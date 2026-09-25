@@ -309,3 +309,4 @@ src/
 - **Cross-platform Auth Flow**: `../FashionAI_BE/001-cross-platform-auth-flow.md`
 - **Mobile Setup Plan**: `MOBILE_SETUP_PLAN.md`
 - **Task Allocation**: `MOBILE_TASK_ALLOCATION.md`
+.
