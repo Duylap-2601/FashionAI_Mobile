@@ -1,15 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
+import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
 
-export const TryOnScreen: React.FC = () => {
+export const ShopScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.icon}>👗</Text>
-        <Text style={styles.title}>Virtual Try-On</Text>
+        <Text style={styles.icon}>🛍️</Text>
+        <Text style={styles.title}>Cửa Hàng Thời Trang</Text>
         <Text style={styles.subtitle}>
-          Tính năng thử đồ ảo AI đang được chuẩn bị. Bạn có thể tải lên ảnh toàn thân và mẫu đồ để xem kết quả mặc thử chân thực.
+          Khám phá các bộ sưu tập và sản phẩm thời trang thiết kế mới nhất. Tích hợp thử đồ ảo ngay trên từng sản phẩm.
         </Text>
       </View>
     </View>

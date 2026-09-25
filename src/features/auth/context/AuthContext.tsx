@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
-import { User, LoginDto, RegisterDto } from '../types/auth';
-import { authApi } from '../api/auth.api';
-import { getTokens, setTokens, clearTokens, getStoredUser, setStoredUser } from './secureStorage';
-import { onUnauthorized } from '../api/client';
-import { ENV } from '../config/env';
+import { User, LoginDto, RegisterDto } from '@/features/auth/types/auth';
+import { authApi } from '@/features/auth/api/auth.api';
+import { getTokens, setTokens, clearTokens, getStoredUser, setStoredUser } from '@/features/auth/storage/secureStorage';
+import { onUnauthorized } from '@/api/client';
+import { ENV } from '@/config/env';
 
 // Complete auth session if returning from WebBrowser
 WebBrowser.maybeCompleteAuthSession();

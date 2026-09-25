@@ -1,7 +1,7 @@
-import { api } from './client';
-import { ENDPOINTS } from '../constants/endpoints';
-import { unwrap } from '../types/api';
-import { AuthResponseData, LoginDto, RegisterDto, User } from '../types/auth';
+import { api } from '@/api/client';
+import { ENDPOINTS } from '@/constants/endpoints';
+import { unwrap } from '@/types/api';
+import { AuthResponseData, LoginDto, RegisterDto, User } from '@/features/auth/types/auth';
 
 export const authApi = {
   async login(data: LoginDto): Promise<AuthResponseData> {

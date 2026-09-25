@@ -12,8 +12,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../navigation/types';
-import { useAuth } from '../../auth/useAuth';
+import { AuthStackParamList } from '@/navigation/types';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 

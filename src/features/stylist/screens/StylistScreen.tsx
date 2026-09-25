@@ -1,15 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
+import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
 
-export const ShopScreen: React.FC = () => {
+export const StylistScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.icon}>🛍️</Text>
-        <Text style={styles.title}>Cửa Hàng Thời Trang</Text>
+        <Text style={styles.icon}>✨</Text>
+        <Text style={styles.title}>AI Stylist</Text>
         <Text style={styles.subtitle}>
-          Khám phá các bộ sưu tập và sản phẩm thời trang thiết kế mới nhất. Tích hợp thử đồ ảo ngay trên từng sản phẩm.
+          Trợ lý phong cách thông minh giúp bạn chọn trang phục phù hợp với vóc dáng, màu da và các dịp sự kiện đặc biệt.
         </Text>
       </View>
     </View>

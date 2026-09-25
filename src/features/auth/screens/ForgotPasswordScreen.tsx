@@ -12,45 +12,39 @@ import {
   ScrollView,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../navigation/types';
-import { authApi } from '../../api/auth.api';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '../../constants/theme';
+import { AuthStackParamList } from '@/navigation/types';
+import { authApi } from '@/features/auth/api/auth.api';
+import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'ResetPassword'>;
+type Props = NativeStackScreenProps<AuthStackParamList, 'ForgotPassword'>;
 
-export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
-  const [token, setToken] = useState(route.params?.token || '');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
+  const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSent, setIsSent] = useState(false);
 
   const handleSubmit = async () => {
-    if (!token.trim()) {
-      Alert.alert('Lỗi', 'Mã token đặt lại mật khẩu không hợp lệ');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Lỗi', 'Mật khẩu mới phải có ít nhất 6 ký tự');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không trùng khớp');
+    if (!email.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập email');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      await authApi.resetPassword(token.trim(), password);
-      Alert.alert('Thành công', 'Mật khẩu của bạn đã được cập nhật thành công!', [
-        {
-          text: 'Đăng nhập',
-          onPress: () => navigation.navigate('Login'),
-        },
-      ]);
+      await authApi.forgotPassword(email.trim());
+      setIsSent(true);
+      Alert.alert(
+        'Đã gửi liên kết',
+        'Vui lòng kiểm tra hộp thư email của bạn để đặt lại mật khẩu.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Login'),
+          },
+        ]
+      );
     } catch (err: any) {
-      Alert.alert('Thất bại', err.message || 'Không thể đặt lại mật khẩu. Vui lòng thử lại.');
+      Alert.alert('Thất bại', err.message || 'Không thể gửi yêu cầu đặt lại mật khẩu');
     } finally {
       setIsSubmitting(false);
     }
@@ -63,40 +57,22 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>Đặt lại mật khẩu</Text>
+          <Text style={styles.title}>Quên mật khẩu</Text>
           <Text style={styles.subtitle}>
-            Nhập mã xác thực và mật khẩu mới cho tài khoản của bạn.
+            Nhập email của bạn và chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu.
           </Text>
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.label}>Mã xác thực (Token)</Text>
+          <Text style={styles.label}>Email</Text>
           <TextInput
             style={styles.input}
-            placeholder="Dán mã token từ email"
+            placeholder="name@example.com"
             placeholderTextColor={COLORS.textMuted}
-            value={token}
-            onChangeText={setToken}
-          />
-
-          <Text style={styles.label}>Mật khẩu mới</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor={COLORS.textMuted}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-
-          <Text style={styles.label}>Xác nhận mật khẩu mới</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor={COLORS.textMuted}
-            secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
           />
 
           <TouchableOpacity
@@ -107,7 +83,7 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
             {isSubmitting ? (
               <ActivityIndicator color={COLORS.textInverse} />
             ) : (
-              <Text style={styles.primaryButtonText}>Lưu mật khẩu mới</Text>
+              <Text style={styles.primaryButtonText}>Gửi liên kết</Text>
             )}
           </TouchableOpacity>
 
@@ -158,7 +134,6 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.semibold as any,
     color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
-    marginTop: SPACING.md,
   },
   input: {
     borderWidth: 1,

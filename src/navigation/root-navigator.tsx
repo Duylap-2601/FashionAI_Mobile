@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 import { AuthStack } from './auth-stack';
 import { MainTabs } from './main-tabs';
-import { useAuth } from '../auth/useAuth';
+import { useAuth } from '../features/auth/hooks/useAuth';
 import { COLORS, SPACING, FONT_SIZE } from '../constants/theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

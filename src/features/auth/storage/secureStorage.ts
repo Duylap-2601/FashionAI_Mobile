@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
-import { AuthTokens, User } from '../types/auth';
+import { AuthTokens, User } from '@/features/auth/types/auth';
 
 const ACCESS_TOKEN_KEY = 'fashionai_access_token';
 const REFRESH_TOKEN_KEY = 'fashionai_refresh_token';

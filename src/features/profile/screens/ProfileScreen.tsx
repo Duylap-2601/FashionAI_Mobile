@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useAuth } from '../../auth/useAuth';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
 
 export const ProfileScreen: React.FC = () => {
   const { user, logout } = useAuth();

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { IOrderItem } from '../types/order';
+import { IOrderItem } from '@/features/orders/types/order';
 
 interface CartState {
   items: IOrderItem[];

@@ -1,8 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { ENV } from '../config/env';
-import { getTokens, setTokens, clearTokens } from '../auth/secureStorage';
-import { ApiError, ApiSuccessResponse, unwrap } from '../types/api';
-import { AuthTokens } from '../types/auth';
+import { ENV } from '@/config/env';
+import { getTokens, setTokens, clearTokens } from '@/features/auth/storage/secureStorage';
+import { ApiError, ApiSuccessResponse, unwrap } from '@/types/api';
+import { AuthTokens } from '@/features/auth/types/auth';
 
 type UnauthorizedCallback = () => void;
 const unauthorizedListeners: Set<UnauthorizedCallback> = new Set();

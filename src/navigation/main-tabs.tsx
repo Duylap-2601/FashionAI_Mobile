@@ -2,11 +2,11 @@ import React from 'react';
 import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from './types';
-import { HomeScreen } from '../screens/home/HomeScreen';
-import { TryOnScreen } from '../screens/tryon/TryOnScreen';
-import { ShopScreen } from '../screens/shop/ShopScreen';
-import { StylistScreen } from '../screens/stylist/StylistScreen';
-import { ProfileScreen } from '../screens/profile/ProfileScreen';
+import { HomeScreen } from '../features/home/screens/HomeScreen';
+import { TryOnScreen } from '../features/try-on/screens/TryOnScreen';
+import { ShopScreen } from '../features/products/screens/ShopScreen';
+import { StylistScreen } from '../features/stylist/screens/StylistScreen';
+import { ProfileScreen } from '../features/profile/screens/ProfileScreen';
 import { COLORS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();

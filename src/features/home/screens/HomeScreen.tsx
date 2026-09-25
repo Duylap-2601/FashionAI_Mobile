@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { MainTabParamList } from '../../navigation/types';
-import { useAuth } from '../../auth/useAuth';
-import { authApi } from '../../api/auth.api';
+import { MainTabParamList } from '@/navigation/types';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { authApi } from '@/features/auth/api/auth.api';
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();

@@ -15,11 +15,13 @@
 
 - **Entrypoint**: `App.tsx` → React Navigation (Stack + Bottom Tabs), not Expo Router
 - **Routes**: `src/navigation/` — `AuthStack`, `MainTabs`, `RootNavigator`
-- **Styling**: **Inline StyleSheet** (no Tailwind/NativeWind) — consistent with `src/screens/*/StyleSheet.create`
+- **Source organization**: Feature-based under `src/features/<feature>/`; shared infrastructure stays in `src/navigation`, `src/components`, `src/api`, `src/constants`, `src/config`, `src/realtime`, `src/utils`, and truly shared `src/types`.
+- **Styling**: **Inline StyleSheet** (no Tailwind/NativeWind) — feature screens use `StyleSheet.create`
 - **State Management**: **Zustand** for client state (cart, filters), **TanStack React Query v5** for server state caching & mutations
 - **Validation**: **Zod v4** schemas + **react-hook-form v7** for forms (auth, profile, measurements)
 - **Theme**: `src/constants/theme.ts` — light colors, spacing scale, font definitions
-- **Hooks**: `src/hooks/` — `useAuth`, `useColorScheme`
+- **Design System**: `design-system.md` — mobile visual direction, burgundy/cream tokens, screen patterns, accessibility, and content rules
+- **Hooks**: Feature hooks live in their owning feature; cross-feature hooks stay in `src/hooks/`
 - **Path aliases**: `@/` → `src/*`, `@/assets/*` → `assets/*` (configured in `tsconfig.json`)
 
 ## Routes & Navigation Structure
@@ -30,41 +32,52 @@
 | **MainTabs** | HomeTab, TryOnTab, ShopTab, StylistTab, ProfileTab | Authenticated bottom tabs (5 tabs) |
 | **RootNavigator** | Auth / Main | Switches based on `isAuthenticated` from `AuthContext` |
 
+## Mobile Design System
+
+- Read `design-system.md` before implementing or refactoring mobile UI.
+- The target visual direction is the burgundy/cream mobile system documented in `design-system.md`, based on the provided HTML references for Home, Product Discovery, Product Detail, Photo Try-On, Camera Try-On, AI Stylist, Cart, and Checkout.
+- Implement the design with React Native primitives and `StyleSheet.create`; do not copy HTML, Tailwind classes, DOM scripts, CDN fonts, or Material Symbols web-font usage into the Expo app.
+- Keep reusable primitives in `src/components/ui`; keep screen-specific composition in `src/features/<feature>/screens` until it is reused.
+- `src/constants/theme.ts` is the source for colors, spacing, font sizes, radius, and shadows. When implementing the new mobile UI, migrate that file toward the burgundy/cream token set in `design-system.md` instead of hard-coding repeated values in screens.
+- Use Vietnamese user-facing copy with proper diacritics. Avoid raw backend/technical terms such as `endpoint`, `payload`, `fallback`, `mock`, `Axios error`, or `500 internal server error` in UI.
+- Mobile actions must not depend on hover behavior. Keep important actions visible and reachable with touch targets around `44x44` or larger.
+- Preserve checkout/order pricing ownership: cart and checkout may display totals returned or verified by backend, but must not submit client-resolved shipping fees or discount amounts as the source of truth.
+
 ### AuthStack Screens
 | Screen | File | Features |
 |---|---|---|
-| Login | `src/screens/auth/login-screen.tsx` | Email/password, Google OAuth (In-App Browser), navigation to Register/ForgotPassword |
-| Register | `src/screens/auth/register-screen.tsx` | Name, email, password, confirm password, validation |
-| ForgotPassword | `src/screens/auth/forgot-password-screen.tsx` | Email input, sends reset link via BE |
-| ResetPassword | `src/screens/auth/reset-password-screen.tsx` | Token from deep link, new password + confirm |
+| Login | `src/features/auth/screens/LoginScreen.tsx` | Email/password, Google OAuth (In-App Browser), navigation to Register/ForgotPassword |
+| Register | `src/features/auth/screens/RegisterScreen.tsx` | Name, email, password, confirm password, validation |
+| ForgotPassword | `src/features/auth/screens/ForgotPasswordScreen.tsx` | Email input, sends reset link via BE |
+| ResetPassword | `src/features/auth/screens/ResetPasswordScreen.tsx` | Token from deep link, new password + confirm |
 
 ### MainTabs Screens
 | Tab | Screen | File | Status |
 |---|---|---|---|
-| Home | HomeScreen | `src/screens/home/home-screen.tsx` | ✅ Done — Quota card, feature grid |
-| Try-On | TryOnScreen | `src/screens/tryon/tryon-screen.tsx` | 🚧 Placeholder |
-| Shop | ShopScreen | `src/screens/shop/shop-screen.tsx` | 🚧 Placeholder |
-| Stylist | StylistScreen | `src/screens/stylist/stylist-screen.tsx` | 🚧 Placeholder |
-| Profile | ProfileScreen | `src/screens/profile/profile-screen.tsx` | ✅ Done — User info, logout |
+| Home | HomeScreen | `src/features/home/screens/HomeScreen.tsx` | ✅ Done — Quota card, feature grid |
+| Try-On | TryOnScreen | `src/features/try-on/screens/TryOnScreen.tsx` | 🚧 Placeholder |
+| Shop | ShopScreen | `src/features/products/screens/ShopScreen.tsx` | 🚧 Placeholder |
+| Stylist | StylistScreen | `src/features/stylist/screens/StylistScreen.tsx` | 🚧 Placeholder |
+| Profile | ProfileScreen | `src/features/profile/screens/ProfileScreen.tsx` | ✅ Done — User info, logout |
 
 ## Feature Modules (Referencing FashionAI_FE & FashionAI_BE)
 
 | Feature | Mobile Location | BE Reference | FE Reference |
 |---|---|---|---|
-| **Auth** | `src/auth/`, `src/screens/auth/`, `src/api/auth-api.ts` | `auth.controller.ts` (14 endpoints) | `src/features/auth/*` |
-| **Virtual Try-On** | `src/screens/tryon/`, `src/api/tryon-api.ts` | `try-on.controller.ts` (6 endpoints) | `src/features/try-on/*` |
-| **AI Stylist** | `src/screens/stylist/`, `src/api/stylist-api.ts` | `stylist.controller.ts` (4 endpoints) | `src/features/stylist/*` |
-| **AI Chatbot** | `src/screens/chat/`, `src/api/chat-api.ts` | `chat.controller.ts` + `chat.gateway.ts` (WS) | `src/features/chat/*` |
-| **Products & Catalog** | `src/screens/shop/`, `src/api/products-api.ts` | `products.controller.ts` (8 endpoints) | `src/features/products/*` |
-| **Collections** | `src/screens/shop/`, `src/api/collections-api.ts` | `collections.controller.ts` (10 endpoints) | `src/features/collections/*` |
-| **Reviews** | `src/screens/shop/`, `src/api/reviews-api.ts` | `reviews.controller.ts` (11 endpoints) | `src/features/reviews/*` |
-| **Cart & Orders** | `src/screens/cart/`, `src/api/orders-api.ts` | `orders.controller.ts` (14 endpoints) | `src/features/cart/*`, `src/features/checkout/*` |
-| **Shipping (GHN)** | `src/screens/checkout/`, `src/api/shipping-api.ts` | `shipping.controller.ts` (5 endpoints) | `src/features/shipping/*` |
-| **Payments (SePay)** | `src/screens/payments/`, `src/api/payments-api.ts` | `payments.controller.ts` (13 endpoints) | `src/features/payments/*` |
-| **Subscriptions (VIP)** | `src/screens/subscription/`, `src/api/subscriptions-api.ts` | `payments.controller.ts` + `users.controller.ts` | `src/features/subscription/*` |
-| **Profile & Measurements** | `src/screens/profile/`, `src/api/users-api.ts` | `users.controller.ts` (8 endpoints) | `src/features/profile/*`, `src/features/measurements/*` |
-| **Notifications** | `src/screens/notifications/`, `src/api/notification-api.ts` | `notification.controller.ts` + `realtime.gateway.ts` | `src/features/notifications/*` |
-| **Rack (Wardrobe)** | `src/screens/rack/`, `src/api/rack-api.ts` | `rack.controller.ts` (4 endpoints) | `src/features/rack/*` |
+| **Auth** | `src/features/auth/` | `auth.controller.ts` (14 endpoints) | `src/features/auth/*` |
+| **Virtual Try-On** | `src/features/try-on/` | `try-on.controller.ts` (6 endpoints) | `src/features/try-on/*` |
+| **AI Stylist** | `src/features/stylist/` | `stylist.controller.ts` (4 endpoints) | `src/features/stylist/*` |
+| **AI Chatbot** | `src/features/chat/` | `chat.controller.ts` + `chat.gateway.ts` (WS) | `src/features/chat/*` |
+| **Products & Catalog** | `src/features/products/` | `products.controller.ts` (8 endpoints) | `src/features/products/*` |
+| **Collections** | `src/features/collections/` | `collections.controller.ts` (10 endpoints) | `src/features/collections/*` |
+| **Reviews** | `src/features/reviews/` | `reviews.controller.ts` (11 endpoints) | `src/features/reviews/*` |
+| **Cart & Orders** | `src/features/cart/`, `src/features/orders/`, `src/features/checkout/` | `orders.controller.ts` (14 endpoints) | `src/features/cart/*`, `src/features/checkout/*` |
+| **Shipping (GHN)** | `src/features/shipping/` | `shipping.controller.ts` (5 endpoints) | `src/features/shipping/*` |
+| **Payments (SePay)** | `src/features/payments/` | `payments.controller.ts` (13 endpoints) | `src/features/payments/*` |
+| **Subscriptions (VIP)** | `src/features/subscription/` | `payments.controller.ts` + `users.controller.ts` | `src/features/subscription/*` |
+| **Profile & Measurements** | `src/features/profile/`, `src/features/measurements/` | `users.controller.ts` (8 endpoints) | `src/features/profile/*`, `src/features/measurements/*` |
+| **Notifications** | `src/features/notifications/` | `notification.controller.ts` + `realtime.gateway.ts` | `src/features/notifications/*` |
+| **Rack (Wardrobe)** | `src/features/rack/` | `rack.controller.ts` (4 endpoints) | `src/features/rack/*` |
 
 ## API Layer
 
@@ -73,7 +86,7 @@
 - **Request interceptor**: Adds `Authorization: Bearer <accessToken>` + `X-Platform: mobile`
 - **Response interceptor**: Auto-refresh on 401 `ACCESS_TOKEN_EXPIRED`, converts BE error envelope to `ApiError`
 
-### Auth API (`src/api/auth-api.ts`)
+### Auth API (`src/features/auth/api/auth.api.ts`)
 | Method | Endpoint | Description |
 |---|---|---|
 | `login` | `POST /auth/login` | Email/password → tokens + user |
@@ -127,11 +140,11 @@ POST /auth/verify-email { token }
 POST /auth/resend-verification
 ```
 
-## Secure Storage (`src/auth/secure-storage.ts`)
+## Secure Storage (`src/features/auth/storage/secureStorage.ts`)
 - **expo-secure-store** for accessToken, refreshToken, user data
 - Keys: `fashionai_access_token`, `fashionai_refresh_token`, `fashionai_user_data`
 
-## Auth Context (`src/auth/auth-context.tsx`)
+## Auth Context (`src/features/auth/context/AuthContext.tsx`)
 Global provider with:
 - `user`, `isLoading`, `isAuthenticated`
 - `login`, `register`, `loginWithGoogle`, `logout`, `refreshUser`
@@ -140,7 +153,7 @@ Global provider with:
 
 ## Type Definitions
 
-### `src/types/auth.ts`
+### `src/features/auth/types/auth.ts`
 ```typescript
 User { id, email, name, avatarUrl, role, tier: 'FREE'|'MEMBER'|'VIP' }
 AuthTokens { accessToken, accessTokenExpiresAt, refreshToken, refreshTokenExpiresAt }
@@ -182,58 +195,47 @@ ENV = {
 ```
 src/
 ├── api/
-│   ├── client.ts           # axios + interceptors
-│   ├── auth-api.ts
-│   ├── tryon-api.ts
-│   ├── stylist-api.ts
-│   ├── products-api.ts
-│   ├── collections-api.ts
-│   ├── reviews-api.ts
-│   ├── orders-api.ts
-│   ├── payments-api.ts
-│   ├── shipping-api.ts
-│   ├── subscriptions-api.ts
-│   ├── users-api.ts
-│   ├── notification-api.ts
-│   ├── chat-api.ts
-│   └── rack-api.ts
-├── auth/
-│   ├── auth-context.tsx    # provider + useAuth
-│   ├── use-auth.ts         # re-export
-│   └── secure-storage.ts   # expo-secure-store
+│   └── client.ts           # shared axios + interceptors only
+├── features/
+│   ├── auth/
+│   │   ├── api/auth.api.ts
+│   │   ├── context/AuthContext.tsx
+│   │   ├── hooks/useAuth.ts
+│   │   ├── screens/        # Login, Register, ForgotPassword, ResetPassword
+│   │   ├── storage/secureStorage.ts
+│   │   └── types/auth.ts
+│   ├── home/
+│   │   └── screens/HomeScreen.tsx
+│   ├── products/
+│   │   ├── screens/ShopScreen.tsx
+│   │   ├── store/          # filter store
+│   │   └── types/product.ts
+│   ├── try-on/
+│   │   ├── screens/TryOnScreen.tsx
+│   │   └── types/tryon.ts
+│   ├── stylist/
+│   │   ├── screens/StylistScreen.tsx
+│   │   └── types/stylist.ts
+│   ├── cart/
+│   │   └── store/          # cart store
+│   ├── orders/
+│   │   └── types/order.ts
+│   └── profile/
+│       ├── screens/ProfileScreen.tsx
+│       └── types/user.ts
 ├── navigation/
 │   ├── types.ts            # AuthStackParamList, MainTabParamList, RootStackParamList
 │   ├── auth-stack.tsx
 │   ├── main-tabs.tsx
 │   └── root-navigator.tsx
-├── screens/
-│   ├── auth/               # Login, Register, ForgotPassword, ResetPassword
-│   ├── home/               # HomeScreen
-│   ├── tryon/              # TryOnScreen, TryOnHistory, TryOnWorkspace
-│   ├── stylist/            # StylistScreen, StylistHistory
-│   ├── chat/               # ChatScreen, ChatHistory
-│   ├── shop/               # ShopScreen, ProductList, ProductDetail, Collections
-│   ├── cart/               # CartScreen
-│   ├── checkout/           # CheckoutScreen, ShippingAddress
-│   ├── payments/           # PaymentWebView
-│   ├── subscription/       # SubscriptionPlans
-│   ├── profile/            # ProfileScreen, MeasurementsScreen
-│   └── notifications/      # NotificationList
 ├── components/
-│   ├── auth/               # AuthInput, AuthButton, GoogleButton
 │   ├── ui/                 # Button, Input, Card, Badge, Modal
 │   └── common/             # Loading, ErrorView, EmptyState
 ├── hooks/
-│   ├── use-auth.ts
-│   └── use-color-scheme.ts
+│   ├── use-auth.ts         # compatibility re-export
+│   └── use-color-scheme.ts # cross-feature hook
 ├── types/
-│   ├── auth.ts
-│   ├── api.ts
-│   ├── tryon.ts
-│   ├── stylist.ts
-│   ├── product.ts
-│   ├── order.ts
-│   └── user.ts
+│   └── api.ts              # truly shared API envelope types
 ├── constants/
 │   ├── endpoints.ts
 │   ├── theme.ts
@@ -242,9 +244,6 @@ src/
 │   └── env.ts
 ├── realtime/
 │   └── socket.ts
-├── store/
-│   ├── cart-store.ts       # Zustand cart
-│   └── filter-store.ts     # Zustand filters
 └── utils/
     ├── date.ts
     └── format.ts
@@ -254,19 +253,19 @@ src/
 
 | Task | Status | File |
 |---|---|---|
-| Auth Context + Secure Storage | ✅ Done | `src/auth/` |
+| Auth Context + Secure Storage | ✅ Done | `src/features/auth/` |
 | API Client + Interceptors | ✅ Done | `src/api/client.ts` |
-| Auth API Layer | ✅ Done | `src/api/auth-api.ts` |
-| Login Screen | ✅ Done | `src/screens/auth/login-screen.tsx` |
-| Register Screen | ✅ Done | `src/screens/auth/register-screen.tsx` |
-| ForgotPassword Screen | ✅ Done | `src/screens/auth/forgot-password-screen.tsx` |
-| ResetPassword Screen | ✅ Done | `src/screens/auth/reset-password-screen.tsx` |
+| Auth API Layer | ✅ Done | `src/features/auth/api/auth.api.ts` |
+| Login Screen | ✅ Done | `src/features/auth/screens/LoginScreen.tsx` |
+| Register Screen | ✅ Done | `src/features/auth/screens/RegisterScreen.tsx` |
+| ForgotPassword Screen | ✅ Done | `src/features/auth/screens/ForgotPasswordScreen.tsx` |
+| ResetPassword Screen | ✅ Done | `src/features/auth/screens/ResetPasswordScreen.tsx` |
 | AuthStack Navigation | ✅ Done | `src/navigation/auth-stack.tsx` |
 | MainTabs Navigation | ✅ Done | `src/navigation/main-tabs.tsx` |
 | RootNavigator (Auth ↔ Main) | ✅ Done | `src/navigation/root-navigator.tsx` |
-| Home Screen with Quota | ✅ Done | `src/screens/home/home-screen.tsx` |
-| Profile Screen with Logout | ✅ Done | `src/screens/profile/profile-screen.tsx` |
-| Placeholder TryOn/Stylist/Shop | ✅ Done | `src/screens/*/` |
+| Home Screen with Quota | ✅ Done | `src/features/home/screens/HomeScreen.tsx` |
+| Profile Screen with Logout | ✅ Done | `src/features/profile/screens/ProfileScreen.tsx` |
+| Placeholder TryOn/Stylist/Shop | ✅ Done | `src/features/*/screens/` |
 | App.tsx updated | ✅ Done | `App.tsx` |
 | TypeScript passes | ✅ Done | `npx tsc --noEmit` |
 
@@ -290,7 +289,7 @@ src/
 - **Error Handling**: Use `unwrap()` from `src/types/api.ts` to extract data; catch `ApiError` for `code`-based UI logic
 - **Date & Timezone**: Use `src/utils/date.ts` helpers for local date grouping
 - **Unit**: Always `kg` / `cm` (Vietnamese audience)
-- **Design First**: Read FE designs before implementing UI
+- **Design First**: Read `design-system.md` and relevant FE/mobile references before implementing UI
 - **Plan & Confirm**: Produce plan first, get approval before writing code
 
 ## Known Issues & Edge Cases
