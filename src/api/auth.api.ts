@@ -47,4 +47,19 @@ export const authApi = {
     });
     return unwrap<any>(res.data);
   },
+
+  async forgotPassword(email: string): Promise<{ message?: string }> {
+    const res = await api.post(ENDPOINTS.AUTH.FORGOT_PASSWORD, { email });
+    return unwrap<{ message?: string }>(res.data);
+  },
+
+  async resetPassword(token: string, newPassword: string): Promise<{ message?: string }> {
+    const res = await api.post(ENDPOINTS.AUTH.RESET_PASSWORD, { token, newPassword });
+    return unwrap<{ message?: string }>(res.data);
+  },
+
+  async verifyEmail(token: string): Promise<{ message?: string }> {
+    const res = await api.post(ENDPOINTS.AUTH.VERIFY_EMAIL, { token });
+    return unwrap<{ message?: string }>(res.data);
+  },
 };

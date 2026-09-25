@@ -85,6 +85,13 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           />
 
           <TouchableOpacity
+            style={styles.forgotPasswordRow}
+            onPress={() => navigation.navigate('ForgotPassword')}
+          >
+            <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={[styles.primaryButton, isSubmitting && styles.buttonDisabled]}
             onPress={handleLogin}
             disabled={isSubmitting || isGoogleSubmitting}
@@ -172,6 +179,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#0f172a',
     backgroundColor: '#f8fafc',
+  },
+  forgotPasswordRow: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+  },
+  forgotPasswordText: {
+    fontSize: 13,
+    color: '#2563eb',
+    fontWeight: '600',
   },
   primaryButton: {
     backgroundColor: '#0f172a',

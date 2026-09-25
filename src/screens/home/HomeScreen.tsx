@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { MainTabParamList } from '../../navigation/types';
 import { useAuth } from '../../auth/useAuth';
 import { authApi } from '../../api/auth.api';
 
 export const HomeScreen: React.FC = () => {
+  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const { user } = useAuth();
   const [quota, setQuota] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -67,17 +71,25 @@ export const HomeScreen: React.FC = () => {
       {/* Quick Action Grid */}
       <Text style={styles.sectionTitle}>Tính năng nổi bật</Text>
       <View style={styles.featureGrid}>
-        <View style={styles.featureCard}>
+        <TouchableOpacity
+          style={styles.featureCard}
+          onPress={() => navigation.navigate('TryOnTab')}
+          activeOpacity={0.7}
+        >
           <Text style={styles.featureIcon}>👗</Text>
           <Text style={styles.featureName}>Virtual Try-On</Text>
           <Text style={styles.featureDesc}>Thử trang phục với ảnh người thật bằng AI</Text>
-        </View>
+        </TouchableOpacity>
 
-        <View style={styles.featureCard}>
+        <TouchableOpacity
+          style={styles.featureCard}
+          onPress={() => navigation.navigate('StylistTab')}
+          activeOpacity={0.7}
+        >
           <Text style={styles.featureIcon}>✨</Text>
           <Text style={styles.featureName}>AI Stylist</Text>
           <Text style={styles.featureDesc}>Tư vấn phối đồ và phong cách cá nhân</Text>
-        </View>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
