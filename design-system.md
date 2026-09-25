@@ -2,7 +2,7 @@
 
 This document defines the mobile UI language for `FashionAI_Mobile`, based on the provided mobile HTML references for Home, Product Discovery, Product Detail, Photo Try-On, Camera Try-On, AI Stylist, Cart, and Checkout.
 
-The app is Expo React Native. Implement screens with React Native primitives, `StyleSheet.create`, shared components in `src/components/ui`, and tokens from `src/constants/theme.ts`. Do not use Tailwind, NativeWind, DOM APIs, Material Symbols web fonts, or HTML patterns directly.
+The app is Expo React Native. Implement screens with React Native primitives, NativeWind classes, gluestack-compatible shared components in `src/components/ui`, and tokens from `src/constants/theme.ts` / `tailwind.config.js`. Do not use DOM APIs, Material Symbols web fonts, or HTML patterns directly.
 
 ## Product Direction
 
@@ -43,10 +43,10 @@ Mobile currently uses `src/constants/theme.ts`, but that file still contains a s
 
 Rules:
 
-- Use `StyleSheet.create` and imported theme constants.
-- Keep new shared primitives in `src/components/ui` when reused across screens.
+- Use NativeWind, `StyleSheet.create`, and imported theme constants where each is appropriate.
+- Keep new shared primitives and gluestack components in `src/components/ui` when reused across screens.
 - Keep feature-specific UI inside the relevant `src/features/<feature>/screens` directory until it is reused across features.
-- Do not add Tailwind/NativeWind just to match the HTML references.
+- NativeWind is configured for utility-first mobile UI. Keep Tailwind tokens aligned with this document and avoid copying HTML classes blindly.
 - Do not add a new component library without updating this file and `AGENTS.md`.
 
 ## Color System

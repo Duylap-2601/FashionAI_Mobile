@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/features/auth/context/AuthContext';
 import { RootNavigator } from './src/navigation/root-navigator';
+import './global.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {

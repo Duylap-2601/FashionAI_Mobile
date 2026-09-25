@@ -16,7 +16,7 @@
 - **Entrypoint**: `App.tsx` → React Navigation (Stack + Bottom Tabs), not Expo Router
 - **Routes**: `src/navigation/` — `AuthStack`, `MainTabs`, `RootNavigator`
 - **Source organization**: Feature-based under `src/features/<feature>/`; shared infrastructure stays in `src/navigation`, `src/components`, `src/api`, `src/constants`, `src/config`, `src/realtime`, `src/utils`, and truly shared `src/types`.
-- **Styling**: **Inline StyleSheet** (no Tailwind/NativeWind) — feature screens use `StyleSheet.create`
+- **Styling**: NativeWind is configured for Tailwind utility classes. Existing screens may still use `StyleSheet.create`; new UI may use NativeWind/gluestack where it improves consistency.
 - **State Management**: **Zustand** for client state (cart, filters), **TanStack React Query v5** for server state caching & mutations
 - **Validation**: **Zod v4** schemas + **react-hook-form v7** for forms (auth, profile, measurements)
 - **Theme**: `src/constants/theme.ts` — light colors, spacing scale, font definitions
@@ -36,8 +36,9 @@
 
 - Read `design-system.md` before implementing or refactoring mobile UI.
 - The target visual direction is the burgundy/cream mobile system documented in `design-system.md`, based on the provided HTML references for Home, Product Discovery, Product Detail, Photo Try-On, Camera Try-On, AI Stylist, Cart, and Checkout.
-- Implement the design with React Native primitives and `StyleSheet.create`; do not copy HTML, Tailwind classes, DOM scripts, CDN fonts, or Material Symbols web-font usage into the Expo app.
-- Keep reusable primitives in `src/components/ui`; keep screen-specific composition in `src/features/<feature>/screens` until it is reused.
+- Implement the design with React Native primitives, NativeWind classes, gluestack-compatible components, or `StyleSheet.create` as appropriate; do not copy HTML, DOM scripts, CDN fonts, or Material Symbols web-font usage into the Expo app.
+- Keep reusable primitives in `src/components/ui`; gluestack components should also be added there. Keep screen-specific composition in `src/features/<feature>/screens` until it is reused.
+- NativeWind configuration lives in `tailwind.config.js`, `global.css`, `babel.config.js`, `metro.config.js`, and `nativewind-env.d.ts`. `gluestack-ui.config.json` points gluestack CLI/component output to `src/components/ui`.
 - `src/constants/theme.ts` is the source for colors, spacing, font sizes, radius, and shadows. When implementing the new mobile UI, migrate that file toward the burgundy/cream token set in `design-system.md` instead of hard-coding repeated values in screens.
 - Use Vietnamese user-facing copy with proper diacritics. Avoid raw backend/technical terms such as `endpoint`, `payload`, `fallback`, `mock`, `Axios error`, or `500 internal server error` in UI.
 - Mobile actions must not depend on hover behavior. Keep important actions visible and reachable with touch targets around `44x44` or larger.
