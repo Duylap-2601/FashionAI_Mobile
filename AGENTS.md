@@ -90,6 +90,7 @@
 - **Axios instance** with baseURL from `ENV.API_URL`
 - **Request interceptor**: Adds `Authorization: Bearer <accessToken>` + `X-Platform: mobile`
 - **Response interceptor**: Auto-refresh on 401 `ACCESS_TOKEN_EXPIRED`, converts BE error envelope to `ApiError`
+- All API features must use this shared Axios client and must not hardcode backend base URLs.
 
 ### Auth API (`src/features/auth/api/auth.api.ts`)
 | Method | Endpoint | Description |
@@ -177,11 +178,17 @@ unwrap<T>(response) → T (throws ApiError on failure)
 ## Environment Config (`src/config/env.ts`)
 ```typescript
 ENV = {
-  API_URL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api',
-  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:3000',
+  API_URL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api',
+  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:3001',
   OAUTH_REDIRECT_SCHEME: 'fashionai://auth',
 }
 ```
+
+The standard local backend configuration is `PORT=3001` with `API_PREFIX=api`,
+so use `http://localhost:3001/api` on desktop development. On a physical phone,
+`localhost` refers to the phone itself; set `EXPO_PUBLIC_API_URL` and
+`EXPO_PUBLIC_SOCKET_URL` to the development machine's LAN IP instead. Android
+Emulator may require `10.0.2.2` in place of `localhost`.
 
 ## Realtime (Socket.IO) — Phase 2+
 - **Namespace `/`**: Notifications, `token:expiring`, `token:expired`
