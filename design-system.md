@@ -30,7 +30,7 @@ The provided HTML references establish the target mobile direction:
 | --- | --- |
 | Home | Editorial commerce home with search, collection hero, categories, try-on promo, personalized products, AI Stylist, new arrivals, and style guide. |
 | Product Discovery | Readable 2-column product grid, sticky compact header, search, horizontal category chips, filter/sort bottom sheets. |
-| Product Detail | Large product gallery, clear price/variant selection, AI size hint, try-on banner, accordions, stylist recommendations, sticky action bar. |
+| Product Detail | Large product gallery, clear color selection, made-to-measure guidance, try-on banner, accordions, stylist recommendations, sticky action bar. |
 | Photo Try-On | 3:4 viewport, source toggle, compare original/result, selected garment row, result CTAs, secure photo reassurance. |
 | Camera Try-On | Camera-dominant fitting room, alignment guide, session state, garment picker, prominent live try-on CTA. |
 | AI Stylist | Chat-like outfit recommendation, lookbook card, set breakdown, follow-up prompt chips, sticky composer. |
@@ -379,7 +379,7 @@ Required sections:
 - Floating gallery dots and zoom action.
 - Product code badge, name, current/original price, discount badge.
 - Color selection.
-- Size selection with AI fit hint only if backed by API or deterministic size rules.
+- Made-to-measure guidance belongs to the customer measurement and order flow, never the product selection flow.
 - Shipping/inventory utility row.
 - AI Try-On banner.
 - Accordions for detail/material/shipping.
@@ -388,7 +388,7 @@ Required sections:
 
 Rules:
 
-- Product detail is commerce-first; do not bury price, size, and action.
+- Product detail is commerce-first; do not bury price, color, and action.
 - AI fit confidence must not be fake if unavailable.
 - Product data and checkout totals must come from backend or validated product state.
 
@@ -449,7 +449,7 @@ Required sections:
 Rules:
 
 - AI Stylist copy should sound like a helpful Vietnamese stylist.
-- Outfit recommendations must clearly show product availability, size, price, and total.
+- Outfit recommendations must clearly show product availability, color, price, and total.
 - Do not invent product availability, savings, or fit metrics if the backend does not return them.
 
 ### Cart
@@ -457,7 +457,7 @@ Rules:
 Required sections:
 
 - Stack header with back action and item count.
-- Product rows with image, name, variant, price, quantity stepper, remove action, save action.
+- Product rows with image, name, color, price, quantity stepper, remove action, save action.
 - Voucher/privilege row.
 - Cross-sell carousel: `Hoàn thiện set đồ`.
 - Order summary.

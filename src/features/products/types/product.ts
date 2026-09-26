@@ -1,55 +1,102 @@
-export interface IProductVariant {
-  id: string | number;
-  productId: string | number;
-  sku?: string;
-  size: string;
-  color: string;
-  stock: number;
-  price: number;
-  imageUrl?: string;
+export type GarmentCategory = 'UPPER' | 'LOWER' | 'FULL_BODY';
+export type GarmentType = 'SHIRT' | 'VEST' | 'JACKET' | 'PANTS' | 'SKIRT' | 'DRESS' | 'JUMPSUIT';
+export type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+export type ProductSort = 'latest' | 'price_asc' | 'price_desc';
+
+export interface IProductImage {
+  id: string;
+  productId: string;
+  imageUrl: string;
+  isMain: boolean;
+  createdAt: string;
+}
+
+export interface IProductColor {
+  name: string;
+  hex: string;
 }
 
 export interface IProduct {
-  id: string | number;
+  id: string;
   name: string;
-  slug?: string;
-  description?: string;
+  description?: string | null;
+  category: GarmentCategory;
+  garmentType?: GarmentType | null;
+  color?: string | null;
+  colors?: IProductColor[] | null;
+  material?: string | null;
   price: number;
-  salePrice?: number | null;
-  images: string[];
-  thumbnailUrl?: string;
-  category?: string;
-  tags?: string[];
-  inStock?: boolean;
-  variants?: IProductVariant[];
-  rating?: number;
-  reviewCount?: number;
-  createdAt?: string;
+  originalPrice?: number | null;
+  stock: number;
+  brand: string | null;
+  garmentUrl: string;
+  status: ProductStatus;
+  avgRating: number;
+  reviewCount: number;
+  images: IProductImage[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IProductFilter {
+  search?: string;
+  category?: GarmentCategory;
+  garmentType?: GarmentType;
+  color?: string;
+  subCategory?: string;
+  material?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  status?: ProductStatus;
+  sort?: ProductSort;
+  page?: number;
+  limit?: number;
 }
 
 export interface ICollection {
-  id: string | number;
-  title: string;
+  id: string;
+  name: string;
   slug: string;
-  description?: string;
-  bannerUrl?: string;
-  thumbnailUrl?: string;
-  productCount?: number;
-  isPublished?: boolean;
-  products?: IProduct[];
+  description?: string | null;
+  coverImages: string[];
+  isPublished: boolean;
+  displayOrder: number;
+  _count?: {
+    products: number;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface IReview {
-  id: string | number;
-  productId: string | number;
+  id: string;
+  productId: string;
   userId: string;
-  userName?: string;
-  userAvatar?: string;
+  orderId: string;
   rating: number;
-  content: string;
-  images?: string[];
+  comment?: string | null;
+  images?: string[] | null;
+  user?: IReviewUser;
+  replies?: IReviewReply[];
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
+}
+
+export interface IReviewUser {
+  id: string;
+  name: string | null;
+  avatarUrl: string | null;
+  role?: 'USER' | 'ADMIN';
+}
+
+export interface IReviewReply {
+  id: string;
+  reviewId: string;
+  userId: string;
+  content: string;
+  user?: IReviewUser;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface IReviewStats {

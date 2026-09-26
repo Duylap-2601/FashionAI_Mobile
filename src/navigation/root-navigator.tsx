@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 import { AuthStack } from './auth-stack';
 import { MainTabs } from './main-tabs';
+import { RoutePlaceholderScreen } from '../components/common/RoutePlaceholderScreen';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { COLORS, SPACING, FONT_SIZE } from '../constants/theme';
 
@@ -26,7 +27,15 @@ export const RootNavigator: React.FC = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
         {isAuthenticated ? (
-          <Stack.Screen name="Main" component={MainTabs} />
+          <>
+            <Stack.Screen name="Main" component={MainTabs} />
+            <Stack.Screen name="ProductDetail" component={RoutePlaceholderScreen} />
+            <Stack.Screen name="CollectionDetail" component={RoutePlaceholderScreen} />
+            <Stack.Screen name="Reviews" component={RoutePlaceholderScreen} />
+            <Stack.Screen name="Rack" component={RoutePlaceholderScreen} />
+            <Stack.Screen name="StylistHistory" component={RoutePlaceholderScreen} />
+            <Stack.Screen name="StylistResult" component={RoutePlaceholderScreen} />
+          </>
         ) : (
           <Stack.Screen name="Auth" component={AuthStack} />
         )}

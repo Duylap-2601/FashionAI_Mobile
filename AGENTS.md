@@ -43,6 +43,7 @@
 - Use Vietnamese user-facing copy with proper diacritics. Avoid raw backend/technical terms such as `endpoint`, `payload`, `fallback`, `mock`, `Axios error`, or `500 internal server error` in UI.
 - Mobile actions must not depend on hover behavior. Keep important actions visible and reachable with touch targets around `44x44` or larger.
 - Preserve checkout/order pricing ownership: cart and checkout may display totals returned or verified by backend, but must not submit client-resolved shipping fees or discount amounts as the source of truth.
+- FashionAI products are made-to-measure. Product selection is limited to `productId`, `color`, and `quantity`; body measurements belong exclusively to the measurement and order flow. Do not add standard sizing fields, selectors, filters, or variant identifiers to product flows.
 
 ### AuthStack Screens
 | Screen | File | Features |

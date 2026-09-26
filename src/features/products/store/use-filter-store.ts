@@ -1,35 +1,50 @@
 import { create } from 'zustand';
-
-export type SortOption = 'newest' | 'price_asc' | 'price_desc' | 'popular';
+import {
+  GarmentCategory,
+  GarmentType,
+  IProductFilter,
+  ProductSort,
+  ProductStatus,
+} from '../types/product';
 
 interface FilterState {
-  category: string | null;
+  search: string;
+  category: GarmentCategory | null;
+  garmentType: GarmentType | null;
+  color: string | null;
+  subCategory: string | null;
+  material: string | null;
   minPrice: number | null;
   maxPrice: number | null;
-  sortBy: SortOption;
-  searchQuery: string;
-  setCategory: (category: string | null) => void;
-  setPriceRange: (min: number | null, max: number | null) => void;
-  setSortBy: (sortBy: SortOption) => void;
-  setSearchQuery: (query: string) => void;
+  status: ProductStatus | null;
+  sort: ProductSort;
+  page: number;
+  limit: number;
+  setFilters: (filters: Partial<IProductFilter>) => void;
+  setPagination: (page: number, limit?: number) => void;
   resetFilters: () => void;
 }
 
 const initialState = {
+  search: '',
   category: null,
+  garmentType: null,
+  color: null,
+  subCategory: null,
+  material: null,
   minPrice: null,
   maxPrice: null,
-  sortBy: 'newest' as SortOption,
-  searchQuery: '',
+  status: 'ACTIVE' as ProductStatus | null,
+  sort: 'latest' as ProductSort,
+  page: 1,
+  limit: 20,
 };
 
 export const useFilterStore = create<FilterState>((set) => ({
   ...initialState,
 
-  setCategory: (category) => set({ category }),
-  setPriceRange: (minPrice, maxPrice) => set({ minPrice, maxPrice }),
-  setSortBy: (sortBy) => set({ sortBy }),
-  setSearchQuery: (searchQuery) => set({ searchQuery }),
+  setFilters: (filters) => set({ ...filters, page: 1 }),
+  setPagination: (page, limit) => set({ page, ...(limit === undefined ? {} : { limit }) }),
   resetFilters: () => set(initialState),
 }));
 
