@@ -26,7 +26,7 @@ export interface IProduct {
   colors?: IProductColor[] | null;
   material?: string | null;
   price: number;
-  originalPrice?: number | null;
+  originalPrice: number | null;
   stock: number;
   brand: string | null;
   garmentUrl: string;
@@ -51,4 +51,36 @@ export interface IProductFilter {
   sort?: ProductSort;
   page?: number;
   limit?: number;
+}
+
+export type IProductListFilters = Omit<IProductFilter, 'page'>;
+
+export interface BackendProductImage {
+  id: string;
+  productId: string;
+  imageUrl: string;
+  isMain: boolean;
+  createdAt: string;
+}
+
+export interface BackendProduct {
+  id: string;
+  name: string;
+  description: string | null;
+  category: GarmentCategory;
+  garmentType: GarmentType | null;
+  color: string | null;
+  colors: unknown;
+  material: string | null;
+  price: string | number;
+  originalPrice: string | number | null;
+  stock: number;
+  brand: string | null;
+  garmentUrl: string;
+  status: ProductStatus;
+  avgRating: string | number | null;
+  reviewCount: number;
+  images: BackendProductImage[];
+  createdAt: string;
+  updatedAt: string;
 }

@@ -2,12 +2,11 @@ import { create } from 'zustand';
 import {
   GarmentCategory,
   GarmentType,
-  IProductFilter,
   ProductSort,
   ProductStatus,
 } from '../types/product';
 
-interface FilterState {
+interface FilterValues {
   search: string;
   category: GarmentCategory | null;
   garmentType: GarmentType | null;
@@ -18,10 +17,10 @@ interface FilterState {
   maxPrice: number | null;
   status: ProductStatus | null;
   sort: ProductSort;
-  page: number;
-  limit: number;
-  setFilters: (filters: Partial<IProductFilter>) => void;
-  setPagination: (page: number, limit?: number) => void;
+}
+
+interface FilterState extends FilterValues {
+  setFilters: (filters: Partial<FilterValues>) => void;
   resetFilters: () => void;
 }
 
@@ -36,15 +35,12 @@ const initialState = {
   maxPrice: null,
   status: 'ACTIVE' as ProductStatus | null,
   sort: 'latest' as ProductSort,
-  page: 1,
-  limit: 20,
 };
 
 export const useFilterStore = create<FilterState>((set) => ({
   ...initialState,
 
-  setFilters: (filters) => set({ ...filters, page: 1 }),
-  setPagination: (page, limit) => set({ page, ...(limit === undefined ? {} : { limit }) }),
+  setFilters: (filters) => set(filters),
   resetFilters: () => set(initialState),
 }));
 
