@@ -136,7 +136,7 @@
 - [ ] Dựng màn hình Danh mục sản phẩm (Product List): Grid 2 cột, Infinite Scroll, Thanh tìm kiếm debounce.
 - [ ] Dựng Modal Bộ lọc sản phẩm (Filter Modal: Danh mục, loại trang phục, khoảng giá, màu, chất liệu).
 - [ ] Dựng màn hình Chi tiết sản phẩm: Image Carousel (`expo-image`), chọn màu, nút "Thử đồ", nút "Thêm vào giỏ".
-- [ ] Dựng Tab Reviews: Thống kê rating, danh sách review, Modal viết đánh giá kèm upload ảnh.
+- [ ] Dựng Tab Reviews: Thống kê rating, danh sách review, Modal viết đánh giá với danh sách URL ảnh theo contract hiện tại.
 - [ ] Dựng màn hình AI Stylist: Form tư vấn theo ngữ cảnh + Hiển thị Card set đồ phối sẵn.
 - [ ] Dựng màn hình Tủ đồ cá nhân (Rack) + Nút chuyển đồ nhanh sang màn hình Try-On của Dev 1.
 
@@ -237,7 +237,7 @@ gantt
 
 ### 🔹 Sprint 3: Tính năng nâng cao, Realtime & Tối ưu (Tuần 5)
 - **Dev 1**: AI Chatbot streaming qua WebSocket `/chat` + Live Try-On Video session + Trung tâm thông báo.
-- **Dev 2**: Bộ sưu tập thời trang (Collections) + Quản lý Tủ đồ cá nhân (Rack) + Đánh giá kèm upload ảnh thực tế.
+- **Dev 2**: Bộ sưu tập thời trang (Collections) + Quản lý Tủ đồ cá nhân (Rack) + Đánh giá hỗ trợ URL ảnh theo contract backend.
 - **Dev 3**: Mua/nâng cấp Gói VIP Subscription để mở rộng quota AI + Màn hình Tracking đơn hàng chi tiết.
 > 🎯 **Mục tiêu nghiệm thu Sprint 3**: Toàn bộ luồng app hoàn thiện, không lỗi TypeScript (`npx tsc --noEmit`), chạy mượt trên cả thiết bị iOS & Android thật.
 
@@ -269,26 +269,26 @@ useCartStore.getState().addItem({
 navigation.navigate('SubscriptionPlans');
 ```
 
-### 4.2 Cấu trúc API Services trong thư mục `src/api/`
-Mỗi Dev tạo và quản lý file API riêng để tránh merge conflict:
+### 4.2 Cấu trúc API Services theo feature
+`src/api/` chỉ chứa HTTP client/interceptor dùng chung. Mỗi business API thuộc feature tương ứng dưới `src/features/<feature>/api/`:
 - **Dev 1**:
-  - `src/api/auth.api.ts`
-  - `src/api/tryOn.api.ts`
-  - `src/api/liveTryOn.api.ts`
-  - `src/api/chat.api.ts`
-  - `src/api/notification.api.ts`
+  - `src/features/auth/api/auth.api.ts`
+  - `src/features/try-on/api/try-on.api.ts`
+  - `src/features/try-on/api/live-try-on.api.ts`
+  - `src/features/chat/api/chat.api.ts`
+  - `src/features/notifications/api/notifications.api.ts`
 - **Dev 2**:
-  - `src/api/collections.api.ts`
-  - `src/api/products.api.ts`
-  - `src/api/reviews.api.ts`
-  - `src/api/stylist.api.ts`
-  - `src/api/rack.api.ts`
+  - `src/features/collections/api/collections.api.ts`
+  - `src/features/products/api/products.api.ts`
+  - `src/features/reviews/api/reviews.api.ts`
+  - `src/features/stylist/api/stylist.api.ts`
+  - `src/features/rack/api/rack.api.ts`
 - **Dev 3**:
-  - `src/api/shipping.api.ts`
-  - `src/api/orders.api.ts`
-  - `src/api/payments.api.ts`
-  - `src/api/subscriptions.api.ts`
-  - `src/api/users.api.ts`
+  - `src/features/shipping/api/shipping.api.ts`
+  - `src/features/orders/api/orders.api.ts`
+  - `src/features/payments/api/payments.api.ts`
+  - `src/features/subscription/api/subscriptions.api.ts`
+  - `src/features/profile/api/users.api.ts`
 
 ### 4.3 Quy tắc Git & Tiêu chuẩn mã nguồn
 - Nhánh chính: `main` (Production), `develop` (Integration).

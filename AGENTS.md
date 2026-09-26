@@ -83,6 +83,9 @@
 
 ## API Layer
 
+- `src/api/` is reserved for shared HTTP infrastructure such as the Axios client and interceptors.
+- Business API modules belong to their owning feature under `src/features/<feature>/api/`.
+
 ### HTTP Client (`src/api/client.ts`)
 - **Axios instance** with baseURL from `ENV.API_URL`
 - **Request interceptor**: Adds `Authorization: Bearer <accessToken>` + `X-Platform: mobile`
@@ -187,10 +190,10 @@ ENV = {
 - **Auth**: `auth: { token: accessToken }`
 - **Reconnect**: `AppState` listener on app foreground
 
-## Image Upload (Try-On / Stylist / Reviews)
-- `expo-image-picker` → `FormData` with `multipart/form-data`
-- BE: `multer` (memory) + Cloudinary, 10MB limit
-- Client: compress/resize with `expo-image-manipulator` before upload
+## Image Upload
+- Try-On and Stylist may use `expo-image-picker` and multipart `FormData` where their backend endpoints support it.
+- Reviews currently accept image URLs as `images?: string[]`; do not invent a Review multipart upload endpoint unless the backend contract changes.
+- For supported multipart flows, the backend uses `multer` (memory) and Cloudinary with a 10MB limit.
 
 ## File Structure
 
@@ -273,10 +276,13 @@ src/
 
 ## Naming Conventions
 
-- **Files & folders**: `kebab-case` (e.g. `login-screen.tsx`, `use-auth.ts`)
-- **React components**: `PascalCase` export, kebab-case file (e.g. `LoginScreen`)
-- **Hooks**: file `use-*.ts`, hook `useFoo`
-- **Zustand stores**: file `use-*-store.ts`, hook `useFooStore`
+- **React components and screens**: `PascalCase.tsx` (e.g. `ProductCard.tsx`, `ProductDetailScreen.tsx`)
+- **Hooks**: `useFoo.ts` (e.g. `useProducts.ts`, `useProduct.ts`, `useAuth.ts`)
+- **API modules**: `feature.api.ts` inside the owning feature (e.g. `products.api.ts`, `reviews.api.ts`)
+- **Mappers**: `feature.mapper.ts` (e.g. `product.mapper.ts`)
+- **Zustand stores**: `use-*-store.ts` (e.g. `use-filter-store.ts`)
+- **Type files**: descriptive lowercase domain names (e.g. `product.ts`, `review.ts`, `collection.ts`)
+- **Other folders and non-component files**: use descriptive lowercase names consistent with the surrounding feature.
 - **Interfaces**: `I` prefix (`IUser`, `IProduct`, `IOrder`)
 - **Types**: `I` prefix for object shapes; plain `PascalCase` for unions
 - **Enums**: `E` prefix (`ETier`, `EOrderStatus`); prefer `enum` over string unions
