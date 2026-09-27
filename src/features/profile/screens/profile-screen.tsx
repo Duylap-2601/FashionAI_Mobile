@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useAuth } from '@/features/auth/hooks/use-auth';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
 
 export const ProfileScreen: React.FC = () => {
@@ -78,11 +78,11 @@ const styles = StyleSheet.create({
   },
   profileHeader: {
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.surfaceLowest,
     padding: SPACING.xxl,
     borderRadius: BORDER_RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.surfaceLine,
     marginBottom: SPACING.xl,
     ...SHADOWS.sm,
   },
@@ -90,39 +90,39 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryContainer,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.md,
   },
   avatarText: {
-    color: COLORS.textInverse,
+    color: COLORS.onPrimary,
     fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.heavy as any,
   },
   name: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.bold as any,
-    color: COLORS.textPrimary,
+    color: COLORS.onSurface,
   },
   email: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    color: COLORS.onSurfaceVariant,
     marginTop: 4,
   },
   tierTag: {
     marginTop: SPACING.md,
-    backgroundColor: COLORS.surfaceMuted,
+    backgroundColor: COLORS.surfaceLow,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs,
     borderRadius: BORDER_RADIUS.full,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.surfaceLine,
   },
   tierText: {
     fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.semibold as any,
-    color: COLORS.primary,
+    color: COLORS.primaryContainer,
   },
   section: {
     marginBottom: SPACING.xl,
@@ -130,15 +130,15 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FONT_SIZE.md,
     fontWeight: FONT_WEIGHT.bold as any,
-    color: COLORS.textPrimary,
+    color: COLORS.onSurface,
     marginBottom: SPACING.sm,
   },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.surfaceLowest,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.surfaceLine,
     ...SHADOWS.sm,
   },
   rowItem: {
@@ -148,16 +148,16 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    color: COLORS.onSurfaceVariant,
   },
   rowValue: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semibold as any,
-    color: COLORS.textPrimary,
+    color: COLORS.onSurface,
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.surfaceMuted,
+    backgroundColor: COLORS.surfaceLow,
     marginVertical: SPACING.sm,
   },
   logoutButton: {

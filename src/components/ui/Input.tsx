@@ -8,7 +8,7 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '../../constants/theme';
+import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
 
 export interface InputProps extends TextInputProps {
   label?: string;
@@ -41,7 +41,7 @@ export const Input: React.FC<InputProps> = ({
       >
         {leftIcon && <View style={styles.iconContainer}>{leftIcon}</View>}
         <TextInput
-          placeholderTextColor={COLORS.textMuted}
+          placeholderTextColor={COLORS.outline}
           style={[styles.input, style]}
           {...props}
         />
@@ -63,23 +63,23 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semibold as any,
-    color: COLORS.textPrimary,
+    color: COLORS.onSurface,
     marginBottom: SPACING.xs,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.surfaceLine,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.surfaceMuted,
+    backgroundColor: COLORS.surfaceLow,
     paddingHorizontal: SPACING.md,
   },
   input: {
     flex: 1,
     paddingVertical: SPACING.md,
     fontSize: FONT_SIZE.md,
-    color: COLORS.textPrimary,
+    color: COLORS.onSurface,
   },
   iconContainer: {
     justifyContent: 'center',
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   },
   helperText: {
     fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    color: COLORS.onSurfaceVariant,
     marginTop: SPACING.xs,
   },
 });

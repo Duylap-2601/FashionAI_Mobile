@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '../../constants/theme';
+import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
 
 export interface EmptyStateProps {
   icon?: string;
@@ -50,26 +50,26 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.bold as any,
-    color: COLORS.textPrimary,
+    color: COLORS.onSurface,
     marginBottom: SPACING.xs,
     textAlign: 'center',
   },
   description: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    color: COLORS.onSurfaceVariant,
     textAlign: 'center',
     lineHeight: 20,
     maxWidth: 260,
     marginBottom: SPACING.lg,
   },
   actionButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryContainer,
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
   },
   actionText: {
-    color: COLORS.textInverse,
+    color: COLORS.onPrimary,
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.bold as any,
   },

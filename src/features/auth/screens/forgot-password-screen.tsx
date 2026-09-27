@@ -12,45 +12,46 @@ import {
   ScrollView,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { AuthStackParamList } from '@/navigation/types';
 import { authApi } from '@/features/auth/api/auth.api';
+import {
+  forgotPasswordSchema,
+  ForgotPasswordFormValues,
+} from '@/features/auth/schemas/auth.schema';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'ResetPassword'>;
+type Props = NativeStackScreenProps<AuthStackParamList, 'ForgotPassword'>;
 
-export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
-  const [token, setToken] = useState(route.params?.token || '');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!token.trim()) {
-      Alert.alert('Lỗi', 'Mã token đặt lại mật khẩu không hợp lệ');
-      return;
-    }
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: '' },
+  });
 
-    if (password.length < 6) {
-      Alert.alert('Lỗi', 'Mật khẩu mới phải có ít nhất 6 ký tự');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không trùng khớp');
-      return;
-    }
-
+  const onSubmit = async (values: ForgotPasswordFormValues) => {
     try {
       setIsSubmitting(true);
-      await authApi.resetPassword(token.trim(), password);
-      Alert.alert('Thành công', 'Mật khẩu của bạn đã được cập nhật thành công!', [
-        {
-          text: 'Đăng nhập',
-          onPress: () => navigation.navigate('Login'),
-        },
-      ]);
+      await authApi.forgotPassword(values.email.trim());
+      Alert.alert(
+        'Đã gửi liên kết',
+        'Vui lòng kiểm tra hộp thư email của bạn để đặt lại mật khẩu.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Login'),
+          },
+        ]
+      );
     } catch (err: any) {
-      Alert.alert('Thất bại', err.message || 'Không thể đặt lại mật khẩu. Vui lòng thử lại.');
+      Alert.alert('Thất bại', err.message || 'Không thể gửi yêu cầu đặt lại mật khẩu');
     } finally {
       setIsSubmitting(false);
     }
@@ -63,51 +64,41 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>Đặt lại mật khẩu</Text>
+          <Text style={styles.title}>Quên mật khẩu</Text>
           <Text style={styles.subtitle}>
-            Nhập mã xác thực và mật khẩu mới cho tài khoản của bạn.
+            Nhập email của bạn và chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu.
           </Text>
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.label}>Mã xác thực (Token)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Dán mã token từ email"
-            placeholderTextColor={COLORS.textMuted}
-            value={token}
-            onChangeText={setToken}
+          <Text style={styles.label}>Email</Text>
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { value, onChange, onBlur } }) => (
+              <TextInput
+                style={[styles.input, errors.email && styles.inputError]}
+                placeholder="name@example.com"
+                placeholderTextColor={COLORS.outline}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+              />
+            )}
           />
-
-          <Text style={styles.label}>Mật khẩu mới</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor={COLORS.textMuted}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-
-          <Text style={styles.label}>Xác nhận mật khẩu mới</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor={COLORS.textMuted}
-            secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
+          {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
 
           <TouchableOpacity
             style={[styles.primaryButton, isSubmitting && styles.buttonDisabled]}
-            onPress={handleSubmit}
+            onPress={handleSubmit(onSubmit)}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
-              <ActivityIndicator color={COLORS.textInverse} />
+              <ActivityIndicator color={COLORS.onPrimary} />
             ) : (
-              <Text style={styles.primaryButtonText}>Lưu mật khẩu mới</Text>
+              <Text style={styles.primaryButtonText}>Gửi liên kết</Text>
             )}
           </TouchableOpacity>
 
@@ -141,11 +132,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FONT_SIZE.xxxl,
     fontWeight: FONT_WEIGHT.heavy as any,
-    color: COLORS.textPrimary,
+    color: COLORS.onSurfaceStrong,
   },
   subtitle: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    color: COLORS.onSurfaceVariant,
     marginTop: SPACING.sm,
     textAlign: 'center',
     lineHeight: 20,
@@ -156,22 +147,29 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semibold as any,
-    color: COLORS.textPrimary,
+    color: COLORS.onSurface,
     marginBottom: SPACING.xs,
-    marginTop: SPACING.md,
   },
   input: {
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.surfaceLine,
     borderRadius: BORDER_RADIUS.md,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     fontSize: FONT_SIZE.md,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.surfaceMuted,
+    color: COLORS.onSurface,
+    backgroundColor: COLORS.surfaceLow,
+  },
+  inputError: {
+    borderColor: COLORS.danger,
+  },
+  errorText: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.danger,
+    marginTop: SPACING.xs,
   },
   primaryButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryContainer,
     borderRadius: BORDER_RADIUS.md,
     paddingVertical: SPACING.lg,
     alignItems: 'center',
@@ -181,7 +179,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   primaryButtonText: {
-    color: COLORS.textInverse,
+    color: COLORS.onPrimary,
     fontSize: FONT_SIZE.md,
     fontWeight: FONT_WEIGHT.bold as any,
   },

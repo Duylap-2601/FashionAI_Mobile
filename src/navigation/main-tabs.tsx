@@ -2,11 +2,11 @@ import React from 'react';
 import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from './types';
-import { HomeScreen } from '../features/home/screens/HomeScreen';
-import { TryOnScreen } from '../features/try-on/screens/TryOnScreen';
-import { ShopScreen } from '../features/products/screens/ShopScreen';
-import { StylistScreen } from '../features/stylist/screens/StylistScreen';
-import { ProfileScreen } from '../features/profile/screens/ProfileScreen';
+import { HomeScreen } from '../features/home/screens/home-screen';
+import { TryOnScreen } from '../features/try-on/screens/try-on-screen';
+import { ShopScreen } from '../features/products/screens/shop-screen';
+import { StylistScreen } from '../features/stylist/screens/stylist-screen';
+import { ProfileScreen } from '../features/profile/screens/profile-screen';
 import { COLORS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -28,14 +28,14 @@ export const MainTabs: React.FC = () => {
         },
         headerTitleStyle: {
           fontWeight: FONT_WEIGHT.bold as any,
-          color: COLORS.textPrimary,
+          color: COLORS.onSurface,
           fontSize: FONT_SIZE.lg,
         },
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textMuted,
+        tabBarActiveTintColor: COLORS.primaryContainer,
+        tabBarInactiveTintColor: COLORS.onSurfaceVariant,
         tabBarStyle: {
           backgroundColor: COLORS.surface,
-          borderTopColor: COLORS.border,
+          borderTopColor: COLORS.surfaceLine,
           height: 60,
           paddingBottom: 8,
           paddingTop: 6,

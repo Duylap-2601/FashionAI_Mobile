@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE } from '../../constants/theme';
+import { COLORS, SPACING, FONT_SIZE } from '@/constants/theme';
 
 export interface LoadingProps {
   message?: string;
@@ -15,7 +15,7 @@ export const Loading: React.FC<LoadingProps> = ({
 }) => {
   return (
     <View style={[styles.container, fullscreen && styles.fullscreen]}>
-      <ActivityIndicator size={size} color={COLORS.primary} />
+      <ActivityIndicator size={size} color={COLORS.primaryContainer} />
       {message ? <Text style={styles.message}>{message}</Text> : null}
     </View>
   );
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
   message: {
     marginTop: SPACING.md,
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    color: COLORS.onSurfaceVariant,
     textAlign: 'center',
   },
 });
