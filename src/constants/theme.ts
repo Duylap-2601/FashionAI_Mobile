@@ -3,6 +3,12 @@ export const COLORS = {
   primaryLight: '#1e293b',
   primaryDark: '#020617',
 
+  // FashionAI commerce palette. Existing aliases above remain unchanged so
+  // feature work can migrate without restyling unrelated screens.
+  primaryContainer: '#5D1C34',
+  primarySoft: '#FFD9E1',
+  onPrimary: '#FFFFFF',
+
   secondary: '#2563eb', // Blue 600
   secondaryLight: '#3b82f6',
   secondaryDark: '#1d4ed8',
@@ -16,14 +22,25 @@ export const COLORS = {
   background: '#f8fafc',
   surface: '#ffffff',
   surfaceMuted: '#f1f5f9',
+  commerceSurface: '#FBF9F7',
+  surfaceLowest: '#FFFFFF',
+  surfaceLow: '#F5F3F1',
+  surfaceContainer: '#EFEDEC',
+  surfaceHigh: '#EAE8E6',
+  surfaceLine: '#E5DFD5',
 
   textPrimary: '#0f172a',
   textSecondary: '#64748b',
   textMuted: '#94a3b8',
   textInverse: '#ffffff',
+  onSurface: '#1B1C1B',
+  onSurfaceVariant: '#534346',
 
   border: '#e2e8f0',
   borderDark: '#cbd5e1',
+  outline: '#857276',
+  outlineVariant: '#D7C1C5',
+  tertiary: '#705D00',
 
   tierFree: '#64748b',
   tierMember: '#2563eb',

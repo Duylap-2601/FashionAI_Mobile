@@ -6,6 +6,7 @@ import { RootStackParamList } from './types';
 import { AuthStack } from './auth-stack';
 import { MainTabs } from './main-tabs';
 import { RoutePlaceholderScreen } from '../components/common/RoutePlaceholderScreen';
+import { ProductDetailScreen } from '../features/products/screens/ProductDetailScreen';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { COLORS, SPACING, FONT_SIZE } from '../constants/theme';
 
@@ -29,7 +30,21 @@ export const RootNavigator: React.FC = () => {
         {isAuthenticated ? (
           <>
             <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen name="ProductDetail" component={RoutePlaceholderScreen} />
+            <Stack.Screen
+              name="ProductDetail"
+              component={ProductDetailScreen}
+              options={{
+                headerShown: true,
+                title: 'Chi tiết sản phẩm',
+                headerBackTitle: 'Sản phẩm',
+                headerTintColor: COLORS.primaryContainer,
+                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerTitleStyle: {
+                  color: COLORS.onSurface,
+                  fontSize: FONT_SIZE.md,
+                },
+              }}
+            />
             <Stack.Screen name="CollectionDetail" component={RoutePlaceholderScreen} />
             <Stack.Screen name="Reviews" component={RoutePlaceholderScreen} />
             <Stack.Screen name="Rack" component={RoutePlaceholderScreen} />
