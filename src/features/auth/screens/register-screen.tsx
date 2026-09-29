@@ -41,6 +41,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         name: values.name.trim(),
         email: values.email.trim(),
         password: values.password,
+        confirmPassword: values.confirmPassword,
       });
     } catch (err: any) {
       Alert.alert('Đăng ký thất bại', err.message || 'Không thể tạo tài khoản');

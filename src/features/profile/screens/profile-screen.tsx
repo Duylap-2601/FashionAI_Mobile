@@ -7,11 +7,17 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '@/features/auth/hooks/use-auth';
+import { ProfileStackParamList } from '@/navigation/types';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
+
+type ProfileNavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'ProfileHome'>;
 
 export const ProfileScreen: React.FC = () => {
   const { user, logout } = useAuth();
+  const navigation = useNavigation<ProfileNavigationProp>();
 
   const handleLogout = () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?', [
@@ -50,15 +56,18 @@ export const ProfileScreen: React.FC = () => {
 
         <View style={styles.card}>
           <View style={styles.rowItem}>
-            <Text style={styles.rowLabel}>ID tài khoản</Text>
-            <Text style={styles.rowValue}>{user?.id || '—'}</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.rowItem}>
             <Text style={styles.rowLabel}>Vai trò</Text>
             <Text style={styles.rowValue}>{user?.role || 'Khách hàng'}</Text>
           </View>
         </View>
+
+        <TouchableOpacity
+          style={styles.linkRow}
+          onPress={() => navigation.navigate('ChangePassword')}
+        >
+          <Text style={styles.linkRowText}>Đổi mật khẩu</Text>
+          <Text style={styles.linkRowChevron}>›</Text>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -159,6 +168,27 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: COLORS.surfaceLow,
     marginVertical: SPACING.sm,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceLowest,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.surfaceLine,
+    marginTop: SPACING.md,
+    ...SHADOWS.sm,
+  },
+  linkRowText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold as any,
+    color: COLORS.onSurface,
+  },
+  linkRowChevron: {
+    fontSize: FONT_SIZE.lg,
+    color: COLORS.onSurfaceVariant,
   },
   logoutButton: {
     backgroundColor: '#fee2e2',

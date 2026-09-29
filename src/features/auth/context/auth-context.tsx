@@ -21,6 +21,7 @@ interface AuthContextType {
   logoutAll: () => Promise<void>;
   refreshUser: () => Promise<void>;
   resendVerification: () => Promise<void>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -171,6 +172,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await authApi.resendVerification();
   };
 
+  const changePassword = async (oldPassword: string, newPassword: string) => {
+    await authApi.changePassword(oldPassword, newPassword);
+    // BE revokes all refresh tokens on password change, so the current session is dead.
+    await clearTokens();
+    setUser(null);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -184,6 +192,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logoutAll,
         refreshUser,
         resendVerification,
+        changePassword,
       }}
     >
       {children}

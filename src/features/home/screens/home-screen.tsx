@@ -81,16 +81,6 @@ export const HomeScreen: React.FC = () => {
           <Text style={styles.featureName}>Virtual Try-On</Text>
           <Text style={styles.featureDesc}>Thử trang phục với ảnh người thật bằng AI</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.featureCard}
-          onPress={() => navigation.navigate('StylistTab')}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.featureIcon}>✨</Text>
-          <Text style={styles.featureName}>AI Stylist</Text>
-          <Text style={styles.featureDesc}>Tư vấn phối đồ và phong cách cá nhân</Text>
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );

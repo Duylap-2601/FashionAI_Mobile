@@ -74,8 +74,8 @@ export const authApi = {
     return unwrap<{ message?: string }>(res.data);
   },
 
-  async changePassword(oldPassword: string, newPassword: string): Promise<{ message?: string }> {
-    const res = await api.post(ENDPOINTS.AUTH.CHANGE_PASSWORD, { oldPassword, newPassword });
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ message?: string }> {
+    const res = await api.post(ENDPOINTS.AUTH.CHANGE_PASSWORD, { currentPassword, newPassword });
     return unwrap<{ message?: string }>(res.data);
   },
 };

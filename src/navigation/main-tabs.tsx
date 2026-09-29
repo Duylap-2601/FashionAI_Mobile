@@ -1,20 +1,51 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 import { MainTabParamList } from './types';
 import { HomeScreen } from '../features/home/screens/home-screen';
 import { TryOnScreen } from '../features/try-on/screens/try-on-screen';
 import { ShopScreen } from '../features/products/screens/shop-screen';
-import { StylistScreen } from '../features/stylist/screens/stylist-screen';
-import { ProfileScreen } from '../features/profile/screens/profile-screen';
+import { RackScreen } from '../features/rack/screens/rack-screen';
+import { ProfileStack } from './profile-stack';
 import { COLORS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const TabIcon = ({ icon, focused }: { icon: string; focused: boolean }) => (
-  <Text style={{ fontSize: focused ? 22 : 18, opacity: focused ? 1 : 0.65 }}>
-    {icon}
-  </Text>
+type IoniconName = keyof typeof Ionicons.glyphMap;
+
+const TabIcon = ({
+  name,
+  focused,
+}: {
+  name: IoniconName;
+  focused: boolean;
+}) => (
+  <Ionicons
+    name={name}
+    size={23}
+    color={focused ? COLORS.primaryContainer : COLORS.onSurfaceVariant}
+  />
+);
+
+const TryOnTabIcon = ({ focused }: { focused: boolean }) => (
+  <View
+    style={{
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+      backgroundColor: focused ? COLORS.primaryContainer : COLORS.surfaceContainer,
+    }}
+  >
+    <Ionicons
+      name="color-wand"
+      size={20}
+      color={focused ? COLORS.onPrimary : COLORS.onSurfaceVariant}
+    />
+  </View>
 );
 
 export const MainTabs: React.FC = () => {
@@ -52,7 +83,20 @@ export const MainTabs: React.FC = () => {
         options={{
           title: 'FashionAI',
           tabBarLabel: 'Trang chủ',
-          tabBarIcon: ({ focused }) => <TabIcon icon="🏠" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="ShopTab"
+        component={ShopScreen}
+        options={{
+          title: 'Khám phá',
+          tabBarLabel: 'Khám phá',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? 'grid' : 'grid-outline'} focused={focused} />
+          ),
         }}
       />
       <Tab.Screen
@@ -61,34 +105,30 @@ export const MainTabs: React.FC = () => {
         options={{
           title: 'Virtual Try-On',
           tabBarLabel: 'Thử đồ',
-          tabBarIcon: ({ focused }) => <TabIcon icon="👗" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TryOnTabIcon focused={focused} />,
         }}
       />
       <Tab.Screen
-        name="ShopTab"
-        component={ShopScreen}
+        name="RackTab"
+        component={RackScreen}
         options={{
-          title: 'Cửa hàng',
-          tabBarLabel: 'Mua sắm',
-          tabBarIcon: ({ focused }) => <TabIcon icon="🛍️" focused={focused} />,
-        }}
-      />
-      <Tab.Screen
-        name="StylistTab"
-        component={StylistScreen}
-        options={{
-          title: 'AI Stylist',
-          tabBarLabel: 'Stylist',
-          tabBarIcon: ({ focused }) => <TabIcon icon="✨" focused={focused} />,
+          title: 'Tủ đồ',
+          tabBarLabel: 'Tủ đồ',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? 'shirt' : 'shirt-outline'} focused={focused} />
+          ),
         }}
       />
       <Tab.Screen
         name="ProfileTab"
-        component={ProfileScreen}
+        component={ProfileStack}
         options={{
-          title: 'Hồ sơ cá nhân',
-          tabBarLabel: 'Cá nhân',
-          tabBarIcon: ({ focused }) => <TabIcon icon="👤" focused={focused} />,
+          title: 'Tài khoản',
+          tabBarLabel: 'Tài khoản',
+          headerShown: false,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />
+          ),
         }}
       />
     </Tab.Navigator>
