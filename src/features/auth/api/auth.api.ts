@@ -6,7 +6,8 @@ import { AuthResponseData, LoginDto, RegisterDto, User } from '@/features/auth/t
 
 export const authApi = {
   googleAuthUrl(): string {
-    return `${ENV.API_URL}${ENDPOINTS.AUTH.GOOGLE}?platform=mobile`;
+    const redirectUri = encodeURIComponent(ENV.OAUTH_REDIRECT_SCHEME);
+    return `${ENV.API_URL}${ENDPOINTS.AUTH.GOOGLE}?platform=mobile&redirect_uri=${redirectUri}`;
   },
 
   async login(data: LoginDto): Promise<AuthResponseData> {
