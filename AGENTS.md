@@ -56,11 +56,11 @@
 ### MainTabs Screens
 | Tab | Screen | File | Status |
 |---|---|---|---|
-| Home | HomeScreen | `src/features/home/screens/home-screen.tsx` | ✅ Done — Quota card, feature grid |
-| Try-On | TryOnScreen | `src/features/try-on/screens/try-on-screen.tsx` | 🚧 Placeholder |
-| Shop | ShopScreen | `src/features/products/screens/shop-screen.tsx` | 🚧 Placeholder |
-| Stylist | StylistScreen | `src/features/stylist/screens/stylist-screen.tsx` | 🚧 Placeholder |
-| Profile | ProfileScreen | `src/features/profile/screens/profile-screen.tsx` | ✅ Done — User info, logout |
+| Home | HomeScreen | `src/features/home/screens/HomeScreen.tsx` | ✅ Done — Quota card, feature grid |
+| Try-On | TryOnScreen | `src/features/try-on/screens/TryOnScreen.tsx` | 🚧 Placeholder |
+| Shop | ShopScreen | `src/features/products/screens/ShopScreen.tsx` | 🚧 Placeholder |
+| Stylist | StylistScreen | `src/features/stylist/screens/StylistScreen.tsx` | 🚧 Placeholder |
+| Profile | ProfileScreen | `src/features/profile/screens/ProfileScreen.tsx` | ✅ Done — User info, logout |
 
 ## Feature Modules (Referencing FashionAI_FE & FashionAI_BE)
 
