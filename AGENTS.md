@@ -47,10 +47,10 @@
 ### AuthStack Screens
 | Screen | File | Features |
 |---|---|---|
-| Login | `src/features/auth/screens/login-screen.tsx` | Email/password (zod + react-hook-form), Google OAuth (In-App Browser), navigation to Register/ForgotPassword |
-| Register | `src/features/auth/screens/register-screen.tsx` | Name, email, password, confirm password (zod + react-hook-form) |
-| ForgotPassword | `src/features/auth/screens/forgot-password-screen.tsx` | Email input (zod + react-hook-form), sends reset link |
-| ResetPassword | `src/features/auth/screens/reset-password-screen.tsx` | Token, new password + confirm (zod + react-hook-form) |
+| Login | `src/features/auth/screens/LoginScreen.tsx` | Email/password (zod + react-hook-form), Google OAuth (In-App Browser), navigation to Register/ForgotPassword |
+| Register | `src/features/auth/screens/RegisterScreen.tsx` | Name, email, password, confirm password (zod + react-hook-form) |
+| ForgotPassword | `src/features/auth/screens/ForgotPasswordScreen.tsx` | Email input (zod + react-hook-form), sends reset link |
+| ResetPassword | `src/features/auth/screens/ResetPasswordScreen.tsx` | Token, new password + confirm
 | VerifyEmail | `src/features/auth/screens/verify-email-screen.tsx` | Verification token input, resend verification |
 
 ### MainTabs Screens
