@@ -39,7 +39,7 @@
 - Implement the design with React Native primitives, NativeWind classes, gluestack-compatible components, or `StyleSheet.create` as appropriate; do not copy HTML, DOM scripts, CDN fonts, or Material Symbols web-font usage into the Expo app.
 - Keep reusable primitives in `src/components/ui`; gluestack components should also be added there. Keep screen-specific composition in `src/features/<feature>/screens` until it is reused.
 - NativeWind configuration lives in `tailwind.config.js`, `global.css`, `babel.config.js`, `metro.config.js`, and `nativewind-env.d.ts`. `gluestack-ui.config.json` points gluestack CLI/component output to `src/components/ui`.
-- `src/constants/theme.ts` is the source for colors, spacing, font sizes, radius, and shadows. When implementing the new mobile UI, migrate that file toward the burgundy/cream token set in `design-system.md` instead of hard-coding repeated values in screens.
+- `src/constants/theme.ts` is the source for colors, spacing, font sizes, radius, and shadows. It currently contains the legacy slate/blue/violet palette; migrate it toward the burgundy/cream token set in `design-system.md` before or alongside major screen implementation so screens do not hard-code the new palette repeatedly.
 - Use Vietnamese user-facing copy with proper diacritics. Avoid raw backend/technical terms such as `endpoint`, `payload`, `fallback`, `mock`, `Axios error`, or `500 internal server error` in UI.
 - Mobile actions must not depend on hover behavior. Keep important actions visible and reachable with touch targets around `44x44` or larger.
 - Preserve checkout/order pricing ownership: cart and checkout may display totals returned or verified by backend, but must not submit client-resolved shipping fees or discount amounts as the source of truth.
@@ -47,10 +47,11 @@
 ### AuthStack Screens
 | Screen | File | Features |
 |---|---|---|
-| Login | `src/features/auth/screens/LoginScreen.tsx` | Email/password, Google OAuth (In-App Browser), navigation to Register/ForgotPassword |
-| Register | `src/features/auth/screens/RegisterScreen.tsx` | Name, email, password, confirm password, validation |
-| ForgotPassword | `src/features/auth/screens/ForgotPasswordScreen.tsx` | Email input, sends reset link via BE |
-| ResetPassword | `src/features/auth/screens/ResetPasswordScreen.tsx` | Token from deep link, new password + confirm |
+| Login | `src/features/auth/screens/LoginScreen.tsx` | Email/password (zod + react-hook-form), Google OAuth (In-App Browser), navigation to Register/ForgotPassword |
+| Register | `src/features/auth/screens/RegisterScreen.tsx` | Name, email, password, confirm password (zod + react-hook-form) |
+| ForgotPassword | `src/features/auth/screens/ForgotPasswordScreen.tsx` | Email input (zod + react-hook-form), sends reset link |
+| ResetPassword | `src/features/auth/screens/ResetPasswordScreen.tsx` | Token, new password + confirm
+| VerifyEmail | `src/features/auth/screens/verify-email-screen.tsx` | Verification token input, resend verification |
 
 ### MainTabs Screens
 | Tab | Screen | File | Status |
@@ -141,11 +142,11 @@ POST /auth/verify-email { token }
 POST /auth/resend-verification
 ```
 
-## Secure Storage (`src/features/auth/storage/secureStorage.ts`)
+## Secure Storage (`src/features/auth/storage/secure-storage.ts`)
 - **expo-secure-store** for accessToken, refreshToken, user data
 - Keys: `fashionai_access_token`, `fashionai_refresh_token`, `fashionai_user_data`
 
-## Auth Context (`src/features/auth/context/AuthContext.tsx`)
+## Auth Context (`src/features/auth/context/auth-context.tsx`)
 Global provider with:
 - `user`, `isLoading`, `isAuthenticated`
 - `login`, `register`, `loginWithGoogle`, `logout`, `refreshUser`
@@ -200,29 +201,30 @@ src/
 ├── features/
 │   ├── auth/
 │   │   ├── api/auth.api.ts
-│   │   ├── context/AuthContext.tsx
-│   │   ├── hooks/useAuth.ts
-│   │   ├── screens/        # Login, Register, ForgotPassword, ResetPassword
-│   │   ├── storage/secureStorage.ts
+│   │   ├── context/auth-context.tsx
+│   │   ├── hooks/use-auth.ts
+│   │   ├── schemas/auth.schema.ts  # zod schemas for auth forms
+│   │   ├── screens/        # login-screen.tsx, register-screen.tsx, forgot-password-screen.tsx, reset-password-screen.tsx, verify-email-screen.tsx
+│   │   ├── storage/secure-storage.ts
 │   │   └── types/auth.ts
 │   ├── home/
-│   │   └── screens/HomeScreen.tsx
+│   │   └── screens/home-screen.tsx
 │   ├── products/
-│   │   ├── screens/ShopScreen.tsx
-│   │   ├── store/          # filter store
+│   │   ├── screens/shop-screen.tsx
+│   │   ├── store/          # use-filter-store.ts, filter-store.ts
 │   │   └── types/product.ts
 │   ├── try-on/
-│   │   ├── screens/TryOnScreen.tsx
+│   │   ├── screens/try-on-screen.tsx
 │   │   └── types/tryon.ts
 │   ├── stylist/
-│   │   ├── screens/StylistScreen.tsx
+│   │   ├── screens/stylist-screen.tsx
 │   │   └── types/stylist.ts
 │   ├── cart/
-│   │   └── store/          # cart store
+│   │   └── store/          # use-cart-store.ts, cart-store.ts
 │   ├── orders/
 │   │   └── types/order.ts
 │   └── profile/
-│       ├── screens/ProfileScreen.tsx
+│       ├── screens/profile-screen.tsx
 │       └── types/user.ts
 ├── navigation/
 │   ├── types.ts            # AuthStackParamList, MainTabParamList, RootStackParamList
@@ -230,8 +232,8 @@ src/
 │   ├── main-tabs.tsx
 │   └── root-navigator.tsx
 ├── components/
-│   ├── ui/                 # Button, Input, Card, Badge, Modal
-│   └── common/             # Loading, ErrorView, EmptyState
+│   ├── ui/                 # button.tsx, card.tsx, input.tsx
+│   └── common/             # empty-state.tsx, error-view.tsx, loading.tsx
 ├── hooks/
 │   ├── use-auth.ts         # compatibility re-export
 │   └── use-color-scheme.ts # cross-feature hook
@@ -257,15 +259,15 @@ src/
 | Auth Context + Secure Storage | ✅ Done | `src/features/auth/` |
 | API Client + Interceptors | ✅ Done | `src/api/client.ts` |
 | Auth API Layer | ✅ Done | `src/features/auth/api/auth.api.ts` |
-| Login Screen | ✅ Done | `src/features/auth/screens/LoginScreen.tsx` |
-| Register Screen | ✅ Done | `src/features/auth/screens/RegisterScreen.tsx` |
-| ForgotPassword Screen | ✅ Done | `src/features/auth/screens/ForgotPasswordScreen.tsx` |
-| ResetPassword Screen | ✅ Done | `src/features/auth/screens/ResetPasswordScreen.tsx` |
+| Login Screen | ✅ Done | `src/features/auth/screens/login-screen.tsx` |
+| Register Screen | ✅ Done | `src/features/auth/screens/register-screen.tsx` |
+| ForgotPassword Screen | ✅ Done | `src/features/auth/screens/forgot-password-screen.tsx` |
+| ResetPassword Screen | ✅ Done | `src/features/auth/screens/reset-password-screen.tsx` |
 | AuthStack Navigation | ✅ Done | `src/navigation/auth-stack.tsx` |
 | MainTabs Navigation | ✅ Done | `src/navigation/main-tabs.tsx` |
 | RootNavigator (Auth ↔ Main) | ✅ Done | `src/navigation/root-navigator.tsx` |
-| Home Screen with Quota | ✅ Done | `src/features/home/screens/HomeScreen.tsx` |
-| Profile Screen with Logout | ✅ Done | `src/features/profile/screens/ProfileScreen.tsx` |
+| Home Screen with Quota | ✅ Done | `src/features/home/screens/home-screen.tsx` |
+| Profile Screen with Logout | ✅ Done | `src/features/profile/screens/profile-screen.tsx` |
 | Placeholder TryOn/Stylist/Shop | ✅ Done | `src/features/*/screens/` |
 | App.tsx updated | ✅ Done | `App.tsx` |
 | TypeScript passes | ✅ Done | `npx tsc --noEmit` |

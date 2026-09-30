@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { ENV } from '@/config/env';
-import { getTokens, setTokens, clearTokens } from '@/features/auth/storage/secureStorage';
+import { ENDPOINTS } from '@/constants/endpoints';
+import { getTokens, setTokens, clearTokens } from '@/features/auth/storage/secure-storage';
 import { ApiError, ApiSuccessResponse, unwrap } from '@/types/api';
 import { AuthTokens } from '@/features/auth/types/auth';
 
@@ -57,7 +58,7 @@ async function refreshAccessToken(): Promise<string | null> {
   try {
     // Direct axios call without interceptor cycle to avoid deadlocks
     const response = await axios.post<ApiSuccessResponse<AuthTokens>>(
-      `${ENV.API_URL}/auth/refresh`,
+      `${ENV.API_URL}${ENDPOINTS.AUTH.REFRESH}`,
       { refreshToken },
       {
         headers: {

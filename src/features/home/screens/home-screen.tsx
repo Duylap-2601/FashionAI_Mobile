@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, A
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from '@/navigation/types';
-import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useAuth } from '@/features/auth/hooks/use-auth';
 import { authApi } from '@/features/auth/api/auth.api';
+import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
@@ -80,16 +81,6 @@ export const HomeScreen: React.FC = () => {
           <Text style={styles.featureName}>Virtual Try-On</Text>
           <Text style={styles.featureDesc}>Thử trang phục với ảnh người thật bằng AI</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.featureCard}
-          onPress={() => navigation.navigate('StylistTab')}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.featureIcon}>✨</Text>
-          <Text style={styles.featureName}>AI Stylist</Text>
-          <Text style={styles.featureDesc}>Tư vấn phối đồ và phong cách cá nhân</Text>
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -98,45 +89,45 @@ export const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: COLORS.surface,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 16,
-    backgroundColor: '#ffffff',
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.xxl,
+    paddingBottom: SPACING.lg,
+    backgroundColor: COLORS.surfaceLowest,
   },
   greeting: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.onSurfaceVariant,
   },
   userName: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#0f172a',
+    fontSize: FONT_SIZE.xxl,
+    fontWeight: FONT_WEIGHT.bold as any,
+    color: COLORS.onSurface,
   },
   tierBadge: {
-    backgroundColor: '#0f172a',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    backgroundColor: COLORS.primaryContainer,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: BORDER_RADIUS.full,
   },
   tierText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '700',
+    color: COLORS.onPrimary,
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.bold as any,
     letterSpacing: 0.5,
   },
   quotaCard: {
-    margin: 20,
-    padding: 20,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
+    margin: SPACING.xl,
+    padding: SPACING.xl,
+    backgroundColor: COLORS.surfaceLowest,
+    borderRadius: BORDER_RADIUS.xl,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: COLORS.surfaceLine,
     shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowOffset: { width: 0, height: 2 },
@@ -144,76 +135,76 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   quotaTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#0f172a',
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.bold as any,
+    color: COLORS.onSurface,
   },
   quotaSub: {
-    fontSize: 13,
-    color: '#64748b',
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.onSurfaceVariant,
     marginTop: 4,
   },
   quotaStatsRow: {
     flexDirection: 'row',
-    marginTop: 16,
-    paddingTop: 16,
+    marginTop: SPACING.lg,
+    paddingTop: SPACING.lg,
     borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
+    borderTopColor: COLORS.surfaceLine,
   },
   quotaStat: {
     flex: 1,
     alignItems: 'center',
   },
   quotaStatNumber: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#2563eb',
+    fontSize: FONT_SIZE.xxl,
+    fontWeight: FONT_WEIGHT.heavy as any,
+    color: COLORS.primaryContainer,
   },
   quotaStatLabel: {
-    fontSize: 12,
-    color: '#64748b',
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.onSurfaceVariant,
     marginTop: 2,
   },
   quotaLoading: {
-    marginTop: 12,
-    fontSize: 13,
-    color: '#94a3b8',
+    marginTop: SPACING.md,
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.outline,
     fontStyle: 'italic',
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0f172a',
-    marginHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 12,
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.bold as any,
+    color: COLORS.onSurface,
+    marginHorizontal: SPACING.xl,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.md,
   },
   featureGrid: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    gap: 12,
+    paddingHorizontal: SPACING.xl,
+    gap: SPACING.md,
   },
   featureCard: {
     flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: COLORS.surfaceLowest,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.lg,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: COLORS.surfaceLine,
   },
   featureIcon: {
     fontSize: 28,
-    marginBottom: 10,
+    marginBottom: SPACING.sm + 2,
   },
   featureName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0f172a',
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.bold as any,
+    color: COLORS.onSurface,
     marginBottom: 4,
   },
   featureDesc: {
-    fontSize: 12,
-    color: '#64748b',
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.onSurfaceVariant,
     lineHeight: 16,
   },
 });

@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { AppState, AppStateStatus } from 'react-native';
 import { ENV } from '@/config/env';
-import { getTokens } from '@/features/auth/storage/secureStorage';
+import { getTokens } from '@/features/auth/storage/secure-storage';
 
 let mainSocket: Socket | null = null;
 let chatSocket: Socket | null = null;

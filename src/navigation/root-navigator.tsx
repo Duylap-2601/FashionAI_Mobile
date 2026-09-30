@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 import { AuthStack } from './auth-stack';
 import { MainTabs } from './main-tabs';
-import { useAuth } from '../features/auth/hooks/useAuth';
+import { useAuth } from '../features/auth/hooks/use-auth';
 import { COLORS, SPACING, FONT_SIZE } from '../constants/theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -16,7 +16,7 @@ export const RootNavigator: React.FC = () => {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={COLORS.primaryContainer} />
         <Text style={styles.loadingText}>Đang khởi động FashionAI...</Text>
       </View>
     );
@@ -46,6 +46,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: SPACING.md,
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    color: COLORS.onSurfaceVariant,
   },
 });

@@ -9,7 +9,7 @@ import {
   TextStyle,
   View,
 } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '../../constants/theme';
+import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
 
 export interface ButtonProps {
   title: string;
@@ -56,8 +56,8 @@ export const Button: React.FC<ButtonProps> = ({
           size="small"
           color={
             variant === 'outline' || variant === 'ghost'
-              ? COLORS.primary
-              : COLORS.textInverse
+              ? COLORS.primaryContainer
+              : COLORS.onPrimary
           }
         />
       ) : (
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
 
   // Variants
   primary: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryContainer,
   },
   secondary: {
     backgroundColor: COLORS.secondary,
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: COLORS.borderDark,
+    borderColor: COLORS.outlineVariant,
   },
   ghost: {
     backgroundColor: 'transparent',
@@ -140,19 +140,19 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.bold as any,
   },
   text_primary: {
-    color: COLORS.textInverse,
+    color: COLORS.onPrimary,
   },
   text_secondary: {
-    color: COLORS.textInverse,
+    color: COLORS.onPrimary,
   },
   text_outline: {
-    color: COLORS.textPrimary,
+    color: COLORS.onSurface,
   },
   text_ghost: {
-    color: COLORS.textPrimary,
+    color: COLORS.onSurface,
   },
   text_danger: {
-    color: COLORS.textInverse,
+    color: COLORS.onPrimary,
   },
 
   // Text Sizes

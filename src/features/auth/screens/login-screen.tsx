@@ -12,27 +12,33 @@ import {
   ScrollView,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { AuthStackParamList } from '@/navigation/types';
-import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useAuth } from '@/features/auth/hooks/use-auth';
+import { loginSchema, LoginFormValues } from '@/features/auth/schemas/auth.schema';
+import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { login, loginWithGoogle } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ email và mật khẩu');
-      return;
-    }
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
 
+  const onSubmit = async (values: LoginFormValues) => {
     try {
       setIsSubmitting(true);
-      await login({ email: email.trim(), password });
+      await login({ email: values.email.trim(), password: values.password });
     } catch (err: any) {
       Alert.alert('Đăng nhập thất bại', err.message || 'Email hoặc mật khẩu không chính xác');
     } finally {
@@ -64,25 +70,41 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
         <View style={styles.form}>
           <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="name@example.com"
-            placeholderTextColor="#999"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { value, onChange, onBlur } }) => (
+              <TextInput
+                style={[styles.input, errors.email && styles.inputError]}
+                placeholder="name@example.com"
+                placeholderTextColor={COLORS.outline}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+              />
+            )}
           />
+          {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
 
           <Text style={styles.label}>Mật khẩu</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor="#999"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { value, onChange, onBlur } }) => (
+              <TextInput
+                style={[styles.input, errors.password && styles.inputError]}
+                placeholder="••••••••"
+                placeholderTextColor={COLORS.outline}
+                secureTextEntry
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+              />
+            )}
           />
+          {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
 
           <TouchableOpacity
             style={styles.forgotPasswordRow}
@@ -93,11 +115,11 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
           <TouchableOpacity
             style={[styles.primaryButton, isSubmitting && styles.buttonDisabled]}
-            onPress={handleLogin}
+            onPress={handleSubmit(onSubmit)}
             disabled={isSubmitting || isGoogleSubmitting}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={COLORS.onPrimary} />
             ) : (
               <Text style={styles.primaryButtonText}>Đăng nhập</Text>
             )}
@@ -115,7 +137,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             disabled={isSubmitting || isGoogleSubmitting}
           >
             {isGoogleSubmitting ? (
-              <ActivityIndicator color="#111" />
+              <ActivityIndicator color={COLORS.onSurface} />
             ) : (
               <Text style={styles.googleButtonText}>Tiếp tục với Google</Text>
             )}
@@ -136,116 +158,124 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.surface,
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 36,
+    paddingHorizontal: SPACING.xxl,
+    paddingVertical: SPACING.xxxl,
   },
   header: {
-    marginBottom: 32,
+    marginBottom: SPACING.xxxl,
     alignItems: 'center',
   },
   brandTitle: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#0f172a',
+    fontSize: FONT_SIZE.display,
+    fontWeight: FONT_WEIGHT.heavy as any,
+    color: COLORS.onSurfaceStrong,
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#64748b',
-    marginTop: 8,
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.onSurfaceVariant,
+    marginTop: SPACING.sm,
     textAlign: 'center',
   },
   form: {
-    marginBottom: 24,
+    marginBottom: SPACING.xxl,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 6,
-    marginTop: 12,
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold as any,
+    color: COLORS.onSurface,
+    marginBottom: SPACING.xs,
+    marginTop: SPACING.md,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#0f172a',
-    backgroundColor: '#f8fafc',
+    borderColor: COLORS.surfaceLine,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    fontSize: FONT_SIZE.md,
+    color: COLORS.onSurface,
+    backgroundColor: COLORS.surfaceLow,
+  },
+  inputError: {
+    borderColor: COLORS.danger,
+  },
+  errorText: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.danger,
+    marginTop: SPACING.xs,
   },
   forgotPasswordRow: {
     alignSelf: 'flex-end',
-    marginTop: 8,
+    marginTop: SPACING.sm,
   },
   forgotPasswordText: {
-    fontSize: 13,
-    color: '#2563eb',
-    fontWeight: '600',
+    fontSize: FONT_SIZE.xs + 1,
+    color: COLORS.primaryContainer,
+    fontWeight: FONT_WEIGHT.semibold as any,
   },
   primaryButton: {
-    backgroundColor: '#0f172a',
-    borderRadius: 12,
-    paddingVertical: 14,
+    backgroundColor: COLORS.primaryContainer,
+    borderRadius: BORDER_RADIUS.lg,
+    paddingVertical: SPACING.lg - 2,
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: SPACING.xxl,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   primaryButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
+    color: COLORS.onPrimary,
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.bold as any,
   },
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: SPACING.xl,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: COLORS.surfaceLine,
   },
   dividerText: {
-    marginHorizontal: 12,
-    color: '#94a3b8',
-    fontSize: 12,
-    fontWeight: '600',
+    marginHorizontal: SPACING.md,
+    color: COLORS.outline,
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.semibold as any,
   },
   googleButton: {
     borderWidth: 1,
-    borderColor: '#cbd5e1',
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderColor: COLORS.outlineVariant,
+    backgroundColor: COLORS.surfaceLowest,
+    borderRadius: BORDER_RADIUS.lg,
+    paddingVertical: SPACING.lg - 2,
     alignItems: 'center',
   },
   googleButtonText: {
-    color: '#0f172a',
-    fontSize: 15,
-    fontWeight: '600',
+    color: COLORS.onSurface,
+    fontSize: FONT_SIZE.sm + 1,
+    fontWeight: FONT_WEIGHT.semibold as any,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: SPACING.lg,
   },
   footerText: {
-    color: '#64748b',
-    fontSize: 14,
+    color: COLORS.onSurfaceVariant,
+    fontSize: FONT_SIZE.sm,
   },
   signupLink: {
-    color: '#2563eb',
-    fontSize: 14,
-    fontWeight: '700',
+    color: COLORS.primaryContainer,
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.bold as any,
   },
 });

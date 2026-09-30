@@ -2,14 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
 
-export const StylistScreen: React.FC = () => {
+export const ShopScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.icon}>✨</Text>
-        <Text style={styles.title}>AI Stylist</Text>
+        <Text style={styles.icon}>🛍️</Text>
+        <Text style={styles.title}>Cửa Hàng Thời Trang</Text>
         <Text style={styles.subtitle}>
-          Trợ lý phong cách thông minh giúp bạn chọn trang phục phù hợp với vóc dáng, màu da và các dịp sự kiện đặc biệt.
+          Khám phá các bộ sưu tập và sản phẩm thời trang thiết kế mới nhất. Tích hợp thử đồ ảo ngay trên từng sản phẩm.
         </Text>
       </View>
     </View>
@@ -24,12 +24,12 @@ const styles = StyleSheet.create({
     padding: SPACING.xl,
   },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.surfaceLowest,
     padding: SPACING.xxxl,
     borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.surfaceLine,
     ...SHADOWS.md,
   },
   icon: {
@@ -39,12 +39,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.heavy as any,
-    color: COLORS.textPrimary,
+    color: COLORS.onSurface,
     marginBottom: SPACING.sm,
   },
   subtitle: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    color: COLORS.onSurfaceVariant,
     textAlign: 'center',
     lineHeight: 22,
   },

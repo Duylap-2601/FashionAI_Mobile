@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '../../constants/theme';
+import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
 
 export interface ErrorViewProps {
   title?: string;
@@ -46,26 +46,26 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.bold as any,
-    color: COLORS.textPrimary,
+    color: COLORS.onSurface,
     marginBottom: SPACING.xs,
     textAlign: 'center',
   },
   message: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    color: COLORS.onSurfaceVariant,
     textAlign: 'center',
     marginBottom: SPACING.lg,
     lineHeight: 20,
     maxWidth: 280,
   },
   retryButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryContainer,
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
   },
   retryText: {
-    color: COLORS.textInverse,
+    color: COLORS.onPrimary,
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.bold as any,
   },

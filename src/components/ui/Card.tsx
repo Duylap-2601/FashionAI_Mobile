@@ -6,7 +6,7 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
 
 export interface CardProps {
   children: React.ReactNode;
@@ -40,21 +40,21 @@ export const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.surfaceLowest,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
   },
   elevated: {
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.surfaceLine,
     ...SHADOWS.sm,
   },
   outlined: {
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.surfaceLine,
   },
   flat: {
-    backgroundColor: COLORS.surfaceMuted,
+    backgroundColor: COLORS.surfaceLow,
   },
 });
 

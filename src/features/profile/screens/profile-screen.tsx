@@ -7,11 +7,17 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useAuth } from '@/features/auth/hooks/useAuth';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '@/features/auth/hooks/use-auth';
+import { ProfileStackParamList } from '@/navigation/types';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
+
+type ProfileNavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'ProfileHome'>;
 
 export const ProfileScreen: React.FC = () => {
   const { user, logout } = useAuth();
+  const navigation = useNavigation<ProfileNavigationProp>();
 
   const handleLogout = () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?', [
@@ -50,15 +56,18 @@ export const ProfileScreen: React.FC = () => {
 
         <View style={styles.card}>
           <View style={styles.rowItem}>
-            <Text style={styles.rowLabel}>ID tài khoản</Text>
-            <Text style={styles.rowValue}>{user?.id || '—'}</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.rowItem}>
             <Text style={styles.rowLabel}>Vai trò</Text>
             <Text style={styles.rowValue}>{user?.role || 'Khách hàng'}</Text>
           </View>
         </View>
+
+        <TouchableOpacity
+          style={styles.linkRow}
+          onPress={() => navigation.navigate('ChangePassword')}
+        >
+          <Text style={styles.linkRowText}>Đổi mật khẩu</Text>
+          <Text style={styles.linkRowChevron}>›</Text>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -78,11 +87,11 @@ const styles = StyleSheet.create({
   },
   profileHeader: {
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.surfaceLowest,
     padding: SPACING.xxl,
     borderRadius: BORDER_RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.surfaceLine,
     marginBottom: SPACING.xl,
     ...SHADOWS.sm,
   },
@@ -90,39 +99,39 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryContainer,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.md,
   },
   avatarText: {
-    color: COLORS.textInverse,
+    color: COLORS.onPrimary,
     fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.heavy as any,
   },
   name: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.bold as any,
-    color: COLORS.textPrimary,
+    color: COLORS.onSurface,
   },
   email: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    color: COLORS.onSurfaceVariant,
     marginTop: 4,
   },
   tierTag: {
     marginTop: SPACING.md,
-    backgroundColor: COLORS.surfaceMuted,
+    backgroundColor: COLORS.surfaceLow,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs,
     borderRadius: BORDER_RADIUS.full,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.surfaceLine,
   },
   tierText: {
     fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.semibold as any,
-    color: COLORS.primary,
+    color: COLORS.primaryContainer,
   },
   section: {
     marginBottom: SPACING.xl,
@@ -130,15 +139,15 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FONT_SIZE.md,
     fontWeight: FONT_WEIGHT.bold as any,
-    color: COLORS.textPrimary,
+    color: COLORS.onSurface,
     marginBottom: SPACING.sm,
   },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.surfaceLowest,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.surfaceLine,
     ...SHADOWS.sm,
   },
   rowItem: {
@@ -148,17 +157,38 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    color: COLORS.onSurfaceVariant,
   },
   rowValue: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semibold as any,
-    color: COLORS.textPrimary,
+    color: COLORS.onSurface,
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.surfaceMuted,
+    backgroundColor: COLORS.surfaceLow,
     marginVertical: SPACING.sm,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceLowest,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.surfaceLine,
+    marginTop: SPACING.md,
+    ...SHADOWS.sm,
+  },
+  linkRowText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold as any,
+    color: COLORS.onSurface,
+  },
+  linkRowChevron: {
+    fontSize: FONT_SIZE.lg,
+    color: COLORS.onSurfaceVariant,
   },
   logoutButton: {
     backgroundColor: '#fee2e2',

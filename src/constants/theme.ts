@@ -1,33 +1,36 @@
 export const COLORS = {
-  primary: '#0f172a', // Slate 900
-  primaryLight: '#1e293b',
-  primaryDark: '#020617',
+  surface: '#FBF9F7',
+  background: '#FBF9F7',
+  surfaceLowest: '#FFFFFF',
+  surfaceLow: '#F5F3F1',
+  surfaceContainer: '#EFEDEC',
+  surfaceHigh: '#EAE8E6',
+  surfaceHighest: '#E4E2E0',
+  surfaceLine: '#E5DFD5',
 
-  secondary: '#2563eb', // Blue 600
-  secondaryLight: '#3b82f6',
-  secondaryDark: '#1d4ed8',
+  outlineVariant: '#D7C1C5',
+  outline: '#857276',
 
-  accent: '#8b5cf6', // Violet 500
-  success: '#10b981', // Emerald 500
-  warning: '#f59e0b', // Amber 500
-  danger: '#ef4444', // Red 500
-  info: '#06b6d4', // Cyan 500
+  primary: '#41051F',
+  primaryContainer: '#5D1C34',
+  primarySoft: '#FFD9E1',
+  primarySoftStrong: '#FFB1C6',
+  onPrimary: '#FFFFFF',
 
-  background: '#f8fafc',
-  surface: '#ffffff',
-  surfaceMuted: '#f1f5f9',
+  onSurface: '#1B1C1B',
+  onSurfaceStrong: '#1A1917',
+  onSurfaceVariant: '#534346',
+  secondary: '#645D5C',
 
-  textPrimary: '#0f172a',
-  textSecondary: '#64748b',
-  textMuted: '#94a3b8',
-  textInverse: '#ffffff',
+  inverseSurface: '#30302F',
+  inverseOnSurface: '#F2F0EE',
 
-  border: '#e2e8f0',
-  borderDark: '#cbd5e1',
+  tertiary: '#705D00',
+  tertiaryFixed: '#FFE173',
 
-  tierFree: '#64748b',
-  tierMember: '#2563eb',
-  tierVip: '#f59e0b',
+  success: '#10B981',
+  warning: '#F59E0B',
+  danger: '#BA1A1A',
 } as const;
 
 export const SPACING = {

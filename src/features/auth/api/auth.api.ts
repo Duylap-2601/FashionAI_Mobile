@@ -1,9 +1,15 @@
 import { api } from '@/api/client';
 import { ENDPOINTS } from '@/constants/endpoints';
 import { unwrap } from '@/types/api';
+import { ENV } from '@/config/env';
 import { AuthResponseData, LoginDto, RegisterDto, User } from '@/features/auth/types/auth';
 
 export const authApi = {
+  googleAuthUrl(): string {
+    const redirectUri = encodeURIComponent(ENV.OAUTH_REDIRECT_SCHEME);
+    return `${ENV.API_URL}${ENDPOINTS.AUTH.GOOGLE}?platform=mobile&redirect_uri=${redirectUri}`;
+  },
+
   async login(data: LoginDto): Promise<AuthResponseData> {
     const res = await api.post(ENDPOINTS.AUTH.LOGIN, data);
     return unwrap<AuthResponseData>(res.data);
@@ -60,6 +66,16 @@ export const authApi = {
 
   async verifyEmail(token: string): Promise<{ message?: string }> {
     const res = await api.post(ENDPOINTS.AUTH.VERIFY_EMAIL, { token });
+    return unwrap<{ message?: string }>(res.data);
+  },
+
+  async resendVerification(): Promise<{ message?: string }> {
+    const res = await api.post(ENDPOINTS.AUTH.RESEND_VERIFICATION);
+    return unwrap<{ message?: string }>(res.data);
+  },
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ message?: string }> {
+    const res = await api.post(ENDPOINTS.AUTH.CHANGE_PASSWORD, { currentPassword, newPassword });
     return unwrap<{ message?: string }>(res.data);
   },
 };

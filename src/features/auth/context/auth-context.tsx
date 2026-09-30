@@ -3,7 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { User, LoginDto, RegisterDto } from '@/features/auth/types/auth';
 import { authApi } from '@/features/auth/api/auth.api';
-import { getTokens, setTokens, clearTokens, getStoredUser, setStoredUser } from '@/features/auth/storage/secureStorage';
+import { getTokens, setTokens, clearTokens, getStoredUser, setStoredUser } from '@/features/auth/storage/secure-storage';
 import { onUnauthorized } from '@/api/client';
 import { ENV } from '@/config/env';
 
@@ -18,7 +18,10 @@ interface AuthContextType {
   register: (data: RegisterDto) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
+  logoutAll: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  resendVerification: () => Promise<void>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -82,20 +85,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (data: LoginDto) => {
     const res = await authApi.login(data);
-    await setTokens({ accessToken: res.accessToken, refreshToken: res.refreshToken });
+    await setTokens({
+      accessToken: res.accessToken,
+      refreshToken: res.refreshToken,
+      accessTokenExpiresAt: res.accessTokenExpiresAt,
+      refreshTokenExpiresAt: res.refreshTokenExpiresAt,
+    });
     await setStoredUser(res.user);
     setUser(res.user);
   };
 
   const register = async (data: RegisterDto) => {
     const res = await authApi.register(data);
-    await setTokens({ accessToken: res.accessToken, refreshToken: res.refreshToken });
+    await setTokens({
+      accessToken: res.accessToken,
+      refreshToken: res.refreshToken,
+      accessTokenExpiresAt: res.accessTokenExpiresAt,
+      refreshTokenExpiresAt: res.refreshTokenExpiresAt,
+    });
     await setStoredUser(res.user);
     setUser(res.user);
   };
 
   const loginWithGoogle = async () => {
-    const authUrl = `${ENV.API_URL}/auth/google?platform=mobile`;
+    const authUrl = authApi.googleAuthUrl();
     const result = await WebBrowser.openAuthSessionAsync(authUrl, ENV.OAUTH_REDIRECT_SCHEME);
 
     if (result.type === 'success' && result.url) {
@@ -104,7 +117,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (typeof code === 'string' && code) {
         const res = await authApi.exchangeOAuthCode(code);
-        await setTokens({ accessToken: res.accessToken, refreshToken: res.refreshToken });
+        await setTokens({
+          accessToken: res.accessToken,
+          refreshToken: res.refreshToken,
+          accessTokenExpiresAt: res.accessTokenExpiresAt,
+          refreshTokenExpiresAt: res.refreshTokenExpiresAt,
+        });
         await setStoredUser(res.user);
         setUser(res.user);
       } else {
@@ -129,6 +147,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const logoutAll = async () => {
+    try {
+      await authApi.logoutAll();
+    } catch (err) {
+      console.warn('LogoutAll API failed:', err);
+    } finally {
+      await clearTokens();
+      setUser(null);
+    }
+  };
+
   const refreshUser = async () => {
     try {
       const freshUser = await authApi.getCurrentUser();
@@ -137,6 +166,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (err) {
       console.warn('Failed to refresh user profile:', err);
     }
+  };
+
+  const resendVerification = async () => {
+    await authApi.resendVerification();
+  };
+
+  const changePassword = async (oldPassword: string, newPassword: string) => {
+    await authApi.changePassword(oldPassword, newPassword);
+    // BE revokes all refresh tokens on password change, so the current session is dead.
+    await clearTokens();
+    setUser(null);
   };
 
   return (
@@ -149,7 +189,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         register,
         loginWithGoogle,
         logout,
+        logoutAll,
         refreshUser,
+        resendVerification,
+        changePassword,
       }}
     >
       {children}
