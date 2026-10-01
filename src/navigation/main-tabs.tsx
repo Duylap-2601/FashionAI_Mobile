@@ -4,10 +4,10 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { MainTabParamList } from './types';
-import { HomeScreen } from '../features/home/screens/home-screen';
-import { TryOnScreen } from '../features/try-on/screens/try-on-screen';
-import { ShopScreen } from '../features/products/screens/shop-screen';
-import { RackScreen } from '../features/rack/screens/rack-screen';
+import { HomeScreen } from '../features/home/screens/HomeScreen';
+import { TryOnScreen } from '../features/try-on/screens/TryOnScreen';
+import { ShopScreen } from '../features/products/screens/ShopScreen';
+import { RackScreen } from '../features/rack/screens/RackScreen';
 import { ProfileStack } from './profile-stack';
 import { COLORS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
 

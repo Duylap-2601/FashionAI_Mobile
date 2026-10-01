@@ -74,7 +74,7 @@ Rules:
 | Register | `src/features/auth/screens/RegisterScreen.tsx` | Name, email, password, confirm password (zod + react-hook-form) |
 | ForgotPassword | `src/features/auth/screens/ForgotPasswordScreen.tsx` | Email input (zod + react-hook-form), sends reset link |
 | ResetPassword | `src/features/auth/screens/ResetPasswordScreen.tsx` | Token, new password + confirm
-| VerifyEmail | `src/features/auth/screens/verify-email-screen.tsx` | Verification token input, resend verification |
+| VerifyEmail | `src/features/auth/screens/VerifyEmailScreen.tsx` | Verification token input, resend verification |
 
 ### MainTabs Screens
 | Tab | Screen | File | Status |
@@ -268,27 +268,27 @@ src/
 │   │   ├── context/auth-context.tsx
 │   │   ├── hooks/use-auth.ts
 │   │   ├── schemas/auth.schema.ts  # zod schemas for auth forms
-│   │   ├── screens/        # login-screen.tsx, register-screen.tsx, forgot-password-screen.tsx, reset-password-screen.tsx, verify-email-screen.tsx
+│   │   ├── screens/        # LoginScreen.tsx, RegisterScreen.tsx, ForgotPasswordScreen.tsx, ResetPasswordScreen.tsx, VerifyEmailScreen.tsx, ChangePasswordScreen.tsx
 │   │   ├── storage/secure-storage.ts
 │   │   └── types/auth.ts
 │   ├── home/
-│   │   └── screens/home-screen.tsx
+│   │   └── screens/HomeScreen.tsx
 │   ├── products/
-│   │   ├── screens/shop-screen.tsx
+│   │   ├── screens/ShopScreen.tsx
 │   │   ├── store/          # use-filter-store.ts, filter-store.ts
 │   │   └── types/product.ts
 │   ├── try-on/
-│   │   ├── screens/try-on-screen.tsx
+│   │   ├── screens/TryOnScreen.tsx
 │   │   └── types/tryon.ts
 │   ├── stylist/
-│   │   ├── screens/stylist-screen.tsx
+│   │   ├── screens/StylistScreen.tsx
 │   │   └── types/stylist.ts
 │   ├── cart/
 │   │   └── store/          # use-cart-store.ts, cart-store.ts
 │   ├── orders/
 │   │   └── types/order.ts
 │   └── profile/
-│       ├── screens/profile-screen.tsx
+│       ├── screens/ProfileScreen.tsx
 │       └── types/user.ts
 ├── navigation/
 │   ├── types.ts            # AuthStackParamList, MainTabParamList, RootStackParamList
@@ -296,8 +296,8 @@ src/
 │   ├── main-tabs.tsx
 │   └── root-navigator.tsx
 ├── components/
-│   ├── ui/                 # button.tsx, card.tsx, input.tsx
-│   └── common/             # empty-state.tsx, error-view.tsx, loading.tsx
+│   ├── ui/                 # Button.tsx, Card.tsx, Input.tsx
+│   └── common/             # EmptyState.tsx, ErrorView.tsx, Loading.tsx
 ├── hooks/
 │   ├── use-auth.ts         # compatibility re-export
 │   └── use-color-scheme.ts # cross-feature hook
@@ -323,23 +323,23 @@ src/
 | Auth Context + Secure Storage | ✅ Done | `src/features/auth/` |
 | API Client + Interceptors | ✅ Done | `src/api/client.ts` |
 | Auth API Layer | ✅ Done | `src/features/auth/api/auth.api.ts` |
-| Login Screen | ✅ Done | `src/features/auth/screens/login-screen.tsx` |
-| Register Screen | ✅ Done | `src/features/auth/screens/register-screen.tsx` |
-| ForgotPassword Screen | ✅ Done | `src/features/auth/screens/forgot-password-screen.tsx` |
-| ResetPassword Screen | ✅ Done | `src/features/auth/screens/reset-password-screen.tsx` |
+| Login Screen | ✅ Done | `src/features/auth/screens/LoginScreen.tsx` |
+| Register Screen | ✅ Done | `src/features/auth/screens/RegisterScreen.tsx` |
+| ForgotPassword Screen | ✅ Done | `src/features/auth/screens/ForgotPasswordScreen.tsx` |
+| ResetPassword Screen | ✅ Done | `src/features/auth/screens/ResetPasswordScreen.tsx` |
 | AuthStack Navigation | ✅ Done | `src/navigation/auth-stack.tsx` |
 | MainTabs Navigation | ✅ Done | `src/navigation/main-tabs.tsx` |
 | RootNavigator (Auth ↔ Main) | ✅ Done | `src/navigation/root-navigator.tsx` |
-| Home Screen with Quota | ✅ Done | `src/features/home/screens/home-screen.tsx` |
-| Profile Screen with Logout | ✅ Done | `src/features/profile/screens/profile-screen.tsx` |
+| Home Screen with Quota | ✅ Done | `src/features/home/screens/HomeScreen.tsx` |
+| Profile Screen with Logout | ✅ Done | `src/features/profile/screens/ProfileScreen.tsx` |
 | Placeholder TryOn/Stylist/Shop | ✅ Done | `src/features/*/screens/` |
 | App.tsx updated | ✅ Done | `App.tsx` |
 | TypeScript passes | ✅ Done | `npx tsc --noEmit` |
 
 ## Naming Conventions
 
-- **Files & folders**: `kebab-case` (e.g. `login-screen.tsx`, `use-auth.ts`)
-- **React components**: `PascalCase` export, kebab-case file (e.g. `LoginScreen`)
+- **Files & folders**: `kebab-case` for non-component files (e.g. `use-auth.ts`, `auth-stack.tsx`); `PascalCase` for component files (screens, `components/ui`, `components/common`)
+- **React components**: `PascalCase` export, `PascalCase` file (e.g. `LoginScreen.tsx`)
 - **Hooks**: file `use-*.ts`, hook `useFoo`
 - **Zustand stores**: file `use-*-store.ts`, hook `useFooStore`
 - **Interfaces**: `I` prefix (`IUser`, `IProduct`, `IOrder`)

@@ -1,8 +1,8 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ProfileStackParamList } from './types';
-import { ProfileScreen } from '../features/profile/screens/profile-screen';
-import { ChangePasswordScreen } from '../features/auth/screens/change-password-screen';
+import { ProfileScreen } from '../features/profile/screens/ProfileScreen';
+import { ChangePasswordScreen } from '../features/auth/screens/ChangePasswordScreen';
 import { COLORS, FONT_WEIGHT, FONT_SIZE } from '../constants/theme';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
