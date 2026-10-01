@@ -1,16 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,7 +9,8 @@ import {
   forgotPasswordSchema,
   ForgotPasswordFormValues,
 } from '@/features/auth/schemas/auth.schema';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ForgotPassword'>;
 
@@ -60,137 +50,51 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      className="flex-1 bg-surface"
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Quên mật khẩu</Text>
-          <Text style={styles.subtitle}>
+      <ScrollView contentContainerClassName="grow justify-center px-xxl py-xxxl">
+        <View className="mb-xxxl items-center">
+          <Text className="text-xxxl font-extrabold text-on-surface-strong">Quên mật khẩu</Text>
+          <Text className="mt-sm text-center text-body-sm leading-5 text-on-surface-variant">
             Nhập email của bạn và chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu.
           </Text>
         </View>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>Email</Text>
+        <View className="mb-xxl">
           <Controller
             control={control}
             name="email"
             render={({ field: { value, onChange, onBlur } }) => (
-              <TextInput
-                style={[styles.input, errors.email && styles.inputError]}
+              <Input
+                label="Email"
                 placeholder="name@example.com"
-                placeholderTextColor={COLORS.outline}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
+                error={errors.email?.message}
               />
             )}
           />
-          {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
 
-          <TouchableOpacity
-            style={[styles.primaryButton, isSubmitting && styles.buttonDisabled]}
+          <Button
+            className="mt-md"
+            title="Gửi liên kết"
             onPress={handleSubmit(onSubmit)}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color={COLORS.onPrimary} />
-            ) : (
-              <Text style={styles.primaryButtonText}>Gửi liên kết</Text>
-            )}
-          </TouchableOpacity>
+            loading={isSubmitting}
+          />
 
           <TouchableOpacity
-            style={styles.backButton}
+            className="mt-lg min-h-11 items-center justify-center py-sm"
             onPress={() => navigation.navigate('Login')}
           >
-            <Text style={styles.backButtonText}>Quay lại Đăng nhập</Text>
+            <Text className="text-body-sm font-semibold text-secondary">
+              Quay lại Đăng nhập
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: SPACING.xxl,
-    paddingVertical: SPACING.xxxl,
-  },
-  header: {
-    marginBottom: SPACING.xxxl,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: FONT_SIZE.xxxl,
-    fontWeight: FONT_WEIGHT.heavy as any,
-    color: COLORS.onSurfaceStrong,
-  },
-  subtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.onSurfaceVariant,
-    marginTop: SPACING.sm,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  form: {
-    marginBottom: SPACING.xxl,
-  },
-  label: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold as any,
-    color: COLORS.onSurface,
-    marginBottom: SPACING.xs,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.surfaceLine,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    fontSize: FONT_SIZE.md,
-    color: COLORS.onSurface,
-    backgroundColor: COLORS.surfaceLow,
-  },
-  inputError: {
-    borderColor: COLORS.danger,
-  },
-  errorText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.danger,
-    marginTop: SPACING.xs,
-  },
-  primaryButton: {
-    backgroundColor: COLORS.primaryContainer,
-    borderRadius: BORDER_RADIUS.md,
-    paddingVertical: SPACING.lg,
-    alignItems: 'center',
-    marginTop: SPACING.xl,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  primaryButtonText: {
-    color: COLORS.onPrimary,
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.bold as any,
-  },
-  backButton: {
-    marginTop: SPACING.lg,
-    alignItems: 'center',
-    paddingVertical: SPACING.sm,
-  },
-  backButtonText: {
-    color: COLORS.secondary,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold as any,
-  },
-});

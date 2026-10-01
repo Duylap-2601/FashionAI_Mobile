@@ -1,15 +1,7 @@
 import React from 'react';
-import {
-  TouchableOpacity,
-  Text,
-  ActivityIndicator,
-  StyleSheet,
-  StyleProp,
-  ViewStyle,
-  TextStyle,
-  View,
-} from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
+import { TouchableOpacity, Text, ActivityIndicator, View } from 'react-native';
+import type { StyleProp, ViewStyle, TextStyle } from 'react-native';
+import { tva } from '@gluestack-ui/nativewind-utils/tva';
 
 export interface ButtonProps {
   title: string;
@@ -18,11 +10,53 @@ export interface ButtonProps {
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   disabled?: boolean;
+  className?: string;
+  textClassName?: string;
+  /** Only for computed/animated values — see AGENTS.md Styling Rules. */
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
+
+const buttonStyle = tva({
+  base: 'min-h-11 flex-row items-center justify-center rounded-md',
+  variants: {
+    variant: {
+      primary: 'bg-primary-container',
+      secondary: 'bg-secondary',
+      outline: 'border border-outline-variant bg-transparent',
+      ghost: 'bg-transparent',
+      danger: 'bg-danger',
+    },
+    size: {
+      sm: 'px-md py-sm',
+      md: 'px-xl py-md',
+      lg: 'px-xxl py-lg',
+    },
+    disabled: {
+      true: 'opacity-50',
+    },
+  },
+});
+
+const buttonTextStyle = tva({
+  base: 'font-bold',
+  variants: {
+    variant: {
+      primary: 'text-on-primary',
+      secondary: 'text-on-primary',
+      outline: 'text-on-surface',
+      ghost: 'text-on-surface',
+      danger: 'text-on-primary',
+    },
+    size: {
+      sm: 'text-body-sm',
+      md: 'text-body-lg',
+      lg: 'text-headline-sm',
+    },
+  },
+});
 
 export const Button: React.FC<ButtonProps> = ({
   title,
@@ -31,6 +65,8 @@ export const Button: React.FC<ButtonProps> = ({
   size = 'md',
   loading = false,
   disabled = false,
+  className,
+  textClassName,
   style,
   textStyle,
   leftIcon,
@@ -43,128 +79,28 @@ export const Button: React.FC<ButtonProps> = ({
       activeOpacity={0.8}
       onPress={onPress}
       disabled={!isInteractive}
-      style={[
-        styles.base,
-        styles[variant],
-        styles[`size_${size}`],
-        disabled && styles.disabled,
-        style,
-      ]}
+      className={buttonStyle({ variant, size, disabled, class: className })}
+      style={style}
     >
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={
-            variant === 'outline' || variant === 'ghost'
-              ? COLORS.primaryContainer
-              : COLORS.onPrimary
-          }
+          color={variant === 'outline' || variant === 'ghost' ? '#5D1C34' : '#FFFFFF'}
         />
       ) : (
-        <View style={styles.contentRow}>
-          {leftIcon && <View style={styles.leftIconContainer}>{leftIcon}</View>}
+        <View className="flex-row items-center justify-center">
+          {leftIcon && <View className="mr-sm">{leftIcon}</View>}
           <Text
-            style={[
-              styles.baseText,
-              styles[`text_${variant}`],
-              styles[`textSize_${size}`],
-              textStyle,
-            ]}
+            className={buttonTextStyle({ variant, size, class: textClassName })}
+            style={textStyle}
           >
             {title}
           </Text>
-          {rightIcon && <View style={styles.rightIconContainer}>{rightIcon}</View>}
+          {rightIcon && <View className="ml-sm">{rightIcon}</View>}
         </View>
       )}
     </TouchableOpacity>
   );
 };
-
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: BORDER_RADIUS.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  contentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  leftIconContainer: {
-    marginRight: SPACING.sm,
-  },
-  rightIconContainer: {
-    marginLeft: SPACING.sm,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-
-  // Variants
-  primary: {
-    backgroundColor: COLORS.primaryContainer,
-  },
-  secondary: {
-    backgroundColor: COLORS.secondary,
-  },
-  outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: COLORS.outlineVariant,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-  },
-  danger: {
-    backgroundColor: COLORS.danger,
-  },
-
-  // Sizes
-  size_sm: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs + 2,
-  },
-  size_md: {
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-  },
-  size_lg: {
-    paddingHorizontal: SPACING.xxl,
-    paddingVertical: SPACING.lg,
-  },
-
-  // Text Variants
-  baseText: {
-    fontWeight: FONT_WEIGHT.bold as any,
-  },
-  text_primary: {
-    color: COLORS.onPrimary,
-  },
-  text_secondary: {
-    color: COLORS.onPrimary,
-  },
-  text_outline: {
-    color: COLORS.onSurface,
-  },
-  text_ghost: {
-    color: COLORS.onSurface,
-  },
-  text_danger: {
-    color: COLORS.onPrimary,
-  },
-
-  // Text Sizes
-  textSize_sm: {
-    fontSize: FONT_SIZE.xs,
-  },
-  textSize_md: {
-    fontSize: FONT_SIZE.md,
-  },
-  textSize_lg: {
-    fontSize: FONT_SIZE.lg,
-  },
-});
 
 export default Button;

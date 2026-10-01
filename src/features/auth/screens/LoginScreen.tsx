@@ -2,10 +2,7 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -17,7 +14,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { AuthStackParamList } from '@/navigation/types';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { loginSchema, LoginFormValues } from '@/features/auth/schemas/auth.schema';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -60,222 +58,86 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      className="flex-1 bg-surface"
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.brandTitle}>FashionAI</Text>
-          <Text style={styles.subtitle}>Đăng nhập để trải nghiệm AI Virtual Try-On</Text>
+      <ScrollView contentContainerClassName="grow justify-center px-xxl py-xxxl">
+        <View className="mb-xxxl items-center">
+          <Text className="text-display text-on-surface-strong tracking-tight">FashionAI</Text>
+          <Text className="mt-sm text-center text-body-sm text-on-surface-variant">
+            Đăng nhập để trải nghiệm AI Virtual Try-On
+          </Text>
         </View>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>Email</Text>
+        <View className="mb-xxl">
           <Controller
             control={control}
             name="email"
             render={({ field: { value, onChange, onBlur } }) => (
-              <TextInput
-                style={[styles.input, errors.email && styles.inputError]}
+              <Input
+                label="Email"
                 placeholder="name@example.com"
-                placeholderTextColor={COLORS.outline}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
+                error={errors.email?.message}
               />
             )}
           />
-          {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
 
-          <Text style={styles.label}>Mật khẩu</Text>
           <Controller
             control={control}
             name="password"
             render={({ field: { value, onChange, onBlur } }) => (
-              <TextInput
-                style={[styles.input, errors.password && styles.inputError]}
+              <Input
+                label="Mật khẩu"
                 placeholder="••••••••"
-                placeholderTextColor={COLORS.outline}
                 secureTextEntry
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
+                error={errors.password?.message}
               />
             )}
           />
-          {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
 
           <TouchableOpacity
-            style={styles.forgotPasswordRow}
+            className="mb-md min-h-11 self-end justify-center"
             onPress={() => navigation.navigate('ForgotPassword')}
           >
-            <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+            <Text className="text-label-lg text-primary-container">Quên mật khẩu?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.primaryButton, isSubmitting && styles.buttonDisabled]}
+          <Button
+            title="Đăng nhập"
             onPress={handleSubmit(onSubmit)}
-            disabled={isSubmitting || isGoogleSubmitting}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color={COLORS.onPrimary} />
-            ) : (
-              <Text style={styles.primaryButtonText}>Đăng nhập</Text>
-            )}
-          </TouchableOpacity>
+            loading={isSubmitting}
+            disabled={isGoogleSubmitting}
+          />
 
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>HOẶC</Text>
-            <View style={styles.dividerLine} />
+          <View className="my-xl flex-row items-center">
+            <View className="h-px flex-1 bg-surface-line" />
+            <Text className="mx-md text-body-sm font-semibold text-outline">HOẶC</Text>
+            <View className="h-px flex-1 bg-surface-line" />
           </View>
 
-          <TouchableOpacity
-            style={[styles.googleButton, isGoogleSubmitting && styles.buttonDisabled]}
+          <Button
+            title="Tiếp tục với Google"
+            variant="outline"
             onPress={handleGoogleLogin}
-            disabled={isSubmitting || isGoogleSubmitting}
-          >
-            {isGoogleSubmitting ? (
-              <ActivityIndicator color={COLORS.onSurface} />
-            ) : (
-              <Text style={styles.googleButtonText}>Tiếp tục với Google</Text>
-            )}
-          </TouchableOpacity>
+            loading={isGoogleSubmitting}
+            disabled={isSubmitting}
+          />
         </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Chưa có tài khoản? </Text>
+        <View className="mt-lg flex-row items-center justify-center">
+          <Text className="text-body-sm text-on-surface-variant">Chưa có tài khoản? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.signupLink}>Đăng ký ngay</Text>
+            <Text className="text-body-sm font-bold text-primary-container">Đăng ký ngay</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: SPACING.xxl,
-    paddingVertical: SPACING.xxxl,
-  },
-  header: {
-    marginBottom: SPACING.xxxl,
-    alignItems: 'center',
-  },
-  brandTitle: {
-    fontSize: FONT_SIZE.display,
-    fontWeight: FONT_WEIGHT.heavy as any,
-    color: COLORS.onSurfaceStrong,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.onSurfaceVariant,
-    marginTop: SPACING.sm,
-    textAlign: 'center',
-  },
-  form: {
-    marginBottom: SPACING.xxl,
-  },
-  label: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold as any,
-    color: COLORS.onSurface,
-    marginBottom: SPACING.xs,
-    marginTop: SPACING.md,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.surfaceLine,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    fontSize: FONT_SIZE.md,
-    color: COLORS.onSurface,
-    backgroundColor: COLORS.surfaceLow,
-  },
-  inputError: {
-    borderColor: COLORS.danger,
-  },
-  errorText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.danger,
-    marginTop: SPACING.xs,
-  },
-  forgotPasswordRow: {
-    alignSelf: 'flex-end',
-    marginTop: SPACING.sm,
-  },
-  forgotPasswordText: {
-    fontSize: FONT_SIZE.xs + 1,
-    color: COLORS.primaryContainer,
-    fontWeight: FONT_WEIGHT.semibold as any,
-  },
-  primaryButton: {
-    backgroundColor: COLORS.primaryContainer,
-    borderRadius: BORDER_RADIUS.lg,
-    paddingVertical: SPACING.lg - 2,
-    alignItems: 'center',
-    marginTop: SPACING.xxl,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  primaryButtonText: {
-    color: COLORS.onPrimary,
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.bold as any,
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: SPACING.xl,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS.surfaceLine,
-  },
-  dividerText: {
-    marginHorizontal: SPACING.md,
-    color: COLORS.outline,
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold as any,
-  },
-  googleButton: {
-    borderWidth: 1,
-    borderColor: COLORS.outlineVariant,
-    backgroundColor: COLORS.surfaceLowest,
-    borderRadius: BORDER_RADIUS.lg,
-    paddingVertical: SPACING.lg - 2,
-    alignItems: 'center',
-  },
-  googleButtonText: {
-    color: COLORS.onSurface,
-    fontSize: FONT_SIZE.sm + 1,
-    fontWeight: FONT_WEIGHT.semibold as any,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: SPACING.lg,
-  },
-  footerText: {
-    color: COLORS.onSurfaceVariant,
-    fontSize: FONT_SIZE.sm,
-  },
-  signupLink: {
-    color: COLORS.primaryContainer,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold as any,
-  },
-});

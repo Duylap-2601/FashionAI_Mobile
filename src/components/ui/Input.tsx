@@ -1,14 +1,7 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TextInputProps,
-  StyleSheet,
-  StyleProp,
-  ViewStyle,
-} from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
+import { View, Text, TextInput } from 'react-native';
+import type { TextInputProps, StyleProp, ViewStyle } from 'react-native';
+import { tva } from '@gluestack-ui/nativewind-utils/tva';
 
 export interface InputProps extends TextInputProps {
   label?: string;
@@ -16,8 +9,30 @@ export interface InputProps extends TextInputProps {
   helperText?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  containerClassName?: string;
+  /** Only for computed/animated values — see AGENTS.md Styling Rules. */
   containerStyle?: StyleProp<ViewStyle>;
 }
+
+const inputWrapperStyle = tva({
+  base: 'mb-md',
+});
+
+const inputContainerStyle = tva({
+  base: 'min-h-11 flex-row items-center rounded-md border border-surface-line bg-surface-low px-md',
+  variants: {
+    error: {
+      true: 'border-danger bg-danger-soft',
+    },
+    disabled: {
+      true: 'opacity-60',
+    },
+  },
+});
+
+const inputFieldStyle = tva({
+  base: 'flex-1 py-md text-body-lg text-on-surface',
+});
 
 export const Input: React.FC<InputProps> = ({
   label,
@@ -25,84 +40,34 @@ export const Input: React.FC<InputProps> = ({
   helperText,
   leftIcon,
   rightIcon,
+  containerClassName,
   containerStyle,
-  style,
+  className,
+  editable,
   ...props
 }) => {
   return (
-    <View style={[styles.container, containerStyle]}>
-      {label && <Text style={styles.label}>{label}</Text>}
+    <View className={inputWrapperStyle({ class: containerClassName })} style={containerStyle}>
+      {label && <Text className="mb-xs text-label-lg text-on-surface">{label}</Text>}
       <View
-        style={[
-          styles.inputContainer,
-          !!error && styles.inputError,
-          props.editable === false && styles.inputDisabled,
-        ]}
+        className={inputContainerStyle({ error: !!error, disabled: editable === false })}
       >
-        {leftIcon && <View style={styles.iconContainer}>{leftIcon}</View>}
+        {leftIcon && <View className="items-center justify-center px-xs">{leftIcon}</View>}
         <TextInput
-          placeholderTextColor={COLORS.outline}
-          style={[styles.input, style]}
+          placeholderTextColor="#857276"
+          editable={editable}
+          className={inputFieldStyle({ class: className })}
           {...props}
         />
-        {rightIcon && <View style={styles.iconContainer}>{rightIcon}</View>}
+        {rightIcon && <View className="items-center justify-center px-xs">{rightIcon}</View>}
       </View>
       {error ? (
-        <Text style={styles.errorText}>{error}</Text>
+        <Text className="mt-xs text-body-sm text-danger">{error}</Text>
       ) : helperText ? (
-        <Text style={styles.helperText}>{helperText}</Text>
+        <Text className="mt-xs text-body-sm text-on-surface-variant">{helperText}</Text>
       ) : null}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: SPACING.md,
-  },
-  label: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold as any,
-    color: COLORS.onSurface,
-    marginBottom: SPACING.xs,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.surfaceLine,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.surfaceLow,
-    paddingHorizontal: SPACING.md,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: SPACING.md,
-    fontSize: FONT_SIZE.md,
-    color: COLORS.onSurface,
-  },
-  iconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xs,
-  },
-  inputError: {
-    borderColor: COLORS.danger,
-    backgroundColor: '#fff5f5',
-  },
-  inputDisabled: {
-    opacity: 0.6,
-  },
-  errorText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.danger,
-    marginTop: SPACING.xs,
-  },
-  helperText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.onSurfaceVariant,
-    marginTop: SPACING.xs,
-  },
-});
 
 export default Input;

@@ -9,7 +9,19 @@ import { TryOnScreen } from '../features/try-on/screens/TryOnScreen';
 import { ShopScreen } from '../features/products/screens/ShopScreen';
 import { RackScreen } from '../features/rack/screens/RackScreen';
 import { ProfileStack } from './profile-stack';
-import { COLORS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
+
+// React Navigation's screenOptions/tabBarIcon require plain style objects
+// (no className support), so burgundy/cream tokens are inlined as hex here —
+// see design-system.md Color System for the source values.
+const COLORS = {
+  surface: '#FBF9F7',
+  surfaceContainer: '#EFEDEC',
+  surfaceLine: '#E5DFD5',
+  primaryContainer: '#5D1C34',
+  onPrimary: '#FFFFFF',
+  onSurface: '#1B1C1B',
+  onSurfaceVariant: '#534346',
+};
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -61,9 +73,9 @@ export const MainTabs: React.FC = () => {
           backgroundColor: COLORS.surface,
         },
         headerTitleStyle: {
-          fontWeight: FONT_WEIGHT.bold as any,
+          fontWeight: '700' as const,
           color: COLORS.onSurface,
-          fontSize: FONT_SIZE.lg,
+          fontSize: 18,
         },
         tabBarActiveTintColor: COLORS.primaryContainer,
         tabBarInactiveTintColor: COLORS.onSurfaceVariant,
@@ -80,7 +92,7 @@ export const MainTabs: React.FC = () => {
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: FONT_WEIGHT.semibold as any,
+          fontWeight: '600' as const,
           marginTop: 2,
         },
       }}
