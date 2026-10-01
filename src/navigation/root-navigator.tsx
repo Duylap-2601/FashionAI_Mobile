@@ -7,6 +7,7 @@ import { AuthStack } from './auth-stack';
 import { MainTabs } from './main-tabs';
 import { useAuth } from '../features/auth/hooks/use-auth';
 import { COLORS, SPACING, FONT_SIZE } from '../constants/theme';
+import { navigationTheme } from './navigation-theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -23,7 +24,7 @@ export const RootNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
         {isAuthenticated ? (
           <Stack.Screen name="Main" component={MainTabs} />

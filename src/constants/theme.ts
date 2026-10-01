@@ -44,6 +44,10 @@ export const SPACING = {
   giant: 48,
 } as const;
 
+// Be Vietnam Pro 400/500/600/700, embedded at build time by the expo-font plugin in app.json.
+// One family name on iOS and Android, so fontWeight picks the right file.
+export const FONT_FAMILY = 'Be Vietnam Pro';
+
 export const FONT_SIZE = {
   xs: 12,
   sm: 14,
@@ -99,6 +103,7 @@ export const SHADOWS = {
 export const THEME = {
   colors: COLORS,
   spacing: SPACING,
+  fontFamily: FONT_FAMILY,
   fontSize: FONT_SIZE,
   fontWeight: FONT_WEIGHT,
   borderRadius: BORDER_RADIUS,

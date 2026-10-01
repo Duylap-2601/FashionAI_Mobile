@@ -21,7 +21,7 @@
 - **Styling**: **NativeWind (Tailwind classes) is mandatory for all new UI**, with gluestack components from `src/components/ui` where one exists. `StyleSheet.create` is legacy — see *Styling Rules* below.
 - **State Management**: **Zustand** for client state (cart, filters), **TanStack React Query v5** for server state caching & mutations
 - **Validation**: **Zod v4** schemas + **react-hook-form v7** for forms (auth, profile, measurements)
-- **Theme**: `src/constants/theme.ts` — light colors, spacing scale, font definitions
+- **Theme**: `src/constants/theme.ts` — light colors, spacing scale, font definitions (`FONT_FAMILY` = Be Vietnam Pro, embedded via the `expo-font` plugin in `app.json`; see `design-system.md` › Typography)
 - **Design System**: `design-system.md` — mobile visual direction, burgundy/cream tokens, screen patterns, accessibility, and content rules
 - **Hooks**: Feature hooks live in their owning feature; cross-feature hooks stay in `src/hooks/`
 - **Path aliases**: `@/` → `src/*`, `@/assets/*` → `assets/*` (configured in `tsconfig.json`)
@@ -40,8 +40,9 @@
 - The target visual direction is the burgundy/cream mobile system documented in `design-system.md`, based on the provided HTML references for Home, Product Discovery, Product Detail, Photo Try-On, Camera Try-On, AI Stylist, Cart, and Checkout.
 - Implement the design with gluestack components + NativeWind classes over React Native primitives (see *Styling Rules*); do not copy HTML, DOM scripts, CDN fonts, or Material Symbols web-font usage into the Expo app.
 - Keep reusable primitives in `src/components/ui`; gluestack components should also be added there. Keep screen-specific composition in `src/features/<feature>/screens` until it is reused.
-- NativeWind configuration lives in `tailwind.config.js`, `global.css`, `babel.config.js`, `metro.config.js`, and `nativewind-env.d.ts`. `gluestack-ui.config.json` points gluestack CLI/component output to `src/components/ui`.
-- `src/constants/theme.ts` is the source for colors, spacing, font sizes, radius, and shadows. It currently contains the legacy slate/blue/violet palette; migrate it toward the burgundy/cream token set in `design-system.md` before or alongside major screen implementation so screens do not hard-code the new palette repeatedly.
+- NativeWind configuration lives in `tailwind.config.js`, `global.css`, `babel.config.js`, `metro.config.js` (`inlineRem: 16`, so `p-4` = 16px on device), and `nativewind-env.d.ts`. `gluestack-ui.config.json` points gluestack CLI/component output to `src/components/ui`.
+- `App.tsx` is wrapped in `GluestackUIProvider` (`src/components/ui/gluestack-ui-provider/`). It turns the `COLORS` in `src/constants/theme.ts` into the CSS variables that `tailwind.config.js` color classes read, so a color is changed in `theme.ts` only. The className ↔ `theme.ts` token map is in `design-system.md` › *NativeWind Tokens*.
+- `src/constants/theme.ts` is the single source for color values (burgundy/cream, already migrated) plus spacing, font sizes, radius, and shadows for the remaining `StyleSheet` code. Add new colors there and expose them in `gluestack-ui-provider/config.ts` + `tailwind.config.js`; never hard-code hex in screens.
 - Use Vietnamese user-facing copy with proper diacritics. Avoid raw backend/technical terms such as `endpoint`, `payload`, `fallback`, `mock`, `Axios error`, or `500 internal server error` in UI.
 - Mobile actions must not depend on hover behavior. Keep important actions visible and reachable with touch targets around `44x44` or larger.
 - Preserve checkout/order pricing ownership: cart and checkout may display totals returned or verified by backend, but must not submit client-resolved shipping fees or discount amounts as the source of truth.
@@ -59,6 +60,7 @@ Order of preference for every piece of UI — always pick the highest option tha
 
 Rules:
 - **NEVER hand-roll a primitive that gluestack already provides.** Check `src/components/ui` first, then `npx gluestack-ui add <component>` (output path is already pointed at `src/components/ui` by `gluestack-ui.config.json`).
+- **Legacy name clash**: `src/components/ui/Button.tsx`, `Card.tsx`, `Input.tsx` collide case-insensitively (macOS) with gluestack's `button/`, `card/`, `input/` folders. Before running `npx gluestack-ui add button|card|input`, migrate the legacy file's callers and delete or rename it.
 - **NEVER mix** `className` and a `style={styles.x}` object on the same element. Pick one per element; NativeWind for anything static.
 - **No inline `style={{ ... }}`** for static values — use `className`. Inline `style` is only for computed/animated values.
 - **Tokens, not raw values**: use Tailwind token classes (`bg-primary`, `px-4`, `rounded-xl`, `text-base`) defined in `tailwind.config.js`. Never hard-code hex colors or magic pixel numbers in `className` (no `bg-[#7B1E3A]`, no `mt-[13px]`) — add the token to `tailwind.config.js` / `src/constants/theme.ts` instead.
