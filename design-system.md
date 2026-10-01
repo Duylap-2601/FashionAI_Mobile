@@ -39,7 +39,7 @@ The provided HTML references establish the target mobile direction:
 
 ## Current Implementation Constraint
 
-Mobile currently uses `src/constants/theme.ts`, but that file still contains a slate/blue/violet palette. New mobile UI should migrate toward the burgundy/cream token system below. Update `theme.ts` before or alongside major screen implementation so screens do not hard-code the new palette repeatedly.
+`src/constants/theme.ts` holds the burgundy/cream palette below and is the single source of color values. `GluestackUIProvider` exposes it to NativeWind as CSS variables; see *NativeWind Tokens* for the class names.
 
 Rules:
 
@@ -90,11 +90,47 @@ Color rules:
 - AI accents use burgundy plus gold sparkle (`tertiaryFixed`), not a separate purple system.
 - Error/success/warning colors must be paired with text or icon state, not used as the only signal.
 
+## NativeWind Tokens
+
+Use these classes in `className`. Every color class supports opacity (`bg-primary/90`).
+gluestack components hard-code the shadcn-style names (`primary`, `muted`, `border`, ...), so those names win where they clash with the `theme.ts` names:
+
+| `theme.ts` (`COLORS.*`) | NativeWind class | Notes |
+| --- | --- | --- |
+| `primaryContainer` | `bg-primary` / `bg-primary-container` | Brand CTA color. |
+| `primary` | `bg-primary-strong` | Pressed/strong burgundy. `bg-primary` is **not** `#41051F`. |
+| `primarySoft`, `primarySoftStrong` | `bg-primary-soft`, `bg-primary-soft-strong` | |
+| `onPrimary` | `text-primary-foreground` / `text-on-primary` | |
+| `surface` | `bg-background` / `bg-surface` | Screen canvas. |
+| `surfaceLowest` | `bg-card` / `bg-surface-lowest` | Cards, sheets (`bg-popover` too). |
+| `surfaceLow` | `bg-muted` / `bg-surface-low` | Search fields, chips. |
+| `surfaceContainer` | `bg-accent` / `bg-surface-container` | Segmented tracks, ghost pressed state. |
+| `surfaceHigh` | `bg-secondary` / `bg-surface-high` | gluestack secondary button background. |
+| `surfaceHighest` | `bg-surface-highest` | |
+| `surfaceLine` | `border-border` / `border-input` / `border-surface-line` | |
+| `outline`, `outlineVariant` | `border-outline`, `border-outline-variant` | `ring` = `outline`. |
+| `onSurface` | `text-foreground` / `text-on-surface` | |
+| `onSurfaceStrong`, `onSurfaceVariant` | `text-on-surface-strong`, `text-on-surface-variant` | |
+| `secondary` | `text-muted-foreground` | Secondary text / inactive tabs. `text-secondary` is **not** this color. |
+| `inverseSurface`, `inverseOnSurface` | `bg-inverse-surface`, `text-inverse-on-surface` | Toasts. |
+| `tertiary`, `tertiaryFixed` | `text-tertiary`, `text-tertiary-fixed` | |
+| `danger` | `bg-destructive` / `text-danger` | |
+| `success`, `warning` | `text-success`, `text-warning` | |
+
+Typography roles map to `text-display`, `text-headline-lg|md|sm`, `text-body-lg|md|sm`, `text-label-lg|md`, `text-price-lg|sm` (size, line height and weight together).
+Spacing uses the stock Tailwind scale (`inlineRem: 16`): `1`=4, `2`=8, `3`=12, `4`=16, `5`=20, `6`=24, `8`=32, `12`=48.
+Radius: `rounded-sm|md|lg|xl|2xl|full` = 6/10/14/18/24/9999.
+
 ## Typography
 
 Target font: `Be Vietnam Pro`.
 
-React Native does not automatically load Google Fonts. If custom font loading is not configured, use platform fonts while matching sizes, weight, and spacing. When adding font assets later, use Be Vietnam Pro weights `400`, `500`, `600`, and `700`.
+Be Vietnam Pro `400`/`500`/`600`/`700` is embedded at build time by the `expo-font` plugin in `app.json` (from `@expo-google-fonts/be-vietnam-pro`), registered under the single family name `Be Vietnam Pro` on iOS and Android, so the weight picks the right file. Changing the font list requires a new native build.
+
+- NativeWind: `font-sans` / `font-body` / `font-heading` plus a weight class (`font-semibold`) or a typography role (`text-headline-sm`). gluestack Text/Heading already apply `font-body` / `font-heading`.
+- `StyleSheet` code: `fontFamily: FONT_FAMILY` from `src/constants/theme.ts`.
+- React Native has no global default font: a bare `<Text>` without one of the above renders in the system font. Headers and tab labels get the font from `src/navigation/navigation-theme.ts`.
+- Web is not covered (the font is native-only); it falls back to the system stack.
 
 | Role | Size | Line Height | Weight | Usage |
 | --- | --- | --- | --- | --- |
@@ -561,8 +597,8 @@ Avoid:
 Before implementing a mobile screen:
 
 - Update or confirm `src/constants/theme.ts` includes the burgundy/cream token set.
-- Build with React Native primitives and `StyleSheet.create`.
-- Reuse `src/components/ui/Button`, `Input`, and `Card` when suitable.
+- Build with gluestack components from `src/components/ui` and React Native primitives styled with NativeWind classes (see *NativeWind Tokens*).
+- Reuse `src/components/ui/Button`, `Input`, and `Card` when suitable until they are replaced by gluestack versions.
 - Use `expo-image` or React Native image primitives consistently for product/media images.
 - Ensure sticky bottom bars account for safe area.
 - Ensure important mobile actions do not depend on hover.
