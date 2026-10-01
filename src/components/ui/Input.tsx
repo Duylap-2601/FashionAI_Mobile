@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Text, TextInput } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Pressable } from 'react-native';
 import type { TextInputProps, StyleProp, ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { tva } from '@gluestack-ui/nativewind-utils/tva';
 
 export interface InputProps extends TextInputProps {
@@ -44,8 +45,24 @@ export const Input: React.FC<InputProps> = ({
   containerStyle,
   className,
   editable,
+  secureTextEntry,
   ...props
 }) => {
+  const [isRevealed, setIsRevealed] = useState(false);
+  const isPasswordField = !!secureTextEntry;
+
+  const passwordToggle = isPasswordField ? (
+    <Pressable
+      onPress={() => setIsRevealed((prev) => !prev)}
+      hitSlop={8}
+      className="min-h-11 min-w-11 items-center justify-center"
+      accessibilityRole="button"
+      accessibilityLabel={isRevealed ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+    >
+      <Ionicons name={isRevealed ? 'eye-off-outline' : 'eye-outline'} size={20} color="#857276" />
+    </Pressable>
+  ) : null;
+
   return (
     <View className={inputWrapperStyle({ class: containerClassName })} style={containerStyle}>
       {label && <Text className="mb-xs text-label-lg text-on-surface">{label}</Text>}
@@ -56,10 +73,15 @@ export const Input: React.FC<InputProps> = ({
         <TextInput
           placeholderTextColor="#857276"
           editable={editable}
+          secureTextEntry={isPasswordField && !isRevealed}
           className={inputFieldStyle({ class: className })}
           {...props}
         />
-        {rightIcon && <View className="items-center justify-center px-xs">{rightIcon}</View>}
+        {rightIcon ? (
+          <View className="items-center justify-center px-xs">{rightIcon}</View>
+        ) : (
+          passwordToggle
+        )}
       </View>
       {error ? (
         <Text className="mt-xs text-body-sm text-danger">{error}</Text>

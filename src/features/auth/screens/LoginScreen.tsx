@@ -34,11 +34,26 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   });
 
   const onSubmit = async (values: LoginFormValues) => {
+    const email = values.email.trim();
     try {
       setIsSubmitting(true);
-      await login({ email: values.email.trim(), password: values.password });
+      await login({ email, password: values.password });
     } catch (err: any) {
-      Alert.alert('Đăng nhập thất bại', err.message || 'Email hoặc mật khẩu không chính xác');
+      if (err.statusCode === 403) {
+        Alert.alert(
+          'Tài khoản chưa xác thực',
+          err.message || 'Vui lòng xác thực email trước khi đăng nhập.',
+          [
+            { text: 'Đóng', style: 'cancel' },
+            {
+              text: 'Xác thực ngay',
+              onPress: () => navigation.navigate('VerifyEmail', { email }),
+            },
+          ],
+        );
+      } else {
+        Alert.alert('Đăng nhập thất bại', err.message || 'Email hoặc mật khẩu không chính xác');
+      }
     } finally {
       setIsSubmitting(false);
     }

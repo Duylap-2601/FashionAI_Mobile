@@ -54,7 +54,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
     >
       <ScrollView contentContainerClassName="grow justify-center px-xxl py-xxxl">
         <View className="mb-xxxl items-center">
-          <Text className="text-xxxl font-extrabold text-on-surface-strong">Quên mật khẩu</Text>
+          <Text className="text-xl font-extrabold text-on-surface-strong">Quên mật khẩu</Text>
           <Text className="mt-sm text-center text-body-sm leading-5 text-on-surface-variant">
             Nhập email của bạn và chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu.
           </Text>
@@ -89,7 +89,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
             className="mt-lg min-h-11 items-center justify-center py-sm"
             onPress={() => navigation.navigate('Login')}
           >
-            <Text className="text-body-sm font-semibold text-secondary">
+            <Text className="text-body-sm font-semibold text-on-surface-variant">
               Quay lại Đăng nhập
             </Text>
           </TouchableOpacity>

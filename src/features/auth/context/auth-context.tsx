@@ -20,7 +20,6 @@ interface AuthContextType {
   logout: () => Promise<void>;
   logoutAll: () => Promise<void>;
   refreshUser: () => Promise<void>;
-  resendVerification: () => Promise<void>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
 }
 
@@ -96,15 +95,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const register = async (data: RegisterDto) => {
-    const res = await authApi.register(data);
-    await setTokens({
-      accessToken: res.accessToken,
-      refreshToken: res.refreshToken,
-      accessTokenExpiresAt: res.accessTokenExpiresAt,
-      refreshTokenExpiresAt: res.refreshTokenExpiresAt,
-    });
-    await setStoredUser(res.user);
-    setUser(res.user);
+    // BE không trả token: tài khoản mới cần xác thực OTP trước khi đăng nhập.
+    await authApi.register(data);
   };
 
   const loginWithGoogle = async () => {
@@ -168,10 +160,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const resendVerification = async () => {
-    await authApi.resendVerification();
-  };
-
   const changePassword = async (oldPassword: string, newPassword: string) => {
     await authApi.changePassword(oldPassword, newPassword);
     // BE revokes all refresh tokens on password change, so the current session is dead.
@@ -191,7 +179,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logout,
         logoutAll,
         refreshUser,
-        resendVerification,
         changePassword,
       }}
     >

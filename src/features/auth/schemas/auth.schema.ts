@@ -51,3 +51,12 @@ export const changePasswordSchema = z
   });
 
 export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
+
+export const otpSchema = z.object({
+  otp: z
+    .string()
+    .length(4, 'Mã OTP phải gồm 4 số')
+    .regex(/^\d{4}$/, 'Mã OTP chỉ gồm chữ số'),
+});
+
+export type OtpFormValues = z.infer<typeof otpSchema>;

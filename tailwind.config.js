@@ -11,6 +11,19 @@ module.exports = {
   important: 'html',
   theme: {
     extend: {
+      // design-system.md › Spacing scale (mirrors SPACING in src/constants/theme.ts).
+      // Named so className tokens like `px-xxl`, `mb-md`, `gap-md` resolve to real
+      // values instead of silently matching nothing on Tailwind's numeric-only scale.
+      spacing: {
+        xs: '4px',
+        sm: '8px',
+        md: '12px',
+        lg: '16px',
+        xl: '20px',
+        xxl: '24px',
+        xxxl: '32px',
+        giant: '48px',
+      },
       colors: {
         // gluestack tokens — hard-coded by components from `npx gluestack-ui add`
         background: token('background'),

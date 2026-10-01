@@ -22,6 +22,10 @@ export interface AuthResponseData extends AuthTokens {
   user: User;
 }
 
+export interface RegisterResponseData {
+  email: string;
+}
+
 export interface LoginDto {
   email: string;
   password: string;

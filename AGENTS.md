@@ -76,7 +76,7 @@ Rules:
 | Register | `src/features/auth/screens/RegisterScreen.tsx` | Name, email, password, confirm password (zod + react-hook-form) |
 | ForgotPassword | `src/features/auth/screens/ForgotPasswordScreen.tsx` | Email input (zod + react-hook-form), sends reset link |
 | ResetPassword | `src/features/auth/screens/ResetPasswordScreen.tsx` | Token, new password + confirm
-| VerifyEmail | `src/features/auth/screens/VerifyEmailScreen.tsx` | Verification token input, resend verification |
+| VerifyEmail | `src/features/auth/screens/VerifyEmailScreen.tsx` | 4-digit OTP input (`src/components/ui/OtpInput.tsx`), resend with 60s cooldown |
 
 ### MainTabs Screens
 | Tab | Screen | File | Status |
@@ -157,7 +157,7 @@ await http.upload<ITryOnResult>(ENDPOINTS.TRY_ON.GENERATE, formData, { signal, o
 | Method | Endpoint | Description |
 |---|---|---|
 | `login` | `POST /auth/login` | Email/password → tokens + user |
-| `register` | `POST /auth/register` | Name, email, password → tokens + user |
+| `register` | `POST /auth/register` | Name, email, password → `{ email }` (no tokens; account unverified until OTP) |
 | `exchangeOAuthCode` | `POST /auth/exchange` | Google auth code → tokens + user |
 | `googleAuth` | `GET /auth/google?platform=mobile` | Opens In-App Browser |
 | `logout` | `POST /auth/logout` | Revokes refresh token |
@@ -166,8 +166,8 @@ await http.upload<ITryOnResult>(ENDPOINTS.TRY_ON.GENERATE, formData, { signal, o
 | `getUserQuota` | `GET /users/me/quota` | AI quota (TRY_ON, STYLIST, CHATBOT) |
 | `forgotPassword` | `POST /auth/forgot-password` | Sends reset email |
 | `resetPassword` | `POST /auth/reset-password` | Token + new password |
-| `verifyEmail` | `POST /auth/verify-email` | Email verification token |
-| `resendVerification` | `POST /auth/resend-verification` | Resends verification email |
+| `verifyEmail` | `POST /auth/verify-email` | Email + 4-digit OTP |
+| `resendVerification` | `POST /auth/resend-verification` | Email → resends OTP (60s cooldown) |
 
 ### Endpoint Constants (`src/constants/endpoints.ts`)
 Centralized endpoint definitions matching BE routes exactly.
@@ -178,9 +178,11 @@ Centralized endpoint definitions matching BE routes exactly.
 
 ### Email/Password
 ```
-POST /auth/register { email, password, name }
+POST /auth/register { email, password, confirmPassword, name? }
+→ { email }  // no tokens — account is unverified, must complete OTP flow before login
 POST /auth/login    { email, password }
 → { user, accessToken, accessTokenExpiresAt, refreshToken, refreshTokenExpiresAt }
+  (403 Forbidden if the account has not completed email verification)
 ```
 
 ### Google OAuth (Authorization Code Flow)
@@ -201,11 +203,14 @@ POST /auth/forgot-password { email }
 POST /auth/reset-password { token, newPassword }
 ```
 
-### Email Verification
+### Email Verification (OTP)
 ```
-POST /auth/verify-email { token }
-POST /auth/resend-verification
+POST /auth/verify-email { email, otp }         // otp: 4-digit numeric code
+POST /auth/resend-verification { email }
 ```
+- OTP is 4 digits, 5-minute TTL, max 5 wrong attempts before it's invalidated (must resend)
+- Resend is rate-limited to once per 60 seconds per email
+- Register automatically sends the first OTP; mobile navigates `Register` → `VerifyEmail` with the registered email
 
 ## Secure Storage (`src/features/auth/storage/secure-storage.ts`)
 - **expo-secure-store** for accessToken, refreshToken, user data

@@ -1,7 +1,13 @@
 import { http, HttpOptions } from '@/api/http';
 import { ENDPOINTS } from '@/constants/endpoints';
 import { ENV } from '@/config/env';
-import { AuthResponseData, LoginDto, RegisterDto, User } from '@/features/auth/types/auth';
+import {
+  AuthResponseData,
+  LoginDto,
+  RegisterDto,
+  RegisterResponseData,
+  User,
+} from '@/features/auth/types/auth';
 
 type MessageResponse = { message?: string };
 
@@ -15,8 +21,8 @@ export const authApi = {
     return http.post<AuthResponseData>(ENDPOINTS.AUTH.LOGIN, data, opts);
   },
 
-  register(data: RegisterDto, opts?: HttpOptions): Promise<AuthResponseData> {
-    return http.post<AuthResponseData>(ENDPOINTS.AUTH.REGISTER, data, opts);
+  register(data: RegisterDto, opts?: HttpOptions): Promise<RegisterResponseData> {
+    return http.post<RegisterResponseData>(ENDPOINTS.AUTH.REGISTER, data, opts);
   },
 
   exchangeOAuthCode(code: string, opts?: HttpOptions): Promise<AuthResponseData> {
@@ -59,12 +65,12 @@ export const authApi = {
     return http.post<MessageResponse>(ENDPOINTS.AUTH.RESET_PASSWORD, { token, newPassword }, opts);
   },
 
-  verifyEmail(token: string, opts?: HttpOptions): Promise<MessageResponse> {
-    return http.post<MessageResponse>(ENDPOINTS.AUTH.VERIFY_EMAIL, { token }, opts);
+  verifyEmail(email: string, otp: string, opts?: HttpOptions): Promise<MessageResponse> {
+    return http.post<MessageResponse>(ENDPOINTS.AUTH.VERIFY_EMAIL, { email, otp }, opts);
   },
 
-  resendVerification(opts?: HttpOptions): Promise<MessageResponse> {
-    return http.post<MessageResponse>(ENDPOINTS.AUTH.RESEND_VERIFICATION, undefined, opts);
+  resendVerification(email: string, opts?: HttpOptions): Promise<MessageResponse> {
+    return http.post<MessageResponse>(ENDPOINTS.AUTH.RESEND_VERIFICATION, { email }, opts);
   },
 
   changePassword(

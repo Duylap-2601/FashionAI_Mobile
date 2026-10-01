@@ -25,14 +25,16 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   });
 
   const onSubmit = async (values: RegisterFormValues) => {
+    const email = values.email.trim();
     try {
       setIsSubmitting(true);
       await register({
         name: values.name.trim(),
-        email: values.email.trim(),
+        email,
         password: values.password,
         confirmPassword: values.confirmPassword,
       });
+      navigation.navigate('VerifyEmail', { email });
     } catch (err: any) {
       Alert.alert('Đăng ký thất bại', err.message || 'Không thể tạo tài khoản');
     } finally {
