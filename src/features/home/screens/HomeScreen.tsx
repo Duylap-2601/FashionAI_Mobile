@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from '@/navigation/types';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { authApi } from '@/features/auth/api/auth.api';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
@@ -34,177 +33,68 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <ScrollView
-      style={styles.container}
+      className="flex-1 bg-surface"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      <View style={styles.header}>
+      <View className="flex-row items-center justify-between bg-surface-lowest px-xl pt-xxl pb-lg">
         <View>
-          <Text style={styles.greeting}>Xin chào,</Text>
-          <Text style={styles.userName}>{user?.name || user?.email || 'Người dùng'}</Text>
+          <Text className="text-body-sm text-on-surface-variant">Xin chào,</Text>
+          <Text className="text-xxl font-bold text-on-surface">
+            {user?.name || user?.email || 'Người dùng'}
+          </Text>
         </View>
-        <View style={styles.tierBadge}>
-          <Text style={styles.tierText}>{user?.tier || 'FREE'}</Text>
+        <View className="rounded-full bg-primary-container px-md py-xs">
+          <Text className="text-body-sm font-bold tracking-wide text-on-primary">
+            {user?.tier || 'FREE'}
+          </Text>
         </View>
       </View>
 
       {/* Quota Card */}
-      <View style={styles.quotaCard}>
-        <Text style={styles.quotaTitle}>Hạn mức AI hôm nay</Text>
-        <Text style={styles.quotaSub}>
+      <View className="m-xl rounded-xl border border-surface-line bg-surface-lowest p-xl shadow-sm">
+        <Text className="text-body-lg font-bold text-on-surface">Hạn mức AI hôm nay</Text>
+        <Text className="mt-1 text-body-sm text-on-surface-variant">
           Virtual Try-On & AI Stylist được cấp theo gói dịch vụ của bạn.
         </Text>
         {quota ? (
-          <View style={styles.quotaStatsRow}>
-            <View style={styles.quotaStat}>
-              <Text style={styles.quotaStatNumber}>{quota.remaining ?? '-'}</Text>
-              <Text style={styles.quotaStatLabel}>Lượt còn lại</Text>
+          <View className="mt-lg flex-row border-t border-surface-line pt-lg">
+            <View className="flex-1 items-center">
+              <Text className="text-xxl font-extrabold text-primary-container">
+                {quota.remaining ?? '-'}
+              </Text>
+              <Text className="mt-0.5 text-body-sm text-on-surface-variant">Lượt còn lại</Text>
             </View>
-            <View style={styles.quotaStat}>
-              <Text style={styles.quotaStatNumber}>{quota.limit ?? '-'}</Text>
-              <Text style={styles.quotaStatLabel}>Tổng hạn mức</Text>
+            <View className="flex-1 items-center">
+              <Text className="text-xxl font-extrabold text-primary-container">
+                {quota.limit ?? '-'}
+              </Text>
+              <Text className="mt-0.5 text-body-sm text-on-surface-variant">Tổng hạn mức</Text>
             </View>
           </View>
         ) : (
-          <Text style={styles.quotaLoading}>Đang cập nhật hạn mức...</Text>
+          <Text className="mt-md text-body-sm italic text-outline">
+            Đang cập nhật hạn mức...
+          </Text>
         )}
       </View>
 
       {/* Quick Action Grid */}
-      <Text style={styles.sectionTitle}>Tính năng nổi bật</Text>
-      <View style={styles.featureGrid}>
+      <Text className="mx-xl mt-sm mb-md text-headline-sm text-on-surface">
+        Tính năng nổi bật
+      </Text>
+      <View className="flex-row gap-md px-xl">
         <TouchableOpacity
-          style={styles.featureCard}
+          className="min-h-11 flex-1 rounded-xl border border-surface-line bg-surface-lowest p-lg"
           onPress={() => navigation.navigate('TryOnTab')}
           activeOpacity={0.7}
         >
-          <Text style={styles.featureIcon}>👗</Text>
-          <Text style={styles.featureName}>Virtual Try-On</Text>
-          <Text style={styles.featureDesc}>Thử trang phục với ảnh người thật bằng AI</Text>
+          <Text className="mb-sm text-icon-lg">👗</Text>
+          <Text className="mb-1 text-body-lg font-bold text-on-surface">Virtual Try-On</Text>
+          <Text className="text-body-sm leading-4 text-on-surface-variant">
+            Thử trang phục với ảnh người thật bằng AI
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.xxl,
-    paddingBottom: SPACING.lg,
-    backgroundColor: COLORS.surfaceLowest,
-  },
-  greeting: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.onSurfaceVariant,
-  },
-  userName: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.bold as any,
-    color: COLORS.onSurface,
-  },
-  tierBadge: {
-    backgroundColor: COLORS.primaryContainer,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    borderRadius: BORDER_RADIUS.full,
-  },
-  tierText: {
-    color: COLORS.onPrimary,
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold as any,
-    letterSpacing: 0.5,
-  },
-  quotaCard: {
-    margin: SPACING.xl,
-    padding: SPACING.xl,
-    backgroundColor: COLORS.surfaceLowest,
-    borderRadius: BORDER_RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceLine,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  quotaTitle: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.bold as any,
-    color: COLORS.onSurface,
-  },
-  quotaSub: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.onSurfaceVariant,
-    marginTop: 4,
-  },
-  quotaStatsRow: {
-    flexDirection: 'row',
-    marginTop: SPACING.lg,
-    paddingTop: SPACING.lg,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.surfaceLine,
-  },
-  quotaStat: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  quotaStatNumber: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.heavy as any,
-    color: COLORS.primaryContainer,
-  },
-  quotaStatLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.onSurfaceVariant,
-    marginTop: 2,
-  },
-  quotaLoading: {
-    marginTop: SPACING.md,
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.outline,
-    fontStyle: 'italic',
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold as any,
-    color: COLORS.onSurface,
-    marginHorizontal: SPACING.xl,
-    marginTop: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  featureGrid: {
-    flexDirection: 'row',
-    paddingHorizontal: SPACING.xl,
-    gap: SPACING.md,
-  },
-  featureCard: {
-    flex: 1,
-    backgroundColor: COLORS.surfaceLowest,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceLine,
-  },
-  featureIcon: {
-    fontSize: 28,
-    marginBottom: SPACING.sm + 2,
-  },
-  featureName: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.bold as any,
-    color: COLORS.onSurface,
-    marginBottom: 4,
-  },
-  featureDesc: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.onSurfaceVariant,
-    lineHeight: 16,
-  },
-});

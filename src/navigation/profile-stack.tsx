@@ -3,7 +3,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ProfileStackParamList } from './types';
 import { ProfileScreen } from '../features/profile/screens/ProfileScreen';
 import { ChangePasswordScreen } from '../features/auth/screens/ChangePasswordScreen';
-import { COLORS, FONT_WEIGHT, FONT_SIZE } from '../constants/theme';
+
+// React Navigation's screenOptions/options require plain style objects (no
+// className support), so burgundy/cream tokens are inlined as hex here — see
+// design-system.md Color System for the source values.
+const COLORS = {
+  surface: '#FBF9F7',
+  onSurface: '#1B1C1B',
+};
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
@@ -18,9 +25,9 @@ export const ProfileStack: React.FC = () => {
           headerShown: true,
           headerStyle: { backgroundColor: COLORS.surface },
           headerTitleStyle: {
-            fontWeight: FONT_WEIGHT.bold as any,
+            fontWeight: '700' as const,
             color: COLORS.onSurface,
-            fontSize: FONT_SIZE.lg,
+            fontSize: 18,
           },
         }}
       />
@@ -32,9 +39,9 @@ export const ProfileStack: React.FC = () => {
           headerShown: true,
           headerStyle: { backgroundColor: COLORS.surface },
           headerTitleStyle: {
-            fontWeight: FONT_WEIGHT.bold as any,
+            fontWeight: '700' as const,
             color: COLORS.onSurface,
-            fontSize: FONT_SIZE.lg,
+            fontSize: 18,
           },
         }}
       />

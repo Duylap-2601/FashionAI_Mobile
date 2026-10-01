@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE } from '@/constants/theme';
+import { View, ActivityIndicator, Text } from 'react-native';
+import { tva } from '@gluestack-ui/nativewind-utils/tva';
 
 export interface LoadingProps {
   message?: string;
@@ -8,35 +8,30 @@ export interface LoadingProps {
   fullscreen?: boolean;
 }
 
+const containerStyle = tva({
+  base: 'items-center justify-center p-xl',
+  variants: {
+    fullscreen: {
+      true: 'flex-1 bg-surface',
+    },
+  },
+});
+
 export const Loading: React.FC<LoadingProps> = ({
   message = 'Đang tải...',
   size = 'large',
   fullscreen = false,
 }) => {
   return (
-    <View style={[styles.container, fullscreen && styles.fullscreen]}>
-      <ActivityIndicator size={size} color={COLORS.primaryContainer} />
-      {message ? <Text style={styles.message}>{message}</Text> : null}
+    <View className={containerStyle({ fullscreen })}>
+      <ActivityIndicator size={size} color="#5D1C34" />
+      {message ? (
+        <Text className="mt-md text-center text-body-sm text-on-surface-variant">
+          {message}
+        </Text>
+      ) : null}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    padding: SPACING.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fullscreen: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  message: {
-    marginTop: SPACING.md,
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.onSurfaceVariant,
-    textAlign: 'center',
-  },
-});
 
 export default Loading;

@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { tva } from '@gluestack-ui/nativewind-utils/tva';
 
 export interface EmptyStateProps {
   icon?: string;
@@ -11,6 +11,15 @@ export interface EmptyStateProps {
   fullscreen?: boolean;
 }
 
+const containerStyle = tva({
+  base: 'items-center justify-center p-xxl',
+  variants: {
+    fullscreen: {
+      true: 'flex-1 bg-surface',
+    },
+  },
+});
+
 export const EmptyState: React.FC<EmptyStateProps> = ({
   icon = '📦',
   title,
@@ -20,59 +29,24 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   fullscreen = false,
 }) => {
   return (
-    <View style={[styles.container, fullscreen && styles.fullscreen]}>
-      <Text style={styles.icon}>{icon}</Text>
-      <Text style={styles.title}>{title}</Text>
-      {description ? <Text style={styles.description}>{description}</Text> : null}
+    <View className={containerStyle({ fullscreen })}>
+      <Text className="mb-md text-icon-giant">{icon}</Text>
+      <Text className="mb-xs text-center text-headline-sm text-on-surface">{title}</Text>
+      {description ? (
+        <Text className="mb-lg max-w-empty-state text-center text-body-sm text-on-surface-variant">
+          {description}
+        </Text>
+      ) : null}
       {actionTitle && onAction ? (
-        <TouchableOpacity style={styles.actionButton} onPress={onAction}>
-          <Text style={styles.actionText}>{actionTitle}</Text>
+        <TouchableOpacity
+          className="min-h-11 rounded-md bg-primary-container px-xl py-md"
+          onPress={onAction}
+        >
+          <Text className="text-body-sm font-bold text-on-primary">{actionTitle}</Text>
         </TouchableOpacity>
       ) : null}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    padding: SPACING.xxl,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fullscreen: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  icon: {
-    fontSize: 48,
-    marginBottom: SPACING.md,
-  },
-  title: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold as any,
-    color: COLORS.onSurface,
-    marginBottom: SPACING.xs,
-    textAlign: 'center',
-  },
-  description: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.onSurfaceVariant,
-    textAlign: 'center',
-    lineHeight: 20,
-    maxWidth: 260,
-    marginBottom: SPACING.lg,
-  },
-  actionButton: {
-    backgroundColor: COLORS.primaryContainer,
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-  },
-  actionText: {
-    color: COLORS.onPrimary,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold as any,
-  },
-});
 
 export default EmptyState;

@@ -94,7 +94,30 @@ module.exports = {
         md: '10px',
         lg: '14px',
         xl: '18px',
-        '2xl': '24px',
+        xxl: '24px',
+        full: '9999px',
+      },
+      boxShadow: {
+        sm: '0 1px 3px rgba(0, 0, 0, 0.04)',
+        md: '0 2px 6px rgba(0, 0, 0, 0.06)',
+        lg: '0 4px 12px rgba(0, 0, 0, 0.1)',
+      },
+      lineHeight: {
+        // Relaxed body copy (empty-state/placeholder descriptions) — taller
+        // than body-sm's own 16px line-height without hard-coding leading-[22px].
+        relaxed: '22px',
+      },
+      // Fixed sizes for icon-as-emoji glyphs and avatar circles so screens
+      // never need an arbitrary-value className (text-[48px], w-[72px], ...).
+      width: {
+        avatar: '72px',
+      },
+      height: {
+        avatar: '72px',
+      },
+      maxWidth: {
+        'empty-state': '260px',
+        'error-state': '280px',
       },
       // gluestack component shadows
       boxShadow: {
@@ -110,5 +133,5 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [require('@gluestack-ui/nativewind-utils/tailwind-plugin')],
 };
