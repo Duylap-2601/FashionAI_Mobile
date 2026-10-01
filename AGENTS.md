@@ -10,16 +10,18 @@
 | `npm run web` | Start for web |
 | `npm run lint` | Run `expo lint` |
 | `npm run typecheck` | Run `npx tsc --noEmit` |
+| `npm test` | Run Jest (`jest-expo/node` preset) |
+| `npm run test:watch` | Run Jest in watch mode |
 
 ## Architecture
 
 - **Entrypoint**: `App.tsx` → React Navigation (Stack + Bottom Tabs), not Expo Router
 - **Routes**: `src/navigation/` — `AuthStack`, `MainTabs`, `RootNavigator`
 - **Source organization**: Feature-based under `src/features/<feature>/`; shared infrastructure stays in `src/navigation`, `src/components`, `src/api`, `src/constants`, `src/config`, `src/realtime`, `src/utils`, and truly shared `src/types`.
-- **Styling**: NativeWind is configured for Tailwind utility classes. Existing screens may still use `StyleSheet.create`; new UI may use NativeWind/gluestack where it improves consistency.
+- **Styling**: **NativeWind (Tailwind classes) is mandatory for all new UI**, with gluestack components from `src/components/ui` where one exists. `StyleSheet.create` is legacy — see *Styling Rules* below.
 - **State Management**: **Zustand** for client state (cart, filters), **TanStack React Query v5** for server state caching & mutations
 - **Validation**: **Zod v4** schemas + **react-hook-form v7** for forms (auth, profile, measurements)
-- **Theme**: `src/constants/theme.ts` — light colors, spacing scale, font definitions
+- **Theme**: `src/constants/theme.ts` — light colors, spacing scale, font definitions (`FONT_FAMILY` = Be Vietnam Pro, embedded via the `expo-font` plugin in `app.json`; see `design-system.md` › Typography)
 - **Design System**: `design-system.md` — mobile visual direction, burgundy/cream tokens, screen patterns, accessibility, and content rules
 - **Hooks**: Feature hooks live in their owning feature; cross-feature hooks stay in `src/hooks/`
 - **Path aliases**: `@/` → `src/*`, `@/assets/*` → `assets/*` (configured in `tsconfig.json`)
@@ -36,22 +38,46 @@
 
 - Read `design-system.md` before implementing or refactoring mobile UI.
 - The target visual direction is the burgundy/cream mobile system documented in `design-system.md`, based on the provided HTML references for Home, Product Discovery, Product Detail, Photo Try-On, Camera Try-On, AI Stylist, Cart, and Checkout.
-- Implement the design with React Native primitives, NativeWind classes, gluestack-compatible components, or `StyleSheet.create` as appropriate; do not copy HTML, DOM scripts, CDN fonts, or Material Symbols web-font usage into the Expo app.
+- Implement the design with gluestack components + NativeWind classes over React Native primitives (see *Styling Rules*); do not copy HTML, DOM scripts, CDN fonts, or Material Symbols web-font usage into the Expo app.
 - Keep reusable primitives in `src/components/ui`; gluestack components should also be added there. Keep screen-specific composition in `src/features/<feature>/screens` until it is reused.
-- NativeWind configuration lives in `tailwind.config.js`, `global.css`, `babel.config.js`, `metro.config.js`, and `nativewind-env.d.ts`. `gluestack-ui.config.json` points gluestack CLI/component output to `src/components/ui`.
-- `src/constants/theme.ts` is the source for colors, spacing, font sizes, radius, and shadows. When implementing the new mobile UI, migrate that file toward the burgundy/cream token set in `design-system.md` instead of hard-coding repeated values in screens.
+- NativeWind configuration lives in `tailwind.config.js`, `global.css`, `babel.config.js`, `metro.config.js` (`inlineRem: 16`, so `p-4` = 16px on device), and `nativewind-env.d.ts`. `gluestack-ui.config.json` points gluestack CLI/component output to `src/components/ui`.
+- `App.tsx` is wrapped in `GluestackUIProvider` (`src/components/ui/gluestack-ui-provider/`). It turns the `COLORS` in `src/constants/theme.ts` into the CSS variables that `tailwind.config.js` color classes read, so a color is changed in `theme.ts` only. The className ↔ `theme.ts` token map is in `design-system.md` › *NativeWind Tokens*.
+- `src/constants/theme.ts` is the single source for color values (burgundy/cream, already migrated) plus spacing, font sizes, radius, and shadows for the remaining `StyleSheet` code. Add new colors there and expose them in `gluestack-ui-provider/config.ts` + `tailwind.config.js`; never hard-code hex in screens.
 - Use Vietnamese user-facing copy with proper diacritics. Avoid raw backend/technical terms such as `endpoint`, `payload`, `fallback`, `mock`, `Axios error`, or `500 internal server error` in UI.
 - Mobile actions must not depend on hover behavior. Keep important actions visible and reachable with touch targets around `44x44` or larger.
 - Preserve checkout/order pricing ownership: cart and checkout may display totals returned or verified by backend, but must not submit client-resolved shipping fees or discount amounts as the source of truth.
 - FashionAI products are made-to-measure. Product selection is limited to `productId`, `color`, and `quantity`; body measurements belong exclusively to the measurement and order flow. Do not add standard sizing fields, selectors, filters, or variant identifiers to product flows.
 
+### Styling Rules — NativeWind + gluestack (REQUIRED)
+
+Order of preference for every piece of UI — always pick the highest option that fits:
+
+| # | Use | When |
+|---|---|---|
+| 1 | A gluestack component already in `src/components/ui` | The primitive exists (Button, Input, Card, Modal, Select, Toast, ...) |
+| 2 | Add the gluestack component via its CLI, then use it | gluestack ships that primitive but the repo has not pulled it in yet |
+| 3 | React Native primitive (`View`, `Text`, `Pressable`, ...) + NativeWind `className` | No gluestack equivalent, or a screen-specific composition |
+| 4 | `StyleSheet.create` | Last resort only, for what NativeWind genuinely cannot express (e.g. imperative `Animated` style objects) — leave a short comment saying why |
+
+Rules:
+- **NEVER hand-roll a primitive that gluestack already provides.** Check `src/components/ui` first, then `npx gluestack-ui add <component>` (output path is already pointed at `src/components/ui` by `gluestack-ui.config.json`).
+- **Legacy name clash**: `src/components/ui/Button.tsx`, `Card.tsx`, `Input.tsx` collide case-insensitively (macOS) with gluestack's `button/`, `card/`, `input/` folders. Before running `npx gluestack-ui add button|card|input`, migrate the legacy file's callers and delete or rename it.
+- **NEVER mix** `className` and a `style={styles.x}` object on the same element. Pick one per element; NativeWind for anything static.
+- **No inline `style={{ ... }}`** for static values — use `className`. Inline `style` is only for computed/animated values.
+- **Tokens, not raw values**: use Tailwind token classes (`bg-primary`, `px-4`, `rounded-xl`, `text-base`) defined in `tailwind.config.js`. Never hard-code hex colors or magic pixel numbers in `className` (no `bg-[#7B1E3A]`, no `mt-[13px]`) — add the token to `tailwind.config.js` / `src/constants/theme.ts` instead.
+- **Variants** on shared components use `tva` from `@gluestack-ui/nativewind-utils`, not conditional string concatenation.
+- **Dark mode / platform**: express with NativeWind modifiers (`dark:`, `ios:`, `android:`) instead of runtime branching where possible.
+- **Legacy migration**: screens still on `StyleSheet.create` (all `src/features/*/screens/*`, plus `src/components/ui/Button.tsx`, `Card.tsx`, `Input.tsx` and `src/components/common/*`) are legacy. When you touch one of those files for a real change, convert the parts you touch to NativeWind/gluestack; do not add new `StyleSheet.create` blocks to them. Do not open drive-by rewrites of untouched screens.
+- Touch targets stay `>= 44x44` (`min-h-11 min-w-11`) regardless of styling approach.
+
 ### AuthStack Screens
 | Screen | File | Features |
 |---|---|---|
-| Login | `src/features/auth/screens/LoginScreen.tsx` | Email/password, Google OAuth (In-App Browser), navigation to Register/ForgotPassword |
-| Register | `src/features/auth/screens/RegisterScreen.tsx` | Name, email, password, confirm password, validation |
-| ForgotPassword | `src/features/auth/screens/ForgotPasswordScreen.tsx` | Email input, sends reset link via BE |
-| ResetPassword | `src/features/auth/screens/ResetPasswordScreen.tsx` | Token from deep link, new password + confirm |
+| Login | `src/features/auth/screens/LoginScreen.tsx` | Email/password (zod + react-hook-form), Google OAuth (In-App Browser), navigation to Register/ForgotPassword |
+| Register | `src/features/auth/screens/RegisterScreen.tsx` | Name, email, password, confirm password (zod + react-hook-form) |
+| ForgotPassword | `src/features/auth/screens/ForgotPasswordScreen.tsx` | Email input (zod + react-hook-form), sends reset link |
+| ResetPassword | `src/features/auth/screens/ResetPasswordScreen.tsx` | Token, new password + confirm
+| VerifyEmail | `src/features/auth/screens/VerifyEmailScreen.tsx` | Verification token input, resend verification |
 
 ### MainTabs Screens
 | Tab | Screen | File | Status |
@@ -90,7 +116,50 @@
 - **Axios instance** with baseURL from `ENV.API_URL`
 - **Request interceptor**: Adds `Authorization: Bearer <accessToken>` + `X-Platform: mobile`
 - **Response interceptor**: Auto-refresh on 401 `ACCESS_TOKEN_EXPIRED`, converts BE error envelope to `ApiError`
+<<<<<<< HEAD
 - All API features must use this shared Axios client and must not hardcode backend base URLs.
+=======
+- Do NOT call `api` / `axios` directly from features — go through the HTTP wrapper below
+
+### HTTP Wrapper (`src/api/http.ts`) — REQUIRED for all feature API calls
+
+Thin generic layer over `api`. Every feature `*.api.ts` MUST use it instead of calling `api.get/post/...` + `unwrap()` by hand.
+
+| Method | Returns | Use for |
+|---|---|---|
+| `http.get<T>(url, opts)` | `T` | Reads |
+| `http.post/put/patch<T>(url, data, opts)` | `T` | Mutations |
+| `http.delete<T = void>(url, opts)` | `T` | Deletes |
+| `http.getPaged<T>(url, opts)` | `{ data: T, meta }` | Paginated lists (products, reviews, orders) |
+| `http.upload<T>(url, formData, { onProgress })` | `T` | `multipart/form-data` (try-on, stylist, reviews) |
+| `http.raw<T>(method, url, data, opts)` | `ApiSuccessResponse<T>` | Only when BE `code`/`message` is needed |
+| `isCanceledError(error)` | `boolean` | Ignore aborted requests instead of showing an error |
+
+Rules:
+- **Envelope**: the wrapper calls `unwrap()` internally — never unwrap again in features.
+- **Errors**: every failure is normalized to `ApiError` (`code`, `statusCode`, `details`); network → `NETWORK_ERROR`, timeout → `REQUEST_TIMEOUT`. Cancellation is the only exception — it is rethrown as-is so React Query and `isCanceledError()` see it unchanged.
+- **Signal**: ALWAYS forward `signal` from React Query's `queryFn({ signal })` so requests are cancelled on unmount/filter change. `HttpOptions` extends `AxiosRequestConfig` (minus `url`/`method`/`data`).
+- **Cancellation UI**: swallow cancelled requests with `isCanceledError(error)` — do not surface them to the user.
+- **Pagination**: use `getPaged` instead of reading `meta` manually.
+- Extend `src/api/http.ts` when a new transport concern appears (retry, abort helpers); do not fork a second client.
+- **Reference implementation**: `src/features/auth/api/auth.api.ts` — copy its shape (trailing `opts?: HttpOptions` on every method) for new feature API files.
+- **Tests**: `src/api/http.test.ts` and `src/features/auth/api/auth.api.test.ts` use `axios-mock-adapter` on the shared `api` instance; add cases there when extending the wrapper.
+
+```ts
+// Query with cancellation
+const { data } = useQuery({
+  queryKey: ['products', filters],
+  queryFn: ({ signal }) =>
+    http.getPaged<IProduct[]>(ENDPOINTS.PRODUCTS.LIST, { params: filters, signal }),
+});
+
+// Mutation
+await http.post<AuthResponseData>(ENDPOINTS.AUTH.LOGIN, { email, password });
+
+// Upload with progress
+await http.upload<ITryOnResult>(ENDPOINTS.TRY_ON.GENERATE, formData, { signal, onProgress: setPercent });
+```
+>>>>>>> origin/main
 
 ### Auth API (`src/features/auth/api/auth.api.ts`)
 | Method | Endpoint | Description |
@@ -146,11 +215,11 @@ POST /auth/verify-email { token }
 POST /auth/resend-verification
 ```
 
-## Secure Storage (`src/features/auth/storage/secureStorage.ts`)
+## Secure Storage (`src/features/auth/storage/secure-storage.ts`)
 - **expo-secure-store** for accessToken, refreshToken, user data
 - Keys: `fashionai_access_token`, `fashionai_refresh_token`, `fashionai_user_data`
 
-## Auth Context (`src/features/auth/context/AuthContext.tsx`)
+## Auth Context (`src/features/auth/context/auth-context.tsx`)
 Global provider with:
 - `user`, `isLoading`, `isAuthenticated`
 - `login`, `register`, `loginWithGoogle`, `logout`, `refreshUser`
@@ -207,20 +276,22 @@ Emulator may require `10.0.2.2` in place of `localhost`.
 ```
 src/
 ├── api/
-│   └── client.ts           # shared axios + interceptors only
+│   ├── client.ts           # shared axios + interceptors only
+│   └── http.ts             # generic http wrapper (signal, paged, upload) — use this in features
 ├── features/
 │   ├── auth/
 │   │   ├── api/auth.api.ts
-│   │   ├── context/AuthContext.tsx
-│   │   ├── hooks/useAuth.ts
-│   │   ├── screens/        # Login, Register, ForgotPassword, ResetPassword
-│   │   ├── storage/secureStorage.ts
+│   │   ├── context/auth-context.tsx
+│   │   ├── hooks/use-auth.ts
+│   │   ├── schemas/auth.schema.ts  # zod schemas for auth forms
+│   │   ├── screens/        # LoginScreen.tsx, RegisterScreen.tsx, ForgotPasswordScreen.tsx, ResetPasswordScreen.tsx, VerifyEmailScreen.tsx, ChangePasswordScreen.tsx
+│   │   ├── storage/secure-storage.ts
 │   │   └── types/auth.ts
 │   ├── home/
 │   │   └── screens/HomeScreen.tsx
 │   ├── products/
 │   │   ├── screens/ShopScreen.tsx
-│   │   ├── store/          # filter store
+│   │   ├── store/          # use-filter-store.ts, filter-store.ts
 │   │   └── types/product.ts
 │   ├── try-on/
 │   │   ├── screens/TryOnScreen.tsx
@@ -229,7 +300,7 @@ src/
 │   │   ├── screens/StylistScreen.tsx
 │   │   └── types/stylist.ts
 │   ├── cart/
-│   │   └── store/          # cart store
+│   │   └── store/          # use-cart-store.ts, cart-store.ts
 │   ├── orders/
 │   │   └── types/order.ts
 │   └── profile/
@@ -241,8 +312,8 @@ src/
 │   ├── main-tabs.tsx
 │   └── root-navigator.tsx
 ├── components/
-│   ├── ui/                 # Button, Input, Card, Badge, Modal
-│   └── common/             # Loading, ErrorView, EmptyState
+│   ├── ui/                 # Button.tsx, Card.tsx, Input.tsx
+│   └── common/             # EmptyState.tsx, ErrorView.tsx, Loading.tsx
 ├── hooks/
 │   ├── use-auth.ts         # compatibility re-export
 │   └── use-color-scheme.ts # cross-feature hook
@@ -283,6 +354,7 @@ src/
 
 ## Naming Conventions
 
+<<<<<<< HEAD
 - **React components and screens**: `PascalCase.tsx` (e.g. `ProductCard.tsx`, `ProductDetailScreen.tsx`)
 - **Hooks**: `useFoo.ts` (e.g. `useProducts.ts`, `useProduct.ts`, `useAuth.ts`)
 - **API modules**: `feature.api.ts` inside the owning feature (e.g. `products.api.ts`, `reviews.api.ts`)
@@ -290,6 +362,12 @@ src/
 - **Zustand stores**: `use-*-store.ts` (e.g. `use-filter-store.ts`)
 - **Type files**: descriptive lowercase domain names (e.g. `product.ts`, `review.ts`, `collection.ts`)
 - **Other folders and non-component files**: use descriptive lowercase names consistent with the surrounding feature.
+=======
+- **Files & folders**: `kebab-case` for non-component files (e.g. `use-auth.ts`, `auth-stack.tsx`); `PascalCase` for component files (screens, `components/ui`, `components/common`)
+- **React components**: `PascalCase` export, `PascalCase` file (e.g. `LoginScreen.tsx`)
+- **Hooks**: file `use-*.ts`, hook `useFoo`
+- **Zustand stores**: file `use-*-store.ts`, hook `useFooStore`
+>>>>>>> origin/main
 - **Interfaces**: `I` prefix (`IUser`, `IProduct`, `IOrder`)
 - **Types**: `I` prefix for object shapes; plain `PascalCase` for unions
 - **Enums**: `E` prefix (`ETier`, `EOrderStatus`); prefer `enum` over string unions
@@ -301,9 +379,14 @@ src/
 - **API Endpoints**: NEVER hardcode — use `ENDPOINTS` from `src/constants/endpoints.ts`
 - **Headers**: ALWAYS include `X-Platform: mobile` on all requests (enforced in client interceptor)
 - **Tokens**: NEVER use `AsyncStorage` for tokens — only `expo-secure-store`
-- **Error Handling**: Use `unwrap()` from `src/types/api.ts` to extract data; catch `ApiError` for `code`-based UI logic
+- **HTTP Calls**: ALWAYS go through `http` from `src/api/http.ts`; never import `api`/`axios` inside `src/features/**`
+- **Request Cancellation**: ALWAYS pass React Query's `signal` into `http.*` options; ignore cancelled requests via `isCanceledError()`
+- **Error Handling**: `http` already unwraps the envelope and throws `ApiError` — catch `ApiError` for `code`-based UI logic. Use `unwrap()` from `src/types/api.ts` only outside the wrapper (e.g. `client.ts` interceptors)
 - **Date & Timezone**: Use `src/utils/date.ts` helpers for local date grouping
 - **Unit**: Always `kg` / `cm` (Vietnamese audience)
+- **Styling**: ALWAYS NativeWind `className` + gluestack components from `src/components/ui` when one exists; `StyleSheet.create` only as a documented last resort (see *Styling Rules*)
+- **UI Primitives**: NEVER hand-roll a component gluestack already provides — `npx gluestack-ui add <component>` into `src/components/ui`
+- **Design Tokens**: NEVER hard-code hex colors or pixel values in `className` — extend `tailwind.config.js` / `src/constants/theme.ts`
 - **Design First**: Read `design-system.md` and relevant FE/mobile references before implementing UI
 - **Plan & Confirm**: Produce plan first, get approval before writing code
 

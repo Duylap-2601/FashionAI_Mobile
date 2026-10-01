@@ -5,14 +5,20 @@ export type AuthStackParamList = {
   Register: undefined;
   ForgotPassword: undefined;
   ResetPassword: { token?: string } | undefined;
+  VerifyEmail: { token?: string } | undefined;
+};
+
+export type ProfileStackParamList = {
+  ProfileHome: undefined;
+  ChangePassword: undefined;
 };
 
 export type MainTabParamList = {
   HomeTab: undefined;
   TryOnTab: undefined;
   ShopTab: undefined;
-  StylistTab: undefined;
-  ProfileTab: undefined;
+  RackTab: undefined;
+  ProfileTab: NavigatorScreenParams<ProfileStackParamList> | undefined;
 };
 
 export type RootStackParamList = {

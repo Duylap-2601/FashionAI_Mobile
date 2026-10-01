@@ -1,65 +1,81 @@
-import { api } from '@/api/client';
+import { http, HttpOptions } from '@/api/http';
 import { ENDPOINTS } from '@/constants/endpoints';
-import { unwrap } from '@/types/api';
+import { ENV } from '@/config/env';
 import { AuthResponseData, LoginDto, RegisterDto, User } from '@/features/auth/types/auth';
 
+type MessageResponse = { message?: string };
+
 export const authApi = {
-  async login(data: LoginDto): Promise<AuthResponseData> {
-    const res = await api.post(ENDPOINTS.AUTH.LOGIN, data);
-    return unwrap<AuthResponseData>(res.data);
+  googleAuthUrl(): string {
+    const redirectUri = encodeURIComponent(ENV.OAUTH_REDIRECT_SCHEME);
+    return `${ENV.API_URL}${ENDPOINTS.AUTH.GOOGLE}?platform=mobile&redirect_uri=${redirectUri}`;
   },
 
-  async register(data: RegisterDto): Promise<AuthResponseData> {
-    const res = await api.post(ENDPOINTS.AUTH.REGISTER, data);
-    return unwrap<AuthResponseData>(res.data);
+  login(data: LoginDto, opts?: HttpOptions): Promise<AuthResponseData> {
+    return http.post<AuthResponseData>(ENDPOINTS.AUTH.LOGIN, data, opts);
   },
 
-  async exchangeOAuthCode(code: string): Promise<AuthResponseData> {
-    const res = await api.post(ENDPOINTS.AUTH.EXCHANGE, { code });
-    return unwrap<AuthResponseData>(res.data);
+  register(data: RegisterDto, opts?: HttpOptions): Promise<AuthResponseData> {
+    return http.post<AuthResponseData>(ENDPOINTS.AUTH.REGISTER, data, opts);
   },
 
-  async logout(refreshToken?: string | null): Promise<void> {
+  exchangeOAuthCode(code: string, opts?: HttpOptions): Promise<AuthResponseData> {
+    return http.post<AuthResponseData>(ENDPOINTS.AUTH.EXCHANGE, { code }, opts);
+  },
+
+  async logout(refreshToken?: string | null, opts?: HttpOptions): Promise<void> {
     try {
-      await api.post(ENDPOINTS.AUTH.LOGOUT, { refreshToken: refreshToken || undefined });
+      await http.post(ENDPOINTS.AUTH.LOGOUT, { refreshToken: refreshToken || undefined }, opts);
     } catch (err) {
       // Still allow client to proceed with local logout
       console.warn('Backend logout error:', err);
     }
   },
 
-  async logoutAll(): Promise<void> {
+  async logoutAll(opts?: HttpOptions): Promise<void> {
     try {
-      await api.post(ENDPOINTS.AUTH.LOGOUT_ALL);
+      await http.post(ENDPOINTS.AUTH.LOGOUT_ALL, undefined, opts);
     } catch (err) {
       console.warn('Backend logoutAll error:', err);
     }
   },
 
-  async getCurrentUser(): Promise<User> {
-    const res = await api.get(ENDPOINTS.USERS.ME);
-    return unwrap<User>(res.data);
+  getCurrentUser(opts?: HttpOptions): Promise<User> {
+    return http.get<User>(ENDPOINTS.USERS.ME, opts);
   },
 
-  async getUserQuota(action?: string): Promise<any> {
-    const res = await api.get(ENDPOINTS.USERS.QUOTA, {
-      params: action ? { action } : undefined,
+  getUserQuota(action?: string, opts?: HttpOptions): Promise<any> {
+    return http.get<any>(ENDPOINTS.USERS.QUOTA, {
+      ...opts,
+      params: action ? { action, ...opts?.params } : opts?.params,
     });
-    return unwrap<any>(res.data);
   },
 
-  async forgotPassword(email: string): Promise<{ message?: string }> {
-    const res = await api.post(ENDPOINTS.AUTH.FORGOT_PASSWORD, { email });
-    return unwrap<{ message?: string }>(res.data);
+  forgotPassword(email: string, opts?: HttpOptions): Promise<MessageResponse> {
+    return http.post<MessageResponse>(ENDPOINTS.AUTH.FORGOT_PASSWORD, { email }, opts);
   },
 
-  async resetPassword(token: string, newPassword: string): Promise<{ message?: string }> {
-    const res = await api.post(ENDPOINTS.AUTH.RESET_PASSWORD, { token, newPassword });
-    return unwrap<{ message?: string }>(res.data);
+  resetPassword(token: string, newPassword: string, opts?: HttpOptions): Promise<MessageResponse> {
+    return http.post<MessageResponse>(ENDPOINTS.AUTH.RESET_PASSWORD, { token, newPassword }, opts);
   },
 
-  async verifyEmail(token: string): Promise<{ message?: string }> {
-    const res = await api.post(ENDPOINTS.AUTH.VERIFY_EMAIL, { token });
-    return unwrap<{ message?: string }>(res.data);
+  verifyEmail(token: string, opts?: HttpOptions): Promise<MessageResponse> {
+    return http.post<MessageResponse>(ENDPOINTS.AUTH.VERIFY_EMAIL, { token }, opts);
+  },
+
+  resendVerification(opts?: HttpOptions): Promise<MessageResponse> {
+    return http.post<MessageResponse>(ENDPOINTS.AUTH.RESEND_VERIFICATION, undefined, opts);
+  },
+
+  changePassword(
+    currentPassword: string,
+    newPassword: string,
+    opts?: HttpOptions,
+  ): Promise<MessageResponse> {
+    return http.post<MessageResponse>(
+      ENDPOINTS.AUTH.CHANGE_PASSWORD,
+      { currentPassword, newPassword },
+      opts,
+    );
   },
 };

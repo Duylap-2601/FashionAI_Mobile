@@ -2,52 +2,47 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
 import { AuthStackParamList } from "@/navigation/types";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth/hooks/use-auth";
+import {
+  registerSchema,
+  RegisterFormValues,
+} from "@/features/auth/schemas/auth.schema";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Register">;
 
 export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const { register } = useAuth();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleRegister = async () => {
-    if (!name.trim() || !email.trim() || !password) {
-      Alert.alert("Lỗi", "Vui lòng điền đầy đủ các trường thông tin");
-      return;
-    }
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+  });
 
-    if (password.length < 8) {
-      Alert.alert("Lỗi", "Mật khẩu phải có ít nhất 8 ký tự");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert("Lỗi", "Mật khẩu xác nhận không khớp");
-      return;
-    }
-
+  const onSubmit = async (values: RegisterFormValues) => {
     try {
       setIsSubmitting(true);
       await register({
-        name: name.trim(),
-        email: email.trim(),
-        password,
-        confirmPassword,
+        name: values.name.trim(),
+        email: values.email.trim(),
+        password: values.password,
       });
     } catch (err: any) {
       Alert.alert("Đăng ký thất bại", err.message || "Không thể tạo tài khoản");
@@ -59,158 +54,102 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
+      className="flex-1 bg-surface"
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.brandTitle}>Tạo tài khoản</Text>
-          <Text style={styles.subtitle}>
+      <ScrollView contentContainerClassName="grow justify-center px-xxl py-xxxl">
+        <View className="mb-xxl items-center">
+          <Text className="text-xxxl font-extrabold text-on-surface-strong">
+            Tạo tài khoản
+          </Text>
+          <Text className="mt-xs text-center text-body-sm text-on-surface-variant">
             Bắt đầu phong cách mới cùng FashionAI
           </Text>
         </View>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>Họ và tên</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Nguyễn Văn A"
-            placeholderTextColor="#999"
-            value={name}
-            onChangeText={setName}
-          />
-
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="name@example.com"
-            placeholderTextColor="#999"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
-
-          <Text style={styles.label}>Mật khẩu</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ít nhất 8 ký tự"
-            placeholderTextColor="#999"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-
-          <Text style={styles.label}>Xác nhận mật khẩu</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Nhập lại mật khẩu"
-            placeholderTextColor="#999"
-            secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
-
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              isSubmitting && styles.buttonDisabled,
-            ]}
-            onPress={handleRegister}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.primaryButtonText}>Đăng ký</Text>
+        <View className="mb-xl">
+          <Controller
+            control={control}
+            name="name"
+            render={({ field: { value, onChange, onBlur } }) => (
+              <Input
+                label="Họ và tên"
+                placeholder="Nguyễn Văn A"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                error={errors.name?.message}
+              />
             )}
-          </TouchableOpacity>
+          />
+
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { value, onChange, onBlur } }) => (
+              <Input
+                label="Email"
+                placeholder="name@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                error={errors.email?.message}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { value, onChange, onBlur } }) => (
+              <Input
+                label="Mật khẩu"
+                placeholder="Ít nhất 6 ký tự"
+                secureTextEntry
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                error={errors.password?.message}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="confirmPassword"
+            render={({ field: { value, onChange, onBlur } }) => (
+              <Input
+                label="Xác nhận mật khẩu"
+                placeholder="Nhập lại mật khẩu"
+                secureTextEntry
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                error={errors.confirmPassword?.message}
+              />
+            )}
+          />
+
+          <Button
+            className="mt-md"
+            title="Đăng ký"
+            onPress={handleSubmit(onSubmit)}
+            loading={isSubmitting}
+          />
         </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Đã có tài khoản? </Text>
+        <View className="mt-lg flex-row items-center justify-center">
+          <Text className="text-body-sm text-on-surface-variant">
+            Đã có tài khoản?{" "}
+          </Text>
           <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-            <Text style={styles.loginLink}>Đăng nhập</Text>
+            <Text className="text-body-sm font-bold text-primary-container">
+              Đăng nhập
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 36,
-  },
-  header: {
-    marginBottom: 28,
-    alignItems: "center",
-  },
-  brandTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#0f172a",
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#64748b",
-    marginTop: 6,
-    textAlign: "center",
-  },
-  form: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#334155",
-    marginBottom: 6,
-    marginTop: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: "#0f172a",
-    backgroundColor: "#f8fafc",
-  },
-  primaryButton: {
-    backgroundColor: "#0f172a",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 22,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  primaryButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 16,
-  },
-  footerText: {
-    color: "#64748b",
-    fontSize: 14,
-  },
-  loginLink: {
-    color: "#2563eb",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-});

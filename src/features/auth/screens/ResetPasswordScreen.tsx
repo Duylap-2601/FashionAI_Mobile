@@ -1,48 +1,43 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { AuthStackParamList } from '@/navigation/types';
 import { authApi } from '@/features/auth/api/auth.api';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '@/constants/theme';
+import {
+  resetPasswordSchema,
+  ResetPasswordFormValues,
+} from '@/features/auth/schemas/auth.schema';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ResetPassword'>;
 
 export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
   const [token, setToken] = useState(route.params?.token || '');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [tokenError, setTokenError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async () => {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { password: '', confirmPassword: '' },
+  });
+
+  const onSubmit = async (values: ResetPasswordFormValues) => {
     if (!token.trim()) {
-      Alert.alert('Lỗi', 'Mã token đặt lại mật khẩu không hợp lệ');
+      setTokenError('Vui lòng nhập mã token đặt lại mật khẩu');
       return;
     }
-
-    if (password.length < 6) {
-      Alert.alert('Lỗi', 'Mật khẩu mới phải có ít nhất 6 ký tự');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không trùng khớp');
-      return;
-    }
+    setTokenError('');
 
     try {
       setIsSubmitting(true);
-      await authApi.resetPassword(token.trim(), password);
+      await authApi.resetPassword(token.trim(), values.password);
       Alert.alert('Thành công', 'Mật khẩu của bạn đã được cập nhật thành công!', [
         {
           text: 'Đăng nhập',
@@ -59,140 +54,75 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      className="flex-1 bg-surface"
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Đặt lại mật khẩu</Text>
-          <Text style={styles.subtitle}>
+      <ScrollView contentContainerClassName="grow justify-center px-xxl py-xxxl">
+        <View className="mb-xxxl items-center">
+          <Text className="text-xxxl font-extrabold text-on-surface-strong">
+            Đặt lại mật khẩu
+          </Text>
+          <Text className="mt-sm text-center text-body-sm leading-5 text-on-surface-variant">
             Nhập mã xác thực và mật khẩu mới cho tài khoản của bạn.
           </Text>
         </View>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>Mã xác thực (Token)</Text>
-          <TextInput
-            style={styles.input}
+        <View className="mb-xxl">
+          <Input
+            label="Mã xác thực (Token)"
             placeholder="Dán mã token từ email"
-            placeholderTextColor={COLORS.textMuted}
             value={token}
             onChangeText={setToken}
+            error={tokenError || undefined}
           />
 
-          <Text style={styles.label}>Mật khẩu mới</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor={COLORS.textMuted}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-
-          <Text style={styles.label}>Xác nhận mật khẩu mới</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor={COLORS.textMuted}
-            secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
-
-          <TouchableOpacity
-            style={[styles.primaryButton, isSubmitting && styles.buttonDisabled]}
-            onPress={handleSubmit}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color={COLORS.textInverse} />
-            ) : (
-              <Text style={styles.primaryButtonText}>Lưu mật khẩu mới</Text>
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { value, onChange, onBlur } }) => (
+              <Input
+                label="Mật khẩu mới"
+                placeholder="••••••••"
+                secureTextEntry
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                error={errors.password?.message}
+              />
             )}
-          </TouchableOpacity>
+          />
+
+          <Controller
+            control={control}
+            name="confirmPassword"
+            render={({ field: { value, onChange, onBlur } }) => (
+              <Input
+                label="Xác nhận mật khẩu mới"
+                placeholder="••••••••"
+                secureTextEntry
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                error={errors.confirmPassword?.message}
+              />
+            )}
+          />
+
+          <Button
+            title="Lưu mật khẩu mới"
+            onPress={handleSubmit(onSubmit)}
+            loading={isSubmitting}
+          />
 
           <TouchableOpacity
-            style={styles.backButton}
+            className="mt-lg min-h-11 items-center justify-center py-sm"
             onPress={() => navigation.navigate('Login')}
           >
-            <Text style={styles.backButtonText}>Quay lại Đăng nhập</Text>
+            <Text className="text-body-sm font-semibold text-secondary">
+              Quay lại Đăng nhập
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: SPACING.xxl,
-    paddingVertical: SPACING.xxxl,
-  },
-  header: {
-    marginBottom: SPACING.xxxl,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: FONT_SIZE.xxxl,
-    fontWeight: FONT_WEIGHT.heavy as any,
-    color: COLORS.textPrimary,
-  },
-  subtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.sm,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  form: {
-    marginBottom: SPACING.xxl,
-  },
-  label: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold as any,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.xs,
-    marginTop: SPACING.md,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    fontSize: FONT_SIZE.md,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.surfaceMuted,
-  },
-  primaryButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: BORDER_RADIUS.md,
-    paddingVertical: SPACING.lg,
-    alignItems: 'center',
-    marginTop: SPACING.xl,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  primaryButtonText: {
-    color: COLORS.textInverse,
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.bold as any,
-  },
-  backButton: {
-    marginTop: SPACING.lg,
-    alignItems: 'center',
-    paddingVertical: SPACING.sm,
-  },
-  backButtonText: {
-    color: COLORS.secondary,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold as any,
-  },
-});

@@ -1,23 +1,69 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { MainTabParamList } from './types';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { TryOnScreen } from '../features/try-on/screens/TryOnScreen';
 import { ShopScreen } from '../features/products/screens/ShopScreen';
-import { StylistScreen } from '../features/stylist/screens/StylistScreen';
-import { ProfileScreen } from '../features/profile/screens/ProfileScreen';
-import { COLORS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
+import { RackScreen } from '../features/rack/screens/RackScreen';
+import { ProfileStack } from './profile-stack';
+
+// React Navigation's screenOptions/tabBarIcon require plain style objects
+// (no className support), so burgundy/cream tokens are inlined as hex here —
+// see design-system.md Color System for the source values.
+const COLORS = {
+  surface: '#FBF9F7',
+  surfaceContainer: '#EFEDEC',
+  surfaceLine: '#E5DFD5',
+  primaryContainer: '#5D1C34',
+  onPrimary: '#FFFFFF',
+  onSurface: '#1B1C1B',
+  onSurfaceVariant: '#534346',
+};
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const TabIcon = ({ icon, focused }: { icon: string; focused: boolean }) => (
-  <Text style={{ fontSize: focused ? 22 : 18, opacity: focused ? 1 : 0.65 }}>
-    {icon}
-  </Text>
+type IoniconName = keyof typeof Ionicons.glyphMap;
+
+const TabIcon = ({
+  name,
+  focused,
+}: {
+  name: IoniconName;
+  focused: boolean;
+}) => (
+  <Ionicons
+    name={name}
+    size={23}
+    color={focused ? COLORS.primaryContainer : COLORS.onSurfaceVariant}
+  />
+);
+
+const TryOnTabIcon = ({ focused }: { focused: boolean }) => (
+  <View
+    style={{
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+      backgroundColor: focused ? COLORS.primaryContainer : COLORS.surfaceContainer,
+    }}
+  >
+    <Ionicons
+      name="color-wand"
+      size={20}
+      color={focused ? COLORS.onPrimary : COLORS.onSurfaceVariant}
+    />
+  </View>
 );
 
 export const MainTabs: React.FC = () => {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       initialRouteName="HomeTab"
@@ -27,22 +73,27 @@ export const MainTabs: React.FC = () => {
           backgroundColor: COLORS.surface,
         },
         headerTitleStyle: {
-          fontWeight: FONT_WEIGHT.bold as any,
-          color: COLORS.textPrimary,
-          fontSize: FONT_SIZE.lg,
+          fontWeight: '700' as const,
+          color: COLORS.onSurface,
+          fontSize: 18,
         },
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textMuted,
+        tabBarActiveTintColor: COLORS.primaryContainer,
+        tabBarInactiveTintColor: COLORS.onSurfaceVariant,
         tabBarStyle: {
           backgroundColor: COLORS.surface,
-          borderTopColor: COLORS.border,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 6,
+          borderTopColor: COLORS.surfaceLine,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom + 8,
+          paddingTop: 8,
+          paddingHorizontal: 8,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 4,
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: FONT_WEIGHT.semibold as any,
+          fontWeight: '600' as const,
+          marginTop: 2,
         },
       }}
     >
@@ -52,7 +103,20 @@ export const MainTabs: React.FC = () => {
         options={{
           title: 'FashionAI',
           tabBarLabel: 'Trang chủ',
-          tabBarIcon: ({ focused }) => <TabIcon icon="🏠" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="ShopTab"
+        component={ShopScreen}
+        options={{
+          title: 'Khám phá',
+          tabBarLabel: 'Khám phá',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? 'grid' : 'grid-outline'} focused={focused} />
+          ),
         }}
       />
       <Tab.Screen
@@ -61,34 +125,30 @@ export const MainTabs: React.FC = () => {
         options={{
           title: 'Virtual Try-On',
           tabBarLabel: 'Thử đồ',
-          tabBarIcon: ({ focused }) => <TabIcon icon="👗" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TryOnTabIcon focused={focused} />,
         }}
       />
       <Tab.Screen
-        name="ShopTab"
-        component={ShopScreen}
+        name="RackTab"
+        component={RackScreen}
         options={{
-          title: 'Cửa hàng',
-          tabBarLabel: 'Mua sắm',
-          tabBarIcon: ({ focused }) => <TabIcon icon="🛍️" focused={focused} />,
-        }}
-      />
-      <Tab.Screen
-        name="StylistTab"
-        component={StylistScreen}
-        options={{
-          title: 'AI Stylist',
-          tabBarLabel: 'Stylist',
-          tabBarIcon: ({ focused }) => <TabIcon icon="✨" focused={focused} />,
+          title: 'Tủ đồ',
+          tabBarLabel: 'Tủ đồ',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? 'shirt' : 'shirt-outline'} focused={focused} />
+          ),
         }}
       />
       <Tab.Screen
         name="ProfileTab"
-        component={ProfileScreen}
+        component={ProfileStack}
         options={{
-          title: 'Hồ sơ cá nhân',
-          tabBarLabel: 'Cá nhân',
-          tabBarIcon: ({ focused }) => <TabIcon icon="👤" focused={focused} />,
+          title: 'Tài khoản',
+          tabBarLabel: 'Tài khoản',
+          headerShown: false,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />
+          ),
         }}
       />
     </Tab.Navigator>

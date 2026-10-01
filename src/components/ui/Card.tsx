@@ -1,61 +1,55 @@
 import React from 'react';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  StyleProp,
-  ViewStyle,
-} from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
+import { View, TouchableOpacity } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
+import { tva } from '@gluestack-ui/nativewind-utils/tva';
 
 export interface CardProps {
   children: React.ReactNode;
+  className?: string;
+  /** Only for computed/animated values — see AGENTS.md Styling Rules. */
   style?: StyleProp<ViewStyle>;
   onPress?: () => void;
   variant?: 'elevated' | 'outlined' | 'flat';
 }
 
+const cardStyle = tva({
+  base: 'rounded-lg bg-surface-lowest p-lg',
+  variants: {
+    variant: {
+      elevated: 'border border-surface-line shadow-sm',
+      outlined: 'border border-surface-line',
+      flat: 'bg-surface-low',
+    },
+  },
+});
+
 export const Card: React.FC<CardProps> = ({
   children,
+  className,
   style,
   onPress,
   variant = 'elevated',
 }) => {
-  const cardStyles = [
-    styles.base,
-    styles[variant],
-    style,
-  ];
+  const resolvedClassName = cardStyle({ variant, class: className });
 
   if (onPress) {
     return (
-      <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={cardStyles}>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={onPress}
+        className={resolvedClassName}
+        style={style}
+      >
         {children}
       </TouchableOpacity>
     );
   }
 
-  return <View style={cardStyles}>{children}</View>;
+  return (
+    <View className={resolvedClassName} style={style}>
+      {children}
+    </View>
+  );
 };
-
-const styles = StyleSheet.create({
-  base: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-  },
-  elevated: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.sm,
-  },
-  outlined: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  flat: {
-    backgroundColor: COLORS.surfaceMuted,
-  },
-});
 
 export default Card;

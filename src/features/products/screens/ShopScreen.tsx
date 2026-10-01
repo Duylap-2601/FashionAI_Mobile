@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -8,34 +8,37 @@ import {
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { EmptyState } from '@/components/common/EmptyState';
-import { ErrorView } from '@/components/common/ErrorView';
-import { Input } from '@/components/ui/Input';
+} from "react-native";
+import {
+  CompositeNavigationProp,
+  useNavigation,
+} from "@react-navigation/native";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorView } from "@/components/common/ErrorView";
+import { Input } from "@/components/ui/Input";
 import {
   BORDER_RADIUS,
   COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   SPACING,
-} from '@/constants/theme';
-import { MainTabParamList, RootStackParamList } from '@/navigation/types';
-import { ProductCard } from '../components/ProductCard';
+} from "@/constants/theme";
+import { MainTabParamList, RootStackParamList } from "@/navigation/types";
+import { ProductCard } from "../components/ProductCard";
 import {
   ProductFilterModal,
   ProductFilterSelection,
-} from '../components/ProductFilterModal';
-import { ProductGridSkeleton } from '../components/ProductGridSkeleton';
-import { useDebouncedValue } from '../hooks/use-debounced-value';
-import { useProducts } from '../hooks/useProducts';
-import { useFilterStore } from '../store/use-filter-store';
-import { IProduct, IProductListFilters } from '../types/product';
+} from "../components/ProductFilterModal";
+import { ProductGridSkeleton } from "../components/ProductGridSkeleton";
+import { useDebouncedValue } from "../hooks/use-debounced-value";
+import { useProducts } from "../hooks/useProducts";
+import { useFilterStore } from "../store/use-filter-store";
+import { IProduct, IProductListFilters } from "../types/product";
 
 type ShopNavigation = CompositeNavigationProp<
-  BottomTabNavigationProp<MainTabParamList, 'ShopTab'>,
+  BottomTabNavigationProp<MainTabParamList, "ShopTab">,
   NativeStackNavigationProp<RootStackParamList>
 >;
 
@@ -92,7 +95,17 @@ export const ShopScreen: React.FC = () => {
       sort,
       limit: PRODUCT_LIMIT,
     }),
-    [category, color, garmentType, material, maxPrice, minPrice, search, sort, status],
+    [
+      category,
+      color,
+      garmentType,
+      material,
+      maxPrice,
+      minPrice,
+      search,
+      sort,
+      status,
+    ],
   );
 
   const {
@@ -114,8 +127,8 @@ export const ShopScreen: React.FC = () => {
   const activeFilterCount = useMemo(
     () =>
       [category, garmentType, color, material, minPrice, maxPrice].filter(
-        (value) => value !== null && value !== '',
-      ).length + (sort === 'latest' ? 0 : 1),
+        (value) => value !== null && value !== "",
+      ).length + (sort === "latest" ? 0 : 1),
     [category, color, garmentType, material, maxPrice, minPrice, sort],
   );
   const hasActiveFilters = activeFilterCount > 0;
@@ -132,8 +145,8 @@ export const ShopScreen: React.FC = () => {
   }, []);
 
   const handleClearSearch = useCallback(() => {
-    setSearchInput('');
-    setFilters({ search: '' });
+    setSearchInput("");
+    setFilters({ search: "" });
   }, [setFilters]);
 
   const handleClearFilters = useCallback(() => {
@@ -145,7 +158,7 @@ export const ShopScreen: React.FC = () => {
       material: null,
       minPrice: null,
       maxPrice: null,
-      sort: 'latest',
+      sort: "latest",
     });
   }, [setFilters]);
 
@@ -159,7 +172,7 @@ export const ShopScreen: React.FC = () => {
 
   const handleProductPress = useCallback(
     (productId: string) => {
-      navigation.navigate('ProductDetail', { productId });
+      navigation.navigate("ProductDetail", { productId });
     },
     [navigation],
   );
@@ -202,7 +215,10 @@ export const ShopScreen: React.FC = () => {
               accessibilityLabel="Xóa tìm kiếm"
               hitSlop={8}
               onPress={handleClearSearch}
-              style={({ pressed }) => [styles.clearSearch, pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.clearSearch,
+                pressed && styles.pressed,
+              ]}
             >
               <Text style={styles.clearSearchText}>×</Text>
             </Pressable>
@@ -213,11 +229,11 @@ export const ShopScreen: React.FC = () => {
 
       <View style={styles.toolbar}>
         <Text style={styles.resultCount}>
-          {totalProducts.toLocaleString('vi-VN')} sản phẩm
+          {totalProducts.toLocaleString("vi-VN")} sản phẩm
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Mở bộ lọc${activeFilterCount ? `, ${activeFilterCount} đang áp dụng` : ''}`}
+          accessibilityLabel={`Mở bộ lọc${activeFilterCount ? `, ${activeFilterCount} đang áp dụng` : ""}`}
           onPress={() => setFiltersVisible(true)}
           style={({ pressed }) => [
             styles.filterButtonPressable,
@@ -314,9 +330,9 @@ export const ShopScreen: React.FC = () => {
             description="Hãy thử thay đổi từ khóa hoặc điều chỉnh bộ lọc của bạn."
             actionTitle={
               hasActiveFilters
-                ? 'Xóa bộ lọc'
+                ? "Xóa bộ lọc"
                 : search
-                  ? 'Xóa tìm kiếm'
+                  ? "Xóa tìm kiếm"
                   : undefined
             }
             onAction={
@@ -386,8 +402,8 @@ const styles = StyleSheet.create({
   clearSearch: {
     minWidth: 36,
     minHeight: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   clearSearchText: {
     fontSize: FONT_SIZE.xxl,
@@ -395,25 +411,25 @@ const styles = StyleSheet.create({
     color: COLORS.onSurfaceVariant,
   },
   toolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: SPACING.lg,
   },
   resultCount: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.medium,
     color: COLORS.onSurface,
-    fontVariant: ['tabular-nums'],
+    fontVariant: ["tabular-nums"],
   },
   filterButtonPressable: {
     borderRadius: BORDER_RADIUS.full,
   },
   filterButton: {
     minHeight: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: SPACING.sm,
     paddingHorizontal: SPACING.md,
     borderRadius: BORDER_RADIUS.full,
@@ -436,8 +452,8 @@ const styles = StyleSheet.create({
   filterBadge: {
     minWidth: 20,
     height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: SPACING.xs,
     borderRadius: BORDER_RADIUS.full,
     backgroundColor: COLORS.primarySoft,
@@ -446,16 +462,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.primaryContainer,
-    fontVariant: ['tabular-nums'],
+    fontVariant: ["tabular-nums"],
   },
   inlineError: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginHorizontal: SPACING.lg,
     padding: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: '#FDECEC',
+    backgroundColor: "#FDECEC",
   },
   inlineErrorText: {
     flex: 1,
@@ -471,8 +487,8 @@ const styles = StyleSheet.create({
   },
   stateContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   listContent: {
     flexGrow: 1,
@@ -481,7 +497,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.xxxl,
   },
   columnWrapper: {
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
     gap: SPACING.md,
     paddingHorizontal: SPACING.lg,
   },
@@ -493,9 +509,9 @@ const styles = StyleSheet.create({
   },
   footerLoading: {
     minHeight: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: SPACING.sm,
   },
   footerLoadingText: {

@@ -1,27 +1,32 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MainTabParamList, RootStackParamList } from '@/navigation/types';
-import { useAuth } from '@/features/auth/hooks/useAuth';
-import { authApi } from '@/features/auth/api/auth.api';
-import { EmptyState } from '@/components/common/EmptyState';
-import { ErrorView } from '@/components/common/ErrorView';
-import { CollectionCarousel } from '@/features/collections/components/CollectionCarousel';
-import { CollectionHeroCard } from '@/features/collections/components/CollectionHeroCard';
-import { CollectionSkeleton } from '@/features/collections/components/CollectionSkeleton';
-import { usePublishedCollections } from '@/features/collections/hooks/usePublishedCollections';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  BORDER_RADIUS,
-  COLORS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-  SPACING,
-} from '@/constants/theme';
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+} from "react-native";
+import {
+  CompositeNavigationProp,
+  useNavigation,
+} from "@react-navigation/native";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
+import { MainTabParamList, RootStackParamList } from "@/navigation/types";
+import { useAuth } from "@/features/auth/hooks/use-auth";
+import { authApi } from "@/features/auth/api/auth.api";
+
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorView } from "@/components/common/ErrorView";
+
+import { CollectionCarousel } from "@/features/collections/components/CollectionCarousel";
+import { CollectionHeroCard } from "@/features/collections/components/CollectionHeroCard";
+import { CollectionSkeleton } from "@/features/collections/components/CollectionSkeleton";
+import { usePublishedCollections } from "@/features/collections/hooks/usePublishedCollections";
 
 type HomeNavigation = CompositeNavigationProp<
-  BottomTabNavigationProp<MainTabParamList, 'HomeTab'>,
+  BottomTabNavigationProp<MainTabParamList, "HomeTab">,
   NativeStackNavigationProp<RootStackParamList>
 >;
 
@@ -43,7 +48,7 @@ export const HomeScreen: React.FC = () => {
       const data = await authApi.getUserQuota();
       setQuota(data);
     } catch (err) {
-      console.warn('Failed to load quota:', err);
+      console.warn("Failed to load quota:", err);
     }
   };
 
@@ -59,40 +64,51 @@ export const HomeScreen: React.FC = () => {
 
   const handleCollectionPress = useCallback(
     (slug: string) => {
-      navigation.navigate('CollectionDetail', { slug });
+      navigation.navigate("CollectionDetail", { slug });
     },
     [navigation],
   );
 
   const handleCollectionsEndReached = useCallback(() => {
-    if (
-      collectionsQuery.hasNextPage &&
-      !collectionsQuery.isFetchingNextPage
-    ) {
+    if (collectionsQuery.hasNextPage && !collectionsQuery.isFetchingNextPage) {
       void collectionsQuery.fetchNextPage();
     }
   }, [collectionsQuery]);
 
   return (
     <ScrollView
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      className="flex-1 bg-surface"
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
     >
-      <View style={styles.header}>
+      <View className="flex-row items-center justify-between bg-surface-lowest px-xl pt-xxl pb-lg">
         <View>
-          <Text style={styles.greeting}>Xin chào,</Text>
-          <Text style={styles.userName}>{user?.name || user?.email || 'Người dùng'}</Text>
+          <Text className="text-body-sm text-on-surface-variant">
+            Xin chào,
+          </Text>
+          <Text className="text-xxl font-bold text-on-surface">
+            {user?.name || user?.email || "Người dùng"}
+          </Text>
         </View>
-        <View style={styles.tierBadge}>
-          <Text style={styles.tierText}>{user?.tier || 'FREE'}</Text>
+        <View className="rounded-full bg-primary-container px-md py-xs">
+          <Text className="text-body-sm font-bold tracking-wide text-on-primary">
+            {user?.tier || "FREE"}
+          </Text>
         </View>
       </View>
 
-      <View style={styles.collectionSection}>
-        <View style={styles.collectionHeading}>
-          <Text style={styles.collectionKicker}>KHÁM PHÁ PHONG CÁCH</Text>
-          <Text style={styles.collectionTitle}>Bộ sưu tập nổi bật</Text>
-          <Text style={styles.collectionIntro}>
+      <View className="gap-lg py-xl">
+        <View className="gap-xs px-lg">
+          <Text className="text-xs font-bold tracking-wider text-primary-container">
+            KHÁM PHÁ PHONG CÁCH
+          </Text>
+
+          <Text className="text-xxl font-bold text-on-surface">
+            Bộ sưu tập nổi bật
+          </Text>
+
+          <Text className="text-sm leading-5 text-on-surface-variant">
             Những thiết kế đã được công bố, sẵn sàng để bạn khám phá.
           </Text>
         </View>
@@ -114,23 +130,29 @@ export const HomeScreen: React.FC = () => {
         ) : (
           <>
             {collectionsQuery.isError ? (
-              <View accessibilityRole="alert" style={styles.collectionError}>
-                <Text style={styles.collectionErrorText}>
+              <View
+                accessibilityRole="alert"
+                className="mx-lg min-h-12 flex-row items-center gap-md rounded-md bg-surface-low px-md py-md"
+              >
+                <Text className="flex-1 text-xs text-on-surface-variant">
                   Chưa thể cập nhật danh sách mới nhất.
                 </Text>
+
                 <TouchableOpacity
                   accessibilityRole="button"
                   activeOpacity={0.68}
                   onPress={() => void collectionsQuery.refetch()}
-                  style={styles.collectionRetry}
+                  className="min-h-11 justify-center px-sm"
                 >
-                  <Text style={styles.collectionRetryText}>Thử lại</Text>
+                  <Text className="text-xs font-bold text-primary-container">
+                    Thử lại
+                  </Text>
                 </TouchableOpacity>
               </View>
             ) : null}
 
             {featuredCollection ? (
-              <View style={styles.heroWrap}>
+              <View className="px-lg">
                 <CollectionHeroCard
                   collection={featuredCollection}
                   onPress={handleCollectionPress}
@@ -139,8 +161,8 @@ export const HomeScreen: React.FC = () => {
             ) : null}
 
             {remainingCollections.length > 0 ? (
-              <View style={styles.moreCollections}>
-                <Text style={styles.moreCollectionsTitle}>
+              <View className="gap-md">
+                <Text className="px-lg text-base font-bold text-on-surface">
                   Khám phá thêm
                 </Text>
                 <CollectionCarousel
@@ -156,234 +178,58 @@ export const HomeScreen: React.FC = () => {
       </View>
 
       {/* Quota Card */}
-      <View style={styles.quotaCard}>
-        <Text style={styles.quotaTitle}>Hạn mức AI hôm nay</Text>
-        <Text style={styles.quotaSub}>
+      <View className="m-xl rounded-xl border border-surface-line bg-surface-lowest p-xl shadow-sm">
+        <Text className="text-body-lg font-bold text-on-surface">
+          Hạn mức AI hôm nay
+        </Text>
+        <Text className="mt-1 text-body-sm text-on-surface-variant">
           Virtual Try-On & AI Stylist được cấp theo gói dịch vụ của bạn.
         </Text>
         {quota ? (
-          <View style={styles.quotaStatsRow}>
-            <View style={styles.quotaStat}>
-              <Text style={styles.quotaStatNumber}>{quota.remaining ?? '-'}</Text>
-              <Text style={styles.quotaStatLabel}>Lượt còn lại</Text>
+          <View className="mt-lg flex-row border-t border-surface-line pt-lg">
+            <View className="flex-1 items-center">
+              <Text className="text-xxl font-extrabold text-primary-container">
+                {quota.remaining ?? "-"}
+              </Text>
+              <Text className="mt-0.5 text-body-sm text-on-surface-variant">
+                Lượt còn lại
+              </Text>
             </View>
-            <View style={styles.quotaStat}>
-              <Text style={styles.quotaStatNumber}>{quota.limit ?? '-'}</Text>
-              <Text style={styles.quotaStatLabel}>Tổng hạn mức</Text>
+            <View className="flex-1 items-center">
+              <Text className="text-xxl font-extrabold text-primary-container">
+                {quota.limit ?? "-"}
+              </Text>
+              <Text className="mt-0.5 text-body-sm text-on-surface-variant">
+                Tổng hạn mức
+              </Text>
             </View>
           </View>
         ) : (
-          <Text style={styles.quotaLoading}>Đang cập nhật hạn mức...</Text>
+          <Text className="mt-md text-body-sm italic text-outline">
+            Đang cập nhật hạn mức...
+          </Text>
         )}
       </View>
 
       {/* Quick Action Grid */}
-      <Text style={styles.sectionTitle}>Tính năng nổi bật</Text>
-      <View style={styles.featureGrid}>
+      <Text className="mx-xl mt-sm mb-md text-headline-sm text-on-surface">
+        Tính năng nổi bật
+      </Text>
+      <View className="flex-row gap-md px-xl">
         <TouchableOpacity
-          style={styles.featureCard}
-          onPress={() => navigation.navigate('TryOnTab')}
+          className="min-h-11 flex-1 rounded-xl border border-surface-line bg-surface-lowest p-lg"
+          onPress={() => navigation.navigate("TryOnTab")}
           activeOpacity={0.7}
         >
-          <Text style={styles.featureIcon}>👗</Text>
-          <Text style={styles.featureName}>Virtual Try-On</Text>
-          <Text style={styles.featureDesc}>Thử trang phục với ảnh người thật bằng AI</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.featureCard}
-          onPress={() => navigation.navigate('StylistTab')}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.featureIcon}>✨</Text>
-          <Text style={styles.featureName}>AI Stylist</Text>
-          <Text style={styles.featureDesc}>Tư vấn phối đồ và phong cách cá nhân</Text>
+          <Text className="mb-sm text-icon-lg">👗</Text>
+          <Text className="mb-1 text-body-lg font-bold text-on-surface">
+            Virtual Try-On
+          </Text>
+          <Text className="text-body-sm leading-4 text-on-surface-variant">
+            Thử trang phục với ảnh người thật bằng AI
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.commerceSurface,
-  },
-  collectionSection: {
-    gap: SPACING.lg,
-    paddingVertical: SPACING.xl,
-  },
-  collectionHeading: {
-    gap: SPACING.xs,
-    paddingHorizontal: SPACING.lg,
-  },
-  collectionKicker: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    letterSpacing: 1.1,
-    color: COLORS.primaryContainer,
-  },
-  collectionTitle: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.onSurface,
-  },
-  collectionIntro: {
-    fontSize: FONT_SIZE.sm,
-    lineHeight: 20,
-    color: COLORS.onSurfaceVariant,
-  },
-  heroWrap: {
-    paddingHorizontal: SPACING.lg,
-  },
-  moreCollections: {
-    gap: SPACING.md,
-  },
-  moreCollectionsTitle: {
-    paddingHorizontal: SPACING.lg,
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.onSurface,
-  },
-  collectionError: {
-    minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    marginHorizontal: SPACING.lg,
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.surfaceLow,
-  },
-  collectionErrorText: {
-    flex: 1,
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.onSurfaceVariant,
-  },
-  collectionRetry: {
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingHorizontal: SPACING.sm,
-  },
-  collectionRetryText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryContainer,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 16,
-    backgroundColor: '#ffffff',
-  },
-  greeting: {
-    fontSize: 14,
-    color: '#64748b',
-  },
-  userName: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  tierBadge: {
-    backgroundColor: '#0f172a',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  tierText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  quotaCard: {
-    margin: 20,
-    padding: 20,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  quotaTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  quotaSub: {
-    fontSize: 13,
-    color: '#64748b',
-    marginTop: 4,
-  },
-  quotaStatsRow: {
-    flexDirection: 'row',
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
-  },
-  quotaStat: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  quotaStatNumber: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#2563eb',
-  },
-  quotaStatLabel: {
-    fontSize: 12,
-    color: '#64748b',
-    marginTop: 2,
-  },
-  quotaLoading: {
-    marginTop: 12,
-    fontSize: 13,
-    color: '#94a3b8',
-    fontStyle: 'italic',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0f172a',
-    marginHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  featureGrid: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  featureCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  featureIcon: {
-    fontSize: 28,
-    marginBottom: 10,
-  },
-  featureName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: 4,
-  },
-  featureDesc: {
-    fontSize: 12,
-    color: '#64748b',
-    lineHeight: 16,
-  },
-});

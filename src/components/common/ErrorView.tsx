@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, BORDER_RADIUS } from '../../constants/theme';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { tva } from '@gluestack-ui/nativewind-utils/tva';
 
 export interface ErrorViewProps {
   title?: string;
@@ -9,6 +9,15 @@ export interface ErrorViewProps {
   fullscreen?: boolean;
 }
 
+const containerStyle = tva({
+  base: 'items-center justify-center p-xl',
+  variants: {
+    fullscreen: {
+      true: 'flex-1 bg-surface',
+    },
+  },
+});
+
 export const ErrorView: React.FC<ErrorViewProps> = ({
   title = 'Đã có lỗi xảy ra',
   message,
@@ -16,59 +25,22 @@ export const ErrorView: React.FC<ErrorViewProps> = ({
   fullscreen = false,
 }) => {
   return (
-    <View style={[styles.container, fullscreen && styles.fullscreen]}>
-      <Text style={styles.icon}>⚠️</Text>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.message}>{message}</Text>
+    <View className={containerStyle({ fullscreen })}>
+      <Text className="mb-md text-icon-xl">⚠️</Text>
+      <Text className="mb-xs text-center text-headline-sm text-on-surface">{title}</Text>
+      <Text className="mb-lg max-w-error-state text-center text-body-sm text-on-surface-variant">
+        {message}
+      </Text>
       {onRetry && (
-        <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-          <Text style={styles.retryText}>Thử lại</Text>
+        <TouchableOpacity
+          className="min-h-11 rounded-md bg-primary-container px-xl py-md"
+          onPress={onRetry}
+        >
+          <Text className="text-body-sm font-bold text-on-primary">Thử lại</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    padding: SPACING.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fullscreen: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  icon: {
-    fontSize: 40,
-    marginBottom: SPACING.md,
-  },
-  title: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold as any,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.xs,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.lg,
-    lineHeight: 20,
-    maxWidth: 280,
-  },
-  retryButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-  },
-  retryText: {
-    color: COLORS.textInverse,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold as any,
-  },
-});
 
 export default ErrorView;
