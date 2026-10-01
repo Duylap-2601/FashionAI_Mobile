@@ -1,16 +1,42 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { MainTabParamList } from '@/navigation/types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MainTabParamList, RootStackParamList } from '@/navigation/types';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { authApi } from '@/features/auth/api/auth.api';
+import { EmptyState } from '@/components/common/EmptyState';
+import { ErrorView } from '@/components/common/ErrorView';
+import { CollectionCarousel } from '@/features/collections/components/CollectionCarousel';
+import { CollectionHeroCard } from '@/features/collections/components/CollectionHeroCard';
+import { CollectionSkeleton } from '@/features/collections/components/CollectionSkeleton';
+import { usePublishedCollections } from '@/features/collections/hooks/usePublishedCollections';
+import {
+  BORDER_RADIUS,
+  COLORS,
+  FONT_SIZE,
+  FONT_WEIGHT,
+  SPACING,
+} from '@/constants/theme';
+
+type HomeNavigation = CompositeNavigationProp<
+  BottomTabNavigationProp<MainTabParamList, 'HomeTab'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 export const HomeScreen: React.FC = () => {
-  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+  const navigation = useNavigation<HomeNavigation>();
   const { user } = useAuth();
   const [quota, setQuota] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const collectionsQuery = usePublishedCollections();
+  const collections = useMemo(
+    () => collectionsQuery.data?.pages.flatMap((page) => page.data) ?? [],
+    [collectionsQuery.data],
+  );
+  const featuredCollection = collections[0] ?? null;
+  const remainingCollections = collections.slice(1);
 
   const fetchQuota = async () => {
     try {
@@ -27,9 +53,25 @@ export const HomeScreen: React.FC = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchQuota();
+    await Promise.all([fetchQuota(), collectionsQuery.refetch()]);
     setRefreshing(false);
   };
+
+  const handleCollectionPress = useCallback(
+    (slug: string) => {
+      navigation.navigate('CollectionDetail', { slug });
+    },
+    [navigation],
+  );
+
+  const handleCollectionsEndReached = useCallback(() => {
+    if (
+      collectionsQuery.hasNextPage &&
+      !collectionsQuery.isFetchingNextPage
+    ) {
+      void collectionsQuery.fetchNextPage();
+    }
+  }, [collectionsQuery]);
 
   return (
     <ScrollView
@@ -44,6 +86,73 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.tierBadge}>
           <Text style={styles.tierText}>{user?.tier || 'FREE'}</Text>
         </View>
+      </View>
+
+      <View style={styles.collectionSection}>
+        <View style={styles.collectionHeading}>
+          <Text style={styles.collectionKicker}>KHÁM PHÁ PHONG CÁCH</Text>
+          <Text style={styles.collectionTitle}>Bộ sưu tập nổi bật</Text>
+          <Text style={styles.collectionIntro}>
+            Những thiết kế đã được công bố, sẵn sàng để bạn khám phá.
+          </Text>
+        </View>
+
+        {collectionsQuery.isLoading && collections.length === 0 ? (
+          <CollectionSkeleton />
+        ) : collectionsQuery.isError && collections.length === 0 ? (
+          <ErrorView
+            title="Chưa thể tải bộ sưu tập"
+            message="Vui lòng kiểm tra kết nối và thử lại."
+            onRetry={() => void collectionsQuery.refetch()}
+          />
+        ) : collections.length === 0 ? (
+          <EmptyState
+            icon="◇"
+            title="Chưa có bộ sưu tập"
+            description="Các bộ sưu tập mới sẽ được cập nhật tại đây."
+          />
+        ) : (
+          <>
+            {collectionsQuery.isError ? (
+              <View accessibilityRole="alert" style={styles.collectionError}>
+                <Text style={styles.collectionErrorText}>
+                  Chưa thể cập nhật danh sách mới nhất.
+                </Text>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  activeOpacity={0.68}
+                  onPress={() => void collectionsQuery.refetch()}
+                  style={styles.collectionRetry}
+                >
+                  <Text style={styles.collectionRetryText}>Thử lại</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
+            {featuredCollection ? (
+              <View style={styles.heroWrap}>
+                <CollectionHeroCard
+                  collection={featuredCollection}
+                  onPress={handleCollectionPress}
+                />
+              </View>
+            ) : null}
+
+            {remainingCollections.length > 0 ? (
+              <View style={styles.moreCollections}>
+                <Text style={styles.moreCollectionsTitle}>
+                  Khám phá thêm
+                </Text>
+                <CollectionCarousel
+                  collections={remainingCollections}
+                  isFetchingNextPage={collectionsQuery.isFetchingNextPage}
+                  onEndReached={handleCollectionsEndReached}
+                  onPressCollection={handleCollectionPress}
+                />
+              </View>
+            ) : null}
+          </>
+        )}
       </View>
 
       {/* Quota Card */}
@@ -98,7 +207,68 @@ export const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: COLORS.commerceSurface,
+  },
+  collectionSection: {
+    gap: SPACING.lg,
+    paddingVertical: SPACING.xl,
+  },
+  collectionHeading: {
+    gap: SPACING.xs,
+    paddingHorizontal: SPACING.lg,
+  },
+  collectionKicker: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.bold,
+    letterSpacing: 1.1,
+    color: COLORS.primaryContainer,
+  },
+  collectionTitle: {
+    fontSize: FONT_SIZE.xxl,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.onSurface,
+  },
+  collectionIntro: {
+    fontSize: FONT_SIZE.sm,
+    lineHeight: 20,
+    color: COLORS.onSurfaceVariant,
+  },
+  heroWrap: {
+    paddingHorizontal: SPACING.lg,
+  },
+  moreCollections: {
+    gap: SPACING.md,
+  },
+  moreCollectionsTitle: {
+    paddingHorizontal: SPACING.lg,
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.onSurface,
+  },
+  collectionError: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    marginHorizontal: SPACING.lg,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.surfaceLow,
+  },
+  collectionErrorText: {
+    flex: 1,
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.onSurfaceVariant,
+  },
+  collectionRetry: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.sm,
+  },
+  collectionRetryText: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.primaryContainer,
   },
   header: {
     flexDirection: 'row',

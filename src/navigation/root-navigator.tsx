@@ -7,6 +7,7 @@ import { AuthStack } from './auth-stack';
 import { MainTabs } from './main-tabs';
 import { RoutePlaceholderScreen } from '../components/common/RoutePlaceholderScreen';
 import { ProductDetailScreen } from '../features/products/screens/ProductDetailScreen';
+import { CollectionDetailScreen } from '../features/collections/screens/CollectionDetailScreen';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { COLORS, SPACING, FONT_SIZE } from '../constants/theme';
 
@@ -45,7 +46,21 @@ export const RootNavigator: React.FC = () => {
                 },
               }}
             />
-            <Stack.Screen name="CollectionDetail" component={RoutePlaceholderScreen} />
+            <Stack.Screen
+              name="CollectionDetail"
+              component={CollectionDetailScreen}
+              options={{
+                headerShown: true,
+                title: 'Bộ sưu tập',
+                headerBackTitle: 'Trang chủ',
+                headerTintColor: COLORS.primaryContainer,
+                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerTitleStyle: {
+                  color: COLORS.onSurface,
+                  fontSize: FONT_SIZE.md,
+                },
+              }}
+            />
             <Stack.Screen name="Reviews" component={RoutePlaceholderScreen} />
             <Stack.Screen name="Rack" component={RoutePlaceholderScreen} />
             <Stack.Screen name="StylistHistory" component={RoutePlaceholderScreen} />

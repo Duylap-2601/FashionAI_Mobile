@@ -19,7 +19,7 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabParamList>;
   ProductDetail: { productId: string };
-  CollectionDetail: { collectionId: string; collectionSlug: string };
+  CollectionDetail: { slug: string };
   Reviews: { productId: string };
   Rack: undefined;
   StylistHistory: undefined;
