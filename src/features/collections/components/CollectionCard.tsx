@@ -28,27 +28,31 @@ export function CollectionCard({ collection, onPress }: CollectionCardProps) {
       accessibilityRole="button"
       accessibilityLabel={`Mở bộ sưu tập ${collection.name}`}
       onPress={() => onPress(collection.slug)}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={styles.card}
     >
-      {imageUrl && !imageFailed ? (
-        <Image
-          source={{ uri: imageUrl }}
-          contentFit="cover"
-          transition={150}
-          style={styles.image}
-          onError={() => setImageFailed(true)}
-        />
-      ) : (
-        <View style={[styles.image, styles.placeholder]}>
-          <Text style={styles.placeholderMark}>◇</Text>
+      {({ pressed }) => (
+        <View style={[styles.content, pressed && styles.pressed]}>
+          {imageUrl && !imageFailed ? (
+            <Image
+              source={{ uri: imageUrl }}
+              contentFit="cover"
+              transition={150}
+              style={styles.image}
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
+            <View style={[styles.image, styles.placeholder]}>
+              <Text style={styles.placeholderMark}>◇</Text>
+            </View>
+          )}
+          <Text numberOfLines={1} style={styles.name}>
+            {collection.name}
+          </Text>
+          <Text style={styles.count}>
+            {collection.productCount.toLocaleString('vi-VN')} thiết kế
+          </Text>
         </View>
       )}
-      <Text numberOfLines={1} style={styles.name}>
-        {collection.name}
-      </Text>
-      <Text style={styles.count}>
-        {collection.productCount.toLocaleString('vi-VN')} thiết kế
-      </Text>
     </Pressable>
   );
 }
@@ -56,6 +60,8 @@ export function CollectionCard({ collection, onPress }: CollectionCardProps) {
 const styles = StyleSheet.create({
   card: {
     width: 214,
+  },
+  content: {
     gap: SPACING.xs,
   },
   pressed: {
@@ -90,4 +96,3 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
 });
-

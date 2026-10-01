@@ -74,7 +74,6 @@ describe("authApi (migrated to the http wrapper)", () => {
         expect(JSON.parse(config.data)).toEqual({
           email: "a@b.c",
           password: "pw",
-          confirmPassword: "pw",
           name: "Lan",
         });
         return [200, envelope({ ...TOKENS, user: USER })];
