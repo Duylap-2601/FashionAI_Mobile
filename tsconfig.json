@@ -5,6 +5,7 @@
     "jsx": "react-jsx",
     "ignoreDeprecations": "6.0",
     "strict": true,
+    "types": ["jest", "node"],
     "paths": {
       "@/*": ["./src/*"]
     }
