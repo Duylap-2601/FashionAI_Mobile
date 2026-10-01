@@ -133,7 +133,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
           <View className="my-xl flex-row items-center">
             <View className="h-px flex-1 bg-surface-line" />
-            <Text className="mx-md text-body-sm font-semibold text-outline">HOẶC</Text>
+            <Text className="mx-md text-label-md text-outline">HOẶC</Text>
             <View className="h-px flex-1 bg-surface-line" />
           </View>
 
@@ -149,7 +149,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         <View className="mt-lg flex-row items-center justify-center">
           <Text className="text-body-sm text-on-surface-variant">Chưa có tài khoản? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text className="text-body-sm font-bold text-primary-container">Đăng ký ngay</Text>
+            <Text className="text-label-lg text-primary-container">Đăng ký ngay</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

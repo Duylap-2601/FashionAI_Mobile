@@ -89,7 +89,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
             className="mt-lg min-h-11 items-center justify-center py-sm"
             onPress={() => navigation.navigate('Login')}
           >
-            <Text className="text-body-sm font-semibold text-on-surface-variant">
+            <Text className="text-label-lg text-on-surface-variant">
               Quay lại Đăng nhập
             </Text>
           </TouchableOpacity>

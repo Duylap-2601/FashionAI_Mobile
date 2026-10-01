@@ -13,7 +13,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'VerifyEmail'>;
 const RESEND_COOLDOWN_SECONDS = 60;
 
 const resendTextStyle = tva({
-  base: 'text-body-sm font-semibold',
+  base: 'text-label-lg',
   variants: {
     cooling: {
       true: 'text-on-surface-variant',
@@ -126,7 +126,7 @@ export const VerifyEmailScreen: React.FC<Props> = ({ navigation, route }) => {
             className="mt-sm min-h-11 items-center justify-center py-sm"
             onPress={() => navigation.navigate('Login')}
           >
-            <Text className="text-body-sm font-semibold text-on-surface-variant">
+            <Text className="text-label-lg text-on-surface-variant">
               Quay lại Đăng nhập
             </Text>
           </TouchableOpacity>

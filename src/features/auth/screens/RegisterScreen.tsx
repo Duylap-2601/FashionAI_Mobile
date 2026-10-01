@@ -55,7 +55,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           </Text>
         </View>
 
-        <View className="mb-xl">
+        <View className="mb-xl w-full">
           <Controller
             control={control}
             name="name"
@@ -121,7 +121,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           />
 
           <Button
-            className="mt-md"
+            className="mt-md w-full"
             title="Đăng ký"
             onPress={handleSubmit(onSubmit)}
             loading={isSubmitting}
@@ -131,7 +131,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         <View className="mt-lg flex-row items-center justify-center">
           <Text className="text-body-sm text-on-surface-variant">Đã có tài khoản? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text className="text-body-sm font-bold text-primary-container">Đăng nhập</Text>
+            <Text className="text-label-lg text-primary-container">Đăng nhập</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
