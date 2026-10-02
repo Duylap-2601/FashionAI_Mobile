@@ -11,6 +11,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorView } from '@/components/common/ErrorView';
+import { Button } from '@/components/ui/Button';
 import {
   BORDER_RADIUS,
   COLORS,
@@ -21,6 +22,7 @@ import {
 import type { RootStackParamList } from '@/navigation/types';
 import { ApiError } from '@/types/api';
 import { useCartStore } from '@/features/cart/store/use-cart-store';
+import { usePinProductToRack } from '@/features/rack/hooks/useRack';
 import { ProductDetailActionBar } from '../components/ProductDetailActionBar';
 import { ProductDetailContent } from '../components/ProductDetailContent';
 import { ProductDetailSkeleton } from '../components/ProductDetailSkeleton';
@@ -51,6 +53,7 @@ export function ProductDetailScreen({
   const productId = route.params.productId.trim();
   const addItem = useCartStore((state) => state.addItem);
   const productQuery = useProduct(productId);
+  const pinToRackMutation = usePinProductToRack();
   const product = productQuery.data;
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
@@ -98,6 +101,26 @@ export function ProductDetailScreen({
       `${product.name}${selectedColor ? ` · Màu ${selectedColor}` : ''}`,
     );
   }, [addItem, mainImageUrl, product, selectedColor]);
+
+  const handleSaveToRack = useCallback(() => {
+    if (!product) {
+      return;
+    }
+
+    void pinToRackMutation
+      .mutateAsync(product.id)
+      .then(() => {
+        Alert.alert('Đã lưu vào Tủ đồ', `${product.name} đã có trong Tủ đồ của bạn.`);
+      })
+      .catch((error: unknown) => {
+        Alert.alert(
+          'Chưa thể lưu vào Tủ đồ',
+          error instanceof ApiError
+            ? error.message
+            : 'Đã xảy ra lỗi. Vui lòng thử lại.',
+        );
+      });
+  }, [pinToRackMutation, product]);
 
   if (!productId) {
     return (
@@ -182,6 +205,14 @@ export function ProductDetailScreen({
           imageUrls={imageUrls}
           productName={product.name}
         />
+        <View className="px-lg pt-lg">
+          <Button
+            title="Lưu vào Tủ đồ"
+            variant="outline"
+            loading={pinToRackMutation.isPending}
+            onPress={handleSaveToRack}
+          />
+        </View>
         <ProductDetailContent
           product={product}
           selectedColor={selectedColor}
