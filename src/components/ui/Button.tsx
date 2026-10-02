@@ -17,6 +17,7 @@ export interface ButtonProps {
   textStyle?: StyleProp<TextStyle>;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  numberOfLines?: number;
 }
 
 const buttonStyle = tva({
@@ -41,14 +42,14 @@ const buttonStyle = tva({
 });
 
 const buttonTextStyle = tva({
-  base: 'font-bold',
+  base: 'font-bold shrink-0',
   variants: {
     variant: {
-      primary: 'text-on-primary',
-      secondary: 'text-on-primary',
+      primary: 'text-primary-foreground',
+      secondary: 'text-primary-foreground',
       outline: 'text-on-surface',
       ghost: 'text-on-surface',
-      danger: 'text-on-primary',
+      danger: 'text-primary-foreground',
     },
     size: {
       sm: 'text-body-sm',
@@ -71,6 +72,7 @@ export const Button: React.FC<ButtonProps> = ({
   textStyle,
   leftIcon,
   rightIcon,
+  numberOfLines = 1,
 }) => {
   const isInteractive = !loading && !disabled;
 
@@ -88,16 +90,17 @@ export const Button: React.FC<ButtonProps> = ({
           color={variant === 'outline' || variant === 'ghost' ? '#5D1C34' : '#FFFFFF'}
         />
       ) : (
-        <View className="flex-row items-center justify-center">
+        <>
           {leftIcon && <View className="mr-sm">{leftIcon}</View>}
           <Text
+            numberOfLines={numberOfLines}
             className={buttonTextStyle({ variant, size, class: textClassName })}
             style={textStyle}
           >
             {title}
           </Text>
           {rightIcon && <View className="ml-sm">{rightIcon}</View>}
-        </View>
+        </>
       )}
     </TouchableOpacity>
   );

@@ -105,6 +105,7 @@ export const ChangePasswordScreen: React.FC<Props> = () => {
             title="Lưu mật khẩu mới"
             onPress={handleSubmit(onSubmit)}
             loading={isSubmitting}
+            textClassName="text-primary-foreground"
           />
         </View>
       </ScrollView>

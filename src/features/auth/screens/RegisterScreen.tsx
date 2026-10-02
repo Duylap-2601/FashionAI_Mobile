@@ -25,14 +25,16 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   });
 
   const onSubmit = async (values: RegisterFormValues) => {
+    const email = values.email.trim();
     try {
       setIsSubmitting(true);
       await register({
         name: values.name.trim(),
-        email: values.email.trim(),
+        email,
         password: values.password,
         confirmPassword: values.confirmPassword,
       });
+      navigation.navigate('VerifyEmail', { email });
     } catch (err: any) {
       Alert.alert('Đăng ký thất bại', err.message || 'Không thể tạo tài khoản');
     } finally {
@@ -53,7 +55,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           </Text>
         </View>
 
-        <View className="mb-xl">
+        <View className="mb-xl w-full">
           <Controller
             control={control}
             name="name"
@@ -118,18 +120,21 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             )}
           />
 
-          <Button
-            className="mt-md"
-            title="Đăng ký"
-            onPress={handleSubmit(onSubmit)}
-            loading={isSubmitting}
-          />
+          <View className="mb-xxl">
+            <Button
+              className="mt-md w-full"
+              title="Đăng ký"
+              onPress={handleSubmit(onSubmit)}
+              loading={isSubmitting}
+              textClassName="text-primary-foreground"
+            />
+          </View>
         </View>
 
         <View className="mt-lg flex-row items-center justify-center">
           <Text className="text-body-sm text-on-surface-variant">Đã có tài khoản? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text className="text-body-sm font-bold text-primary-container">Đăng nhập</Text>
+            <Text className="text-label-lg text-primary-container">Đăng nhập</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

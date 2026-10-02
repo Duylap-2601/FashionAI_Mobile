@@ -13,6 +13,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AuthStackParamList } from '@/navigation/types';
 import { useAuth } from '@/features/auth/hooks/use-auth';
+import { Ionicons } from '@expo/vector-icons';
 import { loginSchema, LoginFormValues } from '@/features/auth/schemas/auth.schema';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -34,11 +35,26 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   });
 
   const onSubmit = async (values: LoginFormValues) => {
+    const email = values.email.trim();
     try {
       setIsSubmitting(true);
-      await login({ email: values.email.trim(), password: values.password });
+      await login({ email, password: values.password });
     } catch (err: any) {
-      Alert.alert('Đăng nhập thất bại', err.message || 'Email hoặc mật khẩu không chính xác');
+      if (err.statusCode === 403) {
+        Alert.alert(
+          'Tài khoản chưa xác thực',
+          err.message || 'Vui lòng xác thực email trước khi đăng nhập.',
+          [
+            { text: 'Đóng', style: 'cancel' },
+            {
+              text: 'Xác thực ngay',
+              onPress: () => navigation.navigate('VerifyEmail', { email }),
+            },
+          ],
+        );
+      } else {
+        Alert.alert('Đăng nhập thất bại', err.message || 'Email hoặc mật khẩu không chính xác');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -109,16 +125,17 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             <Text className="text-label-lg text-primary-container">Quên mật khẩu?</Text>
           </TouchableOpacity>
 
-          <Button
-            title="Đăng nhập"
-            onPress={handleSubmit(onSubmit)}
-            loading={isSubmitting}
-            disabled={isGoogleSubmitting}
-          />
+<Button
+              title="Đăng nhập"
+              onPress={handleSubmit(onSubmit)}
+              loading={isSubmitting}
+              disabled={isGoogleSubmitting}
+              textClassName="text-primary-foreground"
+            />
 
           <View className="my-xl flex-row items-center">
             <View className="h-px flex-1 bg-surface-line" />
-            <Text className="mx-md text-body-sm font-semibold text-outline">HOẶC</Text>
+            <Text className="mx-md text-label-md text-outline">HOẶC</Text>
             <View className="h-px flex-1 bg-surface-line" />
           </View>
 
@@ -128,13 +145,20 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             onPress={handleGoogleLogin}
             loading={isGoogleSubmitting}
             disabled={isSubmitting}
+            leftIcon={
+              <Ionicons
+                name="logo-google"
+                size={20}
+                className="text-primary-container"
+              />
+            }
           />
         </View>
 
         <View className="mt-lg flex-row items-center justify-center">
           <Text className="text-body-sm text-on-surface-variant">Chưa có tài khoản? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text className="text-body-sm font-bold text-primary-container">Đăng ký ngay</Text>
+            <Text className="text-label-lg text-primary-container">Đăng ký ngay</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -5,7 +5,7 @@ export type AuthStackParamList = {
   Register: undefined;
   ForgotPassword: undefined;
   ResetPassword: { token?: string } | undefined;
-  VerifyEmail: { token?: string } | undefined;
+  VerifyEmail: { email: string };
 };
 
 export type ProfileStackParamList = {

@@ -58,7 +58,7 @@ describe('authApi (migrated to the http wrapper)', () => {
       });
     });
 
-    it('register posts name, email and password', async () => {
+    it('register posts name, email and password, and returns only the email', async () => {
       mock.onPost(ENDPOINTS.AUTH.REGISTER).reply((config) => {
         expect(JSON.parse(config.data)).toEqual({
           email: 'a@b.c',
@@ -66,7 +66,7 @@ describe('authApi (migrated to the http wrapper)', () => {
           confirmPassword: 'pw',
           name: 'Lan',
         });
-        return [200, envelope({ ...TOKENS, user: USER })];
+        return [200, envelope({ email: 'a@b.c' })];
       });
 
       const res = await authApi.register({
@@ -75,7 +75,7 @@ describe('authApi (migrated to the http wrapper)', () => {
         confirmPassword: 'pw',
         name: 'Lan',
       });
-      expect(res.user).toEqual(USER);
+      expect(res).toEqual({ email: 'a@b.c' });
     });
 
     it('exchangeOAuthCode posts the authorization code', async () => {
@@ -133,8 +133,12 @@ describe('authApi (migrated to the http wrapper)', () => {
     const cases: [string, () => Promise<unknown>, string][] = [
       ['forgotPassword', () => authApi.forgotPassword('a@b.c'), ENDPOINTS.AUTH.FORGOT_PASSWORD],
       ['resetPassword', () => authApi.resetPassword('tk', 'pw'), ENDPOINTS.AUTH.RESET_PASSWORD],
-      ['verifyEmail', () => authApi.verifyEmail('tk'), ENDPOINTS.AUTH.VERIFY_EMAIL],
-      ['resendVerification', () => authApi.resendVerification(), ENDPOINTS.AUTH.RESEND_VERIFICATION],
+      ['verifyEmail', () => authApi.verifyEmail('a@b.c', '1234'), ENDPOINTS.AUTH.VERIFY_EMAIL],
+      [
+        'resendVerification',
+        () => authApi.resendVerification('a@b.c'),
+        ENDPOINTS.AUTH.RESEND_VERIFICATION,
+      ],
       ['changePassword', () => authApi.changePassword('old', 'new'), ENDPOINTS.AUTH.CHANGE_PASSWORD],
     ];
 
@@ -153,12 +157,14 @@ describe('authApi (migrated to the http wrapper)', () => {
 
       await authApi.forgotPassword('a@b.c');
       await authApi.resetPassword('tk', 'pw-new');
-      await authApi.verifyEmail('tk');
+      await authApi.verifyEmail('a@b.c', '1234');
+      await authApi.resendVerification('a@b.c');
       await authApi.changePassword('old', 'new');
 
       expect(bodies[ENDPOINTS.AUTH.FORGOT_PASSWORD]).toEqual({ email: 'a@b.c' });
       expect(bodies[ENDPOINTS.AUTH.RESET_PASSWORD]).toEqual({ token: 'tk', newPassword: 'pw-new' });
-      expect(bodies[ENDPOINTS.AUTH.VERIFY_EMAIL]).toEqual({ token: 'tk' });
+      expect(bodies[ENDPOINTS.AUTH.VERIFY_EMAIL]).toEqual({ email: 'a@b.c', otp: '1234' });
+      expect(bodies[ENDPOINTS.AUTH.RESEND_VERIFICATION]).toEqual({ email: 'a@b.c' });
       expect(bodies[ENDPOINTS.AUTH.CHANGE_PASSWORD]).toEqual({
         currentPassword: 'old',
         newPassword: 'new',
