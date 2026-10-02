@@ -120,12 +120,15 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             )}
           />
 
-          <Button
-            className="mt-md w-full"
-            title="Đăng ký"
-            onPress={handleSubmit(onSubmit)}
-            loading={isSubmitting}
-          />
+          <View className="mb-xxl">
+            <Button
+              className="mt-md w-full"
+              title="Đăng ký"
+              onPress={handleSubmit(onSubmit)}
+              loading={isSubmitting}
+              textClassName="text-primary-foreground"
+            />
+          </View>
         </View>
 
         <View className="mt-lg flex-row items-center justify-center">

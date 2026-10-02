@@ -13,6 +13,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AuthStackParamList } from '@/navigation/types';
 import { useAuth } from '@/features/auth/hooks/use-auth';
+import { Ionicons } from '@expo/vector-icons';
 import { loginSchema, LoginFormValues } from '@/features/auth/schemas/auth.schema';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -124,12 +125,13 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             <Text className="text-label-lg text-primary-container">Quên mật khẩu?</Text>
           </TouchableOpacity>
 
-          <Button
-            title="Đăng nhập"
-            onPress={handleSubmit(onSubmit)}
-            loading={isSubmitting}
-            disabled={isGoogleSubmitting}
-          />
+<Button
+              title="Đăng nhập"
+              onPress={handleSubmit(onSubmit)}
+              loading={isSubmitting}
+              disabled={isGoogleSubmitting}
+              textClassName="text-primary-foreground"
+            />
 
           <View className="my-xl flex-row items-center">
             <View className="h-px flex-1 bg-surface-line" />
@@ -143,6 +145,13 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             onPress={handleGoogleLogin}
             loading={isGoogleSubmitting}
             disabled={isSubmitting}
+            leftIcon={
+              <Ionicons
+                name="logo-google"
+                size={20}
+                className="text-primary-container"
+              />
+            }
           />
         </View>
 

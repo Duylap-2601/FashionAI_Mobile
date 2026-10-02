@@ -55,35 +55,41 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
       <ScrollView contentContainerClassName="grow justify-center px-xxl py-xxxl">
         <View className="mb-xxxl items-center">
           <Text className="text-xl font-extrabold text-on-surface-strong">Quên mật khẩu</Text>
-          <Text className="mt-sm text-center text-body-sm leading-5 text-on-surface-variant">
+          <Text className="mt-sm text-center text-body-sm leading-relaxed text-on-surface-variant">
             Nhập email của bạn và chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu.
           </Text>
         </View>
 
         <View className="mb-xxl">
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <Input
-                label="Email"
-                placeholder="name@example.com"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.email?.message}
-              />
-            )}
-          />
+          <View className="mb-lg">
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <Input
+                  label="Email"
+                  placeholder="name@example.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.email?.message}
+                />
+              )}
+            />
+          </View>
 
-          <Button
-            className="mt-md"
-            title="Gửi liên kết"
-            onPress={handleSubmit(onSubmit)}
-            loading={isSubmitting}
-          />
+          <View className="mb-xxl">
+            <Button
+              className="mt-md"
+              title="Gửi liên kết"
+              onPress={handleSubmit(onSubmit)}
+              loading={isSubmitting}
+              
+              textClassName="text-primary-foreground"
+            />
+          </View>
 
           <TouchableOpacity
             className="mt-lg min-h-11 items-center justify-center py-sm"

@@ -45,11 +45,11 @@ const buttonTextStyle = tva({
   base: 'font-bold shrink-0',
   variants: {
     variant: {
-      primary: 'text-on-primary',
-      secondary: 'text-on-primary',
+      primary: 'text-primary-foreground',
+      secondary: 'text-primary-foreground',
       outline: 'text-on-surface',
       ghost: 'text-on-surface',
-      danger: 'text-on-primary',
+      danger: 'text-primary-foreground',
     },
     size: {
       sm: 'text-body-sm',
