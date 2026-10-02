@@ -229,6 +229,19 @@ export const HomeScreen: React.FC = () => {
             Thử trang phục với ảnh người thật bằng AI
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          className="min-h-11 flex-1 rounded-xl border border-surface-line bg-surface-lowest p-lg"
+          onPress={() => navigation.navigate("Stylist")}
+          activeOpacity={0.7}
+        >
+          <Text className="mb-sm text-icon-lg">✦</Text>
+          <Text className="mb-1 text-body-lg font-bold text-on-surface">
+            AI Stylist
+          </Text>
+          <Text className="text-body-sm leading-4 text-on-surface-variant">
+            Phân tích màu sắc, vóc dáng và cách phối đồ
+          </Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );

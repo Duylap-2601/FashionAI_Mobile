@@ -10,6 +10,9 @@ import { ProductDetailScreen } from "../features/products/screens/ProductDetailS
 import { CollectionDetailScreen } from "../features/collections/screens/CollectionDetailScreen";
 import { ReviewsScreen } from "../features/reviews/screens/ReviewsScreen";
 import { MyReviewsScreen } from "../features/reviews/screens/MyReviewsScreen";
+import { StylistScreen } from "../features/stylist/screens/StylistScreen";
+import { StylistHistoryScreen } from "../features/stylist/screens/StylistHistoryScreen";
+import { StylistResultScreen } from "../features/stylist/screens/StylistResultScreen";
 import { useAuth } from "../features/auth/hooks/use-auth";
 import { COLORS, FONT_SIZE } from "../constants/theme";
 import { navigationTheme } from "./navigation-theme";
@@ -100,12 +103,49 @@ export const RootNavigator: React.FC = () => {
             />
             <Stack.Screen name="Rack" component={RoutePlaceholderScreen} />
             <Stack.Screen
+              name="Stylist"
+              component={StylistScreen}
+              options={{
+                headerShown: true,
+                title: "AI Stylist",
+                headerBackTitle: "Trang chủ",
+                headerTintColor: COLORS.primaryContainer,
+                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerTitleStyle: {
+                  color: COLORS.onSurface,
+                  fontSize: FONT_SIZE.md,
+                },
+              }}
+            />
+            <Stack.Screen
               name="StylistHistory"
-              component={RoutePlaceholderScreen}
+              component={StylistHistoryScreen}
+              options={{
+                headerShown: true,
+                title: "Lịch sử AI Stylist",
+                headerBackTitle: "AI Stylist",
+                headerTintColor: COLORS.primaryContainer,
+                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerTitleStyle: {
+                  color: COLORS.onSurface,
+                  fontSize: FONT_SIZE.md,
+                },
+              }}
             />
             <Stack.Screen
               name="StylistResult"
-              component={RoutePlaceholderScreen}
+              component={StylistResultScreen}
+              options={{
+                headerShown: true,
+                title: "Kết quả tư vấn",
+                headerBackTitle: "AI Stylist",
+                headerTintColor: COLORS.primaryContainer,
+                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerTitleStyle: {
+                  color: COLORS.onSurface,
+                  fontSize: FONT_SIZE.md,
+                },
+              }}
             />
           </>
         ) : (

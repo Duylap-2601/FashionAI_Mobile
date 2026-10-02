@@ -29,6 +29,7 @@ export type RootStackParamList = {
   Reviews: { productId: string };
   MyReviews: undefined;
   Rack: undefined;
+  Stylist: undefined;
   StylistHistory: undefined;
   StylistResult: { resultId: string };
 };
