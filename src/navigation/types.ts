@@ -27,6 +27,7 @@ export type RootStackParamList = {
   ProductDetail: { productId: string };
   CollectionDetail: { slug: string };
   Reviews: { productId: string };
+  MyReviews: undefined;
   Rack: undefined;
   StylistHistory: undefined;
   StylistResult: { resultId: string };

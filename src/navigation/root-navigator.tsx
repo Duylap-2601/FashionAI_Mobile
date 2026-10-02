@@ -8,8 +8,10 @@ import { MainTabs } from "./main-tabs";
 import { RoutePlaceholderScreen } from "../components/common/RoutePlaceholderScreen";
 import { ProductDetailScreen } from "../features/products/screens/ProductDetailScreen";
 import { CollectionDetailScreen } from "../features/collections/screens/CollectionDetailScreen";
+import { ReviewsScreen } from "../features/reviews/screens/ReviewsScreen";
+import { MyReviewsScreen } from "../features/reviews/screens/MyReviewsScreen";
 import { useAuth } from "../features/auth/hooks/use-auth";
-import { COLORS, SPACING, FONT_SIZE } from "../constants/theme";
+import { COLORS, FONT_SIZE } from "../constants/theme";
 import { navigationTheme } from "./navigation-theme";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -66,7 +68,36 @@ export const RootNavigator: React.FC = () => {
                 },
               }}
             />
-            <Stack.Screen name="Reviews" component={RoutePlaceholderScreen} />
+            <Stack.Screen
+              name="Reviews"
+              component={ReviewsScreen}
+              options={{
+                headerShown: true,
+                title: "Đánh giá sản phẩm",
+                headerBackTitle: "Sản phẩm",
+                headerTintColor: COLORS.primaryContainer,
+                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerTitleStyle: {
+                  color: COLORS.onSurface,
+                  fontSize: FONT_SIZE.md,
+                },
+              }}
+            />
+            <Stack.Screen
+              name="MyReviews"
+              component={MyReviewsScreen}
+              options={{
+                headerShown: true,
+                title: "Đánh giá của tôi",
+                headerBackTitle: "Đánh giá",
+                headerTintColor: COLORS.primaryContainer,
+                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerTitleStyle: {
+                  color: COLORS.onSurface,
+                  fontSize: FONT_SIZE.md,
+                },
+              }}
+            />
             <Stack.Screen name="Rack" component={RoutePlaceholderScreen} />
             <Stack.Screen
               name="StylistHistory"
