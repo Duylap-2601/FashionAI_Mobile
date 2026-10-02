@@ -16,7 +16,6 @@ export function CartScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-lowest">
-      {/* Header */}
       <View className="flex-row items-center px-4 py-3 bg-surface-lowest border-b border-surface-line">
         <Pressable 
           onPress={() => navigation.goBack()}
@@ -26,27 +25,25 @@ export function CartScreen() {
         </Pressable>
         <View className="flex-1 items-center flex-row justify-center gap-1">
           <Text className="text-headline-sm text-on-surface font-semibold">
-            Shopping Ca...
+            Shopping Cart
           </Text>
           <Text className="text-label-md text-on-surface-variant font-medium mt-1">
             ({totalItems} MÓN)
           </Text>
         </View>
-        <View className="w-10 h-10 bg-primary rounded-full" /> {/* Giả lập Avatar/Menu góc phải như ảnh */}
+        <View className="w-10 h-10 bg-primary rounded-full" />
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
-        {/* Danh sách sản phẩm trong giỏ */}
         <View className="px-4 pt-4 flex-col gap-6">
           {items.map((item, index) => (
             <View key={`${item.productId}-${item.variantId}-${index}`} className="flex-row gap-4 pb-6 border-b border-surface-line">
               <View className="w-[100px] h-[120px] rounded-xl overflow-hidden bg-surface relative">
-                {item.image ? (
-                  <Image source={{ uri: item.image }} className="w-full h-full" contentFit="cover" />
+                {item.imageUrl ? (
+                  <Image source={{ uri: item.imageUrl }} className="w-full h-full" contentFit="cover" />
                 ) : (
-                  <View className="w-full h-full bg-surface-container" /> // Placeholder
+                  <View className="w-full h-full bg-surface-container" />
                 )}
-                {/* Tag "Vừa dáng" hoặc "Chỉ còn 2 chiếc" giả lập */}
                 {index === 0 && (
                   <View className="absolute top-0 left-0 bg-primary px-2 py-1 rounded-br-lg">
                     <Text className="text-on-primary text-[10px] font-bold">Vừa dáng</Text>
@@ -58,7 +55,7 @@ export function CartScreen() {
                 <View>
                   <View className="flex-row justify-between items-start">
                     <Text className="text-body-md text-on-surface font-semibold flex-1 pr-2" numberOfLines={2}>
-                      {item.title}
+                      {item.productName}
                     </Text>
                     <Pressable onPress={() => removeItem(item.productId, item.variantId)} className="p-1 -mr-2 -mt-1 active:opacity-50">
                       <X size={20} color="#666" />
@@ -72,7 +69,6 @@ export function CartScreen() {
                     <Text className="text-price-sm text-primary font-bold">
                       {formatCurrency ? formatCurrency(item.price) : `${item.price.toLocaleString('vi-VN')}đ`}
                     </Text>
-                    {/* Giả lập giá gốc */}
                     {index === 1 && (
                       <Text className="text-label-sm text-on-surface-variant line-through">
                         950.000đ
@@ -110,7 +106,6 @@ export function CartScreen() {
           ))}
         </View>
 
-        {/* Section: Hoàn thiện set Gợi ý từ Stylist */}
         <View className="mt-8 px-4">
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-headline-sm text-on-surface font-bold">Hoàn thiện set</Text>
@@ -118,7 +113,6 @@ export function CartScreen() {
           </View>
           
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-4 -mx-4 px-4 pb-4">
-            {/* Suggestion Card 1 */}
             <View className="bg-white p-3 rounded-xl shadow-sm w-[200px] border border-surface-line flex-row items-center gap-3">
                <View className="w-14 h-14 bg-surface rounded-md" />
                <View className="flex-1">
@@ -127,7 +121,6 @@ export function CartScreen() {
                  <Text className="text-price-sm text-primary font-bold mt-1">320.000đ</Text>
                </View>
             </View>
-            {/* Suggestion Card 2 */}
             <View className="bg-white p-3 rounded-xl shadow-sm w-[200px] border border-surface-line flex-row items-center gap-3">
                <View className="w-14 h-14 bg-surface rounded-md" />
                <View className="flex-1">
@@ -139,7 +132,6 @@ export function CartScreen() {
           </ScrollView>
         </View>
 
-        {/* Summary */}
         <View className="mx-4 mt-6 bg-surface-lowest border border-surface-line rounded-xl p-4 mb-8">
           <View className="flex-row justify-between mb-3">
             <Text className="text-body-md text-on-surface-variant">Tạm tính ({totalItems} món)</Text>
@@ -157,7 +149,6 @@ export function CartScreen() {
         </View>
       </ScrollView>
 
-      {/* Sticky Footer Checkout */}
       <View className="absolute bottom-0 left-0 right-0 bg-surface-lowest px-4 py-4 border-t border-surface-line flex-row items-center justify-between pb-8 shadow-hard-4">
         <View>
           <Text className="text-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Tổng tạm tính</Text>
