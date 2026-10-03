@@ -1,15 +1,27 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { AuthStackParamList } from '@/navigation/types';
-import { useAuth } from '@/features/auth/hooks/use-auth';
-import { registerSchema, RegisterFormValues } from '@/features/auth/schemas/auth.schema';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
+import { AuthStackParamList } from "@/navigation/types";
+import { useAuth } from "@/features/auth/hooks/use-auth";
+import {
+  registerSchema,
+  RegisterFormValues,
+} from "@/features/auth/schemas/auth.schema";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+
+type Props = NativeStackScreenProps<AuthStackParamList, "Register">;
 
 export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const { register } = useAuth();
@@ -21,7 +33,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
 
   const onSubmit = async (values: RegisterFormValues) => {
@@ -32,11 +44,10 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         name: values.name.trim(),
         email,
         password: values.password,
-        confirmPassword: values.confirmPassword,
       });
-      navigation.navigate('VerifyEmail', { email });
+      navigation.navigate("VerifyEmail", { email });
     } catch (err: any) {
-      Alert.alert('Đăng ký thất bại', err.message || 'Không thể tạo tài khoản');
+      Alert.alert("Đăng ký thất bại", err.message || "Không thể tạo tài khoản");
     } finally {
       setIsSubmitting(false);
     }
@@ -44,12 +55,14 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-surface"
     >
       <ScrollView contentContainerClassName="grow justify-center px-xxl py-xxxl">
         <View className="mb-xxl items-center">
-          <Text className="text-xxxl font-extrabold text-on-surface-strong">Tạo tài khoản</Text>
+          <Text className="text-xxxl font-extrabold text-on-surface-strong">
+            Tạo tài khoản
+          </Text>
           <Text className="mt-xs text-center text-body-sm text-on-surface-variant">
             Bắt đầu phong cách mới cùng FashionAI
           </Text>
@@ -132,9 +145,13 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         <View className="mt-lg flex-row items-center justify-center">
-          <Text className="text-body-sm text-on-surface-variant">Đã có tài khoản? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text className="text-label-lg text-primary-container">Đăng nhập</Text>
+          <Text className="text-body-sm text-on-surface-variant">
+            Đã có tài khoản?{" "}
+          </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+            <Text className="text-label-lg text-primary-container">
+              Đăng nhập
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

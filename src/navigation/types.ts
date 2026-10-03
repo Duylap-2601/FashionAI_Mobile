@@ -24,4 +24,11 @@ export type MainTabParamList = {
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabParamList>;
+  ProductDetail: { productId: string };
+  CollectionDetail: { slug: string };
+  Reviews: { productId: string };
+  MyReviews: undefined;
+  Stylist: undefined;
+  StylistHistory: undefined;
+  StylistResult: { resultId: string };
 };
