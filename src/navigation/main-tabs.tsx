@@ -195,6 +195,7 @@ export const MainTabs: React.FC = () => {
           title: 'Tài khoản',
           tabBarLabel: 'Tài khoản',
           headerShown: false,
+          popToTopOnBlur: true,
           tabBarIcon: ({ focused }) => (
             <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />
           ),
