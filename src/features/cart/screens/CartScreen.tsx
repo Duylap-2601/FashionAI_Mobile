@@ -156,11 +156,15 @@ export function CartScreen() {
              {formatCurrency ? formatCurrency(totalPrice) : `${totalPrice.toLocaleString('vi-VN')}đ`}
           </Text>
         </View>
-        <Pressable className="bg-primary px-6 py-4 rounded-xl flex-row items-center justify-center gap-2 active:bg-primary-strong">
-          <Text className="text-on-primary text-label-lg font-bold">
+        <Pressable 
+          className={`px-6 py-4 rounded-xl flex-row items-center justify-center gap-2 ${totalItems > 0 ? 'bg-primary active:bg-primary-strong' : 'bg-surface-line'}`}
+          disabled={totalItems === 0}
+          onPress={() => (navigation as any).navigate('Checkout')}
+        >
+          <Text className={`text-label-lg font-bold ${totalItems > 0 ? 'text-on-primary' : 'text-on-surface-variant'}`}>
             Thanh toán ({totalItems})
           </Text>
-          <ArrowRight size={18} color="#FFF" />
+          <ArrowRight size={18} color={totalItems > 0 ? "#FFF" : "#999"} />
         </Pressable>
       </View>
     </SafeAreaView>

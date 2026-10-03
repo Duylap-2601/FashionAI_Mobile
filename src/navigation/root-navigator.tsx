@@ -9,6 +9,7 @@ import { useAuth } from '../features/auth/hooks/use-auth';
 import { COLORS, SPACING, FONT_SIZE } from '../constants/theme';
 import { navigationTheme } from './navigation-theme';
 import { CartScreen } from '../features/cart/screens/CartScreen';
+import { CheckoutScreen } from '../features/checkout/screens/CheckoutScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -33,6 +34,7 @@ export const RootNavigator: React.FC = () => {
           <Stack.Group>
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen name="Cart" component={CartScreen} options={{ presentation: 'modal' }} />
+            <Stack.Screen name="Checkout" component={CheckoutScreen} />
           </Stack.Group>
         ) : (
           <Stack.Screen name="Auth" component={AuthStack} />

@@ -26,4 +26,5 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabParamList>;
   Cart: undefined;
+  Checkout: undefined;
 };
