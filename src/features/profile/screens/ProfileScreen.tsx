@@ -33,16 +33,18 @@ export const ProfileScreen: React.FC = () => {
   const renderAvatar = () => {
     if (user?.avatarUrl) {
       return (
-        <Image
-          source={{ uri: user.avatarUrl }}
-          className="h-avatar w-avatar rounded-full"
-          style={{ width: 80, height: 80 }}
-        />
+        <View className="mb-4 h-avatar w-avatar items-center justify-center rounded-full bg-primary-container overflow-hidden">
+          <Image
+            source={{ uri: user.avatarUrl }}
+            className="h-full w-full"
+            style={{ width: 80, height: 80 }}
+          />
+        </View>
       );
     }
     return (
-      <View className="h-avatar w-avatar items-center justify-center rounded-full bg-primary-container">
-        <Text className="text-xxl font-extrabold text-on-primary">
+      <View className="mb-4 h-avatar w-avatar items-center justify-center rounded-full bg-primary-container" style={{ width: 80, height: 80 }}>
+        <Text className="text-[32px] font-extrabold text-on-primary">
           {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
         </Text>
       </View>
@@ -51,67 +53,82 @@ export const ProfileScreen: React.FC = () => {
 
   return (
     <>
-      <ScrollView className="flex-1 bg-background" contentContainerClassName="p-xl">
-        <View className="mb-xl items-center rounded-xl border border-surface-line bg-surface-lowest p-xxl shadow-sm">
+      <ScrollView className="flex-1 bg-surface-lowest" contentContainerStyle={{ padding: 16 }}>
+        {/* Avatar Card */}
+        <View className="mb-6 items-center rounded-xl border border-surface-line bg-white p-6 shadow-sm">
           {renderAvatar()}
-          <Text className="text-xl font-bold text-on-surface">
+          <Text className="text-headline-md font-bold text-on-surface">
             {user?.name || 'Người dùng FashionAI'}
           </Text>
-          <Text className="mt-1 text-body-sm text-on-surface-variant">{user?.email}</Text>
-          <View className="mt-md rounded-full border border-surface-line bg-surface-low px-md py-xs">
-            <Text className="text-body-sm font-semibold text-primary-container">
+          <Text className="mt-1 text-body-md text-on-surface-variant">{user?.email}</Text>
+          <View className="mt-4 rounded-full border border-surface-line bg-surface-low px-4 py-1">
+            <Text className="text-label-md font-semibold text-primary">
               Gói thành viên: {user?.tier || 'FREE'}
             </Text>
           </View>
         </View>
 
-        <View className="mb-xl">
-          <Text className="mb-sm text-body-lg font-bold text-on-surface">
+        <View className="mb-6">
+          <Text className="mb-3 text-headline-sm font-bold text-on-surface">
+            Hồ sơ & Cơ thể
+          </Text>
+          <TouchableOpacity
+            className="min-h-11 flex-row items-center justify-between rounded-lg border border-surface-line bg-white p-4 shadow-sm"
+            onPress={() => navigation.navigate('Measurements')}
+          >
+            <Text className="text-body-lg font-semibold text-on-surface">Số đo cơ thể</Text>
+            <Text className="text-headline-sm text-on-surface-variant">›</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View className="mb-6">
+          <Text className="mb-3 text-headline-sm font-bold text-on-surface">
             Tài khoản & Thiết lập
           </Text>
 
-          <View className="rounded-lg border border-surface-line bg-surface-lowest p-lg shadow-sm">
-            <View className="flex-row justify-between py-xs">
-              <Text className="text-body-sm text-on-surface-variant">Vai trò</Text>
-              <Text className="text-body-sm font-semibold text-on-surface">
+          <View className="rounded-lg border border-surface-line bg-white p-4 shadow-sm mb-3">
+            <View className="flex-row justify-between py-1">
+              <Text className="text-body-lg text-on-surface-variant">Vai trò</Text>
+              <Text className="text-body-lg font-semibold text-on-surface">
                 {user?.role || 'Khách hàng'}
               </Text>
             </View>
           </View>
 
           <TouchableOpacity
-            className="mt-md min-h-11 flex-row items-center justify-between rounded-lg border border-surface-line bg-surface-lowest p-lg shadow-sm"
+            className="min-h-11 flex-row items-center justify-between rounded-lg border border-surface-line bg-white p-4 shadow-sm"
             onPress={() => navigation.navigate('ChangePassword')}
           >
-            <Text className="text-body-sm font-semibold text-on-surface">Đổi mật khẩu</Text>
+            <Text className="text-body-lg font-semibold text-on-surface">Đổi mật khẩu</Text>
             <Text className="text-headline-sm text-on-surface-variant">›</Text>
           </TouchableOpacity>
         </View>
 
-<TouchableOpacity
-          className="mt-md min-h-11 items-center rounded-lg border border-primary-container bg-primary-container py-lg"
+        {/* Nút Đăng xuất */}
+        <TouchableOpacity
+          className="mt-4 min-h-11 items-center rounded-xl border border-danger bg-danger/10 py-3"
           onPress={() => {
             setLogoutError('');
             setShowLogoutModal(true);
           }}
         >
-          <Text className="text-body-lg font-bold text-primary-foreground">Đăng xuất</Text>
+          <Text className="text-body-lg font-bold text-danger">Đăng xuất</Text>
         </TouchableOpacity>
       </ScrollView>
 
-<FeedbackModal
+      <FeedbackModal
         visible={showLogoutModal}
         onClose={() => {
           if (!isLoggingOut) {
-setShowLogoutModal(false);
-          setLogoutError('');
-        }
+            setShowLogoutModal(false);
+            setLogoutError('');
+          }
         }}
         type="warning"
         customIcon={
-          <Ionicons name="log-out-outline" size={32} className="text-primary-foreground" />
+          <Ionicons name="log-out-outline" size={32} className="text-danger" />
         }
-        iconBgClassName="bg-primary-soft"
+        iconBgClassName="bg-danger/10"
         title="Đăng xuất"
         message={
           logoutError || 'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?'

@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IOrderItem } from '@/features/orders/types/order';
 
 interface CartState {
@@ -15,8 +17,10 @@ interface CartState {
   getTotalPrice: () => number;
 }
 
-export const useCartStore = create<CartState>((set, get) => ({
-  items: [],
+export const useCartStore = create<CartState>()(
+  persist(
+    (set, get) => ({
+      items: [],
 
   addItem: (newItem) => {
     set((state) => {
@@ -84,6 +88,12 @@ export const useCartStore = create<CartState>((set, get) => ({
   getTotalPrice: () => {
     return get().items.reduce((acc, item) => acc + item.total, 0);
   },
-}));
+    }),
+    {
+      name: 'fashionai-cart-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+    }
+  )
+);
 
 export default useCartStore;
