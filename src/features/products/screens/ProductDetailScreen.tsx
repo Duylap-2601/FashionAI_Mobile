@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -39,7 +39,7 @@ type ProductDetailScreenProps = NativeStackScreenProps<
 >;
 
 function getInitialColor(
-  colors?: Array<{ name: string }> | null,
+  colors?: { name: string }[] | null,
   color?: string | null,
 ): string | null {
   const firstColor = colors?.find((item) => item.name.trim())?.name.trim();
@@ -55,11 +55,14 @@ export function ProductDetailScreen({
   const productQuery = useProduct(productId);
   const pinToRackMutation = usePinProductToRack();
   const product = productQuery.data;
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
-
-  useEffect(() => {
-    setSelectedColor(getInitialColor(product?.colors, product?.color));
-  }, [product?.color, product?.colors, product?.id]);
+  const [colorSelection, setColorSelection] = useState<{
+    productId: string;
+    color: string | null;
+  } | null>(null);
+  const selectedColor =
+    colorSelection && colorSelection.productId === product?.id
+      ? colorSelection.color
+      : getInitialColor(product?.colors, product?.color);
 
   const imageUrls = useMemo(
     () => (product ? getProductImageUrls(product) : []),
@@ -77,6 +80,15 @@ export function ProductDetailScreen({
   const handleReviewsPress = useCallback(() => {
     navigation.navigate('Reviews', { productId });
   }, [navigation, productId]);
+
+  const handleSelectColor = useCallback(
+    (color: string) => {
+      if (product) {
+        setColorSelection({ productId: product.id, color });
+      }
+    },
+    [product],
+  );
 
   const handleTryOn = useCallback(() => {
     navigation.navigate('Main', { screen: 'TryOnTab' });
@@ -218,7 +230,7 @@ export function ProductDetailScreen({
           selectedColor={selectedColor}
           unavailable={unavailable}
           onReviewsPress={handleReviewsPress}
-          onSelectColor={setSelectedColor}
+          onSelectColor={handleSelectColor}
         />
       </ScrollView>
 

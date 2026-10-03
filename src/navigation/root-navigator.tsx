@@ -5,7 +5,6 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { RootStackParamList } from "./types";
 import { AuthStack } from "./auth-stack";
 import { MainTabs } from "./main-tabs";
-import { RoutePlaceholderScreen } from "../components/common/RoutePlaceholderScreen";
 import { ProductDetailScreen } from "../features/products/screens/ProductDetailScreen";
 import { CollectionDetailScreen } from "../features/collections/screens/CollectionDetailScreen";
 import { ReviewsScreen } from "../features/reviews/screens/ReviewsScreen";
@@ -101,7 +100,6 @@ export const RootNavigator: React.FC = () => {
                 },
               }}
             />
-            <Stack.Screen name="Rack" component={RoutePlaceholderScreen} />
             <Stack.Screen
               name="Stylist"
               component={StylistScreen}

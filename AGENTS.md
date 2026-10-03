@@ -116,9 +116,6 @@ Rules:
 - **Axios instance** with baseURL from `ENV.API_URL`
 - **Request interceptor**: Adds `Authorization: Bearer <accessToken>` + `X-Platform: mobile`
 - **Response interceptor**: Auto-refresh on 401 `ACCESS_TOKEN_EXPIRED`, converts BE error envelope to `ApiError`
-<<<<<<< HEAD
-- All API features must use this shared Axios client and must not hardcode backend base URLs.
-=======
 - Do NOT call `api` / `axios` directly from features — go through the HTTP wrapper below
 
 ### HTTP Wrapper (`src/api/http.ts`) — REQUIRED for all feature API calls
@@ -159,7 +156,6 @@ await http.post<AuthResponseData>(ENDPOINTS.AUTH.LOGIN, { email, password });
 // Upload with progress
 await http.upload<ITryOnResult>(ENDPOINTS.TRY_ON.GENERATE, formData, { signal, onProgress: setPercent });
 ```
->>>>>>> origin/main
 
 ### Auth API (`src/features/auth/api/auth.api.ts`)
 | Method | Endpoint | Description |
@@ -354,20 +350,10 @@ src/
 
 ## Naming Conventions
 
-<<<<<<< HEAD
-- **React components and screens**: `PascalCase.tsx` (e.g. `ProductCard.tsx`, `ProductDetailScreen.tsx`)
-- **Hooks**: `useFoo.ts` (e.g. `useProducts.ts`, `useProduct.ts`, `useAuth.ts`)
-- **API modules**: `feature.api.ts` inside the owning feature (e.g. `products.api.ts`, `reviews.api.ts`)
-- **Mappers**: `feature.mapper.ts` (e.g. `product.mapper.ts`)
-- **Zustand stores**: `use-*-store.ts` (e.g. `use-filter-store.ts`)
-- **Type files**: descriptive lowercase domain names (e.g. `product.ts`, `review.ts`, `collection.ts`)
-- **Other folders and non-component files**: use descriptive lowercase names consistent with the surrounding feature.
-=======
 - **Files & folders**: `kebab-case` for non-component files (e.g. `use-auth.ts`, `auth-stack.tsx`); `PascalCase` for component files (screens, `components/ui`, `components/common`)
 - **React components**: `PascalCase` export, `PascalCase` file (e.g. `LoginScreen.tsx`)
 - **Hooks**: file `use-*.ts`, hook `useFoo`
 - **Zustand stores**: file `use-*-store.ts`, hook `useFooStore`
->>>>>>> origin/main
 - **Interfaces**: `I` prefix (`IUser`, `IProduct`, `IOrder`)
 - **Types**: `I` prefix for object shapes; plain `PascalCase` for unions
 - **Enums**: `E` prefix (`ETier`, `EOrderStatus`); prefer `enum` over string unions

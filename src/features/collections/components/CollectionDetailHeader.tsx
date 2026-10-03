@@ -1,13 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
-import {
-  BORDER_RADIUS,
-  COLORS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-  SPACING,
-} from '@/constants/theme';
+import { COLORS, FONT_SIZE, FONT_WEIGHT, SPACING } from '@/constants/theme';
 import type { Collection } from '../types/collection';
 
 interface CollectionDetailHeaderProps {
@@ -20,11 +14,8 @@ export function CollectionDetailHeader({
   productTotal,
 }: CollectionDetailHeaderProps) {
   const imageUrl = collection.coverImages[0] ?? null;
-  const [imageFailed, setImageFailed] = useState(false);
-
-  useEffect(() => {
-    setImageFailed(false);
-  }, [imageUrl]);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const imageFailed = failedImageUrl === imageUrl;
 
   return (
     <View style={styles.container}>
@@ -35,7 +26,7 @@ export function CollectionDetailHeader({
           contentFit="cover"
           transition={180}
           style={styles.hero}
-          onError={() => setImageFailed(true)}
+          onError={() => setFailedImageUrl(imageUrl)}
         />
       ) : (
         <View
@@ -137,4 +128,3 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
 });
-

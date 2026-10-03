@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
@@ -20,11 +20,8 @@ export function CollectionHeroCard({
   onPress,
 }: CollectionHeroCardProps) {
   const imageUrl = collection.coverImages[0] ?? null;
-  const [imageFailed, setImageFailed] = useState(false);
-
-  useEffect(() => {
-    setImageFailed(false);
-  }, [imageUrl]);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const imageFailed = failedImageUrl === imageUrl;
 
   return (
     <Pressable
@@ -39,7 +36,7 @@ export function CollectionHeroCard({
           contentFit="cover"
           transition={180}
           style={StyleSheet.absoluteFill}
-          onError={() => setImageFailed(true)}
+          onError={() => setFailedImageUrl(imageUrl)}
         />
       ) : (
         <View style={[StyleSheet.absoluteFill, styles.placeholder]}>

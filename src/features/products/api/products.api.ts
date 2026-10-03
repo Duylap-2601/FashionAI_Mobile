@@ -1,11 +1,9 @@
-import { api } from '@/api/client';
+import { http } from '@/api/http';
 import { ENDPOINTS } from '@/constants/endpoints';
 import {
+  ApiError,
   ApiPaginatedResponse,
-  ApiPaginatedSuccessResponse,
-  ApiSuccessResponse,
-  unwrap,
-  unwrapPaginated,
+  ApiPaginationMeta,
 } from '@/types/api';
 import { mapBackendProduct } from '../mappers/product.mapper';
 import {
@@ -47,6 +45,37 @@ export const productKeys = {
   detail: (productId: string) => [...productKeys.details(), productId] as const,
 };
 
+function parsePaginationMeta(value: unknown): ApiPaginationMeta {
+  if (!value || typeof value !== 'object') {
+    throw new ApiError(
+      'Dữ liệu phân trang sản phẩm không hợp lệ.',
+      500,
+      'INVALID_PRODUCT_META',
+    );
+  }
+
+  const meta = value as Record<string, unknown>;
+  if (
+    typeof meta.total !== 'number' ||
+    typeof meta.page !== 'number' ||
+    typeof meta.limit !== 'number' ||
+    typeof meta.totalPages !== 'number'
+  ) {
+    throw new ApiError(
+      'Dữ liệu phân trang sản phẩm không hợp lệ.',
+      500,
+      'INVALID_PRODUCT_META',
+    );
+  }
+
+  return {
+    total: meta.total,
+    page: meta.page,
+    limit: meta.limit,
+    totalPages: meta.totalPages,
+  };
+}
+
 export async function getProducts(
   filters: IProductFilter = {},
   signal?: AbortSignal,
@@ -56,15 +85,14 @@ export async function getProducts(
     ...normalizeProductFilters(listFilters),
     ...(page !== undefined ? { page } : {}),
   };
-  const response = await api.get<ApiPaginatedSuccessResponse<BackendProduct[]>>(
+  const result = await http.getPaged<BackendProduct[]>(
     ENDPOINTS.PRODUCTS.LIST,
     { params, signal },
   );
-  const result = unwrapPaginated<BackendProduct[]>(response.data);
 
   return {
     data: result.data.map(mapBackendProduct),
-    meta: result.meta,
+    meta: parsePaginationMeta(result.meta),
   };
 }
 
@@ -77,10 +105,10 @@ export async function getProduct(
     throw new TypeError('Product ID is required');
   }
 
-  const response = await api.get<ApiSuccessResponse<BackendProduct>>(
+  const product = await http.get<BackendProduct>(
     ENDPOINTS.PRODUCTS.DETAIL(normalizedProductId),
     { signal },
   );
 
-  return mapBackendProduct(unwrap<BackendProduct>(response.data));
+  return mapBackendProduct(product);
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -104,27 +104,22 @@ export function ProductFilterModal({
   onClose,
 }: ProductFilterModalProps) {
   const insets = useSafeAreaInsets();
-  const [category, setCategory] = useState<GarmentCategory | null>(null);
-  const [garmentType, setGarmentType] = useState<GarmentType | null>(null);
-  const [color, setColor] = useState('');
-  const [material, setMaterial] = useState('');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-  const [sort, setSort] = useState<ProductSort>('latest');
+  const [category, setCategory] = useState<GarmentCategory | null>(
+    values.category,
+  );
+  const [garmentType, setGarmentType] = useState<GarmentType | null>(
+    values.garmentType,
+  );
+  const [color, setColor] = useState(values.color ?? '');
+  const [material, setMaterial] = useState(values.material ?? '');
+  const [minPrice, setMinPrice] = useState(
+    values.minPrice?.toString() ?? '',
+  );
+  const [maxPrice, setMaxPrice] = useState(
+    values.maxPrice?.toString() ?? '',
+  );
+  const [sort, setSort] = useState<ProductSort>(values.sort);
   const [priceError, setPriceError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!visible) return;
-
-    setCategory(values.category);
-    setGarmentType(values.garmentType);
-    setColor(values.color ?? '');
-    setMaterial(values.material ?? '');
-    setMinPrice(values.minPrice?.toString() ?? '');
-    setMaxPrice(values.maxPrice?.toString() ?? '');
-    setSort(values.sort);
-    setPriceError(null);
-  }, [values, visible]);
 
   const handleReset = () => {
     setCategory(null);

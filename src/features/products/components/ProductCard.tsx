@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
@@ -22,13 +22,10 @@ interface ProductCardProps {
 
 export function ProductCard({ product, cardWidth, onPress }: ProductCardProps) {
   const imageUrl = getProductMainImage(product);
-  const [imageFailed, setImageFailed] = useState(false);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const imageFailed = failedImageUrl === imageUrl;
   const showOriginalPrice =
     product.originalPrice !== null && product.originalPrice > product.price;
-
-  useEffect(() => {
-    setImageFailed(false);
-  }, [imageUrl]);
 
   return (
     <View style={[styles.container, { width: cardWidth }]}>
@@ -44,7 +41,7 @@ export function ProductCard({ product, cardWidth, onPress }: ProductCardProps) {
             contentFit="cover"
             transition={150}
             style={styles.media}
-            onError={() => setImageFailed(true)}
+            onError={() => setFailedImageUrl(imageUrl)}
           />
         ) : (
           <View style={[styles.media, styles.imagePlaceholder]}>

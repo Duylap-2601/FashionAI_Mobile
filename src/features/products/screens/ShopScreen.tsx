@@ -280,14 +280,14 @@ export const ShopScreen: React.FC = () => {
     </View>
   );
 
-  const filterModal = (
+  const filterModal = filtersVisible ? (
     <ProductFilterModal
-      visible={filtersVisible}
+      visible
       values={filterSelection}
       onApply={handleApplyFilters}
       onClose={() => setFiltersVisible(false)}
     />
-  );
+  ) : null;
 
   if (isLoading) {
     return (
