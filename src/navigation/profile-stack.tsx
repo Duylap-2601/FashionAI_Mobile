@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ProfileStackParamList } from './types';
 import { ProfileScreen } from '../features/profile/screens/ProfileScreen';
 import { ChangePasswordScreen } from '../features/auth/screens/ChangePasswordScreen';
+import { MeasurementsScreen } from '../features/measurements/screens/MeasurementsScreen';
 
 // React Navigation's screenOptions/options require plain style objects (no
 // className support), so burgundy/cream tokens are inlined as hex here — see
@@ -43,6 +44,13 @@ export const ProfileStack: React.FC = () => {
             color: COLORS.onSurface,
             fontSize: 18,
           },
+        }}
+      />
+      <Stack.Screen
+        name="Measurements"
+        component={MeasurementsScreen}
+        options={{
+          headerShown: false,
         }}
       />
     </Stack.Navigator>

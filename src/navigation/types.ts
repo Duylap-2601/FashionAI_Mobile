@@ -11,6 +11,7 @@ export type AuthStackParamList = {
 export type ProfileStackParamList = {
   ProfileHome: undefined;
   ChangePassword: undefined;
+  Measurements: undefined;
 };
 
 export type MainTabParamList = {
@@ -24,4 +25,5 @@ export type MainTabParamList = {
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabParamList>;
+  Cart: undefined;
 };
