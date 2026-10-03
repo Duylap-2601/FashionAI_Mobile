@@ -3,6 +3,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "strict": true,
+    "ignoreDeprecations": "5.0",
     "types": ["jest", "node"],
     "paths": {
       "@/*": ["./src/*"]
