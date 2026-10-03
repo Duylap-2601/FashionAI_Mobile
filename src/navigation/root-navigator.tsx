@@ -9,6 +9,7 @@ import { useAuth } from '../features/auth/hooks/use-auth';
 import { COLORS, SPACING, FONT_SIZE } from '../constants/theme';
 import { navigationTheme } from './navigation-theme';
 import { CartScreen } from '../features/cart/screens/CartScreen';
+import { SubscriptionPlansScreen } from '../features/subscription/screens/SubscriptionPlansScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -33,6 +34,11 @@ export const RootNavigator: React.FC = () => {
           <Stack.Group>
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen name="Cart" component={CartScreen} options={{ presentation: 'modal' }} />
+            <Stack.Screen
+              name="SubscriptionPlans"
+              component={SubscriptionPlansScreen}
+              options={{ headerShown: true, title: 'Gói hội viên' }}
+            />
           </Stack.Group>
         ) : (
           <Stack.Screen name="Auth" component={AuthStack} />

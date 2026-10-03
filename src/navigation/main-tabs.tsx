@@ -10,7 +10,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../features/auth/hooks/use-auth';
 import { useCartStore } from '../features/cart/store/use-cart-store';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
-import { TryOnScreen } from '../features/try-on/screens/TryOnScreen';
+import { TryOnStack } from './try-on-stack';
 import { ShopScreen } from '../features/products/screens/ShopScreen';
 import { RackScreen } from '../features/rack/screens/RackScreen';
 import { ProfileStack } from './profile-stack';
@@ -170,10 +170,11 @@ export const MainTabs: React.FC = () => {
       />
       <Tab.Screen
         name="TryOnTab"
-        component={TryOnScreen}
+        component={TryOnStack}
         options={{
           title: 'Virtual Try-On',
           tabBarLabel: 'Thử đồ',
+          headerShown: false,
           tabBarIcon: ({ focused }) => <TryOnTabIcon focused={focused} />,
         }}
       />
