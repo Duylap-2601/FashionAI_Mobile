@@ -1,36 +1,55 @@
 export const COLORS = {
-  surface: '#FBF9F7',
-  background: '#FBF9F7',
-  surfaceLowest: '#FFFFFF',
-  surfaceLow: '#F5F3F1',
-  surfaceContainer: '#EFEDEC',
-  surfaceHigh: '#EAE8E6',
-  surfaceHighest: '#E4E2E0',
-  surfaceLine: '#E5DFD5',
+  surface: "#FBF9F7",
+  background: "#FBF9F7",
+  surfaceLowest: "#FFFFFF",
+  surfaceLow: "#F5F3F1",
+  surfaceContainer: "#EFEDEC",
+  surfaceHigh: "#EAE8E6",
+  surfaceHighest: "#E4E2E0",
+  surfaceLine: "#E5DFD5",
 
-  outlineVariant: '#D7C1C5',
-  outline: '#857276',
+  // Legacy aliases still used by existing Dev 2 / shared UI
+  commerceSurface: "#FBF9F7",
+  surfaceMuted: "#F1F5F9",
 
-  primary: '#41051F',
-  primaryContainer: '#5D1C34',
-  primarySoft: '#FFD9E1',
-  primarySoftStrong: '#FFB1C6',
-  onPrimary: '#FFFFFF',
+  // FashionAI commerce palette. Existing aliases above remain unchanged so
+  // feature work can migrate without restyling unrelated screens.
+  primary: "#41051F",
+  primaryContainer: "#5D1C34",
+  primarySoft: "#FFD9E1",
+  primarySoftStrong: "#FFB1C6",
+  onPrimary: "#FFFFFF",
 
-  onSurface: '#1B1C1B',
-  onSurfaceStrong: '#1A1917',
-  onSurfaceVariant: '#534346',
-  secondary: '#645D5C',
+  // Secondary / tertiary — use new main design-system values
+  secondary: "#645D5C",
+  tertiary: "#705D00",
+  tertiaryFixed: "#FFE173",
 
-  inverseSurface: '#30302F',
-  inverseOnSurface: '#F2F0EE',
+  // Surface content
+  onSurface: "#1B1C1B",
+  onSurfaceStrong: "#1A1917",
+  onSurfaceVariant: "#534346",
 
-  tertiary: '#705D00',
-  tertiaryFixed: '#FFE173',
+  inverseSurface: "#30302F",
+  inverseOnSurface: "#F2F0EE",
 
-  success: '#10B981',
-  warning: '#F59E0B',
-  danger: '#BA1A1A',
+  // Borders / outlines
+  outline: "#857276",
+  outlineVariant: "#D7C1C5",
+
+  textPrimary: "#0f172a",
+  textSecondary: "#64748b",
+  textMuted: "#94a3b8",
+  textInverse: "#ffffff",
+
+  // Legacy border aliases
+  border: "#E2E8F0",
+  borderDark: "#CBD5E1",
+
+  // Status
+  success: "#10B981",
+  warning: "#F59E0B",
+  danger: "#BA1A1A",
 } as const;
 
 export const SPACING = {
@@ -46,7 +65,7 @@ export const SPACING = {
 
 // Be Vietnam Pro 400/500/600/700, embedded at build time by the expo-font plugin in app.json.
 // One family name on iOS and Android, so fontWeight picks the right file.
-export const FONT_FAMILY = 'Be Vietnam Pro';
+export const FONT_FAMILY = "Be Vietnam Pro";
 
 export const FONT_SIZE = {
   xs: 12,
@@ -60,11 +79,11 @@ export const FONT_SIZE = {
 } as const;
 
 export const FONT_WEIGHT = {
-  regular: '400',
-  medium: '500',
-  semibold: '600',
-  bold: '700',
-  heavy: '800',
+  regular: "400",
+  medium: "500",
+  semibold: "600",
+  bold: "700",
+  heavy: "800",
 } as const;
 
 export const BORDER_RADIUS = {
@@ -78,21 +97,21 @@ export const BORDER_RADIUS = {
 
 export const SHADOWS = {
   sm: {
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.04,
     shadowOffset: { width: 0, height: 1 },
     shadowRadius: 3,
     elevation: 1,
   },
   md: {
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 6,
     elevation: 2,
   },
   lg: {
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 12,
