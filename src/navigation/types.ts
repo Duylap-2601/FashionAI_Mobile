@@ -1,4 +1,4 @@
-import { NavigatorScreenParams } from '@react-navigation/native';
+import { NavigatorScreenParams } from "@react-navigation/native";
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -11,6 +11,7 @@ export type AuthStackParamList = {
 export type ProfileStackParamList = {
   ProfileHome: undefined;
   ChangePassword: undefined;
+  Measurements: undefined;
 };
 
 export type MainTabParamList = {
@@ -24,11 +25,15 @@ export type MainTabParamList = {
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabParamList>;
+
   ProductDetail: { productId: string };
   CollectionDetail: { slug: string };
   Reviews: { productId: string };
   MyReviews: undefined;
+
   Stylist: undefined;
   StylistHistory: undefined;
   StylistResult: { resultId: string };
+
+  Cart: undefined;
 };

@@ -1,9 +1,14 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, Pressable, Text, Image } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { MainTabParamList } from './types';
+import { MainTabParamList, RootStackParamList } from './types';
+import { Heart, ShoppingBag } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useAuth } from '../features/auth/hooks/use-auth';
+import { useCartStore } from '../features/cart/store/use-cart-store';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { TryOnScreen } from '../features/try-on/screens/TryOnScreen';
 import { ShopScreen } from '../features/products/screens/ShopScreen';
@@ -61,6 +66,49 @@ const TryOnTabIcon = ({ focused }: { focused: boolean }) => (
   </View>
 );
 
+const HeaderRight = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { user } = useAuth();
+  const totalItems = useCartStore(state => state.getTotalItems());
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16, gap: 16 }}>
+      <Pressable onPress={() => {}}>
+        <Heart size={24} color={COLORS.onSurface} />
+      </Pressable>
+      
+      <Pressable onPress={() => navigation.navigate('Cart')} style={{ position: 'relative' }}>
+        <ShoppingBag size={24} color={COLORS.onSurface} />
+        {totalItems > 0 && (
+          <View style={{
+            position: 'absolute', top: -6, right: -6, 
+            backgroundColor: '#C81E51', 
+            borderRadius: 10, minWidth: 18, height: 18, paddingHorizontal: 4,
+            justifyContent: 'center', alignItems: 'center',
+            borderWidth: 1.5, borderColor: COLORS.surface
+          }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: 'bold' }}>
+              {totalItems > 99 ? '99+' : totalItems}
+            </Text>
+          </View>
+        )}
+      </Pressable>
+      
+      <Pressable onPress={() => navigation.navigate('Main', { screen: 'ProfileTab' } as any)}>
+        {user?.avatarUrl ? (
+          <Image source={{ uri: user.avatarUrl }} style={{ width: 30, height: 30, borderRadius: 15 }} />
+        ) : (
+          <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: COLORS.surfaceContainer, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ fontSize: 13, fontWeight: 'bold', color: COLORS.onSurfaceVariant }}>
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+            </Text>
+          </View>
+        )}
+      </Pressable>
+    </View>
+  );
+};
+
 export const MainTabs: React.FC = () => {
   const insets = useSafeAreaInsets();
 
@@ -77,6 +125,7 @@ export const MainTabs: React.FC = () => {
           color: COLORS.onSurface,
           fontSize: 18,
         },
+        headerRight: () => <HeaderRight />,
         tabBarActiveTintColor: COLORS.primaryContainer,
         tabBarInactiveTintColor: COLORS.onSurfaceVariant,
         tabBarStyle: {
@@ -146,6 +195,7 @@ export const MainTabs: React.FC = () => {
           title: 'Tài khoản',
           tabBarLabel: 'Tài khoản',
           headerShown: false,
+          popToTopOnBlur: true,
           tabBarIcon: ({ focused }) => (
             <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />
           ),
