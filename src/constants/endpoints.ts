@@ -22,7 +22,7 @@ export const ENDPOINTS = {
   COLLECTIONS: {
     PUBLISHED: '/collections/published',
     DETAIL: (slug: string) => `/collections/${slug}`,
-    PRODUCTS: (collectionId: string | number) => `/collections/${collectionId}/products`,
+    PRODUCTS: (collectionId: string) => `/collections/${collectionId}/products`,
   },
   PRODUCTS: {
     LIST: '/products',

@@ -4,7 +4,7 @@ export interface User {
   name: string;
   avatarUrl?: string | null;
   role?: string;
-  tier?: 'FREE' | 'MEMBER' | 'VIP';
+  tier?: "FREE" | "MEMBER" | "VIP";
   isVerified?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -34,7 +34,6 @@ export interface LoginDto {
 export interface RegisterDto {
   email: string;
   password: string;
-  confirmPassword: string;
   name: string;
 }
 

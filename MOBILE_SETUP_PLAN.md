@@ -30,39 +30,42 @@ Cấu trúc thư mục đề xuất:
 src/
   api/
     client.ts           # axios instance + interceptor refresh
-    auth.api.ts
-    products.api.ts
-    tryOn.api.ts
-    stylist.api.ts
-    orders.api.ts
-    payments.api.ts
-    notifications.api.ts
-  auth/
-    AuthContext.tsx      # lưu accessToken, user, hàm login/logout
-    useAuth.ts
-    secureStorage.ts
+  features/
+    auth/
+      api/auth.api.ts
+      context/AuthContext.tsx
+      hooks/useAuth.ts
+      storage/secureStorage.ts
+    products/
+      api/products.api.ts
+      types/product.ts
+    collections/
+      api/collections.api.ts
+      types/collection.ts
+    reviews/
+      api/reviews.api.ts
+      types/review.ts
+    stylist/
+      api/stylist.api.ts
+    try-on/
+      api/try-on.api.ts
+    orders/
+      api/orders.api.ts
   navigation/
     RootNavigator.tsx
     AuthStack.tsx
     MainTabs.tsx
-  screens/
-    auth/ (Login, Register, ForgotPassword)
-    home/
-    tryOn/
-    stylist/
-    chat/
-    products/
-    orders/
-    profile/
   realtime/
     socket.ts            # kết nối namespace '/' và '/chat'
-  types/                  # đồng bộ với DTO/response BE
+  types/                  # chỉ generic API envelopes/shared types thực sự dùng chung
   constants/
     endpoints.ts
     aiActions.ts          # TRY_ON, STYLIST, CHATBOT quota keys
   config/
     env.ts                # đọc EXPO_PUBLIC_API_URL...
 ```
+
+`src/api/` chỉ dành cho HTTP infrastructure dùng chung. Business API, domain types, hooks và UI phải nằm trong feature sở hữu dưới `src/features/<feature>/`.
 
 ---
 
@@ -138,7 +141,7 @@ Xóa token khỏi secure storage sau khi gọi thành công (hoặc thất bại
 ```typescript
 // src/api/client.ts
 import axios from 'axios';
-import { getTokens, setTokens, clearTokens } from '../auth/secureStorage';
+import { getTokens, setTokens, clearTokens } from '@/features/auth/storage/secureStorage';
 
 export const api = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
