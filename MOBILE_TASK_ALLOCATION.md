@@ -100,8 +100,8 @@
    - `GET /collections/:slug`: Chi tiết bộ sưu tập (hình ảnh concept, mô tả xu hướng).
    - `GET /collections/:collectionId/products`: Danh sách sản phẩm thuộc bộ sưu tập.
 3. **Danh mục sản phẩm (`products.controller.ts` — 8 endpoints):**
-   - `GET /products`: Danh sách sản phẩm hỗ trợ tìm kiếm (`search`), lọc danh mục (`category`), khoảng giá (`minPrice`, `maxPrice`), màu, size, sắp xếp, phân trang (`page`, `limit`).
-   - `GET /products/:id`: Chi tiết sản phẩm, danh sách biến thể (Size/Màu), số lượng tồn kho.
+   - `GET /products`: Danh sách sản phẩm hỗ trợ tìm kiếm (`search`), lọc danh mục (`category`), loại trang phục (`garmentType`), màu, chất liệu, khoảng giá (`minPrice`, `maxPrice`), trạng thái, sắp xếp và phân trang (`page`, `limit`).
+   - `GET /products/:id`: Chi tiết sản phẩm may đo, màu sắc và số lượng tồn kho.
    - `GET /products/:id/reviews/stats`: Tổng điểm đánh giá sao và số lượt review.
 4. **Hệ thống đánh giá sản phẩm (`reviews.controller.ts` — 11 endpoints):**
    - `GET /products/:productId/reviews`: Danh sách đánh giá của sản phẩm (hỗ trợ lọc theo số sao, có kèm ảnh).
@@ -134,9 +134,9 @@
 - [ ] Dựng màn hình Home: Tích hợp Quota Card, Collection Hero Banner, Hot Deals.
 - [ ] Dựng màn hình Bộ sưu tập (Collections): Danh sách Lookbook & danh sách sản phẩm theo collection.
 - [ ] Dựng màn hình Danh mục sản phẩm (Product List): Grid 2 cột, Infinite Scroll, Thanh tìm kiếm debounce.
-- [ ] Dựng Modal Bộ lọc sản phẩm (Filter Modal: Danh mục, Khoảng giá, Size, Màu).
-- [ ] Dựng màn hình Chi tiết sản phẩm: Image Carousel (`expo-image`), chọn Size/Màu, nút "Thử đồ", nút "Thêm vào giỏ".
-- [ ] Dựng Tab Reviews: Thống kê rating, danh sách review, Modal viết đánh giá kèm upload ảnh.
+- [ ] Dựng Modal Bộ lọc sản phẩm (Filter Modal: Danh mục, loại trang phục, khoảng giá, màu, chất liệu).
+- [ ] Dựng màn hình Chi tiết sản phẩm: Image Carousel (`expo-image`), chọn màu, nút "Thử đồ", nút "Thêm vào giỏ".
+- [ ] Dựng Tab Reviews: Thống kê rating, danh sách review, Modal viết đánh giá với danh sách URL ảnh theo contract hiện tại.
 - [ ] Dựng màn hình AI Stylist: Form tư vấn theo ngữ cảnh + Hiển thị Card set đồ phối sẵn.
 - [ ] Dựng màn hình Tủ đồ cá nhân (Rack) + Nút chuyển đồ nhanh sang màn hình Try-On của Dev 1.
 
@@ -154,7 +154,7 @@
    - `GET /shipping/locations`: Cây địa giới hành chính.
    - `POST /shipping/calculate-fee`: Tính toán phí vận chuyển thực tế từ dịch vụ GHN dựa trên địa chỉ nhận hàng và trọng lượng.
 2. **Giỏ hàng & Đơn hàng (`orders.controller.ts` — 14 endpoints):**
-   - Quản lý giỏ hàng phía Client bằng Zustand (lưu Local Storage/AsyncStorage, lưu size/color/quantity).
+   - Quản lý giỏ hàng phía Client bằng Zustand (lưu Local Storage/AsyncStorage, lưu productId/color/quantity).
    - `POST /orders/quote`: Preview đơn hàng trước khi chốt: tính tổng tiền sản phẩm, tiền ship, áp mã giảm giá để hiển thị cho khách kiểm tra.
    - `POST /orders`: Tạo đơn hàng chính thức.
    - `GET /orders`: Danh sách đơn hàng của tôi (lọc theo tab: Chờ thanh toán, Đang xử lý, Đang giao, Đã giao, Đã hủy).
@@ -178,7 +178,7 @@
    - `PUT /users/me`: Cập nhật thông tin cá nhân.
    - `GET /users/me/measurements`: Lấy số đo cơ thể đã lưu.
    - `GET /users/me/measurements/completeness`: Độ hoàn thiện hồ sơ số đo (%).
-   - `PUT /users/me/measurements`: Cập nhật số đo (chiều cao, cân nặng, vòng ngực, vòng eo, vòng mông) — phục vụ thuật toán gợi ý size sản phẩm và mô hình 3D.
+   - `PUT /users/me/measurements`: Cập nhật số đo (chiều cao, cân nặng, vòng ngực, vòng eo, vòng mông) — phục vụ quy trình may đo và mô hình 3D.
    - `GET /users/me/quota`: Lấy thông tin chi tiết hạn mức AI hôm nay (`TRY_ON`, `STYLIST`, `CHATBOT`).
 
 #### B. Nguồn tham chiếu từ Web (`fashionai-frontend`):
@@ -231,13 +231,13 @@ gantt
 
 ### 🔹 Sprint 2: AI & Giao dịch cốt lõi (Tuần 3 - 4)
 - **Dev 1**: Luồng Virtual Try-On (chọn ảnh người + ảnh đồ, gọi `POST /try-on`, màn History xem kết quả).
-- **Dev 2**: Màn Chi tiết sản phẩm (Product Detail Carousel, chọn Size/Màu) + Đánh giá Reviews + Màn AI Stylist tư vấn phối đồ.
+- **Dev 2**: Màn Chi tiết sản phẩm (Product Detail Carousel, chọn màu) + Đánh giá Reviews + Màn AI Stylist tư vấn phối đồ.
 - **Dev 3**: Checkout đặt hàng (chọn địa chỉ Tỉnh/Huyện/Xã, tính phí ship GHN) + Tích hợp mở cổng thanh toán SePay + Lịch sử đơn hàng.
 > 🎯 **Mục tiêu nghiệm thu Sprint 2**: Thực hiện thử đồ AI thật trên điện thoại và hoàn tất 1 đơn hàng test thanh toán qua SePay.
 
 ### 🔹 Sprint 3: Tính năng nâng cao, Realtime & Tối ưu (Tuần 5)
 - **Dev 1**: AI Chatbot streaming qua WebSocket `/chat` + Live Try-On Video session + Trung tâm thông báo.
-- **Dev 2**: Bộ sưu tập thời trang (Collections) + Quản lý Tủ đồ cá nhân (Rack) + Đánh giá kèm upload ảnh thực tế.
+- **Dev 2**: Bộ sưu tập thời trang (Collections) + Quản lý Tủ đồ cá nhân (Rack) + Đánh giá hỗ trợ URL ảnh theo contract backend.
 - **Dev 3**: Mua/nâng cấp Gói VIP Subscription để mở rộng quota AI + Màn hình Tracking đơn hàng chi tiết.
 > 🎯 **Mục tiêu nghiệm thu Sprint 3**: Toàn bộ luồng app hoàn thiện, không lỗi TypeScript (`npx tsc --noEmit`), chạy mượt trên cả thiết bị iOS & Android thật.
 
@@ -258,9 +258,9 @@ navigation.navigate('TryOnTab', {
 // 2. Thêm đồ từ Product Detail (Dev 2) sang Giỏ hàng (Dev 3)
 useCartStore.getState().addItem({
   productId: product.id,
-  variantId: selectedVariant.id,
+  color: selectedColor,
   quantity: 1,
-  price: selectedVariant.price,
+  price: product.price,
   title: product.name,
   image: product.images[0].url,
 });
@@ -269,26 +269,26 @@ useCartStore.getState().addItem({
 navigation.navigate('SubscriptionPlans');
 ```
 
-### 4.2 Cấu trúc API Services trong thư mục `src/api/`
-Mỗi Dev tạo và quản lý file API riêng để tránh merge conflict:
+### 4.2 Cấu trúc API Services theo feature
+`src/api/` chỉ chứa HTTP client/interceptor dùng chung. Mỗi business API thuộc feature tương ứng dưới `src/features/<feature>/api/`:
 - **Dev 1**:
-  - `src/api/auth.api.ts`
-  - `src/api/tryOn.api.ts`
-  - `src/api/liveTryOn.api.ts`
-  - `src/api/chat.api.ts`
-  - `src/api/notification.api.ts`
+  - `src/features/auth/api/auth.api.ts`
+  - `src/features/try-on/api/try-on.api.ts`
+  - `src/features/try-on/api/live-try-on.api.ts`
+  - `src/features/chat/api/chat.api.ts`
+  - `src/features/notifications/api/notifications.api.ts`
 - **Dev 2**:
-  - `src/api/collections.api.ts`
-  - `src/api/products.api.ts`
-  - `src/api/reviews.api.ts`
-  - `src/api/stylist.api.ts`
-  - `src/api/rack.api.ts`
+  - `src/features/collections/api/collections.api.ts`
+  - `src/features/products/api/products.api.ts`
+  - `src/features/reviews/api/reviews.api.ts`
+  - `src/features/stylist/api/stylist.api.ts`
+  - `src/features/rack/api/rack.api.ts`
 - **Dev 3**:
-  - `src/api/shipping.api.ts`
-  - `src/api/orders.api.ts`
-  - `src/api/payments.api.ts`
-  - `src/api/subscriptions.api.ts`
-  - `src/api/users.api.ts`
+  - `src/features/shipping/api/shipping.api.ts`
+  - `src/features/orders/api/orders.api.ts`
+  - `src/features/payments/api/payments.api.ts`
+  - `src/features/subscription/api/subscriptions.api.ts`
+  - `src/features/profile/api/users.api.ts`
 
 ### 4.3 Quy tắc Git & Tiêu chuẩn mã nguồn
 - Nhánh chính: `main` (Production), `develop` (Integration).
