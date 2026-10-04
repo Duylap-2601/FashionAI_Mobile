@@ -46,6 +46,7 @@
 - Use Vietnamese user-facing copy with proper diacritics. Avoid raw backend/technical terms such as `endpoint`, `payload`, `fallback`, `mock`, `Axios error`, or `500 internal server error` in UI.
 - Mobile actions must not depend on hover behavior. Keep important actions visible and reachable with touch targets around `44x44` or larger.
 - Preserve checkout/order pricing ownership: cart and checkout may display totals returned or verified by backend, but must not submit client-resolved shipping fees or discount amounts as the source of truth.
+- FashionAI products are made-to-measure. Product selection is limited to `productId`, `color`, and `quantity`; body measurements belong exclusively to the measurement and order flow. Do not add standard sizing fields, selectors, filters, or variant identifiers to product flows.
 
 ### Styling Rules — NativeWind + gluestack (REQUIRED)
 
@@ -107,6 +108,9 @@ Rules:
 | **Rack (Wardrobe)** | `src/features/rack/` | `rack.controller.ts` (4 endpoints) | `src/features/rack/*` |
 
 ## API Layer
+
+- `src/api/` is reserved for shared HTTP infrastructure such as the Axios client and interceptors.
+- Business API modules belong to their owning feature under `src/features/<feature>/api/`.
 
 ### HTTP Client (`src/api/client.ts`)
 - **Axios instance** with baseURL from `ENV.API_URL`
@@ -244,11 +248,17 @@ unwrap<T>(response) → T (throws ApiError on failure)
 ## Environment Config (`src/config/env.ts`)
 ```typescript
 ENV = {
-  API_URL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api',
-  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:3000',
+  API_URL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api',
+  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:3001',
   OAUTH_REDIRECT_SCHEME: 'fashionai://auth',
 }
 ```
+
+The standard local backend configuration is `PORT=3001` with `API_PREFIX=api`,
+so use `http://localhost:3001/api` on desktop development. On a physical phone,
+`localhost` refers to the phone itself; set `EXPO_PUBLIC_API_URL` and
+`EXPO_PUBLIC_SOCKET_URL` to the development machine's LAN IP instead. Android
+Emulator may require `10.0.2.2` in place of `localhost`.
 
 ## Realtime (Socket.IO) — Phase 2+
 - **Namespace `/`**: Notifications, `token:expiring`, `token:expired`
@@ -257,10 +267,10 @@ ENV = {
 - **Auth**: `auth: { token: accessToken }`
 - **Reconnect**: `AppState` listener on app foreground
 
-## Image Upload (Try-On / Stylist / Reviews)
-- `expo-image-picker` → `FormData` with `multipart/form-data`
-- BE: `multer` (memory) + Cloudinary, 10MB limit
-- Client: compress/resize with `expo-image-manipulator` before upload
+## Image Upload
+- Try-On and Stylist may use `expo-image-picker` and multipart `FormData` where their backend endpoints support it.
+- Reviews currently accept image URLs as `images?: string[]`; do not invent a Review multipart upload endpoint unless the backend contract changes.
+- For supported multipart flows, the backend uses `multer` (memory) and Cloudinary with a 10MB limit.
 
 ## File Structure
 
