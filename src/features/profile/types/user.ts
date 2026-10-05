@@ -27,11 +27,20 @@ export interface IMeasurement {
   userId?: string;
   height?: number; // cm
   weight?: number; // kg
+  shoulder?: number; // cm
   chest?: number; // cm
   waist?: number; // cm
   hips?: number; // cm
-  shoulder?: number; // cm
+  hip?: number; // alias for hips
+  neck?: number; // cm
+  sleeveLength?: number; // cm
+  shirtLength?: number; // cm
+  thigh?: number; // cm
+  calf?: number; // cm
+  trouserLength?: number; // cm
+  outseam?: number; // cm (alias for trouserLength)
   inseam?: number; // cm
+  underbust?: number; // cm
   bodyType?: string;
   updatedAt?: string;
 }

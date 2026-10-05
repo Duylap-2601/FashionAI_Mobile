@@ -67,6 +67,9 @@
         }
       ],
       "expo-web-browser"
-    ]
+    ],
+    "experiments": {
+      "tsconfigPaths": true
+    }
   }
 }
