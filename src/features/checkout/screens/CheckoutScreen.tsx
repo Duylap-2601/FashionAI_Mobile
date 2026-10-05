@@ -77,7 +77,7 @@ export function CheckoutScreen() {
         ghnDistrictId: selectedDistrict?.id,
         ghnWardCode: selectedWard?.code,
       } : undefined,
-      paymentMethod: paymentMethod === EPaymentMethod.SEPAY ? 'BANK_TRANSFER' : paymentMethod,
+      paymentMethod: 'BANK_TRANSFER',
     }),
     enabled: items.length > 0 && !!hasFullAddress,
   });
@@ -97,9 +97,9 @@ export function CheckoutScreen() {
     mutationFn: (payload: any) => ordersApi.createOrder(payload)
   });
 
-  // Mutation checkout SePay
-  const checkoutSePayMutation = useMutation({
-    mutationFn: (orderId: string | number) => paymentsApi.checkout({ orderId })
+  // Mutation checkout
+  const checkoutPaymentMutation = useMutation({
+    mutationFn: (payload: { orderId: string | number, provider: string }) => paymentsApi.checkout(payload)
   });
 
   const { canOrder, completeness, byCategory } = useMeasurementsCompleteness();
@@ -152,24 +152,29 @@ export function CheckoutScreen() {
         shippingFee,
         totalAmount: displayTotal,
         quoteToken: quoteRes?.quoteToken,
-        paymentMethod: paymentMethod === EPaymentMethod.SEPAY ? 'BANK_TRANSFER' : paymentMethod,
+        paymentMethod: 'BANK_TRANSFER',
       };
 
       const newOrder = await createOrderMutation.mutateAsync(orderPayload);
       const orderId = newOrder.id; // Tùy thuộc vào response thực tế
 
-      if (paymentMethod === EPaymentMethod.COD) {
-        Alert.alert('Thành công', 'Đặt hàng thành công!');
-        // navigation.navigate('OrderSuccess') hoặc xử lý sau
-      } else if (paymentMethod === EPaymentMethod.SEPAY) {
-        // Mở cổng thanh toán SePay thông qua PaymentScreen
-        const checkoutInfo = await checkoutSePayMutation.mutateAsync(orderId);
-        if (checkoutInfo.checkoutUrl) {
-          navigation.navigate('Payment', {
-            checkoutUrl: checkoutInfo.checkoutUrl,
-            provider: 'SEPAY'
-          });
-        }
+      // Mở cổng thanh toán thông qua PaymentScreen
+      const provider = paymentMethod === EPaymentMethod.SEPAY ? 'SEPAY' : 'ZALOPAY';
+      const checkoutInfo = await checkoutPaymentMutation.mutateAsync({ orderId, provider });
+      
+      const url = checkoutInfo.checkoutUrl || checkoutInfo.payUrl;
+      const qrCode = checkoutInfo.qrCode || url; // Fallback to URL if qrCode is missing (ZaloPay SDK handles this)
+      
+      if (url) {
+        navigation.navigate('Payment', {
+          checkoutUrl: url,
+          provider: provider,
+          qrCode: qrCode,
+          orderCode: checkoutInfo.orderCode,
+          totalAmount: displayTotal,
+        });
+      } else {
+        Alert.alert('Lỗi', 'Không lấy được đường dẫn thanh toán.');
       }
     } catch (error: any) {
       const details = error.details ? JSON.stringify(error.details) : '';
@@ -400,18 +405,18 @@ export function CheckoutScreen() {
           </Pressable>
 
           <Pressable 
-            onPress={() => setPaymentMethod(EPaymentMethod.COD)}
-            className={`flex-row items-center p-4 rounded-xl border mb-4 ${paymentMethod === EPaymentMethod.COD ? 'border-primary bg-primary/5' : 'border-surface-line bg-surface'}`}
+            onPress={() => setPaymentMethod(EPaymentMethod.ZALOPAY)}
+            className={`flex-row items-center p-4 rounded-xl border mb-4 ${paymentMethod === EPaymentMethod.ZALOPAY ? 'border-primary bg-primary/5' : 'border-surface-line bg-surface'}`}
           >
-            <View className="w-10 h-10 bg-surface-container rounded-lg items-center justify-center mr-3">
-               <Banknote size={20} color="#666" />
+            <View className="w-10 h-10 bg-blue-50 rounded-lg items-center justify-center mr-3">
+               <Text className="text-blue-600 font-bold text-[10px]">ZaloPay</Text>
             </View>
             <View className="flex-1">
-              <Text className="text-label-md font-bold text-on-surface">Thanh toán khi nhận hàng (COD)</Text>
-              <Text className="text-body-sm text-on-surface-variant mt-1">Trả tiền mặt khi nhận hàng</Text>
+              <Text className="text-label-md font-bold text-on-surface">Ví ZaloPay</Text>
+              <Text className="text-body-sm text-on-surface-variant mt-1">Thanh toán qua ví điện tử ZaloPay</Text>
             </View>
-            <View className={`w-5 h-5 rounded-full border-2 items-center justify-center ${paymentMethod === EPaymentMethod.COD ? 'border-primary' : 'border-surface-line'}`}>
-              {paymentMethod === EPaymentMethod.COD && <View className="w-2.5 h-2.5 rounded-full bg-primary" />}
+            <View className={`w-5 h-5 rounded-full border-2 items-center justify-center ${paymentMethod === EPaymentMethod.ZALOPAY ? 'border-primary' : 'border-surface-line'}`}>
+              {paymentMethod === EPaymentMethod.ZALOPAY && <View className="w-2.5 h-2.5 rounded-full bg-primary" />}
             </View>
           </Pressable>
         </View>
@@ -469,10 +474,10 @@ export function CheckoutScreen() {
         </View>
         <Pressable 
           className={`px-8 py-3.5 rounded-xl flex-row items-center justify-center ${hasFullAddress ? 'bg-primary active:bg-primary-strong' : 'bg-surface-line'}`}
-          disabled={!hasFullAddress || isQuoting || createOrderMutation.isPending || checkoutSePayMutation.isPending}
+          disabled={!hasFullAddress || isQuoting || createOrderMutation.isPending || checkoutPaymentMutation.isPending}
           onPress={handlePlaceOrder}
         >
-          {createOrderMutation.isPending || checkoutSePayMutation.isPending ? (
+          {createOrderMutation.isPending || checkoutPaymentMutation.isPending ? (
             <ActivityIndicator size="small" color="#FFF" />
           ) : (
             <Text className={`text-label-lg font-bold ${hasFullAddress ? 'text-on-primary' : 'text-on-surface-variant'}`}>

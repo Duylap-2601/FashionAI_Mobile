@@ -9,7 +9,7 @@ export enum EOrderStatus {
 
 export enum EPaymentMethod {
   SEPAY = 'SEPAY',
-  COD = 'COD',
+  ZALOPAY = 'ZALOPAY',
   WALLET = 'WALLET',
 }
 

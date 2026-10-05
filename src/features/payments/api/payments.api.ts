@@ -3,10 +3,14 @@ import { ENDPOINTS } from '@/constants/endpoints';
 
 export interface CheckoutPayload {
   orderId: string | number;
+  provider?: string;
 }
 
 export interface CheckoutResponse {
-  checkoutUrl: string;
+  checkoutUrl?: string;
+  payUrl?: string;
+  qrCode?: string;
+  orderCode?: string;
 }
 
 export const paymentsApi = {
