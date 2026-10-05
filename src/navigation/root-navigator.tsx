@@ -18,6 +18,8 @@ import { StylistHistoryScreen } from "../features/stylist/screens/StylistHistory
 import { StylistResultScreen } from "../features/stylist/screens/StylistResultScreen";
 
 import { CartScreen } from "../features/cart/screens/CartScreen";
+import { CheckoutScreen } from "../features/checkout/screens/CheckoutScreen";
+import { PaymentScreen } from "../features/checkout/screens/PaymentScreen";
 
 import { useAuth } from "../features/auth/hooks/use-auth";
 import { COLORS, FONT_SIZE } from "../constants/theme";
@@ -51,6 +53,27 @@ export const RootNavigator: React.FC = () => {
               name="Cart"
               component={CartScreen}
               options={{ presentation: "modal" }}
+            />
+
+            <Stack.Screen
+              name="Checkout"
+              component={CheckoutScreen}
+              options={{ headerShown: false }}
+            />
+
+            <Stack.Screen
+              name="Payment"
+              component={PaymentScreen}
+              options={{
+                headerShown: true,
+                title: "Thanh toán SePay",
+                headerTintColor: COLORS.primaryContainer,
+                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerTitleStyle: {
+                  color: COLORS.onSurface,
+                  fontSize: FONT_SIZE.md,
+                },
+              }}
             />
 
             <Stack.Screen

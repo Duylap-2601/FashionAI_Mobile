@@ -36,4 +36,6 @@ export type RootStackParamList = {
   StylistResult: { resultId: string };
 
   Cart: undefined;
+  Checkout: undefined;
+  Payment: { checkoutUrl: string; provider: string };
 };
