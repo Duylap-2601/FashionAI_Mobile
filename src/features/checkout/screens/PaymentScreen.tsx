@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, SafeAreaView, ActivityIndicator, Text } from 'react-native';
+import { View, ActivityIndicator, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { useRoute, useNavigation } from '@react-navigation/native';
 
@@ -37,10 +38,7 @@ export function PaymentScreen() {
         source = {
           uri: `${urlObj.origin}${urlObj.pathname}`,
           method: 'POST',
-          body: bodyParts.join('&'),
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
+          body: bodyParts.join('&')
         };
       }
     }
