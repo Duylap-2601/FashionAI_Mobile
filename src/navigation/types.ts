@@ -53,4 +53,6 @@ export type RootStackParamList = {
 
   Cart: undefined;
   SubscriptionPlans: undefined;
+  Checkout: undefined;
+  Payment: { checkoutUrl: string; provider: string };
 };
