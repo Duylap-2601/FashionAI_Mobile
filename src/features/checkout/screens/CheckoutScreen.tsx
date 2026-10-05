@@ -7,15 +7,19 @@ import { useNavigation } from '@react-navigation/native';
 import { useCartStore } from '@/features/cart/store/use-cart-store';
 import { formatCurrency } from '@/utils/format';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { shippingApi, Location, WardLocation } from '@/api/shipping.api';
-import { ordersApi } from '@/api/orders.api';
-import { paymentsApi } from '@/api/payments.api';
+import { shippingApi, Location, WardLocation } from '@/features/shipping/api/shipping.api';
+import { ordersApi } from '@/features/orders/api/orders.api';
+import { paymentsApi } from '@/features/payments/api/payments.api';
+import { useMeasurementsCompleteness } from '@/features/measurements/hooks/use-measurements-completeness';
 import * as WebBrowser from 'expo-web-browser';
 import { Alert } from 'react-native';
+import { EPaymentMethod } from '@/features/orders/types/order';
+import { useAuth } from '@/features/auth/hooks/use-auth';
 
 export function CheckoutScreen() {
-  const navigation = useNavigation();
-  const [paymentMethod, setPaymentMethod] = useState<'QR' | 'COD'>('QR');
+  const navigation = useNavigation<any>();
+  const { user } = useAuth();
+  const [paymentMethod, setPaymentMethod] = useState<EPaymentMethod>(EPaymentMethod.SEPAY);
 
   // Lấy danh sách sản phẩm thực từ giỏ hàng
   const { items, getTotalItems } = useCartStore();
@@ -50,33 +54,43 @@ export function CheckoutScreen() {
     enabled: !!selectedDistrict,
   });
 
-  // Tính phí ship tự động
-  const { data: calculateFeeRes, isLoading: isCalculatingFee } = useQuery({
-    queryKey: ['calculateFee', selectedProvince?.id, selectedDistrict?.id, selectedWard?.code],
-    queryFn: () => shippingApi.calculateFee({
-      provinceId: selectedProvince!.id,
-      districtId: selectedDistrict!.id,
-      wardCode: selectedWard!.code,
-      weight: 500, // Giả định đơn hàng nặng 500 gram
-    }),
-    enabled: !!selectedProvince && !!selectedDistrict && !!selectedWard,
-  });
+  const hasFullAddress = selectedProvince && selectedDistrict && selectedWard;
 
-  const shippingFee = calculateFeeRes?.fee || 0;
-
-  // Gọi API lấy báo giá đơn hàng (Quote) để tính tổng tiền
+  // Gọi API lấy báo giá đơn hàng (Quote) để tính tổng tiền và phí ship
   const { data: quoteRes, isLoading: isQuoting } = useQuery({
-    queryKey: ['orderQuote', items, shippingFee],
+    queryKey: ['orderQuote', items, selectedWard?.code],
     queryFn: () => ordersApi.quote({
       items: items.map(i => ({
         productId: i.productId,
-        variantId: i.variantId,
-        quantity: i.quantity
+        color: i.color,
+        quantity: i.quantity,
+        price: i.price
       })),
-      shippingFee,
+      shippingInfo: hasFullAddress ? {
+        name: user?.fullName || 'Người nhận',
+        phone: user?.phone || '0912345678',
+        address: `${selectedWard?.name}, ${selectedDistrict?.name}, ${selectedProvince?.name}`,
+        provinceName: selectedProvince?.name,
+        districtName: selectedDistrict?.name,
+        wardName: selectedWard?.name,
+        ghnProvinceId: selectedProvince?.id,
+        ghnDistrictId: selectedDistrict?.id,
+        ghnWardCode: selectedWard?.code,
+      } : undefined,
+      paymentMethod: paymentMethod === EPaymentMethod.SEPAY ? 'BANK_TRANSFER' : paymentMethod,
     }),
-    enabled: items.length > 0,
+    enabled: items.length > 0 && !!hasFullAddress,
   });
+
+  const shippingFee = quoteRes?.shippingFee ?? 0;
+
+  // Gọi API lấy báo giá đơn hàng (Quote) để tính tổng tiền
+  // Fallback tính toán tại máy (local)
+  const localSubtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const localTotal = localSubtotal + shippingFee;
+
+  const displaySubtotal = quoteRes?.itemsTotal ?? localSubtotal;
+  const displayTotal = quoteRes?.totalAmount ?? localTotal;
 
   // Mutation đặt hàng
   const createOrderMutation = useMutation({
@@ -88,9 +102,31 @@ export function CheckoutScreen() {
     mutationFn: (orderId: string | number) => paymentsApi.checkout({ orderId })
   });
 
+  const { canOrder, completeness, byCategory } = useMeasurementsCompleteness();
+
   const handlePlaceOrder = async () => {
     if (!hasFullAddress) {
       Alert.alert('Lỗi', 'Vui lòng chọn địa chỉ giao hàng');
+      return;
+    }
+    
+    if (completeness && !canOrder) {
+      const missingLabels: string[] = [];
+      completeness.byCategory.forEach((cat: any) => {
+        if (!cat.complete && cat.missing) {
+          cat.missing.forEach((m: any) => {
+            if (!missingLabels.includes(m.label)) missingLabels.push(m.label);
+          });
+        }
+      });
+      
+      const missingText = missingLabels.length > 0 ? `\n\nBạn còn thiếu các số đo: ${missingLabels.join(', ')}` : '';
+      
+      Alert.alert(
+        'Lỗi đặt hàng',
+        `Vui lòng cập nhật đầy đủ số đo cơ thể trong hồ sơ trước khi đặt may.${missingText}`,
+        [{ text: 'Đóng', style: 'cancel' }]
+      );
       return;
     }
 
@@ -98,35 +134,46 @@ export function CheckoutScreen() {
       const orderPayload = {
         items: items.map(i => ({
           productId: i.productId,
-          variantId: i.variantId,
-          quantity: i.quantity
+          color: i.color,
+          quantity: i.quantity,
+          price: i.price,
         })),
+        shippingInfo: {
+          name: user?.fullName || 'Người nhận',
+          phone: user?.phone || '0912345678',
+          address: `${selectedWard?.name}, ${selectedDistrict?.name}, ${selectedProvince?.name}`,
+          provinceName: selectedProvince?.name,
+          districtName: selectedDistrict?.name,
+          wardName: selectedWard?.name,
+          ghnProvinceId: selectedProvince?.id,
+          ghnDistrictId: selectedDistrict?.id,
+          ghnWardCode: selectedWard?.code,
+        },
         shippingFee,
-        paymentMethod,
-        provinceId: selectedProvince?.id,
-        districtId: selectedDistrict?.id,
-        wardCode: selectedWard?.code,
+        totalAmount: displayTotal,
+        quoteToken: quoteRes?.quoteToken,
+        paymentMethod: paymentMethod === EPaymentMethod.SEPAY ? 'BANK_TRANSFER' : paymentMethod,
       };
 
       const newOrder = await createOrderMutation.mutateAsync(orderPayload);
       const orderId = newOrder.id; // Tùy thuộc vào response thực tế
 
-      if (paymentMethod === 'COD') {
+      if (paymentMethod === EPaymentMethod.COD) {
         Alert.alert('Thành công', 'Đặt hàng thành công!');
         // navigation.navigate('OrderSuccess') hoặc xử lý sau
-      } else if (paymentMethod === 'QR') {
-        // Mở cổng thanh toán SePay
+      } else if (paymentMethod === EPaymentMethod.SEPAY) {
+        // Mở cổng thanh toán SePay thông qua PaymentScreen
         const checkoutInfo = await checkoutSePayMutation.mutateAsync(orderId);
         if (checkoutInfo.checkoutUrl) {
-          const result = await WebBrowser.openBrowserAsync(checkoutInfo.checkoutUrl);
-          // Hoặc WebBrowser.openAuthSessionAsync nếu SePay redirect về app qua scheme
-          if (result.type === 'dismiss') {
-             Alert.alert('Thanh toán', 'Bạn đã đóng giao diện thanh toán');
-          }
+          navigation.navigate('Payment', {
+            checkoutUrl: checkoutInfo.checkoutUrl,
+            provider: 'SEPAY'
+          });
         }
       }
     } catch (error: any) {
-      Alert.alert('Lỗi đặt hàng', error.message || 'Có lỗi xảy ra khi tạo đơn hàng');
+      const details = error.details ? JSON.stringify(error.details) : '';
+      Alert.alert('Lỗi đặt hàng', (error.message || 'Có lỗi xảy ra khi tạo đơn hàng') + (details ? `\n${details}` : ''));
     }
   };
 
@@ -193,12 +240,15 @@ export function CheckoutScreen() {
     setIsLocationModalVisible(true);
   };
 
-  const hasFullAddress = selectedProvince && selectedDistrict && selectedWard;
+
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
+    <SafeAreaView className="flex-1 bg-surface-lowest">
       <View className="flex-row items-center px-4 py-3 bg-surface-lowest border-b border-surface-line">
-        <Pressable onPress={() => navigation.goBack()} className="p-2 -ml-2 rounded-full active:bg-surface-line">
+        <Pressable 
+          onPress={() => navigation.goBack()}
+          className="p-2 -ml-2 rounded-full active:bg-surface-line"
+        >
           <ArrowLeft size={24} color="#1A1A1A" />
         </Pressable>
         <Text className="flex-1 text-center text-headline-sm text-on-surface font-semibold pr-8">
@@ -207,6 +257,36 @@ export function CheckoutScreen() {
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {!canOrder && completeness && (
+          <View className="bg-[#FFF1F2] p-4 mx-4 my-2 rounded-xl border border-[#FDA4AF]">
+            <Text className="text-body-md font-bold text-[#BE123C] mb-2">Cần bổ sung số đo cơ thể</Text>
+            <Text className="text-body-sm text-[#9F1239] mb-3">
+              Giỏ hàng của bạn có trang phục may đo. Vui lòng cập nhật đầy đủ các số đo sau:
+            </Text>
+            <View className="pl-2 mb-3">
+              {byCategory.filter(c => !c.complete).map((cat, i) => (
+                <View key={i} className="mb-2">
+                  <Text className="text-label-sm font-semibold text-[#9F1239] mb-1">
+                    {cat.category === 'UPPER' ? 'Áo (Thân trên)' : cat.category === 'LOWER' ? 'Quần/Váy (Thân dưới)' : 'Đồ bộ (Toàn thân)'}:
+                  </Text>
+                  {cat.missing.map((m, j) => (
+                    <Text key={j} className="text-body-sm text-[#9F1239]">• {m.label}</Text>
+                  ))}
+                </View>
+              ))}
+            </View>
+            <Pressable 
+              className="bg-[#BE123C] py-2 px-4 rounded-lg self-start active:bg-[#9F1239]"
+              onPress={() => (navigation.navigate as any)('Main', { 
+                screen: 'ProfileTab', 
+                params: { screen: 'Measurements' } 
+              })}
+            >
+              <Text className="text-white text-label-md font-bold">Cập nhật số đo</Text>
+            </Pressable>
+          </View>
+        )}
+
         {/* Địa chỉ giao hàng */}
         <View className="bg-surface-lowest p-4 mb-2 border-y border-surface-line mt-2">
           <View className="flex-row justify-between items-center mb-3">
@@ -221,7 +301,9 @@ export function CheckoutScreen() {
           
           {hasFullAddress ? (
             <>
-              <Text className="text-body-md font-bold text-on-surface mb-1">Người nhận • 0988 888 888</Text>
+              <Text className="text-body-md font-bold text-on-surface mb-1">
+                {user?.fullName || 'Người nhận'} • {user?.phone || 'Chưa cập nhật SĐT'}
+              </Text>
               <Text className="text-body-sm text-on-surface-variant mb-3">
                 {`${selectedWard?.name}, ${selectedDistrict?.name}, ${selectedProvince?.name}`}
               </Text>
@@ -253,7 +335,7 @@ export function CheckoutScreen() {
           {items.map((item, index) => (
             <View key={index} className="flex-row gap-4 mb-4">
               <View className="w-[72px] h-[72px] rounded-lg bg-surface-container overflow-hidden border border-surface-line">
-                 {item.imageUrl && <Image source={{ uri: item.imageUrl }} className="w-full h-full" contentFit="cover" />}
+                 {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />}
               </View>
               <View className="flex-1 justify-center">
                 <Text className="text-label-md font-semibold text-on-surface" numberOfLines={1}>{item.productName}</Text>
@@ -284,7 +366,7 @@ export function CheckoutScreen() {
                <Text className="text-body-sm text-on-surface-variant">Thời gian giao hàng tiêu chuẩn</Text>
              </View>
              <View className="items-end">
-               {isCalculatingFee ? (
+               {isQuoting ? (
                  <ActivityIndicator size="small" color="#5D1C34" />
                ) : hasFullAddress ? (
                  <Text className="text-label-md font-bold text-on-surface">
@@ -302,8 +384,8 @@ export function CheckoutScreen() {
           <Text className="text-headline-sm font-bold text-on-surface mb-3">Phương thức thanh toán</Text>
           
           <Pressable 
-            onPress={() => setPaymentMethod('QR')}
-            className={`flex-row items-center p-4 rounded-xl border mb-3 ${paymentMethod === 'QR' ? 'border-primary bg-primary/5' : 'border-surface-line bg-surface'}`}
+            onPress={() => setPaymentMethod(EPaymentMethod.SEPAY)}
+            className={`flex-row items-center p-4 rounded-xl border mb-3 ${paymentMethod === EPaymentMethod.SEPAY ? 'border-primary bg-primary/5' : 'border-surface-line bg-surface'}`}
           >
             <View className="w-10 h-10 bg-primary/10 rounded-lg items-center justify-center mr-3">
                <QrCode size={20} color="#5D1C34" />
@@ -312,14 +394,14 @@ export function CheckoutScreen() {
               <Text className="text-label-md font-bold text-on-surface">Chuyển khoản QR (SePay)</Text>
               <Text className="text-body-sm text-on-surface-variant mt-1">Quét mã QR bằng ứng dụng ngân hàng 24/7</Text>
             </View>
-            <View className={`w-5 h-5 rounded-full border-2 items-center justify-center ${paymentMethod === 'QR' ? 'border-primary' : 'border-surface-line'}`}>
-              {paymentMethod === 'QR' && <View className="w-2.5 h-2.5 rounded-full bg-primary" />}
+            <View className={`w-5 h-5 rounded-full border-2 items-center justify-center ${paymentMethod === EPaymentMethod.SEPAY ? 'border-primary' : 'border-surface-line'}`}>
+              {paymentMethod === EPaymentMethod.SEPAY && <View className="w-2.5 h-2.5 rounded-full bg-primary" />}
             </View>
           </Pressable>
 
           <Pressable 
-            onPress={() => setPaymentMethod('COD')}
-            className={`flex-row items-center p-4 rounded-xl border mb-4 ${paymentMethod === 'COD' ? 'border-primary bg-primary/5' : 'border-surface-line bg-surface'}`}
+            onPress={() => setPaymentMethod(EPaymentMethod.COD)}
+            className={`flex-row items-center p-4 rounded-xl border mb-4 ${paymentMethod === EPaymentMethod.COD ? 'border-primary bg-primary/5' : 'border-surface-line bg-surface'}`}
           >
             <View className="w-10 h-10 bg-surface-container rounded-lg items-center justify-center mr-3">
                <Banknote size={20} color="#666" />
@@ -328,8 +410,8 @@ export function CheckoutScreen() {
               <Text className="text-label-md font-bold text-on-surface">Thanh toán khi nhận hàng (COD)</Text>
               <Text className="text-body-sm text-on-surface-variant mt-1">Trả tiền mặt khi nhận hàng</Text>
             </View>
-            <View className={`w-5 h-5 rounded-full border-2 items-center justify-center ${paymentMethod === 'COD' ? 'border-primary' : 'border-surface-line'}`}>
-              {paymentMethod === 'COD' && <View className="w-2.5 h-2.5 rounded-full bg-primary" />}
+            <View className={`w-5 h-5 rounded-full border-2 items-center justify-center ${paymentMethod === EPaymentMethod.COD ? 'border-primary' : 'border-surface-line'}`}>
+              {paymentMethod === EPaymentMethod.COD && <View className="w-2.5 h-2.5 rounded-full bg-primary" />}
             </View>
           </Pressable>
         </View>
@@ -340,17 +422,19 @@ export function CheckoutScreen() {
           <View className="flex-row justify-between mb-3">
             <Text className="text-body-md text-on-surface-variant">Tạm tính</Text>
             <Text className="text-body-md font-semibold text-on-surface">
-              {quoteRes?.subtotal 
-                ? (formatCurrency ? formatCurrency(quoteRes.subtotal) : `${quoteRes.subtotal.toLocaleString('vi-VN')}đ`)
+              {displaySubtotal !== undefined 
+                ? (formatCurrency ? formatCurrency(displaySubtotal) : `${displaySubtotal.toLocaleString('vi-VN')}đ`)
                 : 'Đang tính...'}
             </Text>
           </View>
           <View className="flex-row justify-between mb-5">
             <Text className="text-body-md text-on-surface-variant">Phí vận chuyển</Text>
             <Text className="text-body-md font-semibold text-on-surface">
-              {shippingFee === 0 
-                ? 'Miễn phí' 
-                : (formatCurrency ? formatCurrency(shippingFee) : `${shippingFee.toLocaleString('vi-VN')}đ`)}
+              {!hasFullAddress 
+                ? 'Chưa tính' 
+                : shippingFee === 0 
+                  ? 'Miễn phí' 
+                  : (formatCurrency ? formatCurrency(shippingFee) : `${shippingFee.toLocaleString('vi-VN')}đ`)}
             </Text>
           </View>
           <View className="flex-row justify-between items-end">
@@ -358,12 +442,12 @@ export function CheckoutScreen() {
               <Text className="text-body-lg font-bold text-on-surface">Tổng thanh toán</Text>
               <Text className="text-body-sm text-on-surface-variant mt-0.5">(Đã bao gồm VAT)</Text>
             </View>
-            {isQuoting ? (
+            {isQuoting && items.length > 0 && !quoteRes ? (
                <ActivityIndicator size="small" color="#5D1C34" />
             ) : (
               <Text className="text-headline-md font-bold text-on-surface">
-                 {quoteRes?.total 
-                    ? (formatCurrency ? formatCurrency(quoteRes.total) : `${quoteRes.total.toLocaleString('vi-VN')}đ`)
+                 {displayTotal !== undefined 
+                    ? (formatCurrency ? formatCurrency(displayTotal) : `${displayTotal.toLocaleString('vi-VN')}đ`)
                     : '---'}
               </Text>
             )}
@@ -378,8 +462,8 @@ export function CheckoutScreen() {
             Tổng thanh toán
           </Text>
           <Text className="text-headline-md font-bold text-on-surface">
-             {quoteRes?.total 
-                ? (formatCurrency ? formatCurrency(quoteRes.total) : `${quoteRes.total.toLocaleString('vi-VN')}đ`)
+             {displayTotal !== undefined 
+                ? (formatCurrency ? formatCurrency(displayTotal) : `${displayTotal.toLocaleString('vi-VN')}đ`)
                 : '---'}
           </Text>
         </View>
