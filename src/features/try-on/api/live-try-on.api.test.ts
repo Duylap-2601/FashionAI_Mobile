@@ -33,7 +33,7 @@ describe('liveTryOnApi (session lifecycle)', () => {
   it('getQuota returns the live quota', async () => {
     mock
       .onGet(ENDPOINTS.LIVE_TRY_ON.QUOTA)
-      .reply(200, envelope({ enabled: true, eligible: true, remaining: 300, limit: 600, seconds: 300 }));
+      .reply(200, envelope({ enabled: true, eligible: true, remaining: 300, limit: 600, maxDurationSeconds: 30 }));
 
     await expect(liveTryOnApi.getQuota()).resolves.toMatchObject({ eligible: true });
   });

@@ -27,7 +27,6 @@ export type TryOnStackParamList = {
   TryOnHistory: undefined;
   TryOnDetail: { id: string };
   TryOnLive: TryOnEntryParams | undefined;
-  TryOnStylist: undefined;
 };
 
 export type MainTabParamList = {

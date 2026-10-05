@@ -20,9 +20,12 @@ export interface LiveSession {
 export interface LiveQuota {
   enabled: boolean;
   eligible: boolean;
+  disabledReason?: string;
   remaining: number;
   limit: number | null;
-  seconds: number;
+  maxDurationSeconds: number;
+  reserved?: number;
+  allocated?: number;
   resetAt?: string;
 }
 
