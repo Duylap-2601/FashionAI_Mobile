@@ -1,23 +1,47 @@
 import React from 'react';
-import { View, ActivityIndicator, Text, Pressable, Linking } from 'react-native';
+import { View, ActivityIndicator, Text, Pressable, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
 import { Image } from 'expo-image';
 import { formatCurrency } from '@/utils/format';
+import { useQuery } from '@tanstack/react-query';
+import { paymentsApi } from '@/features/payments/api/payments.api';
+import { CheckCircle2, AlertCircle } from 'lucide-react-native';
 
 export function PaymentScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   
-  const { checkoutUrl, provider, qrCode, orderCode, totalAmount } = route.params || {};
+  const { checkoutUrl, provider, qrCode, orderCode, totalAmount, paymentId, orderId } = route.params || {};
 
   React.useEffect(() => {
     navigation.setOptions({
       title: provider === 'ZALOPAY' ? 'Thanh toán ZaloPay' : 'Thanh toán SePay',
     });
   }, [navigation, provider]);
+
+  const { data: payment, isLoading: isCheckingStatus } = useQuery({
+    queryKey: ['paymentStatus', paymentId],
+    queryFn: () => paymentsApi.getPaymentStatus(paymentId),
+    enabled: !!paymentId && provider === 'ZALOPAY',
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === 'PENDING' ? 3000 : false;
+    },
+  });
+
+  const isPaid = payment?.status === 'PAID' || payment?.status === 'COMPLETED';
+  const isFailed = payment?.status === 'FAILED';
+  const isRefundRequired = payment?.status === 'REFUND_REQUIRED';
+
+  React.useEffect(() => {
+    if (isPaid && orderId) {
+      Alert.alert('Thành công', 'Thanh toán thành công!');
+      navigation.replace('OrderDetail', { orderId: orderId });
+    }
+  }, [isPaid, orderId, navigation]);
 
   if (!checkoutUrl) {
     return (
@@ -49,16 +73,51 @@ export function PaymentScreen() {
             </View>
 
             <Text className="text-body-md text-on-surface-variant mb-1">Thanh toán đơn hàng {orderCode ? `#${orderCode}` : ''}</Text>
-            <Text className="text-[32px] font-bold text-[#0068FF] mb-2">
+            <Text className="text-[32px] font-bold text-[#0068FF] mb-4">
               {formatCurrency ? formatCurrency(totalAmount || 0) : `${(totalAmount || 0).toLocaleString('vi-VN')}đ`}
             </Text>
+
+            {/* Trạng thái thanh toán */}
+            <View className="w-full p-4 rounded-xl border border-surface-line">
+              {isPaid && (
+                <View className="flex-row items-center justify-center gap-2">
+                  <CheckCircle2 color="#10B981" size={20} />
+                  <Text className="text-body-sm font-semibold text-[#10B981]">Thanh toán thành công, đang chuyển trang...</Text>
+                </View>
+              )}
+              {isFailed && (
+                <View className="flex-row items-center justify-center gap-2">
+                  <AlertCircle color="#EF4444" size={20} />
+                  <Text className="text-body-sm font-semibold text-[#EF4444] text-center flex-1">
+                    {payment?.failureReason || 'Thanh toán thất bại hoặc đã hết hạn.'}
+                  </Text>
+                </View>
+              )}
+              {isRefundRequired && (
+                <View className="flex-row items-center justify-center gap-2">
+                  <AlertCircle color="#F59E0B" size={20} />
+                  <Text className="text-body-sm font-semibold text-[#F59E0B] text-center flex-1">
+                    Đã nhận tiền nhưng đơn hàng gặp lỗi. Khoản tiền sẽ được hoàn lại.
+                  </Text>
+                </View>
+              )}
+              {!isPaid && !isFailed && !isRefundRequired && (
+                <View className="flex-row items-center justify-center gap-2">
+                  <ActivityIndicator size="small" color="#0068FF" />
+                  <Text className="text-body-sm text-on-surface-variant text-center">
+                    {isCheckingStatus ? 'Đang kiểm tra trạng thái thanh toán...' : 'Đang chờ ZaloPay xác nhận thanh toán...'}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
 
           <Pressable 
             onPress={() => Linking.openURL(checkoutUrl)}
-            className="w-full h-14 bg-[#0068FF] rounded-xl flex-row items-center justify-center active:bg-[#0052cc]"
+            disabled={isPaid}
+            className={`w-full h-14 rounded-xl flex-row items-center justify-center ${isPaid ? 'bg-surface-line' : 'bg-[#0068FF] active:bg-[#0052cc]'}`}
           >
-            <Text className="text-white font-bold text-label-lg">Mở ứng dụng ZaloPay</Text>
+            <Text className={`font-bold text-label-lg ${isPaid ? 'text-on-surface-variant' : 'text-white'}`}>Mở ứng dụng ZaloPay</Text>
           </Pressable>
         </View>
       </SafeAreaView>

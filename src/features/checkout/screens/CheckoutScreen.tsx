@@ -172,6 +172,8 @@ export function CheckoutScreen() {
           qrCode: qrCode,
           orderCode: checkoutInfo.orderCode,
           totalAmount: displayTotal,
+          paymentId: checkoutInfo.paymentId,
+          orderId: orderId,
         });
       } else {
         Alert.alert('Lỗi', 'Không lấy được đường dẫn thanh toán.');
