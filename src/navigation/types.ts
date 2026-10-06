@@ -12,6 +12,7 @@ export type ProfileStackParamList = {
   ProfileHome: undefined;
   ChangePassword: undefined;
   Measurements: undefined;
+  Orders: undefined;
 };
 
 export type MainTabParamList = {
@@ -34,6 +35,8 @@ export type RootStackParamList = {
   Stylist: undefined;
   StylistHistory: undefined;
   StylistResult: { resultId: string };
+
+  OrderDetail: { orderId: string | number };
 
   Cart: undefined;
   Checkout: undefined;

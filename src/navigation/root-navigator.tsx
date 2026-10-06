@@ -13,6 +13,8 @@ import { CollectionDetailScreen } from "../features/collections/screens/Collecti
 import { ReviewsScreen } from "../features/reviews/screens/ReviewsScreen";
 import { MyReviewsScreen } from "../features/reviews/screens/MyReviewsScreen";
 
+import { OrderDetailScreen } from "../features/orders/screens/OrderDetailScreen";
+
 import { StylistScreen } from "../features/stylist/screens/StylistScreen";
 import { StylistHistoryScreen } from "../features/stylist/screens/StylistHistoryScreen";
 import { StylistResultScreen } from "../features/stylist/screens/StylistResultScreen";
@@ -43,7 +45,7 @@ export const RootNavigator: React.FC = () => {
   return (
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator
-        screenOptions={{ headerShown: false, animation: "fade" }}
+        screenOptions={{ headerShown: false }}
       >
         {isAuthenticated ? (
           <>
@@ -67,6 +69,22 @@ export const RootNavigator: React.FC = () => {
               options={{
                 headerShown: true,
                 title: "Thanh toán SePay",
+                headerTintColor: COLORS.primaryContainer,
+                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerTitleStyle: {
+                  color: COLORS.onSurface,
+                  fontSize: FONT_SIZE.md,
+                },
+              }}
+            />
+
+            <Stack.Screen
+              name="OrderDetail"
+              component={OrderDetailScreen}
+              options={{
+                headerShown: true,
+                title: "Chi tiết đơn hàng",
+                headerBackTitle: "Đơn hàng",
                 headerTintColor: COLORS.primaryContainer,
                 headerStyle: { backgroundColor: COLORS.surfaceLowest },
                 headerTitleStyle: {

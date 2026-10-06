@@ -40,5 +40,21 @@ export const ordersApi = {
   
   createOrder: (payload: any, opts?: HttpOptions): Promise<any> => {
     return http.post<any>(ENDPOINTS.ORDERS.CREATE, payload, opts);
+  },
+  
+  getOrders: (opts?: HttpOptions): Promise<any[]> => {
+    return http.get<any[]>(ENDPOINTS.ORDERS.LIST, opts);
+  },
+  
+  getOrder: (id: string | number, opts?: HttpOptions): Promise<any> => {
+    return http.get<any>(ENDPOINTS.ORDERS.DETAIL(id), opts);
+  },
+  
+  cancelOrder: (id: string | number, opts?: HttpOptions): Promise<any> => {
+    return http.patch<any>(ENDPOINTS.ORDERS.CANCEL(id), undefined, opts);
+  },
+  
+  confirmDelivery: (id: string | number, payload?: { note?: string }, opts?: HttpOptions): Promise<any> => {
+    return http.post<any>(ENDPOINTS.ORDERS.CONFIRM_DELIVERY(id), payload, opts);
   }
 };
