@@ -12,6 +12,7 @@ export type ProfileStackParamList = {
   ProfileHome: undefined;
   ChangePassword: undefined;
   Measurements: undefined;
+  Orders: undefined;
 };
 
 export type MainTabParamList = {
@@ -35,7 +36,9 @@ export type RootStackParamList = {
   StylistHistory: undefined;
   StylistResult: { resultId: string };
 
+  OrderDetail: { orderId: string | number };
+
   Cart: undefined;
   Checkout: undefined;
-  Payment: { checkoutUrl: string; provider: string };
+  Payment: { checkoutUrl: string; provider: string; paymentId?: string; orderId?: string | number; qrCode?: string; orderCode?: string; totalAmount?: number; };
 };

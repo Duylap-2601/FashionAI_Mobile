@@ -70,6 +70,19 @@ export const ProfileScreen: React.FC = () => {
 
         <View className="mb-6">
           <Text className="mb-3 text-headline-sm font-bold text-on-surface">
+            Thương mại & Giao dịch
+          </Text>
+          <TouchableOpacity
+            className="min-h-11 flex-row items-center justify-between rounded-lg border border-surface-line bg-white p-4 shadow-sm"
+            onPress={() => navigation.navigate('Orders')}
+          >
+            <Text className="text-body-lg font-semibold text-on-surface">Đơn hàng của tôi</Text>
+            <Text className="text-headline-sm text-on-surface-variant">›</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View className="mb-6">
+          <Text className="mb-3 text-headline-sm font-bold text-on-surface">
             Hồ sơ & Cơ thể
           </Text>
           <TouchableOpacity
