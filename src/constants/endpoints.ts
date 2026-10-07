@@ -90,6 +90,7 @@ export const ENDPOINTS = {
   },
   PAYMENTS: {
     CHECKOUT: '/payments/checkout',
+    STATUS: (id: string | number) => `/payments/${id}`,
     ORDERS: '/payments/orders',
     PLANS: '/payments/plans',
     SUBSCRIPTIONS_ME: '/payments/subscriptions/me',
