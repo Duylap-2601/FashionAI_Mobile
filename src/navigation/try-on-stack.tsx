@@ -6,27 +6,13 @@ import { TryOnHistoryScreen } from '../features/try-on/screens/TryOnHistoryScree
 import { TryOnDetailScreen } from '../features/try-on/screens/TryOnDetailScreen';
 import { TryOnLiveScreen } from '../features/try-on/screens/TryOnLiveScreen';
 
-const COLORS = {
-  surface: '#FBF9F7',
-  onSurface: '#1B1C1B',
-};
-
 const Stack = createNativeStackNavigator<TryOnStackParamList>();
 
 export const TryOnStack: React.FC = () => {
   return (
     <Stack.Navigator initialRouteName="TryOnHome" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="TryOnHome" component={TryOnScreen} />
-      <Stack.Screen
-        name="TryOnHistory"
-        component={TryOnHistoryScreen}
-        options={{
-          headerShown: true,
-          title: 'Lịch sử Try-On',
-          headerStyle: { backgroundColor: COLORS.surface },
-          headerTitleStyle: { fontWeight: '700' as const, color: COLORS.onSurface, fontSize: 18 },
-        }}
-      />
+      <Stack.Screen name="TryOnHistory" component={TryOnHistoryScreen} />
       <Stack.Screen name="TryOnDetail" component={TryOnDetailScreen} />
       <Stack.Screen name="TryOnLive" component={TryOnLiveScreen} />
     </Stack.Navigator>
