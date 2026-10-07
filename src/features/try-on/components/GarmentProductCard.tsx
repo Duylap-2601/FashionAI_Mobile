@@ -52,3 +52,26 @@ export const GarmentProductCard: React.FC<GarmentProductCardProps> = ({
 };
 
 export default GarmentProductCard;
+
+// Ảnh lớn của trang phục đã chọn (kiểu ảnh mẫu màn Thử ảnh):
+// hiện trọn món đồ trên nền sáng để user kiểm tra trước khi thử.
+export const GarmentPreview: React.FC<{ product: IProduct; label: string }> = ({
+  product,
+  label,
+}) => {
+  const imageUrl = mainProductImage(product);
+  if (!imageUrl) return null;
+  return (
+    <View className="mt-md w-4/5 self-center overflow-hidden rounded-xl border border-surface-line bg-surface-low">
+      {/* NativeWind không có token aspect 4:5 nên dùng aspectRatio tính toán */}
+      <Image
+        source={{ uri: imageUrl }}
+        style={{ aspectRatio: 4 / 5 }}
+        className="w-full"
+        contentFit="contain"
+        transition={200}
+        accessibilityLabel={label}
+      />
+    </View>
+  );
+};

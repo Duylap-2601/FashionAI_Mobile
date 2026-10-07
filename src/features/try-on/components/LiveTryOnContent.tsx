@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { TryOnModeToggle, TryOnSharedIntro } from '@/features/try-on/components/TryOnHeader';
-import { GarmentProductCard } from '@/features/try-on/components/GarmentProductCard';
+import { GarmentProductCard, GarmentPreview } from '@/features/try-on/components/GarmentProductCard';
 import type { SharedGarmentSelection } from './TryOnWorkspace';
 
 interface LiveTryOnContentProps {
@@ -306,11 +306,14 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
         {mode === 'single' ? (
           <View className="mt-md">
             {singleProduct ? (
-              <GarmentProductCard
-                product={singleProduct}
-                onChange={() => openPicker('single')}
-                changeLabel="Đổi món"
-              />
+              <>
+                <GarmentProductCard
+                  product={singleProduct}
+                  onChange={() => openPicker('single')}
+                  changeLabel="Đổi món"
+                />
+                <GarmentPreview product={singleProduct} label={singleProduct.name} />
+              </>
             ) : (
               <Pressable
                 className="items-center rounded-xl border border-dashed border-outline-variant bg-surface-lowest p-xl"
@@ -342,11 +345,14 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
                 ) : null}
               </View>
               {comboUpper ? (
-                <GarmentProductCard
-                  product={comboUpper}
-                  onChange={() => openPicker('upper')}
-                  changeLabel="Đổi áo khác"
-                />
+                <>
+                  <GarmentProductCard
+                    product={comboUpper}
+                    onChange={() => openPicker('upper')}
+                    changeLabel="Đổi áo khác"
+                  />
+                  <GarmentPreview product={comboUpper} label={comboUpper.name} />
+                </>
               ) : (
                 <Pressable
                   className="items-center rounded-xl border border-dashed border-outline-variant bg-surface-lowest p-xl"
@@ -376,11 +382,14 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
                 ) : null}
               </View>
               {comboLower ? (
-                <GarmentProductCard
-                  product={comboLower}
-                  onChange={() => openPicker('lower')}
-                  changeLabel="Đổi quần/váy khác"
-                />
+                <>
+                  <GarmentProductCard
+                    product={comboLower}
+                    onChange={() => openPicker('lower')}
+                    changeLabel="Đổi quần/váy khác"
+                  />
+                  <GarmentPreview product={comboLower} label={comboLower.name} />
+                </>
               ) : (
                 <Pressable
                   className="items-center rounded-xl border border-dashed border-outline-variant bg-surface-lowest p-xl"
