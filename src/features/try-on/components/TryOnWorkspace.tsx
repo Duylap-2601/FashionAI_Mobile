@@ -4,7 +4,7 @@ import { TryOnEntryParams } from '@/navigation/types';
 import { authApi } from '@/features/auth/api/auth.api';
 import { getProduct } from '@/features/products/api/products.api';
 import { IProduct } from '@/features/products/types/product';
-import { TryOnHeader, TryOnModeToggle, TryOnSharedIntro } from '@/features/try-on/components/TryOnHeader';
+import { TryOnModeToggle, TryOnSharedIntro } from '@/features/try-on/components/TryOnHeader';
 import { PhotoTryOnContent } from '@/features/try-on/components/PhotoTryOnContent';
 import { LiveTryOnContent } from '@/features/try-on/components/LiveTryOnContent';
 import {
@@ -115,7 +115,6 @@ export const TryOnWorkspace: React.FC<TryOnWorkspaceProps> = ({
 
   return (
     <View className="flex-1 bg-background">
-      <TryOnHeader />
       {tab === 'photo' ? (
         <ScrollView className="flex-1" contentContainerClassName="p-xl">
           <TryOnSharedIntro quota={quota} />

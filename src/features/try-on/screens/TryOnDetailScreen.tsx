@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, TouchableOpacity, Alert } from 'react-native';
 import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { TryOnStackParamList } from '@/navigation/types';
@@ -61,6 +62,14 @@ export const TryOnDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <ScrollView className="flex-1 bg-background" contentContainerClassName="p-xl">
+      <Pressable
+        className="mb-md min-h-11 flex-row items-center gap-xs self-start"
+        accessibilityLabel="Quay lại"
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={20} className="text-on-surface" />
+        <Text className="text-label-lg text-on-surface">Quay lại</Text>
+      </Pressable>
       <View className="overflow-hidden rounded-xl border border-surface-line bg-surface-lowest shadow-sm">
         {/* NativeWind không có token aspect 3:4 nên dùng aspectRatio tính toán */}
         <Image
