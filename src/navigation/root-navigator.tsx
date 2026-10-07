@@ -22,6 +22,7 @@ import { StylistResultScreen } from "../features/stylist/screens/StylistResultSc
 import { CartScreen } from "../features/cart/screens/CartScreen";
 import { CheckoutScreen } from "../features/checkout/screens/CheckoutScreen";
 import { PaymentScreen } from "../features/checkout/screens/PaymentScreen";
+import { NotificationsScreen } from "../features/notifications/screens/NotificationsScreen";
 
 import { useAuth } from "../features/auth/hooks/use-auth";
 import { COLORS, FONT_SIZE } from "../constants/theme";
@@ -203,6 +204,14 @@ export const RootNavigator: React.FC = () => {
                   color: COLORS.onSurface,
                   fontSize: FONT_SIZE.md,
                 },
+              }}
+            />
+
+            <Stack.Screen
+              name="Notifications"
+              component={NotificationsScreen}
+              options={{
+                headerShown: false,
               }}
             />
           </>

@@ -57,4 +57,5 @@ export type RootStackParamList = {
   SubscriptionPlans: undefined;
   Checkout: undefined;
   Payment: { checkoutUrl: string; provider: string; paymentId?: string; orderId?: string | number; qrCode?: string; orderCode?: string; totalAmount?: number; };
+  Notifications: undefined;
 };
