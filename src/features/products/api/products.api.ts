@@ -112,3 +112,10 @@ export async function getProduct(
 
   return mapBackendProduct(product);
 }
+
+export function mainProductImage(
+  product: Pick<IProduct, 'images'>,
+): string | undefined {
+  const images = product.images ?? [];
+  return (images.find((image) => image.isMain) ?? images[0])?.imageUrl;
+}
