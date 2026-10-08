@@ -91,8 +91,20 @@ export function ProductDetailScreen({
   );
 
   const handleTryOn = useCallback(() => {
-    navigation.navigate('Main', { screen: 'TryOnTab' });
-  }, [navigation]);
+    if (!product) return;
+    navigation.navigate('Main', {
+      screen: 'TryOnTab',
+      params: {
+        screen: 'TryOnHome',
+        params: {
+          productId: String(product.id),
+          productName: product.name,
+          productImageUrl: mainImageUrl ?? undefined,
+          category: product.category,
+        },
+      },
+    });
+  }, [navigation, product, mainImageUrl]);
 
   const handleAddToCart = useCallback(() => {
     if (!product || product.status !== 'ACTIVE') {
