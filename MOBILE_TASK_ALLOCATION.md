@@ -77,11 +77,16 @@
 - `src/features/notifications/*`
 
 #### C. Checklist công việc Dev 1:
-- [ ] Dựng bộ màn hình Auth: Login, Register, Forgot Password, Reset Password.
-- [ ] Tích hợp Google OAuth In-App Browser + deep link callback `fashionai://auth`.
-- [ ] Dựng màn Try-On Workspace: Chọn ảnh từ thư viện/camera, chọn loại áo/quần/váy, upload multipart.
-- [ ] Dựng màn Try-On History + Trình xem ảnh so sánh kết quả.
-- [ ] Tích hợp Live Try-On Workspace (Camera view + điều khiển phiên session).
+- [x] Dựng bộ màn hình Auth: Login, Register, Forgot Password, Reset Password.
+- [x] Tích hợp Google OAuth In-App Browser + deep link callback `fashionai://auth`.
+- [x] Dựng màn Try-On Workspace: Chọn ảnh từ thư viện/camera, chọn loại áo/quần/váy, upload multipart.
+- [x] Dựng màn Try-On History + Trình xem ảnh so sánh kết quả.
+- [x] Tích hợp Live Try-On Workspace (Camera view + điều khiển phiên session).
+  > ⚠️ **Chưa hoàn chỉnh — giới hạn camera đã xác nhận:** màn hình, vòng đời session
+  > (create/pause/resume/end), quota giây và preview camera trước chạy thật; nhưng **camera
+  > chỉ hiện preview thường, KHÔNG bật/render video AI ghép đồ trực tiếp** (Decart stream
+  > như bản web) vì chưa tích hợp Decart SDK cho React Native — vượt ngoài 7 endpoints
+  > hiện tại của `live-try-on.controller.ts`. Khi nghiệm thu phải nói rõ điểm này.
 - [ ] Dựng màn Chatbot AI: Giao diện tin nhắn, kết nối WebSocket `/chat`, stream text, hiển thị gợi ý đồ.
 - [ ] Dựng màn Notification List & Badge chuông thông báo.
 
@@ -196,8 +201,8 @@
 - [x] Dựng màn hình Giỏ hàng (CartScreen).
 - [x] Dựng màn hình Checkout: Bộ chọn Tỉnh/Thành -> Quận/Huyện -> Phường/Xã từ API `/shipping`, tính phí ship tự động, gọi `/orders/quote`.
 - [x] Tích hợp mở cổng thanh toán SePay và xử lý callback quay về app để xác nhận đơn.
-- [ ] Dựng màn hình Danh sách đơn hàng (OrdersScreen) có các tab trạng thái.
-- [ ] Dựng màn hình Chi tiết đơn hàng & Timeline tracking vận chuyển.
+- [x] Dựng màn hình Danh sách đơn hàng (OrdersScreen) có các tab trạng thái.
+- [x] Dựng màn hình Chi tiết đơn hàng & Timeline tracking vận chuyển.
 - [ ] Dựng màn hình Bảng giá Gói thành viên (SubscriptionScreen) + Luồng nâng cấp gói qua SePay.
 - [x] Dựng màn hình Hồ sơ cá nhân (ProfileScreen) và Form nhập Số đo cơ thể (MeasurementsScreen).
 

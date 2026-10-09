@@ -13,6 +13,8 @@ import { CollectionDetailScreen } from "../features/collections/screens/Collecti
 import { ReviewsScreen } from "../features/reviews/screens/ReviewsScreen";
 import { MyReviewsScreen } from "../features/reviews/screens/MyReviewsScreen";
 
+import { OrderDetailScreen } from "../features/orders/screens/OrderDetailScreen";
+
 import { StylistScreen } from "../features/stylist/screens/StylistScreen";
 import { StylistHistoryScreen } from "../features/stylist/screens/StylistHistoryScreen";
 import { StylistResultScreen } from "../features/stylist/screens/StylistResultScreen";
@@ -20,6 +22,7 @@ import { StylistResultScreen } from "../features/stylist/screens/StylistResultSc
 import { CartScreen } from "../features/cart/screens/CartScreen";
 import { CheckoutScreen } from "../features/checkout/screens/CheckoutScreen";
 import { PaymentScreen } from "../features/checkout/screens/PaymentScreen";
+import { NotificationsScreen } from "../features/notifications/screens/NotificationsScreen";
 
 import { useAuth } from "../features/auth/hooks/use-auth";
 import { COLORS, FONT_SIZE } from "../constants/theme";
@@ -43,7 +46,7 @@ export const RootNavigator: React.FC = () => {
   return (
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator
-        screenOptions={{ headerShown: false, animation: "fade" }}
+        screenOptions={{ headerShown: false }}
       >
         {isAuthenticated ? (
           <>
@@ -67,6 +70,22 @@ export const RootNavigator: React.FC = () => {
               options={{
                 headerShown: true,
                 title: "Thanh toán SePay",
+                headerTintColor: COLORS.primaryContainer,
+                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerTitleStyle: {
+                  color: COLORS.onSurface,
+                  fontSize: FONT_SIZE.md,
+                },
+              }}
+            />
+
+            <Stack.Screen
+              name="OrderDetail"
+              component={OrderDetailScreen}
+              options={{
+                headerShown: true,
+                title: "Chi tiết đơn hàng",
+                headerBackTitle: "Đơn hàng",
                 headerTintColor: COLORS.primaryContainer,
                 headerStyle: { backgroundColor: COLORS.surfaceLowest },
                 headerTitleStyle: {
@@ -185,6 +204,14 @@ export const RootNavigator: React.FC = () => {
                   color: COLORS.onSurface,
                   fontSize: FONT_SIZE.md,
                 },
+              }}
+            />
+
+            <Stack.Screen
+              name="Notifications"
+              component={NotificationsScreen}
+              options={{
+                headerShown: false,
               }}
             />
           </>
