@@ -2,9 +2,8 @@ import React from 'react';
 import { View, Pressable, Text, Image } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { MainTabParamList, RootStackParamList } from './types';
-import { Heart, ShoppingBag } from 'lucide-react-native';
+import { Heart, ShoppingBag, Home, Package, Sparkles, Shirt, User, type LucideIcon } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../features/auth/hooks/use-auth';
@@ -24,6 +23,7 @@ const COLORS = {
   surfaceContainer: '#EFEDEC',
   surfaceLine: '#E5DFD5',
   primaryContainer: '#5D1C34',
+  primarySoft: '#FFD9E1',
   onPrimary: '#FFFFFF',
   onSurface: '#1B1C1B',
   onSurfaceVariant: '#534346',
@@ -31,39 +31,50 @@ const COLORS = {
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-type IoniconName = keyof typeof Ionicons.glyphMap;
-
-const TabIcon = ({
-  name,
-  focused,
-}: {
-  name: IoniconName;
-  focused: boolean;
-}) => (
-  <Ionicons
-    name={name}
-    size={23}
-    color={focused ? COLORS.primaryContainer : COLORS.onSurfaceVariant}
-  />
-);
-
-const TryOnTabIcon = ({ focused }: { focused: boolean }) => (
+const TabIcon = ({ Icon, focused }: { Icon: LucideIcon; focused: boolean }) => (
   <View
     style={{
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 38,
+      height: 38,
+      borderRadius: 19,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 8,
-      backgroundColor: focused ? COLORS.primaryContainer : COLORS.surfaceContainer,
+      backgroundColor: focused ? COLORS.primarySoft : 'transparent',
     }}
   >
-    <Ionicons
-      name="color-wand"
-      size={20}
-      color={focused ? COLORS.onPrimary : COLORS.onSurfaceVariant}
+    <Icon
+      size={25}
+      color={focused ? COLORS.primaryContainer : COLORS.onSurfaceVariant}
+      strokeWidth={focused ? 2.2 : 1.8}
     />
+  </View>
+);
+
+const TabLabel = ({ label, focused }: { label: string; focused: boolean }) => (
+  <View style={{ alignItems: 'center', marginTop: 5 }}>
+    <Text
+      style={{
+        fontSize: 12.5,
+        fontWeight: focused ? ('700' as const) : ('600' as const),
+        color: focused ? COLORS.primaryContainer : COLORS.onSurfaceVariant,
+        fontFamily: 'Be Vietnam Pro',
+      }}
+    >
+      {label}
+    </Text>
+    {focused ? (
+      <View
+        style={{
+          width: 4,
+          height: 4,
+          borderRadius: 2,
+          backgroundColor: COLORS.primaryContainer,
+          marginTop: 2,
+        }}
+      />
+    ) : (
+      <View style={{ width: 4, height: 4, marginTop: 2 }} />
+    )}
   </View>
 );
 
@@ -134,18 +145,13 @@ export const MainTabs: React.FC = () => {
         tabBarStyle: {
           backgroundColor: COLORS.surface,
           borderTopColor: COLORS.surfaceLine,
-          height: 60 + insets.bottom,
-          paddingBottom: insets.bottom + 8,
-          paddingTop: 8,
+          height: 78 + insets.bottom,
+          paddingBottom: insets.bottom + 4,
+          paddingTop: 6,
           paddingHorizontal: 8,
         },
         tabBarItemStyle: {
           paddingVertical: 4,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600' as const,
-          marginTop: 2,
         },
       }}
     >
@@ -154,10 +160,8 @@ export const MainTabs: React.FC = () => {
         component={HomeScreen}
         options={{
           title: 'FashionAI',
-          tabBarLabel: 'Trang chủ',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />
-          ),
+          tabBarLabel: ({ focused }) => <TabLabel label="Home" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon Icon={Home} focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -165,10 +169,8 @@ export const MainTabs: React.FC = () => {
         component={ShopScreen}
         options={{
           title: 'Khám phá',
-          tabBarLabel: 'Khám phá',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'grid' : 'grid-outline'} focused={focused} />
-          ),
+          tabBarLabel: ({ focused }) => <TabLabel label="Sản Phẩm" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon Icon={Package} focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -176,9 +178,9 @@ export const MainTabs: React.FC = () => {
         component={TryOnStack}
         options={{
           title: 'Virtual Try-On',
-          tabBarLabel: 'Thử đồ',
+          tabBarLabel: ({ focused }) => <TabLabel label="Try-On" focused={focused} />,
           headerShown: false,
-          tabBarIcon: ({ focused }) => <TryOnTabIcon focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon Icon={Sparkles} focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -186,10 +188,8 @@ export const MainTabs: React.FC = () => {
         component={RackScreen}
         options={{
           title: 'Tủ đồ',
-          tabBarLabel: 'Tủ đồ',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'shirt' : 'shirt-outline'} focused={focused} />
-          ),
+          tabBarLabel: ({ focused }) => <TabLabel label="Tủ đồ" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon Icon={Shirt} focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -197,12 +197,10 @@ export const MainTabs: React.FC = () => {
         component={ProfileStack}
         options={{
           title: 'Tài khoản',
-          tabBarLabel: 'Tài khoản',
           headerShown: false,
           popToTopOnBlur: true,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />
-          ),
+          tabBarLabel: ({ focused }) => <TabLabel label="Tài khoản" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon Icon={User} focused={focused} />,
         }}
       />
     </Tab.Navigator>
