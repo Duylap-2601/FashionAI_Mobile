@@ -43,6 +43,7 @@ export const ENDPOINTS = {
     GENERATE: '/try-on',
     HISTORY: '/try-on/history',
     DETAIL: (id: string | number) => `/try-on/history/${id}`,
+    DOWNLOAD: (id: string | number) => `/try-on/history/${id}/download`,
     DELETE: (id: string | number) => `/try-on/history/${id}`,
     DELETE_ALL: '/try-on/history/all',
   },

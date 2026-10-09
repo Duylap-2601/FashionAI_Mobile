@@ -81,7 +81,7 @@ export const tryOnApi = {
       throw new Error('Cần quyền truy cập thư viện ảnh để lưu kết quả.');
     }
 
-    const url = `${ENV.API_URL}${ENDPOINTS.TRY_ON.DETAIL(id)}/download`;
+    const url = `${ENV.API_URL}${ENDPOINTS.TRY_ON.DOWNLOAD(id)}`;
     const destination = new File(new Directory(Paths.cache), `try-on-${id}.jpg`);
 
     const file = await File.downloadFileAsync(url, destination, {
