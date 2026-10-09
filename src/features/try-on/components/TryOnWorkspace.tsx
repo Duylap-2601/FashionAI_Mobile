@@ -46,13 +46,21 @@ export const TryOnWorkspace: React.FC<TryOnWorkspaceProps> = ({
   });
   const [quota, setQuota] = useState<{ remaining?: number; limit?: number } | null>(null);
 
-  // Sản phẩm đi kèm từ màn Chi tiết (Dev 2): nạp đủ thông tin để thử ngay.
+  // Sản phẩm đi kèm từ màn Chi tiết (Dev 2): nạp đủ thông tin để thử ngay,
+  // đồng bộ cả 2 chế độ — ô đơn (1 món) luôn nhận, ô phối bộ nhận theo đúng
+  // danh mục (UPPER → ô áo, LOWER → ô quần/váy; FULL_BODY chỉ thử đơn).
   useEffect(() => {
     if (!entry?.productId) return;
     let active = true;
     getProduct(entry.productId)
       .then((product) => {
-        if (active) setSingleProduct(product);
+        if (!active) return;
+        setSingleProduct(product);
+        if (product.category === 'UPPER') {
+          setComboUpper(product);
+        } else if (product.category === 'LOWER') {
+          setComboLower(product);
+        }
       })
       .catch(() => {});
     return () => {
