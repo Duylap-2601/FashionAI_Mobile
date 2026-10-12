@@ -177,9 +177,9 @@ export const MainTabs: React.FC = () => {
         name="TryOnTab"
         component={TryOnStack}
         options={{
-          title: 'Thử Đồ',
-          tabBarLabel: 'Thử đồ',
-          tabBarIcon: ({ focused }) => <TryOnTabIcon focused={focused} />,
+          title: 'Try-On',
+          tabBarLabel: ({ focused }) => <TabLabel label="Try-On" focused={focused} />,    
+          tabBarIcon: ({ focused }) => <TabIcon Icon={Sparkles} focused={focused} />,
         }}
       />
       <Tab.Screen
