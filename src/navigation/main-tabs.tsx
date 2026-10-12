@@ -14,6 +14,7 @@ import { ShopScreen } from '../features/products/screens/ShopScreen';
 import { RackScreen } from '../features/rack/screens/RackScreen';
 import { ProfileStack } from './profile-stack';
 import { NotificationBell } from '../features/notifications/components/NotificationBell';
+import { FloatingChatBubble } from '../features/chat/components/FloatingChatBubble';
 
 // React Navigation's screenOptions/tabBarIcon require plain style objects
 // (no className support), so burgundy/cream tokens are inlined as hex here —
@@ -127,6 +128,7 @@ export const MainTabs: React.FC = () => {
   const insets = useSafeAreaInsets();
 
   return (
+    <View style={{ flex: 1 }}>
     <Tab.Navigator
       initialRouteName="HomeTab"
       screenOptions={{
@@ -203,5 +205,7 @@ export const MainTabs: React.FC = () => {
         }}
       />
     </Tab.Navigator>
+      <FloatingChatBubble />
+    </View>
   );
 };
