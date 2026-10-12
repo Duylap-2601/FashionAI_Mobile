@@ -77,10 +77,10 @@
 - `src/features/notifications/*`
 
 #### C. Checklist công việc Dev 1:
-- [x] Dựng bộ màn hình Auth: Login, Register, Forgot Password, Reset Password.
+- [x] Dựng bộ màn hình Auth: Login, Register, Forgot Password, Reset Password, VerifyEmail OTP 4 số + ChangePassword (kèm xử lý 403 chưa verify, SecureStore, interceptor auto-refresh `ACCESS_TOKEN_EXPIRED`).
 - [x] Tích hợp Google OAuth In-App Browser + deep link callback `fashionai://auth`.
 - [x] Dựng màn Try-On Workspace: Chọn ảnh từ thư viện/camera, chọn loại áo/quần/váy, upload multipart.
-- [x] Dựng màn Try-On History + Trình xem ảnh so sánh kết quả.
+- [x] Dựng màn Try-On History + Trình xem ảnh so sánh kết quả + Tải ảnh kết quả về máy (`GET /try-on/history/:id/download`) + Xóa 1 mục / Xóa tất cả.
 - [x] Tích hợp Live Try-On Workspace (Camera view + điều khiển phiên session).
   > ⚠️ **Chưa hoàn chỉnh — giới hạn camera đã xác nhận:** màn hình, vòng đời session
   > (create/pause/resume/end), quota giây và preview camera trước chạy thật; nhưng **camera
@@ -88,7 +88,12 @@
   > như bản web) vì chưa tích hợp Decart SDK cho React Native — vượt ngoài 7 endpoints
   > hiện tại của `live-try-on.controller.ts`. Khi nghiệm thu phải nói rõ điểm này.
 - [ ] Dựng màn Chatbot AI: Giao diện tin nhắn, kết nối WebSocket `/chat`, stream text, hiển thị gợi ý đồ.
-- [ ] Dựng màn Notification List & Badge chuông thông báo.
+  > ❌ **Chưa làm — thiếu toàn bộ `src/features/chat/`:** chưa có `chat.api.ts` (`GET /chat/sessions`, `GET /chat/sessions/:sessionId`, `DELETE /chat/sessions/:sessionId`), types, hooks, `ChatScreen`, route navigation, handler `chat:send` / `chat:token` / `chat:done` / `chat:error`. Hạ tầng duy nhất đã có là `ENDPOINTS.CHAT` + `getChatSocket()` trong `src/realtime/socket.ts` (chưa được gọi ở đâu).
+- [x] Dựng màn Notification List & Badge chuông thông báo — đã xong (`NotificationsScreen`, `NotificationBell` trong header `MainTabs`, `use-notifications` + `use-notification-socket`, route `Notifications`).
+  > ℹ️ **Thiếu sót nhỏ đã xác nhận (không chặn nghiệm thu):**
+  > - ✅ Đã xong `ENDPOINTS.TRY_ON.DOWNLOAD(id)` — `tryOnApi.downloadResult()` dùng constant thay vì nối chuỗi thủ công.
+  > - `tryOnApi.getHistory()` trả mảng thô, chưa dùng `http.getPaged` như `notificationsApi` nên mất `meta.totalPages`; `use-try-on-history.ts` phải đoán `hasNextPage` bằng `length === limit`.
+  > - `ENDPOINTS.CHAT` thiếu endpoint `DELETE /chat/sessions/:sessionId` theo allocation; `RootStackParamList` chưa có route `Chat*` nào.
 
 ---
 

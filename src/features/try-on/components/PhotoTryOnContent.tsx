@@ -418,18 +418,10 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
           ) : (
             <View className="mt-md gap-xl">
               <View>
-                <View className="mb-sm flex-row items-center justify-between">
+                <View className="mb-sm">
                   <Text className="text-body-sm font-semibold text-on-surface">
                     Món 1: Áo / Blazer (Upper)
                   </Text>
-                  {comboUpper ? (
-                    <Pressable
-                      className="min-h-11 justify-center px-sm"
-                      onPress={() => openPicker('upper')}
-                    >
-                      <Text className="text-label-lg text-primary-container">Đổi áo khác</Text>
-                    </Pressable>
-                  ) : null}
                 </View>
                 {comboUpper ? (
                   <>
@@ -455,18 +447,10 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
                 )}
               </View>
               <View>
-                <View className="mb-sm flex-row items-center justify-between">
+                <View className="mb-sm">
                   <Text className="text-body-sm font-semibold text-on-surface">
                     Món 2: Quần / Chân váy (Lower)
                   </Text>
-                  {comboLower ? (
-                    <Pressable
-                      className="min-h-11 justify-center px-sm"
-                      onPress={() => openPicker('lower')}
-                    >
-                      <Text className="text-label-lg text-primary-container">Đổi quần/váy khác</Text>
-                    </Pressable>
-                  ) : null}
                 </View>
                 {comboLower ? (
                   <>
