@@ -55,6 +55,11 @@ function mapChatError(code: string, fallback: string): ChatErrorState {
         message: 'AI đang trả lời tin trước. Vui lòng đợi chút rồi gửi lại.',
         action: null,
       };
+    case 'STREAM_ERROR':
+      return {
+        message: 'AI trả lời dở dang do sự cố. Gửi lại tin này không mất thêm lượt.',
+        action: null,
+      };
     case 'TOKEN_EXPIRED':
     case 'UNAUTHORIZED':
       return {
@@ -100,6 +105,8 @@ export function useChat(initialSessionId?: string) {
   );
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<ChatErrorState | null>(null);
+  // Tăng mỗi lần chat:done — màn hình dùng để refresh quota hiển thị.
+  const [completedCount, setCompletedCount] = useState(0);
 
   const streamingRef = useRef(false);
   const sessionIdRef = useRef<string | undefined>(initialSessionId);
@@ -218,6 +225,8 @@ export function useChat(initialSessionId?: string) {
         );
       }
       queryClient.invalidateQueries({ queryKey: chatKeys.sessions() });
+      queryClient.invalidateQueries({ queryKey: chatKeys.quota() });
+      setCompletedCount((count) => count + 1);
     },
     [finishAssistant, queryClient],
   );
@@ -373,6 +382,7 @@ export function useChat(initialSessionId?: string) {
     currentSessionId,
     isStreaming,
     error,
+    completedCount,
     sendMessage,
     stop,
     loadSession,

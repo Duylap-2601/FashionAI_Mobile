@@ -3,6 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { RotateCcw } from 'lucide-react-native';
 import { IChatMessage } from '@/features/chat/types/chat';
+import { FormattedAssistantText } from '@/features/chat/components/FormattedAssistantText';
 import { COLORS } from '@/constants/theme';
 
 function formatTime(iso?: string): string {
@@ -40,10 +41,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, onRetry }) =>
     <View className="mb-md items-start">
       <View className="max-w-[90%] rounded-xl rounded-bl-sm border border-surface-line bg-surface-lowest px-md py-sm shadow-sm">
         {message.content ? (
-          <Text className="text-body-md leading-relaxed text-on-surface">
-            {message.content}
-            {message.streaming ? <Text className="text-tertiary-fixed"> ▍</Text> : null}
-          </Text>
+          <FormattedAssistantText content={message.content} streaming={message.streaming} />
         ) : (
           <Text className="text-body-md text-on-surface-variant">Đang suy nghĩ...</Text>
         )}
