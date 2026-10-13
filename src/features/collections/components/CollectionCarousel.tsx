@@ -3,10 +3,9 @@ import {
   ActivityIndicator,
   FlatList,
   ListRenderItem,
-  StyleSheet,
   View,
 } from 'react-native';
-import { COLORS, SPACING } from '@/constants/theme';
+import { COLORS } from '@/constants/theme';
 import type { Collection } from '../types/collection';
 import { CollectionCard } from './CollectionCard';
 
@@ -36,10 +35,10 @@ export function CollectionCarousel({
       horizontal
       keyExtractor={(collection) => collection.id}
       renderItem={renderCollection}
-      contentContainerStyle={styles.content}
+      contentContainerClassName="gap-lg px-lg"
       ListFooterComponent={
         isFetchingNextPage ? (
-          <View style={styles.footer}>
+          <View className="w-14 items-center justify-center">
             <ActivityIndicator color={COLORS.primaryContainer} />
           </View>
         ) : null
@@ -51,15 +50,3 @@ export function CollectionCarousel({
     />
   );
 }
-
-const styles = StyleSheet.create({
-  content: {
-    gap: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-  },
-  footer: {
-    width: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

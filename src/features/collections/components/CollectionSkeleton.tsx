@@ -1,50 +1,17 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { BORDER_RADIUS, COLORS, SPACING } from '@/constants/theme';
+import { View } from 'react-native';
 
 export function CollectionSkeleton() {
   return (
     <View
       accessibilityRole="progressbar"
       accessibilityLabel="Đang tải bộ sưu tập"
-      style={styles.container}
+      className="gap-lg bg-surface-lowest p-lg"
     >
-      <View style={styles.hero} />
-      <View style={styles.title} />
-      <View style={styles.body} />
-      <View style={styles.bodyShort} />
+      <View className="aspect-[3/4] w-full rounded-catalog-gallery bg-catalog-muted" />
+      <View className="h-7 w-2/3 rounded-sm bg-catalog-line" />
+      <View className="h-4 w-full rounded-sm bg-catalog-line" />
+      <View className="h-4 w-3/4 rounded-sm bg-catalog-line" />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: SPACING.md,
-    padding: SPACING.lg,
-  },
-  hero: {
-    width: '100%',
-    aspectRatio: 0.88,
-    maxHeight: 460,
-    borderRadius: BORDER_RADIUS.xl,
-    backgroundColor: COLORS.surfaceContainer,
-  },
-  title: {
-    width: '58%',
-    height: 28,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.surfaceContainer,
-  },
-  body: {
-    width: '100%',
-    height: 14,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.surfaceContainer,
-  },
-  bodyShort: {
-    width: '72%',
-    height: 14,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.surfaceContainer,
-  },
-});

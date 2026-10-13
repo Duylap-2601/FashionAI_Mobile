@@ -3,12 +3,11 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Pressable,
   Text,
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { EmptyState } from '@/components/common/EmptyState';
+import { Button } from '@/components/ui/Button';
 import { ErrorView } from '@/components/common/ErrorView';
 import { COLORS } from '@/constants/theme';
 import { useAuth } from '@/features/auth/hooks/use-auth';
@@ -17,6 +16,7 @@ import { ApiError } from '@/types/api';
 import { RatingFilter } from '../components/RatingFilter';
 import { ReviewCard } from '../components/ReviewCard';
 import { ReviewForm } from '../components/ReviewForm';
+import { ReviewEmptyState } from '../components/ReviewEmptyState';
 import { ReviewStatsCard } from '../components/ReviewStatsCard';
 import { useProductReviews, useProductReviewStats } from '../hooks/useProductReviews';
 import {
@@ -127,9 +127,9 @@ export function ReviewsScreen({ navigation, route }: Props) {
 
   if (reviewsQuery.isLoading && reviews.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center bg-surface">
+      <View className="flex-1 items-center justify-center bg-surface-lowest">
         <ActivityIndicator size="large" color={COLORS.primaryContainer} />
-        <Text className="mt-md text-body-sm text-on-surface-variant">Đang tải đánh giá...</Text>
+        <Text className="mt-md font-sans text-body-sm text-catalog-muted-text">Đang tải đánh giá...</Text>
       </View>
     );
   }
@@ -147,45 +147,42 @@ export function ReviewsScreen({ navigation, route }: Props) {
 
   return (
     <FlatList
-      className="flex-1 bg-surface"
+      className="flex-1 bg-surface-lowest"
       data={reviews}
       keyExtractor={(item) => item.id}
-      contentContainerClassName="gap-md pb-xxxl"
+      contentContainerClassName="gap-xxl pb-xxxl"
+      contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
       refreshing={reviewsQuery.isRefetching && !reviewsQuery.isFetchingNextPage}
       onRefresh={refresh}
       onEndReached={loadMore}
       onEndReachedThreshold={0.35}
       ListHeaderComponent={
-        <View className="gap-lg pt-lg">
-          <ReviewStatsCard
-            stats={statsQuery.data}
-            loading={statsQuery.isLoading}
-            error={statsQuery.isError}
-            onRetry={() => void statsQuery.refetch()}
-          />
-
-          <View className="mx-lg flex-row gap-sm">
-            <Pressable
-              accessibilityRole="button"
-              className="min-h-11 flex-1 items-center justify-center rounded-md bg-primary-container px-md"
+        <View className="gap-xxl pt-xxl">
+          <View className="gap-sm px-lg">
+            <Text accessibilityRole="header" className="font-sans text-headline-lg font-bold text-primary-container">Đánh giá & Nhận xét</Text>
+            <Text className="font-sans text-body-sm leading-relaxed text-catalog-muted-text">Phản hồi thực tế từ khách hàng đã trải nghiệm sản phẩm may đo.</Text>
+          </View>
+          <View className="mx-lg flex-row flex-wrap gap-sm">
+            <Button
+              title={writing ? 'Đóng biểu mẫu' : 'Viết đánh giá'}
+              size="sm"
+              className="!rounded-xl"
+              textClassName="font-sans !text-on-primary"
               onPress={() => {
                 createMutation.reset();
                 setEditing(null);
                 setWriting((value) => !value);
               }}
-            >
-              <Text className="text-label-lg text-on-primary">
-                {writing ? 'Đóng biểu mẫu' : 'Viết đánh giá'}
-              </Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              className="min-h-11 flex-1 items-center justify-center rounded-md border border-outline-variant bg-surface-lowest px-md"
+            />
+            <Button
+              title="Đánh giá của tôi"
+              variant="outline"
+              size="sm"
+              className="!rounded-xl !border-catalog-line"
+              textClassName="font-sans !text-primary-container"
               onPress={() => navigation.navigate('MyReviews')}
-            >
-              <Text className="text-label-lg text-primary-container">Đánh giá của tôi</Text>
-            </Pressable>
+            />
           </View>
 
           {writing ? (
@@ -200,14 +197,19 @@ export function ReviewsScreen({ navigation, route }: Props) {
             </View>
           ) : null}
 
-          <View>
-            <Text className="mb-sm px-lg text-headline-sm text-on-surface">Lọc theo đánh giá</Text>
-            <RatingFilter value={rating} onChange={setRating} />
-          </View>
+          <ReviewStatsCard
+            stats={statsQuery.data}
+            loading={statsQuery.isLoading}
+            error={statsQuery.isError}
+            onRetry={() => void statsQuery.refetch()}
+          >
+            <Text className="font-sans text-body-sm font-semibold text-on-surface-variant">Lọc theo:</Text>
+            <RatingFilter value={rating} onChange={setRating} stats={statsQuery.data} />
+          </ReviewStatsCard>
 
           {reviewsQuery.isError ? (
-            <View className="mx-lg rounded-lg bg-surface-low p-md">
-              <Text className="text-body-sm text-danger">
+            <View className="mx-lg rounded-xl border border-catalog-line bg-catalog-muted p-lg">
+              <Text className="font-sans text-body-sm text-danger">
                 Chưa thể cập nhật danh sách mới nhất. Nội dung đã tải vẫn được giữ lại.
               </Text>
             </View>
@@ -242,10 +244,9 @@ export function ReviewsScreen({ navigation, route }: Props) {
         </View>
       )}
       ListEmptyComponent={
-        <EmptyState
-          icon="☆"
+        <ReviewEmptyState
           title={rating ? `Chưa có đánh giá ${rating} sao` : 'Chưa có đánh giá'}
-          description="Hãy là người đầu tiên chia sẻ trải nghiệm về sản phẩm này."
+          description={rating ? 'Hãy thử chọn mức sao khác hoặc xem tất cả đánh giá.' : 'Nếu bạn đã mua và nhận sản phẩm này, hãy là người đầu tiên chia sẻ cảm nhận nhé!'}
         />
       }
       ListFooterComponent={reviewsQuery.isFetchingNextPage ? (

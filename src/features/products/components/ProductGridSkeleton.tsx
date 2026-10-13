@@ -6,9 +6,35 @@ const PLACEHOLDERS = Array.from({ length: 6 }, (_, index) => index);
 
 interface ProductGridSkeletonProps {
   cardWidth: number;
+  presentation?: 'default' | 'catalog';
 }
 
-export function ProductGridSkeleton({ cardWidth }: ProductGridSkeletonProps) {
+export function ProductGridSkeleton({
+  cardWidth,
+  presentation = 'default',
+}: ProductGridSkeletonProps) {
+  if (presentation === 'catalog') {
+    return (
+      <View
+        accessibilityRole="progressbar"
+        accessibilityLabel="Đang tải sản phẩm"
+        className="flex-row flex-wrap gap-catalog-gap px-lg"
+      >
+        {PLACEHOLDERS.map((placeholder) => (
+          <View key={placeholder} style={{ width: cardWidth }}>
+            <View className="overflow-hidden rounded-catalog-card border border-catalog-line bg-surface-lowest">
+              <View className="aspect-[3/4] w-full bg-catalog-muted" />
+              <View className="gap-sm p-sm">
+                <View className="h-3 w-1/3 rounded-sm bg-catalog-line" />
+                <View className="h-8 w-full rounded-sm bg-catalog-line" />
+                <View className="h-4 w-2/3 rounded-sm bg-catalog-line" />
+              </View>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  }
   return (
     <View
       accessibilityRole="progressbar"

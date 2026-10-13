@@ -38,6 +38,8 @@
 
 - Read `design-system.md` before implementing or refactoring mobile UI.
 - The target visual direction is the burgundy/cream mobile system documented in `design-system.md`, based on the provided HTML references for Home, Product Discovery, Product Detail, Photo Try-On, Camera Try-On, AI Stylist, Cart, and Checkout.
+- P11 Shop/Product Detail uses the deployed responsive website as its primary visual reference (see `P11_VISUAL_AUDIT.md`). Catalog color tokens are additive; use the opt-in `catalog` presentation on product cards/skeletons rather than changing their default collection presentation. Keep shared Input overrides optional so Auth and other existing callers retain their styling.
+- P11 Home/Collections uses feature-local `CollectionCover` and `HomeFeaturedProducts` presentation. Keep carousel card width explicit (`w-collection-card`) rather than measuring horizontal list content; preserve slug navigation and existing query hooks. P11 audit/QA reports are local-only and must not be staged or pushed.
 - Implement the design with gluestack components + NativeWind classes over React Native primitives (see *Styling Rules*); do not copy HTML, DOM scripts, CDN fonts, or Material Symbols web-font usage into the Expo app.
 - Keep reusable primitives in `src/components/ui`; gluestack components should also be added there. Keep screen-specific composition in `src/features/<feature>/screens` until it is reused.
 - NativeWind configuration lives in `tailwind.config.js`, `global.css`, `babel.config.js`, `metro.config.js` (`inlineRem: 16`, so `p-4` = 16px on device), and `nativewind-env.d.ts`. `gluestack-ui.config.json` points gluestack CLI/component output to `src/components/ui`.

@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { EmptyState } from '@/components/common/EmptyState';
+import { Card } from '@/components/ui/Card';
 import { ErrorView } from '@/components/common/ErrorView';
 import { COLORS } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
@@ -9,6 +9,7 @@ import { ApiError } from '@/types/api';
 import { RatingFilter } from '../components/RatingFilter';
 import { ReviewCard } from '../components/ReviewCard';
 import { ReviewForm } from '../components/ReviewForm';
+import { ReviewEmptyState } from '../components/ReviewEmptyState';
 import { useMyReviews } from '../hooks/useMyReviews';
 import { useDeleteReview, useUpdateReview } from '../hooks/useReviewMutations';
 import type { CreateReviewFormValues } from '../schemas/review.schema';
@@ -74,9 +75,9 @@ export function MyReviewsScreen(_props: Props) {
 
   if (reviewsQuery.isLoading && reviews.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center bg-surface">
+      <View className="flex-1 items-center justify-center bg-catalog-muted">
         <ActivityIndicator size="large" color={COLORS.primaryContainer} />
-        <Text className="mt-md text-body-sm text-on-surface-variant">Đang tải đánh giá của bạn...</Text>
+        <Text className="mt-md font-sans text-body-sm text-catalog-muted-text">Đang tải đánh giá của bạn...</Text>
       </View>
     );
   }
@@ -94,21 +95,28 @@ export function MyReviewsScreen(_props: Props) {
 
   return (
     <FlatList
-      className="flex-1 bg-surface"
+      className="flex-1 bg-catalog-muted"
       data={reviews}
       keyExtractor={(item) => item.id}
-      contentContainerClassName="gap-md pb-xxxl"
+      contentContainerClassName="gap-xxl pb-xxxl"
+      contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
       refreshing={reviewsQuery.isRefetching && !reviewsQuery.isFetchingNextPage}
       onRefresh={() => void reviewsQuery.refetch()}
       onEndReached={loadMore}
       onEndReachedThreshold={0.35}
       ListHeaderComponent={
-        <View className="gap-sm pt-lg">
-          <Text className="px-lg text-headline-sm text-on-surface">Lọc đánh giá của tôi</Text>
-          <RatingFilter value={rating} onChange={setRating} />
+        <View className="gap-xxl">
+          <View className="gap-sm border-b border-catalog-line bg-surface-lowest px-lg py-xxl">
+            <Text accessibilityRole="header" className="font-sans text-headline-lg font-bold text-primary-container">Đánh giá của tôi</Text>
+            <Text className="font-sans text-body-sm leading-relaxed text-catalog-muted-text">Xem lại lịch sử đánh giá và cảm nhận thực tế về các sản phẩm bạn đã mua.</Text>
+          </View>
+          <Card variant="outlined" className="mx-lg gap-md !rounded-2xl !border-catalog-line">
+            <Text className="font-sans text-body-sm font-semibold text-on-surface-variant">Lọc theo đánh giá</Text>
+            <RatingFilter value={rating} onChange={setRating} />
+          </Card>
           {reviewsQuery.isError ? (
-            <Text className="mx-lg rounded-lg bg-surface-low p-md text-body-sm text-danger">
+            <Text className="mx-lg rounded-xl border border-catalog-line bg-surface-lowest p-lg font-sans text-body-sm text-danger">
               Chưa thể cập nhật danh sách mới nhất. Nội dung đã tải vẫn được giữ lại.
             </Text>
           ) : null}
@@ -141,10 +149,10 @@ export function MyReviewsScreen(_props: Props) {
         </View>
       )}
       ListEmptyComponent={
-        <EmptyState
-          icon="☆"
+        <ReviewEmptyState
+          personal
           title={rating ? `Bạn chưa có đánh giá ${rating} sao` : 'Bạn chưa có đánh giá'}
-          description="Đánh giá sẽ xuất hiện sau khi bạn nhận hàng và chia sẻ trải nghiệm."
+          description="Sau khi nhận hàng, bạn có thể chia sẻ cảm nhận về chất lượng sản phẩm. Các đánh giá của bạn sẽ xuất hiện tại đây."
         />
       }
       ListFooterComponent={reviewsQuery.isFetchingNextPage ? (

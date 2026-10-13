@@ -12,6 +12,15 @@ export const COLORS = {
   commerceSurface: "#FBF9F7",
   surfaceMuted: "#F1F5F9",
 
+  // Deployed catalog palette; additive so other developers' screens keep their theme.
+  catalogMuted: "#F9F7F5",
+  catalogMutedText: "#8B8880",
+  catalogLine: "#F0EEE9",
+  catalogTailoring: "#FDFBF7",
+  // Deployed Home editorial surround and image scrim; existing aliases stay intact.
+  editorialBackground: "#0E161C",
+  editorialShade: "#000000",
+
   // FashionAI commerce palette. Existing aliases above remain unchanged so
   // feature work can migrate without restyling unrelated screens.
   primary: "#41051F",
@@ -53,6 +62,7 @@ export const COLORS = {
 } as const;
 
 export const SPACING = {
+  catalogGap: 10,
   xs: 4,
   sm: 8,
   md: 12,

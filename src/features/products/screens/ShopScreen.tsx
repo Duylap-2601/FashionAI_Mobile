@@ -5,7 +5,7 @@ import {
   LayoutChangeEvent,
   ListRenderItem,
   Pressable,
-  StyleSheet,
+  ScrollView,
   Text,
   View,
 } from "react-native";
@@ -18,13 +18,8 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ErrorView } from "@/components/common/ErrorView";
 import { Input } from "@/components/ui/Input";
-import {
-  BORDER_RADIUS,
-  COLORS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-  SPACING,
-} from "@/constants/theme";
+import { COLORS, SPACING } from "@/constants/theme";
+import { Search, SlidersHorizontal } from "lucide-react-native";
 import { MainTabParamList, RootStackParamList } from "@/navigation/types";
 import { ProductCard } from "../components/ProductCard";
 import {
@@ -35,7 +30,7 @@ import { ProductGridSkeleton } from "../components/ProductGridSkeleton";
 import { useDebouncedValue } from "../hooks/use-debounced-value";
 import { useProducts } from "../hooks/useProducts";
 import { useFilterStore } from "../store/use-filter-store";
-import { IProduct, IProductListFilters } from "../types/product";
+import { GarmentType, IProduct, IProductListFilters } from "../types/product";
 
 type ShopNavigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, "ShopTab">,
@@ -43,6 +38,16 @@ type ShopNavigation = CompositeNavigationProp<
 >;
 
 const PRODUCT_LIMIT = 20;
+const GARMENT_TABS: { label: string; value: GarmentType | null }[] = [
+  { label: "Tất cả", value: null },
+  { label: "Áo sơ mi", value: "SHIRT" },
+  { label: "Áo vest", value: "VEST" },
+  { label: "Áo khoác", value: "JACKET" },
+  { label: "Quần", value: "PANTS" },
+  { label: "Chân váy", value: "SKIRT" },
+  { label: "Đầm", value: "DRESS" },
+  { label: "Jumpsuit", value: "JUMPSUIT" },
+];
 
 export const ShopScreen: React.FC = () => {
   const navigation = useNavigation<ShopNavigation>();
@@ -134,7 +139,7 @@ export const ShopScreen: React.FC = () => {
   const hasActiveFilters = activeFilterCount > 0;
   const productCardWidth = Math.max(
     1,
-    Math.floor((layoutWidth - SPACING.lg * 2 - SPACING.md) / 2),
+    (layoutWidth - SPACING.lg * 2 - SPACING.catalogGap) / 2,
   );
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => {
@@ -180,6 +185,7 @@ export const ShopScreen: React.FC = () => {
   const renderProduct = useCallback<ListRenderItem<IProduct>>(
     ({ item }) => (
       <ProductCard
+        presentation="catalog"
         product={item}
         cardWidth={productCardWidth}
         onPress={handleProductPress}
@@ -195,15 +201,15 @@ export const ShopScreen: React.FC = () => {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const header = (
-    <View style={styles.header}>
-      <Text style={styles.intro}>
-        Khám phá thiết kế công sở được may đo dành riêng cho bạn.
-      </Text>
+    <View className="gap-sm pb-lg pt-lg">
       <Input
         accessibilityLabel="Tìm kiếm sản phẩm"
         autoCapitalize="none"
         autoCorrect={false}
-        containerStyle={styles.searchContainer}
+        containerClassName="mx-lg !mb-0"
+        fieldContainerClassName="!rounded-full !border-catalog-line !bg-surface-lowest"
+        className="min-h-11 !py-sm font-sans !text-body-sm"
+        leftIcon={<Search size={16} color={COLORS.catalogMutedText} />}
         placeholder="Tìm sản phẩm, chất liệu, phong cách..."
         returnKeyType="search"
         value={searchInput}
@@ -213,67 +219,69 @@ export const ShopScreen: React.FC = () => {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Xóa tìm kiếm"
-              hitSlop={8}
               onPress={handleClearSearch}
-              style={({ pressed }) => [
-                styles.clearSearch,
-                pressed && styles.pressed,
-              ]}
+              className="min-h-11 min-w-11 items-center justify-center active:opacity-70"
             >
-              <Text style={styles.clearSearchText}>×</Text>
+              <Text className="font-sans text-headline-md text-catalog-muted-text">
+                ×
+              </Text>
             </Pressable>
           ) : null
         }
-        style={styles.searchInput}
       />
-
-      <View style={styles.toolbar}>
-        <Text style={styles.resultCount}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerClassName="gap-lg px-lg"
+      >
+        {GARMENT_TABS.map((tab) => (
+          <Pressable
+            key={tab.value ?? "all"}
+            accessibilityRole="button"
+            accessibilityState={{ selected: garmentType === tab.value }}
+            onPress={() => setFilters({ garmentType: tab.value })}
+            className="min-h-11 min-w-11 items-center justify-center gap-xs active:opacity-70"
+          >
+            <Text
+              className={`font-sans text-body-sm font-semibold ${garmentType === tab.value ? "text-primary-container" : "text-catalog-muted-text"}`}
+            >
+              {tab.label}
+            </Text>
+            <View
+              className={`h-1 w-1 rounded-full ${garmentType === tab.value ? "bg-primary-container" : "bg-transparent"}`}
+            />
+          </Pressable>
+        ))}
+      </ScrollView>
+      <View className="flex-row items-center justify-between border-b border-catalog-line px-lg pb-xs">
+        <Text className="font-sans text-body-sm tabular-nums text-catalog-muted-text">
           {totalProducts.toLocaleString("vi-VN")} sản phẩm
         </Text>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Mở bộ lọc${activeFilterCount ? `, ${activeFilterCount} đang áp dụng` : ""}`}
           onPress={() => setFiltersVisible(true)}
-          style={({ pressed }) => [
-            styles.filterButtonPressable,
-            pressed && styles.pressed,
-          ]}
+          className="min-h-11 flex-row items-center gap-sm active:opacity-70"
         >
-          <View
-            style={[
-              styles.filterButton,
-              hasActiveFilters && styles.filterButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.filterButtonText,
-                hasActiveFilters && styles.filterButtonTextActive,
-              ]}
-            >
-              Bộ lọc
-            </Text>
-            {activeFilterCount ? (
-              <View style={styles.filterBadge}>
-                <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
-              </View>
-            ) : null}
-          </View>
+          <SlidersHorizontal size={14} color={COLORS.primaryContainer} />
+          <Text className="font-sans text-body-sm font-semibold text-primary-container underline">
+            Sắp xếp / Lọc{activeFilterCount ? ` (${activeFilterCount})` : ""}
+          </Text>
         </Pressable>
       </View>
-
       {isError && products.length > 0 ? (
-        <View style={styles.inlineError}>
-          <Text style={styles.inlineErrorText}>
+        <View className="mx-lg flex-row items-center justify-between rounded-md bg-catalog-muted p-md">
+          <Text className="flex-1 font-sans text-body-sm text-danger">
             Chưa thể cập nhật danh sách mới nhất.
           </Text>
           <Pressable
             accessibilityRole="button"
             onPress={() => void refetch()}
-            style={({ pressed }) => pressed && styles.pressed}
+            className="min-h-11 justify-center px-sm active:opacity-70"
           >
-            <Text style={styles.inlineRetry}>Thử lại</Text>
+            <Text className="font-sans text-body-sm font-bold text-danger">
+              Thử lại
+            </Text>
           </Pressable>
         </View>
       ) : null}
@@ -291,9 +299,12 @@ export const ShopScreen: React.FC = () => {
 
   if (isLoading) {
     return (
-      <View style={styles.screen} onLayout={handleLayout}>
+      <View className="flex-1 bg-surface-lowest" onLayout={handleLayout}>
         {header}
-        <ProductGridSkeleton cardWidth={productCardWidth} />
+        <ProductGridSkeleton
+          presentation="catalog"
+          cardWidth={productCardWidth}
+        />
         {filterModal}
       </View>
     );
@@ -301,9 +312,9 @@ export const ShopScreen: React.FC = () => {
 
   if (isError && products.length === 0) {
     return (
-      <View style={styles.screen} onLayout={handleLayout}>
+      <View className="flex-1 bg-surface-lowest" onLayout={handleLayout}>
         {header}
-        <View style={styles.stateContainer}>
+        <View className="flex-1 items-center justify-center">
           <ErrorView
             title="Chưa thể tải sản phẩm"
             message="Vui lòng kiểm tra kết nối và thử lại."
@@ -316,7 +327,7 @@ export const ShopScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.screen} onLayout={handleLayout}>
+    <View className="flex-1 bg-surface-lowest" onLayout={handleLayout}>
       <FlatList
         data={products}
         renderItem={renderProduct}
@@ -346,20 +357,19 @@ export const ShopScreen: React.FC = () => {
         }
         ListFooterComponent={
           isFetchingNextPage ? (
-            <View style={styles.footerLoading}>
+            <View className="min-h-16 flex-row items-center justify-center gap-sm">
               <ActivityIndicator color={COLORS.primaryContainer} />
-              <Text style={styles.footerLoadingText}>Đang tải thêm...</Text>
+              <Text className="font-sans text-body-sm text-catalog-muted-text">
+                Đang tải thêm...
+              </Text>
             </View>
           ) : (
-            <View style={styles.footerSpace} />
+            <View className="h-xxl" />
           )
         }
-        ItemSeparatorComponent={() => <View style={styles.rowSeparator} />}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={[
-          styles.listContent,
-          products.length === 0 && styles.emptyListContent,
-        ]}
+        ItemSeparatorComponent={() => <View className="h-lg" />}
+        columnWrapperClassName="items-start gap-catalog-gap px-lg"
+        contentContainerClassName={`grow ${products.length === 0 ? "pb-xxxl" : ""}`}
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
         refreshing={isRefetching && !isFetchingNextPage}
@@ -373,152 +383,3 @@ export const ShopScreen: React.FC = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.commerceSurface,
-  },
-  header: {
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.xl,
-    gap: SPACING.md,
-  },
-  intro: {
-    paddingHorizontal: SPACING.lg,
-    fontSize: FONT_SIZE.sm,
-    lineHeight: 20,
-    color: COLORS.onSurfaceVariant,
-  },
-  searchContainer: {
-    marginBottom: 0,
-    marginHorizontal: SPACING.lg,
-  },
-  searchInput: {
-    minHeight: 44,
-    paddingVertical: SPACING.sm,
-    color: COLORS.onSurface,
-  },
-  clearSearch: {
-    minWidth: 36,
-    minHeight: 36,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  clearSearchText: {
-    fontSize: FONT_SIZE.xxl,
-    lineHeight: 26,
-    color: COLORS.onSurfaceVariant,
-  },
-  toolbar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: SPACING.lg,
-  },
-  resultCount: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.onSurface,
-    fontVariant: ["tabular-nums"],
-  },
-  filterButtonPressable: {
-    borderRadius: BORDER_RADIUS.full,
-  },
-  filterButton: {
-    minHeight: 44,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    borderRadius: BORDER_RADIUS.full,
-    borderWidth: 1,
-    borderColor: COLORS.outlineVariant,
-    backgroundColor: COLORS.surfaceLowest,
-  },
-  filterButtonActive: {
-    borderColor: COLORS.primaryContainer,
-    backgroundColor: COLORS.primaryContainer,
-  },
-  filterButtonText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primaryContainer,
-  },
-  filterButtonTextActive: {
-    color: COLORS.onPrimary,
-  },
-  filterBadge: {
-    minWidth: 20,
-    height: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: SPACING.xs,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primarySoft,
-  },
-  filterBadgeText: {
-    fontSize: 11,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryContainer,
-    fontVariant: ["tabular-nums"],
-  },
-  inlineError: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginHorizontal: SPACING.lg,
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: "#FDECEC",
-  },
-  inlineErrorText: {
-    flex: 1,
-    fontSize: FONT_SIZE.xs,
-    lineHeight: 16,
-    color: COLORS.danger,
-  },
-  inlineRetry: {
-    paddingHorizontal: SPACING.sm,
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.danger,
-  },
-  stateContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  listContent: {
-    flexGrow: 1,
-  },
-  emptyListContent: {
-    paddingBottom: SPACING.xxxl,
-  },
-  columnWrapper: {
-    alignItems: "flex-start",
-    gap: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-  },
-  rowSeparator: {
-    height: SPACING.xl,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  footerLoading: {
-    minHeight: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: SPACING.sm,
-  },
-  footerLoadingText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.onSurfaceVariant,
-  },
-  footerSpace: {
-    height: SPACING.xxl,
-  },
-});
