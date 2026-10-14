@@ -14,7 +14,7 @@ export function PaymentScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   
-  const { checkoutUrl, provider, qrCode, orderCode, totalAmount, paymentId, orderId } = route.params || {};
+  const { checkoutUrl, provider, qrCode, orderCode, totalAmount, paymentId, orderId, targetTier, returnRoute } = route.params || {};
 
   React.useEffect(() => {
     navigation.setOptions({
@@ -37,11 +37,15 @@ export function PaymentScreen() {
   const isRefundRequired = payment?.status === 'REFUND_REQUIRED';
 
   React.useEffect(() => {
-    if (isPaid && orderId) {
+    if (isPaid) {
       Alert.alert('Thành công', 'Thanh toán thành công!');
-      navigation.replace('OrderDetail', { orderId: orderId });
+      if (targetTier || returnRoute === 'SubscriptionPlans') {
+        navigation.replace('SubscriptionPlans');
+      } else if (orderId) {
+        navigation.replace('OrderDetail', { orderId: orderId });
+      }
     }
-  }, [isPaid, orderId, navigation]);
+  }, [isPaid, orderId, targetTier, returnRoute, navigation]);
 
   if (!checkoutUrl) {
     return (
@@ -165,9 +169,17 @@ export function PaymentScreen() {
           </View>
         )}
         onNavigationStateChange={(navState) => {
-          // Xử lý redirect thành công hoặc thất bại nếu có scheme trả về
-          if (navState.url.includes('success')) {
-            // navigation.navigate('OrderSuccess');
+          if (
+            navState.url.includes('success') ||
+            navState.url.includes('resultCode=0') ||
+            navState.url.includes('fashionai://payment/success')
+          ) {
+            Alert.alert('Thành công', 'Thanh toán thành công!');
+            if (targetTier || returnRoute === 'SubscriptionPlans') {
+              navigation.replace('SubscriptionPlans');
+            } else if (orderId) {
+              navigation.replace('OrderDetail', { orderId: orderId });
+            }
           }
         }}
       />

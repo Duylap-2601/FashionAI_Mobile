@@ -23,6 +23,7 @@ import { CartScreen } from "../features/cart/screens/CartScreen";
 import { CheckoutScreen } from "../features/checkout/screens/CheckoutScreen";
 import { PaymentScreen } from "../features/checkout/screens/PaymentScreen";
 import { NotificationsScreen } from "../features/notifications/screens/NotificationsScreen";
+import { SubscriptionPlansScreen } from "../features/subscription/screens/SubscriptionPlansScreen";
 
 import { useAuth } from "../features/auth/hooks/use-auth";
 import { COLORS, FONT_SIZE } from "../constants/theme";
@@ -210,6 +211,14 @@ export const RootNavigator: React.FC = () => {
             <Stack.Screen
               name="Notifications"
               component={NotificationsScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
+
+            <Stack.Screen
+              name="SubscriptionPlans"
+              component={SubscriptionPlansScreen}
               options={{
                 headerShown: false,
               }}

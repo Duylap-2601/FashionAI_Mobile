@@ -56,6 +56,16 @@ export type RootStackParamList = {
   Cart: undefined;
   SubscriptionPlans: undefined;
   Checkout: undefined;
-  Payment: { checkoutUrl: string; provider: string; paymentId?: string; orderId?: string | number; qrCode?: string; orderCode?: string; totalAmount?: number; };
+  Payment: {
+    checkoutUrl: string;
+    provider: string;
+    paymentId?: string;
+    orderId?: string | number;
+    qrCode?: string;
+    orderCode?: string;
+    totalAmount?: number;
+    targetTier?: string;
+    returnRoute?: string;
+  };
   Notifications: undefined;
 };

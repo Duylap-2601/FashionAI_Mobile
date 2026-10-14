@@ -23,14 +23,7 @@ export const ProfileStack: React.FC = () => {
         name="ProfileHome"
         component={ProfileScreen}
         options={{
-          title: 'Hồ sơ cá nhân',
-          headerShown: true,
-          headerStyle: { backgroundColor: COLORS.surface },
-          headerTitleStyle: {
-            fontWeight: '700' as const,
-            color: COLORS.onSurface,
-            fontSize: 18,
-          },
+          headerShown: false,
         }}
       />
       <Stack.Screen
