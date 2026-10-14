@@ -675,12 +675,7 @@ export const ProfileScreen: React.FC = () => {
             icon={History}
             label="Lịch sử Try-On"
             desc="Xem lại và tải ảnh thử đồ AI của bạn"
-            onPress={() =>
-              navigation.navigate('Main', {
-                screen: 'TryOnTab',
-                params: { screen: 'TryOnHistory' },
-              } as any)
-            }
+            onPress={() => navigation.navigate('TryOnHistory')}
           />
 
           <NavCard

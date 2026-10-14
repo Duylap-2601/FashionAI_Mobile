@@ -41,6 +41,8 @@ export interface IMeasurement {
   outseam?: number; // cm (alias for trouserLength)
   inseam?: number; // cm
   underbust?: number; // cm
+  wrist?: number; // cm
+  knee?: number; // cm
   bodyType?: string;
   updatedAt?: string;
 }

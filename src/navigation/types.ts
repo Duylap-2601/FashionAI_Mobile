@@ -14,6 +14,8 @@ export type ProfileStackParamList = {
   ChangePassword: undefined;
   Measurements: undefined;
   Orders: undefined;
+  TryOnHistory: undefined;
+  TryOnDetail: { id: string };
 };
 
 export type TryOnEntryParams = {

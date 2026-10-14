@@ -5,6 +5,8 @@ import { ProfileScreen } from '../features/profile/screens/ProfileScreen';
 import { ChangePasswordScreen } from '../features/auth/screens/ChangePasswordScreen';
 import { MeasurementsScreen } from '../features/measurements/screens/MeasurementsScreen';
 import { OrdersScreen } from '../features/orders/screens/OrdersScreen';
+import { TryOnHistoryScreen } from '../features/try-on/screens/TryOnHistoryScreen';
+import { TryOnDetailScreen } from '../features/try-on/screens/TryOnDetailScreen';
 
 // React Navigation's screenOptions/options require plain style objects (no
 // className support), so burgundy/cream tokens are inlined as hex here — see
@@ -50,6 +52,20 @@ export const ProfileStack: React.FC = () => {
       <Stack.Screen
         name="Orders"
         component={OrdersScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="TryOnHistory"
+        component={TryOnHistoryScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="TryOnDetail"
+        component={TryOnDetailScreen}
         options={{
           headerShown: false,
         }}

@@ -6,6 +6,12 @@ export interface UpdateProfileDto {
   name?: string;
   phone?: string;
   avatarUrl?: string;
+  birthday?: string;
+  gender?: string;
+  address?: string;
+  city?: string;
+  job?: string;
+  company?: string;
 }
 
 export interface UserQuotaResponse {
