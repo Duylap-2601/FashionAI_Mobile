@@ -29,5 +29,8 @@ export const paymentsApi = {
   },
   getPaymentStatus: (paymentId: string | number, opts?: HttpOptions): Promise<PaymentStatusResponse> => {
     return http.get<PaymentStatusResponse>(ENDPOINTS.PAYMENTS.STATUS(paymentId), opts);
-  }
+  },
+  getPaymentOrders: (opts?: HttpOptions): Promise<any[]> => {
+    return http.get<any[]>(ENDPOINTS.PAYMENTS.ORDERS, opts);
+  },
 };

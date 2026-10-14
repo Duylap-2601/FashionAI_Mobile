@@ -24,4 +24,7 @@ export const shippingApi = {
   calculateFee: (payload: any, opts?: HttpOptions) => {
     return http.post<{ fee: number }>(ENDPOINTS.SHIPPING.CALCULATE_FEE, payload, opts);
   },
+  getLocations: (opts?: HttpOptions) => {
+    return http.get<any>(ENDPOINTS.SHIPPING.LOCATIONS, opts);
+  },
 };
