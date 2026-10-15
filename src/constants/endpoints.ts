@@ -18,6 +18,7 @@ export const ENDPOINTS = {
     MEASUREMENTS: '/users/me/measurements',
     MEASUREMENTS_COMPLETENESS: '/users/me/measurements/completeness',
     QUOTA: '/users/me/quota',
+    ADDRESSES: '/users/me/addresses',
   },
   COLLECTIONS: {
     PUBLISHED: '/collections/published',
@@ -98,6 +99,7 @@ export const ENDPOINTS = {
     SUBSCRIPTIONS_HISTORY: '/payments/subscriptions/history',
     SUBSCRIPTIONS_CANCEL: '/payments/subscriptions/cancel',
     SUBSCRIPTIONS_RESUME: '/payments/subscriptions/resume',
+    SUBSCRIPTIONS_SCHEDULED_CANCEL: '/payments/subscriptions/scheduled/cancel',
   },
   NOTIFICATIONS: {
     LIST: '/notifications',

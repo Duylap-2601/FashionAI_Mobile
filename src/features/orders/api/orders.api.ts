@@ -50,11 +50,19 @@ export const ordersApi = {
     return http.get<any>(ENDPOINTS.ORDERS.DETAIL(id), opts);
   },
   
+  getTracking: (id: string | number, opts?: HttpOptions): Promise<any> => {
+    return http.get<any>(ENDPOINTS.ORDERS.TRACKING(id), opts);
+  },
+  
   cancelOrder: (id: string | number, opts?: HttpOptions): Promise<any> => {
     return http.patch<any>(ENDPOINTS.ORDERS.CANCEL(id), undefined, opts);
   },
   
   confirmDelivery: (id: string | number, payload?: { note?: string }, opts?: HttpOptions): Promise<any> => {
     return http.post<any>(ENDPOINTS.ORDERS.CONFIRM_DELIVERY(id), payload, opts);
-  }
+  },
+
+  updateMeasurement: (orderId: string | number, itemId: string | number, data: any, opts?: HttpOptions): Promise<any> => {
+    return http.patch<any>(ENDPOINTS.ORDERS.UPDATE_MEASUREMENT(orderId, itemId), data, opts);
+  },
 };
