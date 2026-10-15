@@ -1,7 +1,9 @@
 import React from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
-import { EmptyState } from '@/components/common/EmptyState';
+import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Sparkles } from 'lucide-react-native';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { ErrorView } from '@/components/common/ErrorView';
 import { COLORS } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
@@ -34,22 +36,25 @@ export function StylistResultScreen({ navigation, route }: Props) {
 
   if (resultQuery.isLoading && !result) {
     return (
-      <View className="flex-1 items-center justify-center bg-surface">
-        <Text className="text-body-sm text-on-surface-variant">Đang tải kết quả tư vấn...</Text>
+      <View className="flex-1 items-center justify-center gap-md bg-catalog-muted">
+        <ActivityIndicator color={COLORS.primaryContainer} />
+        <Text className="font-sans text-body-sm text-catalog-muted-text">Đang tải kết quả tư vấn...</Text>
       </View>
     );
   }
 
   if (resultQuery.error instanceof ApiError && resultQuery.error.statusCode === 404) {
     return (
-      <EmptyState
-        fullscreen
-        icon="✦"
-        title="Không tìm thấy kết quả"
-        description="Kết quả tư vấn có thể đã được xóa."
-        actionTitle="Xem lịch sử"
-        onAction={() => navigation.replace('StylistHistory')}
-      />
+      <View className="flex-1 justify-center bg-catalog-muted p-lg">
+        <Card variant="outlined" className="items-center gap-xl !rounded-2xl !border-catalog-line !p-xxxl">
+          <View className="h-20 w-20 items-center justify-center rounded-full bg-catalog-muted">
+            <Sparkles size={28} color={COLORS.primaryContainer} />
+          </View>
+          <Text className="text-center font-sans text-headline-md font-semibold text-primary-container">Không tìm thấy kết quả</Text>
+          <Text className="text-center font-sans text-body-sm leading-relaxed text-catalog-muted-text">Kết quả tư vấn có thể đã được xóa.</Text>
+          <Button title="Xem lịch sử" className="!rounded-xl" textClassName="font-sans !text-body-sm !text-on-primary" onPress={() => navigation.replace('StylistHistory')} />
+        </Card>
+      </View>
     );
   }
 
@@ -72,8 +77,8 @@ export function StylistResultScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView
-      className="flex-1 bg-surface"
-      contentContainerClassName="gap-md px-lg py-xl"
+      className="flex-1 bg-catalog-muted"
+      contentContainerClassName="gap-xxl px-lg pb-xxxl pt-xxl"
       contentInsetAdjustmentBehavior="automatic"
       refreshControl={
         <RefreshControl
@@ -86,10 +91,14 @@ export function StylistResultScreen({ navigation, route }: Props) {
       showsVerticalScrollIndicator={false}
     >
       {resultQuery.isError ? (
-        <Text accessibilityRole="alert" className="rounded-lg bg-surface-low p-md text-body-sm text-danger">
+        <Text accessibilityRole="alert" className="rounded-xl border border-catalog-line bg-surface-lowest p-lg font-sans text-body-sm text-danger">
           Chưa thể cập nhật kết quả mới nhất. Nội dung đã tải vẫn được giữ lại.
         </Text>
       ) : null}
+      <View className="gap-sm">
+        <Text accessibilityRole="header" className="font-sans text-headline-lg font-bold text-primary-container">Kết quả tư vấn</Text>
+        <Text className="font-sans text-body-sm leading-relaxed text-catalog-muted-text">Phân tích màu sắc, vóc dáng và gợi ý phối đồ của bạn.</Text>
+      </View>
       <StylistResultContent
         result={result}
         onProductPress={(productId) => navigation.navigate('ProductDetail', { productId })}

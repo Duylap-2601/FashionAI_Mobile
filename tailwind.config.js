@@ -15,6 +15,9 @@ module.exports = {
       // Named so className tokens like `px-xxl`, `mb-md`, `gap-md` resolve to real
       // values instead of silently matching nothing on Tailwind's numeric-only scale.
       spacing: {
+        "catalog-gap": "10px",
+        "collection-hero": "440px",
+        "collection-card": "280px",
         xs: "4px",
         sm: "8px",
         md: "12px",
@@ -25,6 +28,13 @@ module.exports = {
         giant: "48px",
       },
       colors: {
+        editorial: { background: token("editorial-background") },
+        catalog: {
+          muted: token("catalog-muted"),
+          "muted-text": token("catalog-muted-text"),
+          line: token("catalog-line"),
+          tailoring: token("catalog-tailoring"),
+        },
         // gluestack tokens — hard-coded by components from `npx gluestack-ui add`
         background: token("background"),
         foreground: token("foreground"),
@@ -106,6 +116,8 @@ module.exports = {
       },
       // design-system.md › Typography roles, e.g. `text-headline-sm`, `text-price-lg`
       fontSize: {
+        "product-title": ["32px", { lineHeight: "40px", fontWeight: "700" }],
+        "product-price": ["22px", { lineHeight: "28px", fontWeight: "700" }],
         "2xs": "10px",
         display: ["34px", { lineHeight: "42px", fontWeight: "700" }],
         "headline-lg": ["26px", { lineHeight: "34px", fontWeight: "700" }],
@@ -121,6 +133,8 @@ module.exports = {
       },
       // design-system.md › Radius scale
       borderRadius: {
+        "catalog-card": "12px",
+        "catalog-gallery": "16px",
         sm: "6px",
         md: "10px",
         lg: "14px",

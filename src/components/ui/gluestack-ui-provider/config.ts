@@ -37,6 +37,11 @@ const tokenMap: Record<string, ColorKey> = {
 
   // design-system tokens
   '--surface': 'surface',
+  '--catalog-muted': 'catalogMuted',
+  '--catalog-muted-text': 'catalogMutedText',
+  '--catalog-line': 'catalogLine',
+  '--catalog-tailoring': 'catalogTailoring',
+  '--editorial-background': 'editorialBackground',
   '--surface-lowest': 'surfaceLowest',
   '--surface-low': 'surfaceLow',
   '--surface-container': 'surfaceContainer',

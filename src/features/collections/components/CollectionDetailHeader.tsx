@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Image } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
-import { COLORS, FONT_SIZE, FONT_WEIGHT, SPACING } from '@/constants/theme';
+import React from 'react';
+import { Text, useWindowDimensions, View } from 'react-native';
+import { SPACING } from '@/constants/theme';
 import type { Collection } from '../types/collection';
+import { CollectionCover } from './CollectionCover';
 
 interface CollectionDetailHeaderProps {
   collection: Collection;
@@ -13,118 +13,56 @@ export function CollectionDetailHeader({
   collection,
   productTotal,
 }: CollectionDetailHeaderProps) {
-  const imageUrl = collection.coverImages[0] ?? null;
-  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-  const imageFailed = failedImageUrl === imageUrl;
+  const { width } = useWindowDimensions();
+  const imageWidth = Math.max(1, width - SPACING.lg * 2);
 
   return (
-    <View style={styles.container}>
-      {imageUrl && !imageFailed ? (
-        <Image
-          accessibilityLabel={`Ảnh bộ sưu tập ${collection.name}`}
-          source={{ uri: imageUrl }}
-          contentFit="cover"
-          transition={180}
-          style={styles.hero}
-          onError={() => setFailedImageUrl(imageUrl)}
+    <View className="gap-xxxl px-lg pb-xxxl pt-lg">
+      <View className="aspect-[3/4] w-full overflow-hidden rounded-catalog-gallery bg-editorial-background">
+        <CollectionCover
+          imageUrl={collection.coverImages[0] ?? null}
+          name={collection.name}
+          width={imageWidth}
+          height={imageWidth / 0.75}
         />
-      ) : (
-        <View
-          accessibilityLabel={`${collection.name}, chưa có ảnh bộ sưu tập`}
-          style={[styles.hero, styles.placeholder]}
-        >
-          <Text style={styles.placeholderMark}>◇</Text>
-          <Text style={styles.placeholderText}>Chưa có ảnh bộ sưu tập</Text>
+        <View className="flex-1 justify-end gap-md p-xl">
+          <View className="self-start rounded-full border border-surface-lowest/20 bg-surface-lowest/20 px-md py-xs">
+            <Text className="font-sans text-label-md uppercase tracking-widest text-on-primary">
+              BỘ SƯU TẬP MAY ĐO
+            </Text>
+          </View>
+          <Text
+            selectable
+            className="font-sans text-product-title text-on-primary"
+          >
+            {collection.name}
+          </Text>
+          <Text className="font-sans text-label-md tabular-nums text-on-primary/80">
+            {productTotal.toLocaleString('vi-VN')} thiết kế
+          </Text>
         </View>
-      )}
-
-      <View style={styles.copy}>
-        <Text style={styles.kicker}>BỘ SƯU TẬP MAY ĐO</Text>
-        <Text selectable style={styles.name}>
-          {collection.name}
-        </Text>
-        {collection.description ? (
-          <Text selectable style={styles.description}>
+      </View>
+      {collection.description ? (
+        <View className="gap-md">
+          <Text className="font-sans text-label-md uppercase tracking-widest text-primary-container">
+            BỘ SƯU TẬP ĐỘC QUYỀN
+          </Text>
+          <Text
+            selectable
+            className="font-sans text-body-md leading-relaxed text-on-surface-variant"
+          >
             {collection.description}
           </Text>
-        ) : null}
-      </View>
-
-      <View style={styles.productsHeading}>
-        <Text style={styles.productsTitle}>Thiết kế trong bộ sưu tập</Text>
-        <Text style={styles.productsCount}>
+        </View>
+      ) : null}
+      <View className="gap-sm border-t border-catalog-line pt-xxxl">
+        <Text className="font-sans text-headline-lg font-bold uppercase text-primary-container">
+          Thiết kế: {collection.name}
+        </Text>
+        <Text className="font-sans text-body-sm tabular-nums text-catalog-muted-text">
           {productTotal.toLocaleString('vi-VN')} sản phẩm
         </Text>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: SPACING.xl,
-    paddingBottom: SPACING.xl,
-  },
-  hero: {
-    width: '100%',
-    aspectRatio: 0.9,
-    maxHeight: 500,
-    backgroundColor: COLORS.surfaceLow,
-  },
-  placeholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-  },
-  placeholderMark: {
-    fontSize: FONT_SIZE.display,
-    color: COLORS.outline,
-  },
-  placeholderText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.onSurfaceVariant,
-  },
-  copy: {
-    gap: SPACING.sm,
-    paddingHorizontal: SPACING.lg,
-  },
-  kicker: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    letterSpacing: 1.1,
-    color: COLORS.primaryContainer,
-  },
-  name: {
-    fontSize: FONT_SIZE.xxxl,
-    lineHeight: 36,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.onSurface,
-  },
-  description: {
-    fontSize: FONT_SIZE.sm,
-    lineHeight: 22,
-    color: COLORS.onSurfaceVariant,
-  },
-  productsHeading: {
-    minHeight: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: SPACING.md,
-    marginHorizontal: SPACING.lg,
-    paddingTop: SPACING.xl,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.surfaceLine,
-  },
-  productsTitle: {
-    flex: 1,
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.onSurface,
-  },
-  productsCount: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.onSurfaceVariant,
-    fontVariant: ['tabular-nums'],
-  },
-});

@@ -39,7 +39,11 @@ The provided HTML references establish the target mobile direction:
 
 ## Current Implementation Constraint
 
+P11 Shop and Product Detail follow the deployed mobile viewport audit in `P11_VISUAL_AUDIT.md`. They use white `surfaceLowest` canvases and additive catalog tokens: `catalogMuted` (#F9F7F5), `catalogMutedText` (#8B8880), `catalogLine` (#F0EEE9), and `catalogTailoring` (#FDFBF7). NativeWind exposes these as `catalog-muted`, `catalog-muted-text`, `catalog-line`, and `catalog-tailoring`. Catalog cards use 12px radius, detail galleries 16px, and listing gaps 10px (`SPACING.catalogGap` / `gap-catalog-gap`). Detail title and price roles are `text-product-title` (32/40) and `text-product-price` (22/28). Other screens retain the existing palette and roles below.
+
 `src/constants/theme.ts` holds the burgundy/cream palette below and is the single source of color values. `GluestackUIProvider` exposes it to NativeWind as CSS variables; see *NativeWind Tokens* for the class names.
+
+P11 Home/Collections adds `editorialBackground` (#0E161C) and `editorialShade` (#000000) for the deployed editorial surround and image scrim. Existing defaults remain intact. `h-collection-hero` is 440px; `w-collection-card` is a fixed 280px, with 3:4 cards and 16px gaps/corners. `CollectionCover` uses the existing SVG dependency for the image gradient. Home and Collection Detail opt into the existing catalog cards. Native member/quota and feature access remain below Home's collection/product presentation. No season, sale claim or collection is fabricated when it is absent from the API.
 
 Rules:
 

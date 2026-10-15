@@ -3,6 +3,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Text, View } from 'react-native';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import {
   createReviewSchema,
@@ -45,8 +46,8 @@ export function ReviewForm({
   }, [initialComment, initialRating, reset]);
 
   return (
-    <View className="rounded-xl border border-outline-variant bg-surface-lowest p-lg">
-      <Text className="mb-md text-headline-sm text-on-surface">
+    <Card variant="outlined" className="!rounded-2xl !border-catalog-line !p-xl">
+      <Text className="mb-lg font-sans text-headline-md text-primary-container">
         {mode === 'create' ? 'Viết đánh giá' : 'Chỉnh sửa đánh giá'}
       </Text>
 
@@ -56,19 +57,19 @@ export function ReviewForm({
           name="rating"
           render={({ field: { value, onChange } }) => (
             <View className="mb-md">
-              <Text className="mb-xs text-label-lg text-on-surface">Mức đánh giá</Text>
+              <Text className="mb-sm font-sans text-label-lg text-on-surface-variant">Mức đánh giá</Text>
               <RatingStars value={value} onChange={onChange} size="lg" />
               {errors.rating?.message ? (
-                <Text className="text-body-sm text-danger">{errors.rating.message}</Text>
+                <Text className="font-sans text-body-sm text-danger">{errors.rating.message}</Text>
               ) : null}
             </View>
           )}
         />
       ) : (
         <View className="mb-md">
-          <Text className="text-label-lg text-on-surface">Mức đánh giá</Text>
+          <Text className="mb-sm font-sans text-label-lg text-on-surface-variant">Mức đánh giá</Text>
           <RatingStars value={initialRating} />
-          <Text className="mt-xs text-body-sm text-on-surface-variant">
+          <Text className="mt-sm font-sans text-body-sm text-catalog-muted-text">
             Số sao không thể thay đổi sau khi gửi.
           </Text>
         </View>
@@ -88,13 +89,14 @@ export function ReviewForm({
             onChangeText={onChange}
             onBlur={onBlur}
             error={errors.comment?.message}
-            className="min-h-24"
+            className="min-h-24 font-sans text-body-md"
+            fieldContainerClassName="!rounded-xl !border-catalog-line !bg-catalog-muted"
           />
         )}
       />
 
       {errorMessage ? (
-        <Text accessibilityRole="alert" className="mb-md text-body-sm text-danger">
+        <Text accessibilityRole="alert" className="mb-md font-sans text-body-sm text-danger">
           {errorMessage}
         </Text>
       ) : null}
@@ -103,18 +105,19 @@ export function ReviewForm({
         <Button
           title="Hủy"
           variant="outline"
-          className="flex-1"
+          className="flex-1 !rounded-xl !border-catalog-line"
+          textClassName="font-sans text-body-sm !text-primary-container"
           disabled={submitting}
           onPress={onCancel}
         />
         <Button
           title={mode === 'create' ? 'Gửi đánh giá' : 'Lưu thay đổi'}
-          className="flex-1"
-          textClassName="text-on-primary"
+          className="flex-1 !rounded-xl"
+          textClassName="font-sans text-body-sm !text-on-primary"
           loading={submitting}
           onPress={handleSubmit(onSubmit)}
         />
       </View>
-    </View>
+    </Card>
   );
 }

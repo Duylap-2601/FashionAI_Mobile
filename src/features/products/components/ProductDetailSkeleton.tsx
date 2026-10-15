@@ -1,100 +1,31 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import {
-  BORDER_RADIUS,
-  COLORS,
-  SPACING,
-} from '@/constants/theme';
+import { ScrollView, View } from 'react-native';
 
 export function ProductDetailSkeleton() {
   return (
     <ScrollView
       accessibilityLabel="Đang tải chi tiết sản phẩm"
-      contentContainerStyle={styles.content}
+      contentContainerClassName="bg-surface-lowest px-lg pb-28 pt-lg"
       contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.media} />
-      <View style={styles.details}>
-        <View style={[styles.line, styles.eyebrow]} />
-        <View style={[styles.line, styles.title]} />
-        <View style={[styles.line, styles.titleShort]} />
-        <View style={[styles.line, styles.rating]} />
-        <View style={[styles.line, styles.price]} />
-        <View style={styles.divider} />
-        <View style={[styles.line, styles.sectionTitle]} />
-        <View style={styles.chips}>
-          <View style={styles.chip} />
-          <View style={styles.chip} />
-          <View style={styles.chip} />
+      <View className="aspect-[3/4] w-full rounded-catalog-gallery bg-catalog-muted" />
+      <View className="gap-md pt-lg">
+        <View className="rounded-sm bg-catalog-line h-3 w-1/3" />
+        <View className="rounded-sm bg-catalog-line h-7 w-full" />
+        <View className="rounded-sm bg-catalog-line h-7 w-2/3" />
+        <View className="rounded-sm bg-catalog-line h-4 w-1/2" />
+        <View className="rounded-sm bg-catalog-line h-6 w-1/2" />
+        <View className="h-px bg-catalog-line" />
+        <View className="rounded-sm bg-catalog-line h-4 w-1/3" />
+        <View className="flex-row gap-sm">
+          <View className="h-11 w-20 rounded-full bg-catalog-line" />
+          <View className="h-11 w-20 rounded-full bg-catalog-line" />
+          <View className="h-11 w-20 rounded-full bg-catalog-line" />
         </View>
-        <View style={[styles.line, styles.body]} />
-        <View style={[styles.line, styles.bodyShort]} />
+        <View className="rounded-sm bg-catalog-line h-4 w-full" />
+        <View className="rounded-sm bg-catalog-line h-4 w-3/4" />
       </View>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  content: {
-    paddingBottom: 112,
-    backgroundColor: COLORS.commerceSurface,
-  },
-  media: {
-    width: '100%',
-    aspectRatio: 0.75,
-    maxHeight: 560,
-    backgroundColor: COLORS.surfaceContainer,
-  },
-  details: {
-    padding: SPACING.lg,
-    gap: SPACING.md,
-  },
-  line: {
-    height: 16,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.surfaceContainer,
-  },
-  eyebrow: {
-    width: '32%',
-    height: 12,
-  },
-  title: {
-    width: '92%',
-    height: 28,
-  },
-  titleShort: {
-    width: '64%',
-    height: 28,
-  },
-  rating: {
-    width: '44%',
-  },
-  price: {
-    width: '52%',
-    height: 24,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.surfaceLine,
-  },
-  sectionTitle: {
-    width: '36%',
-  },
-  chips: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  chip: {
-    width: 76,
-    height: 44,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.surfaceContainer,
-  },
-  body: {
-    width: '100%',
-  },
-  bodyShort: {
-    width: '76%',
-  },
-});
