@@ -224,6 +224,14 @@ export const RootNavigator: React.FC = () => {
                 headerShown: false,
               }}
             />
+
+            <Stack.Screen
+              name="Chat"
+              component={ChatScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
           </>
         ) : (
           <Stack.Screen name="Auth" component={AuthStack} />
