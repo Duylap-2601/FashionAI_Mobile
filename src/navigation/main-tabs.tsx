@@ -90,6 +90,8 @@ const HeaderRight = () => {
         <Heart size={24} color={COLORS.onSurface} />
       </Pressable>
       
+      <NotificationBell />
+
       <Pressable onPress={() => navigation.navigate('Cart')} style={{ position: 'relative' }}>
         <ShoppingBag size={24} color={COLORS.onSurface} />
         {totalItems > 0 && (
@@ -107,19 +109,6 @@ const HeaderRight = () => {
         )}
       </Pressable>
       
-      <NotificationBell />
-      
-      <Pressable onPress={() => navigation.navigate('Main', { screen: 'ProfileTab' } as any)}>
-        {user?.avatarUrl ? (
-          <Image source={{ uri: user.avatarUrl }} style={{ width: 30, height: 30, borderRadius: 15 }} />
-        ) : (
-          <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: COLORS.surfaceContainer, justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={{ fontSize: 13, fontWeight: 'bold', color: COLORS.onSurfaceVariant }}>
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-            </Text>
-          </View>
-        )}
-      </Pressable>
     </View>
   );
 };

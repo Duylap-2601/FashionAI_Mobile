@@ -4,7 +4,6 @@ import {
   FlatList,
   ListRenderItem,
   Pressable,
-  StyleSheet,
   Text,
   useWindowDimensions,
   View,
@@ -12,13 +11,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorView } from '@/components/common/ErrorView';
-import {
-  BORDER_RADIUS,
-  COLORS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-  SPACING,
-} from '@/constants/theme';
+import { COLORS, SPACING } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
 import { ApiError } from '@/types/api';
 import { ProductCard } from '@/features/products/components/ProductCard';
@@ -51,7 +44,7 @@ export function CollectionDetailScreen({
     productsQuery.data?.pages[0]?.meta.total ?? collection?.productCount ?? 0;
   const cardWidth = Math.max(
     1,
-    Math.floor((width - SPACING.lg * 2 - SPACING.md) / 2),
+    (width - SPACING.lg * 2 - SPACING.catalogGap) / 2,
   );
   const isNotFound =
     collectionQuery.error instanceof ApiError &&
@@ -67,6 +60,7 @@ export function CollectionDetailScreen({
   const renderProduct = useCallback<ListRenderItem<IProduct>>(
     ({ item }) => (
       <ProductCard
+        presentation="catalog"
         product={item}
         cardWidth={cardWidth}
         onPress={handleProductPress}
@@ -97,7 +91,7 @@ export function CollectionDetailScreen({
 
   if (collectionQuery.isLoading && !collection) {
     return (
-      <View style={styles.screen}>
+      <View className="flex-1 bg-surface-lowest">
         <CollectionSkeleton />
       </View>
     );
@@ -139,17 +133,24 @@ export function CollectionDetailScreen({
 
   const header = (
     <>
-      {collectionQuery.isError || (productsQuery.isError && products.length > 0) ? (
-        <View accessibilityRole="alert" style={styles.inlineError}>
-          <Text style={styles.inlineErrorText}>
-            Chưa thể cập nhật nội dung mới nhất. Dữ liệu đã tải vẫn được giữ lại.
+      {collectionQuery.isError ||
+      (productsQuery.isError && products.length > 0) ? (
+        <View
+          accessibilityRole="alert"
+          className="m-lg min-h-12 flex-row items-center gap-md rounded-md bg-catalog-muted p-md"
+        >
+          <Text className="flex-1 font-sans text-body-sm leading-relaxed text-on-surface-variant">
+            Chưa thể cập nhật nội dung mới nhất. Dữ liệu đã tải vẫn được giữ
+            lại.
           </Text>
           <Pressable
             accessibilityRole="button"
             onPress={handleRefresh}
-            style={({ pressed }) => pressed && styles.pressed}
+            className="min-h-11 min-w-11 items-center justify-center px-sm active:opacity-70"
           >
-            <Text style={styles.retryText}>Thử lại</Text>
+            <Text className="font-sans text-body-sm font-bold text-primary-container">
+              Thử lại
+            </Text>
           </Pressable>
         </View>
       ) : null}
@@ -161,7 +162,7 @@ export function CollectionDetailScreen({
   );
 
   return (
-    <View style={styles.screen}>
+    <View className="flex-1 bg-surface-lowest">
       <FlatList
         data={products}
         renderItem={renderProduct}
@@ -170,7 +171,7 @@ export function CollectionDetailScreen({
         ListHeaderComponent={header}
         ListEmptyComponent={
           productsQuery.isLoading ? (
-            <ProductGridSkeleton cardWidth={cardWidth} />
+            <ProductGridSkeleton presentation="catalog" cardWidth={cardWidth} />
           ) : productsQuery.isError ? (
             <ErrorView
               title="Chưa thể tải sản phẩm"
@@ -187,17 +188,19 @@ export function CollectionDetailScreen({
         }
         ListFooterComponent={
           productsQuery.isFetchingNextPage ? (
-            <View style={styles.footerLoading}>
+            <View className="min-h-16 flex-row items-center justify-center gap-sm">
               <ActivityIndicator color={COLORS.primaryContainer} />
-              <Text style={styles.footerText}>Đang tải thêm...</Text>
+              <Text className="font-sans text-body-sm text-catalog-muted-text">
+                Đang tải thêm...
+              </Text>
             </View>
           ) : (
-            <View style={styles.footerSpace} />
+            <View className="h-xxl" />
           )
         }
-        ItemSeparatorComponent={() => <View style={styles.rowSeparator} />}
-        columnWrapperStyle={products.length > 0 ? styles.columnWrapper : undefined}
-        contentContainerStyle={styles.listContent}
+        ItemSeparatorComponent={() => <View className="h-lg" />}
+        columnWrapperClassName="items-start gap-catalog-gap px-lg"
+        contentContainerClassName="grow"
         contentInsetAdjustmentBehavior="automatic"
         refreshing={
           collectionQuery.isRefetching ||
@@ -212,63 +215,3 @@ export function CollectionDetailScreen({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.commerceSurface,
-  },
-  listContent: {
-    flexGrow: 1,
-  },
-  columnWrapper: {
-    alignItems: 'flex-start',
-    gap: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-  },
-  rowSeparator: {
-    height: SPACING.xl,
-  },
-  inlineError: {
-    minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    margin: SPACING.lg,
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.surfaceLow,
-  },
-  inlineErrorText: {
-    flex: 1,
-    fontSize: FONT_SIZE.xs,
-    lineHeight: 18,
-    color: COLORS.onSurfaceVariant,
-  },
-  retryText: {
-    minHeight: 44,
-    paddingHorizontal: SPACING.sm,
-    textAlignVertical: 'center',
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryContainer,
-  },
-  pressed: {
-    opacity: 0.68,
-  },
-  footerLoading: {
-    minHeight: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-  },
-  footerText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.onSurfaceVariant,
-  },
-  footerSpace: {
-    height: SPACING.xxl,
-  },
-});
-

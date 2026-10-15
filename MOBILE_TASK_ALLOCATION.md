@@ -208,7 +208,7 @@
 - [x] Tích hợp mở cổng thanh toán SePay và xử lý callback quay về app để xác nhận đơn.
 - [x] Dựng màn hình Danh sách đơn hàng (OrdersScreen) có các tab trạng thái.
 - [x] Dựng màn hình Chi tiết đơn hàng & Timeline tracking vận chuyển.
-- [ ] Dựng màn hình Bảng giá Gói thành viên (SubscriptionScreen) + Luồng nâng cấp gói qua SePay.
+- [x] Dựng màn hình Bảng giá Gói thành viên (SubscriptionScreen) + Luồng nâng cấp gói qua SePay.
 - [x] Dựng màn hình Hồ sơ cá nhân (ProfileScreen) và Form nhập Số đo cơ thể (MeasurementsScreen).
 
 ---

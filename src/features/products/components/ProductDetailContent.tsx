@@ -1,21 +1,12 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import {
-  BORDER_RADIUS,
-  COLORS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-  SPACING,
-} from '@/constants/theme';
-import type {
-  GarmentCategory,
-  GarmentType,
-  IProduct,
-} from '../types/product';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { tva } from '@gluestack-ui/nativewind-utils/tva';
+import type { GarmentCategory, GarmentType, IProduct } from '../types/product';
 import { formatProductPrice } from '../utils/product-display';
 
 interface ProductDetailContentProps {
   product: IProduct;
+  rackAction?: React.ReactNode;
   selectedColor: string | null;
   unavailable: boolean;
   onReviewsPress: () => void;
@@ -26,6 +17,25 @@ interface ProductColorOption {
   name: string;
   hex: string | null;
 }
+
+const colorOptionStyle = tva({
+  base: 'min-h-11 min-w-11 flex-row items-center justify-center gap-sm rounded-full border bg-surface-lowest px-md',
+  variants: {
+    selected: {
+      true: 'border-primary-container',
+      false: 'border-surface-line',
+    },
+  },
+});
+const colorNameStyle = tva({
+  base: 'font-sans text-body-md',
+  variants: {
+    selected: {
+      true: 'font-semibold text-primary-container',
+      false: 'font-medium text-catalog-muted-text',
+    },
+  },
+});
 
 const CATEGORY_LABELS: Record<GarmentCategory, string> = {
   UPPER: 'Trang phục thân trên',
@@ -49,6 +59,7 @@ function isDisplayableColor(value: string): boolean {
 
 export function ProductDetailContent({
   product,
+  rackAction,
   selectedColor,
   unavailable,
   onReviewsPress,
@@ -69,14 +80,20 @@ export function ProductDetailContent({
     product.originalPrice !== null && product.originalPrice > product.price;
 
   return (
-    <View style={styles.content}>
-      <View style={styles.heading}>
+    <View className="gap-xl p-lg">
+      <View className="gap-sm">
         {product.brand ? (
-          <Text selectable style={styles.brand}>
+          <Text
+            selectable
+            className="font-sans text-label-md uppercase tracking-widest text-catalog-muted-text"
+          >
             {product.brand}
           </Text>
         ) : null}
-        <Text selectable style={styles.name}>
+        <Text
+          selectable
+          className="font-sans text-product-title text-primary-container"
+        >
           {product.name}
         </Text>
 
@@ -85,58 +102,84 @@ export function ProductDetailContent({
           accessibilityLabel={`Xem ${product.reviewCount} đánh giá của sản phẩm`}
           activeOpacity={0.68}
           onPress={onReviewsPress}
-          style={styles.ratingButton}
+          className="min-h-11 min-w-11 flex-row items-center gap-xs self-start"
         >
-          <Text accessibilityElementsHidden style={styles.star}>
+          <Text
+            accessibilityElementsHidden
+            className="text-body-lg text-tertiary"
+          >
             ★
           </Text>
-          <Text style={styles.ratingValue}>{product.avgRating.toFixed(1)}</Text>
-          <Text style={styles.reviewCount}>
+          <Text className="font-sans text-body-md font-bold tabular-nums text-on-surface-strong">
+            {product.avgRating.toFixed(1)}
+          </Text>
+          <Text className="font-sans text-body-md tabular-nums text-catalog-muted-text underline">
             ({product.reviewCount.toLocaleString('vi-VN')} đánh giá)
           </Text>
-          <Text accessibilityElementsHidden style={styles.chevron}>
+          <Text
+            accessibilityElementsHidden
+            className="text-headline-md text-catalog-muted-text"
+          >
             ›
           </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.priceRow}>
-        <Text selectable style={styles.price}>
+      <View className="flex-row flex-wrap items-center gap-sm">
+        <Text
+          selectable
+          className="font-sans text-product-price tabular-nums text-primary-container"
+        >
           {formatProductPrice(product.price)}
         </Text>
         {showOriginalPrice ? (
           <>
-            <Text selectable style={styles.originalPrice}>
+            <Text
+              selectable
+              className="font-sans text-body-md tabular-nums text-catalog-muted-text line-through"
+            >
               {formatProductPrice(product.originalPrice!)}
             </Text>
-            <Text style={styles.saleBadge}>Giá ưu đãi</Text>
+            <Text className="rounded-full bg-catalog-muted px-sm py-xs font-sans text-body-sm font-bold text-primary-container">
+              Giá ưu đãi
+            </Text>
           </>
         ) : null}
       </View>
 
       {unavailable ? (
-        <View accessibilityRole="alert" style={styles.unavailableBanner}>
-          <Text style={styles.unavailableTitle}>Tạm ngừng nhận đơn</Text>
-          <Text style={styles.unavailableText}>
+        <View
+          accessibilityRole="alert"
+          className="gap-xs rounded-md border border-surface-line bg-catalog-muted p-md"
+        >
+          <Text className="font-sans text-body-md font-bold text-on-surface-strong">
+            Tạm ngừng nhận đơn
+          </Text>
+          <Text className="font-sans text-body-sm leading-relaxed text-catalog-muted-text">
             Sản phẩm hiện chưa sẵn sàng để thêm vào giỏ hàng.
           </Text>
         </View>
       ) : (
-        <View style={styles.availabilityRow}>
-          <View style={styles.availabilityDot} />
-          <Text style={styles.availabilityText}>Đang nhận đơn may đo</Text>
+        <View className="min-h-7 flex-row items-center gap-sm">
+          <View className="h-2 w-2 rounded-full bg-success" />
+          <Text className="font-sans text-body-sm font-medium text-on-surface-strong">
+            Đang nhận đơn may đo
+          </Text>
         </View>
       )}
 
       {colorOptions.length > 0 ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
+        <View className="gap-md border-t border-catalog-line pt-xl">
+          <Text className="font-sans text-body-lg font-semibold text-primary-container">
             Màu sắc
             {selectedColor ? (
-              <Text style={styles.selectedValue}> · {selectedColor}</Text>
+              <Text className="font-normal text-catalog-muted-text">
+                {' '}
+                · {selectedColor}
+              </Text>
             ) : null}
           </Text>
-          <View style={styles.colorList}>
+          <View className="flex-row flex-wrap gap-sm">
             {colorOptions.map((color) => {
               const selected = color.name === selectedColor;
               return (
@@ -147,25 +190,15 @@ export function ProductDetailContent({
                   accessibilityState={{ selected }}
                   activeOpacity={0.68}
                   onPress={() => onSelectColor(color.name)}
-                  style={[
-                    styles.colorOption,
-                    selected && styles.colorOptionSelected,
-                  ]}
+                  className={colorOptionStyle({ selected })}
                 >
                   {color.hex ? (
                     <View
-                      style={[
-                        styles.colorSwatch,
-                        { backgroundColor: color.hex },
-                      ]}
+                      className="h-5 w-5 rounded-full border border-surface-line"
+                      style={{ backgroundColor: color.hex }}
                     />
                   ) : null}
-                  <Text
-                    style={[
-                      styles.colorName,
-                      selected && styles.colorNameSelected,
-                    ]}
-                  >
+                  <Text className={colorNameStyle({ selected })}>
                     {color.name}
                   </Text>
                 </TouchableOpacity>
@@ -175,20 +208,29 @@ export function ProductDetailContent({
         </View>
       ) : null}
 
-      <View style={styles.madeToMeasure}>
-        <Text style={styles.madeToMeasureKicker}>MAY ĐO CÁ NHÂN</Text>
-        <Text style={styles.madeToMeasureTitle}>
+      <View className="gap-sm rounded-catalog-card border border-surface-line bg-catalog-tailoring p-lg">
+        <Text className="font-sans text-label-md uppercase tracking-wide text-primary-container">
+          MAY ĐO CÁ NHÂN
+        </Text>
+        <Text className="font-sans text-headline-sm text-primary-container">
           Thiết kế dành riêng cho số đo của bạn
         </Text>
-        <Text style={styles.madeToMeasureBody}>
+        <Text className="font-sans text-body-md leading-relaxed text-on-surface-variant">
           FashionAI không dùng kích cỡ tiêu chuẩn. Số đo cơ thể sẽ được áp dụng
           trong quy trình đặt may để tạo độ vừa vặn phù hợp với riêng bạn.
         </Text>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Thông tin sản phẩm</Text>
-        <MetadataRow label="Danh mục" value={CATEGORY_LABELS[product.category]} />
+      {rackAction}
+
+      <View className="gap-md border-t border-catalog-line pt-xl">
+        <Text className="font-sans text-body-lg font-semibold text-primary-container">
+          Thông tin sản phẩm
+        </Text>
+        <MetadataRow
+          label="Danh mục"
+          value={CATEGORY_LABELS[product.category]}
+        />
         {product.garmentType ? (
           <MetadataRow
             label="Kiểu trang phục"
@@ -201,9 +243,14 @@ export function ProductDetailContent({
       </View>
 
       {product.description ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Chi tiết</Text>
-          <Text selectable style={styles.description}>
+        <View className="gap-md border-t border-catalog-line pt-xl">
+          <Text className="font-sans text-body-lg font-semibold text-primary-container">
+            Chi tiết
+          </Text>
+          <Text
+            selectable
+            className="font-sans text-body-md leading-relaxed text-on-surface-variant"
+          >
             {product.description}
           </Text>
         </View>
@@ -214,223 +261,16 @@ export function ProductDetailContent({
 
 function MetadataRow({ label, value }: { label: string; value: string }) {
   return (
-    <View style={styles.metadataRow}>
-      <Text style={styles.metadataLabel}>{label}</Text>
-      <Text selectable style={styles.metadataValue}>
+    <View className="min-h-9 flex-row items-start justify-between gap-lg">
+      <Text className="flex-1 font-sans text-body-md text-catalog-muted-text">
+        {label}
+      </Text>
+      <Text
+        selectable
+        className="flex-1 text-right font-sans text-body-md font-medium text-on-surface-strong"
+      >
         {value}
       </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  content: {
-    padding: SPACING.lg,
-    gap: SPACING.xl,
-  },
-  heading: {
-    gap: SPACING.sm,
-  },
-  brand: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    letterSpacing: 1.2,
-    color: COLORS.outline,
-    textTransform: 'uppercase',
-  },
-  name: {
-    fontSize: FONT_SIZE.xxl,
-    lineHeight: 32,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.onSurface,
-  },
-  ratingButton: {
-    minHeight: 44,
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-  },
-  star: {
-    fontSize: FONT_SIZE.md,
-    color: COLORS.tertiary,
-  },
-  ratingValue: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.onSurface,
-    fontVariant: ['tabular-nums'],
-  },
-  reviewCount: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.onSurfaceVariant,
-    textDecorationLine: 'underline',
-    fontVariant: ['tabular-nums'],
-  },
-  chevron: {
-    fontSize: FONT_SIZE.xl,
-    color: COLORS.outline,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  price: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.heavy,
-    color: COLORS.primaryContainer,
-    fontVariant: ['tabular-nums'],
-  },
-  originalPrice: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.outline,
-    textDecorationLine: 'line-through',
-    fontVariant: ['tabular-nums'],
-  },
-  saleBadge: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primarySoft,
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryContainer,
-  },
-  unavailableBanner: {
-    padding: SPACING.md,
-    gap: SPACING.xs,
-    borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.outlineVariant,
-    backgroundColor: COLORS.surfaceLow,
-  },
-  unavailableTitle: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.onSurface,
-  },
-  unavailableText: {
-    fontSize: FONT_SIZE.xs,
-    lineHeight: 18,
-    color: COLORS.onSurfaceVariant,
-  },
-  availabilityRow: {
-    minHeight: 28,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  availabilityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.success,
-  },
-  availabilityText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.onSurface,
-  },
-  section: {
-    gap: SPACING.md,
-    paddingTop: SPACING.xl,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.surfaceLine,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.onSurface,
-  },
-  selectedValue: {
-    fontWeight: FONT_WEIGHT.regular,
-    color: COLORS.onSurfaceVariant,
-  },
-  colorList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-  },
-  colorOption: {
-    minHeight: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    borderRadius: BORDER_RADIUS.full,
-    borderWidth: 1,
-    borderColor: COLORS.outlineVariant,
-    backgroundColor: COLORS.surfaceLowest,
-  },
-  colorOptionSelected: {
-    borderColor: COLORS.primaryContainer,
-    backgroundColor: COLORS.primarySoft,
-  },
-  colorSwatch: {
-    width: 18,
-    height: 18,
-    borderRadius: BORDER_RADIUS.full,
-    borderWidth: 1,
-    borderColor: COLORS.outlineVariant,
-  },
-  colorName: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.onSurfaceVariant,
-  },
-  colorNameSelected: {
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryContainer,
-  },
-  madeToMeasure: {
-    padding: SPACING.lg,
-    gap: SPACING.sm,
-    borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: COLORS.primaryContainer,
-  },
-  madeToMeasureKicker: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    letterSpacing: 1.1,
-    color: COLORS.primarySoft,
-  },
-  madeToMeasureTitle: {
-    fontSize: FONT_SIZE.lg,
-    lineHeight: 24,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.onPrimary,
-  },
-  madeToMeasureBody: {
-    fontSize: FONT_SIZE.sm,
-    lineHeight: 21,
-    color: COLORS.onPrimary,
-  },
-  metadataRow: {
-    minHeight: 36,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: SPACING.lg,
-  },
-  metadataLabel: {
-    flex: 1,
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.onSurfaceVariant,
-  },
-  metadataValue: {
-    flex: 1.5,
-    fontSize: FONT_SIZE.sm,
-    lineHeight: 20,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.onSurface,
-    textAlign: 'right',
-  },
-  description: {
-    fontSize: FONT_SIZE.sm,
-    lineHeight: 22,
-    color: COLORS.onSurfaceVariant,
-  },
-});

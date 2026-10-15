@@ -11,6 +11,8 @@ export interface InputProps extends TextInputProps {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   containerClassName?: string;
+  /** Additive presentation override; leaves existing callers unchanged. */
+  fieldContainerClassName?: string;
   /** Only for computed/animated values — see AGENTS.md Styling Rules. */
   containerStyle?: StyleProp<ViewStyle>;
 }
@@ -42,6 +44,7 @@ export const Input: React.FC<InputProps> = ({
   leftIcon,
   rightIcon,
   containerClassName,
+  fieldContainerClassName,
   containerStyle,
   className,
   editable,
@@ -59,17 +62,32 @@ export const Input: React.FC<InputProps> = ({
       accessibilityRole="button"
       accessibilityLabel={isRevealed ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
     >
-      <Ionicons name={isRevealed ? 'eye-off-outline' : 'eye-outline'} size={20} color="#857276" />
+      <Ionicons
+        name={isRevealed ? 'eye-off-outline' : 'eye-outline'}
+        size={20}
+        color="#857276"
+      />
     </Pressable>
   ) : null;
 
   return (
-    <View className={inputWrapperStyle({ class: containerClassName })} style={containerStyle}>
-      {label && <Text className="mb-xs text-label-lg text-on-surface">{label}</Text>}
+    <View
+      className={inputWrapperStyle({ class: containerClassName })}
+      style={containerStyle}
+    >
+      {label && (
+        <Text className="mb-xs text-label-lg text-on-surface">{label}</Text>
+      )}
       <View
-        className={inputContainerStyle({ error: !!error, disabled: editable === false })}
+        className={inputContainerStyle({
+          error: !!error,
+          disabled: editable === false,
+          class: fieldContainerClassName,
+        })}
       >
-        {leftIcon && <View className="items-center justify-center px-xs">{leftIcon}</View>}
+        {leftIcon && (
+          <View className="items-center justify-center px-xs">{leftIcon}</View>
+        )}
         <TextInput
           placeholderTextColor="#857276"
           editable={editable}
@@ -86,7 +104,9 @@ export const Input: React.FC<InputProps> = ({
       {error ? (
         <Text className="mt-xs text-body-sm text-danger">{error}</Text>
       ) : helperText ? (
-        <Text className="mt-xs text-body-sm text-on-surface-variant">{helperText}</Text>
+        <Text className="mt-xs text-body-sm text-on-surface-variant">
+          {helperText}
+        </Text>
       ) : null}
     </View>
   );

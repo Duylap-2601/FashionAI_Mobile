@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
-import { Image } from 'expo-image';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import {
-  BORDER_RADIUS,
-  COLORS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-  SPACING,
-} from '@/constants/theme';
+import React from 'react';
+import { Pressable, Text, View } from 'react-native';
+import { ArrowUpRight } from 'lucide-react-native';
+import { COLORS } from '@/constants/theme';
 import type { Collection } from '../types/collection';
+import { CollectionCover } from './CollectionCover';
+
+// Keep an explicit width independent of horizontal FlatList measurement (P5/P9).
+// Mirrors w-collection-card; the deployed mobile card is 280px wide.
+const CARD_WIDTH = 280;
 
 interface CollectionCardProps {
   collection: Collection;
@@ -16,80 +15,53 @@ interface CollectionCardProps {
 }
 
 export function CollectionCard({ collection, onPress }: CollectionCardProps) {
-  const imageUrl = collection.coverImages[0] ?? null;
-  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-  const imageFailed = failedImageUrl === imageUrl;
-
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Mở bộ sưu tập ${collection.name}`}
       onPress={() => onPress(collection.slug)}
-      style={styles.card}
+      className="aspect-[3/4] w-collection-card overflow-hidden rounded-catalog-gallery border border-catalog-line bg-editorial-background active:opacity-80"
     >
-      {({ pressed }) => (
-        <View style={[styles.content, pressed && styles.pressed]}>
-          {imageUrl && !imageFailed ? (
-            <Image
-              source={{ uri: imageUrl }}
-              contentFit="cover"
-              transition={150}
-              style={styles.image}
-              onError={() => setFailedImageUrl(imageUrl)}
-            />
-          ) : (
-            <View style={[styles.image, styles.placeholder]}>
-              <Text style={styles.placeholderMark}>◇</Text>
-            </View>
-          )}
-          <Text numberOfLines={1} style={styles.name}>
-            {collection.name}
-          </Text>
-          <Text style={styles.count}>
-            {collection.productCount.toLocaleString('vi-VN')} thiết kế
+      <CollectionCover
+        imageUrl={collection.coverImages[0] ?? null}
+        name={collection.name}
+        width={CARD_WIDTH - 2}
+        height={(CARD_WIDTH - 2) / 0.75}
+      />
+      <View className="flex-1 justify-between p-lg">
+        <View className="self-start rounded-full border border-surface-lowest/20 bg-surface-lowest/20 px-md py-xs">
+          <Text className="font-sans text-2xs font-bold uppercase tracking-wide text-on-primary">
+            MAY ĐO
           </Text>
         </View>
-      )}
+        <View className="gap-sm">
+          <Text
+            numberOfLines={2}
+            className="font-sans text-headline-md font-bold text-on-primary"
+          >
+            {collection.name}
+          </Text>
+          {collection.description ? (
+            <Text
+              numberOfLines={2}
+              className="font-sans text-body-sm text-on-primary/80"
+            >
+              {collection.description}
+            </Text>
+          ) : null}
+          <View className="mt-sm flex-row items-center justify-between gap-sm border-t border-surface-lowest/20 pt-sm">
+            <Text className="font-sans text-label-md tabular-nums text-on-primary/70">
+              {collection.productCount.toLocaleString('vi-VN')} thiết kế
+            </Text>
+            <View className="min-h-11 flex-row items-center gap-xs rounded-full bg-surface-lowest px-md">
+              <Text className="font-sans text-label-md uppercase tracking-wide text-on-surface-strong">
+                Xem ngay
+              </Text>
+              <ArrowUpRight size={14} color={COLORS.onSurfaceStrong} />
+            </View>
+          </View>
+        </View>
+      </View>
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    width: 214,
-  },
-  content: {
-    gap: SPACING.xs,
-  },
-  pressed: {
-    opacity: 0.72,
-  },
-  image: {
-    width: '100%',
-    aspectRatio: 0.8,
-    overflow: 'hidden',
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceLine,
-    backgroundColor: COLORS.surfaceLow,
-  },
-  placeholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderMark: {
-    fontSize: FONT_SIZE.xxl,
-    color: COLORS.outline,
-  },
-  name: {
-    marginTop: SPACING.xs,
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.onSurface,
-  },
-  count: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.onSurfaceVariant,
-    fontVariant: ['tabular-nums'],
-  },
-});

@@ -1,145 +1,82 @@
-import React, { useState } from 'react';
-import { Image } from 'expo-image';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import {
-  BORDER_RADIUS,
-  COLORS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-  SPACING,
-} from '@/constants/theme';
+import React from 'react';
+import { Pressable, Text, useWindowDimensions, View } from 'react-native';
+import { ArrowRight } from 'lucide-react-native';
+import { Button } from '@/components/ui/Button';
+import { COLORS, SPACING } from '@/constants/theme';
 import type { Collection } from '../types/collection';
+import { CollectionCover } from './CollectionCover';
 
 interface CollectionHeroCardProps {
   collection: Collection;
   onPress: (slug: string) => void;
+  onTryOnPress: () => void;
 }
 
 export function CollectionHeroCard({
   collection,
   onPress,
+  onTryOnPress,
 }: CollectionHeroCardProps) {
-  const imageUrl = collection.coverImages[0] ?? null;
-  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-  const imageFailed = failedImageUrl === imageUrl;
+  const { width } = useWindowDimensions();
+  const imageWidth = Math.max(1, width - SPACING.lg * 2);
+  const imageUrl =
+    collection.coverImages[1] ?? collection.coverImages[0] ?? null;
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Khám phá bộ sưu tập ${collection.name}`}
-      onPress={() => onPress(collection.slug)}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-    >
-      {imageUrl && !imageFailed ? (
-        <Image
-          source={{ uri: imageUrl }}
-          contentFit="cover"
-          transition={180}
-          style={StyleSheet.absoluteFill}
-          onError={() => setFailedImageUrl(imageUrl)}
-        />
-      ) : (
-        <View style={[StyleSheet.absoluteFill, styles.placeholder]}>
-          <Text style={styles.placeholderMark}>◇</Text>
-          <Text style={styles.placeholderText}>Chưa có ảnh bộ sưu tập</Text>
-        </View>
-      )}
-
-      <View style={styles.overlay} />
-      <View style={styles.content}>
-        <Text style={styles.kicker}>BỘ SƯU TẬP MAY ĐO</Text>
-        <Text numberOfLines={2} style={styles.name}>
-          {collection.name}
-        </Text>
-        {collection.description ? (
-          <Text numberOfLines={2} style={styles.description}>
-            {collection.description}
+    <View className="h-collection-hero overflow-hidden rounded-catalog-gallery bg-editorial-background">
+      <CollectionCover
+        imageUrl={imageUrl}
+        name={collection.name}
+        width={imageWidth}
+        height={440}
+        alignTop
+      />
+      <View className="flex-1 justify-end gap-xxl p-xl">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Khám phá bộ sưu tập ${collection.name}`}
+          onPress={() => onPress(collection.slug)}
+          className="min-h-11 items-center gap-md active:opacity-80"
+        >
+          <View className="rounded-full border border-surface-lowest/60 bg-surface-lowest/90 px-md py-xs">
+            <Text className="font-sans text-label-md uppercase tracking-widest text-primary-container">
+              BỘ SƯU TẬP MAY ĐO
+            </Text>
+          </View>
+          <Text
+            numberOfLines={2}
+            className="text-center font-sans text-headline-lg font-bold text-on-primary"
+          >
+            {collection.name}
           </Text>
-        ) : null}
-        <View style={styles.metaRow}>
-          <Text style={styles.metaText}>
-            {collection.productCount.toLocaleString('vi-VN')} thiết kế
-          </Text>
-          <Text style={styles.cta}>Khám phá ›</Text>
+          {collection.description ? (
+            <Text
+              numberOfLines={2}
+              className="text-center font-sans text-body-md italic text-on-primary/85"
+            >
+              “{collection.description}”
+            </Text>
+          ) : null}
+        </Pressable>
+        <View className="flex-row flex-wrap items-center justify-center gap-md">
+          <Button
+            title="Khám phá BST"
+            variant="outline"
+            size="sm"
+            onPress={() => onPress(collection.slug)}
+            className="!rounded-full !border-surface-lowest !bg-surface-lowest px-xl"
+            textClassName="font-sans text-on-surface-strong"
+            rightIcon={<ArrowRight size={16} color={COLORS.onSurfaceStrong} />}
+          />
+          <Button
+            title="Thử đồ AI"
+            size="sm"
+            onPress={onTryOnPress}
+            className="!rounded-full border border-surface-lowest/10 px-xl"
+            textClassName="font-sans !text-on-primary"
+          />
         </View>
       </View>
-    </Pressable>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    minHeight: 400,
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
-    borderRadius: BORDER_RADIUS.xl,
-    backgroundColor: COLORS.surfaceContainer,
-  },
-  pressed: {
-    opacity: 0.82,
-  },
-  placeholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    backgroundColor: COLORS.surfaceContainer,
-  },
-  placeholderMark: {
-    fontSize: FONT_SIZE.display,
-    color: COLORS.outline,
-  },
-  placeholderText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.onSurfaceVariant,
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: 'rgba(18, 10, 13, 0.38)',
-  },
-  content: {
-    gap: SPACING.sm,
-    padding: SPACING.xl,
-    paddingTop: 120,
-    backgroundColor: 'rgba(18, 10, 13, 0.58)',
-  },
-  kicker: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    letterSpacing: 1.1,
-    color: COLORS.primarySoft,
-  },
-  name: {
-    fontSize: FONT_SIZE.xxxl,
-    lineHeight: 36,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.onPrimary,
-  },
-  description: {
-    fontSize: FONT_SIZE.sm,
-    lineHeight: 20,
-    color: COLORS.onPrimary,
-  },
-  metaRow: {
-    minHeight: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: SPACING.md,
-    marginTop: SPACING.sm,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.28)',
-  },
-  metaText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.onPrimary,
-  },
-  cta: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.onPrimary,
-  },
-});

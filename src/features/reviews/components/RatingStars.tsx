@@ -1,5 +1,7 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Star } from 'lucide-react-native';
+import { COLORS } from '@/constants/theme';
 import type { ReviewRating } from '../types/review';
 
 const RATINGS: ReviewRating[] = [1, 2, 3, 4, 5];
@@ -12,14 +14,14 @@ interface RatingStarsProps {
 
 export function RatingStars({ value, onChange, size = 'sm' }: RatingStarsProps) {
   return (
-    <View className="flex-row" accessibilityLabel={`${value} trên 5 sao`}>
+    <View className="flex-row gap-xs" accessibilityLabel={`${value} trên 5 sao`}>
       {RATINGS.map((rating) => {
         const star = (
-          <Text
-            className={size === 'lg' ? 'text-headline-lg text-warning' : 'text-headline-sm text-warning'}
-          >
-            {rating <= value ? '★' : '☆'}
-          </Text>
+          <Star
+            size={size === 'lg' ? 28 : 18}
+            color={rating <= value ? COLORS.warning : COLORS.surfaceHighest}
+            fill={rating <= value ? COLORS.warning : COLORS.surfaceHigh}
+          />
         );
 
         return onChange ? (
@@ -33,7 +35,7 @@ export function RatingStars({ value, onChange, size = 'sm' }: RatingStarsProps) 
             {star}
           </Pressable>
         ) : (
-          <View key={rating} className="mr-xs">
+          <View key={rating}>
             {star}
           </View>
         );

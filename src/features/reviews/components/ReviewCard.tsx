@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Image } from 'expo-image';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import type { IReview } from '../types/review';
 import { RatingStars } from './RatingStars';
 
@@ -9,25 +11,20 @@ function formatReviewDate(value: string): string {
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('vi-VN');
 }
 
-function ReviewImage({ url }: { url: string }) {
+function ReviewImage({ url, product = false }: { url: string; product?: boolean }) {
   const [failed, setFailed] = useState(false);
 
-  if (failed) {
-    return (
-      <View className="h-24 w-24 items-center justify-center rounded-lg bg-surface-low">
-        <Text className="text-body-sm text-on-surface-variant">Không tải được ảnh</Text>
-      </View>
-    );
-  }
-
   return (
-    <Image
-      source={{ uri: url }}
-      contentFit="cover"
-      transition={150}
-      className="h-24 w-24 rounded-lg bg-surface-low"
-      onError={() => setFailed(true)}
-    />
+    <View className={product ? 'h-14 w-12 overflow-hidden rounded-lg border border-catalog-line bg-catalog-muted' : 'h-20 w-20 overflow-hidden rounded-xl border border-catalog-line bg-catalog-muted'}>
+      {failed ? (
+        <View className="flex-1 items-center justify-center">
+          <Text accessibilityLabel="Không tải được ảnh" className="font-sans text-headline-sm text-catalog-muted-text">◇</Text>
+        </View>
+      ) : (
+        // expo-image does not consume NativeWind classes; fill its token-sized wrapper.
+        <Image source={{ uri: url }} contentFit="cover" transition={150} style={StyleSheet.absoluteFill} onError={() => setFailed(true)} />
+      )}
+    </View>
   );
 }
 
@@ -43,30 +40,29 @@ export function ReviewCard({ review, owned, onEdit, onDelete }: ReviewCardProps)
   const initial = displayName.charAt(0).toLocaleUpperCase('vi-VN');
 
   return (
-    <View className="mx-lg rounded-xl border border-surface-line bg-surface-lowest p-lg">
+    <Card variant="outlined" className="mx-lg !rounded-2xl !border-catalog-line !p-xxl">
       {review.product ? (
-        <Text className="mb-md text-label-lg text-primary-container" numberOfLines={2}>
-          {review.product.name}
-        </Text>
+        <View className="mb-lg flex-row items-center gap-md border-b border-catalog-line pb-lg">
+          {review.product.garmentUrl ? <ReviewImage url={review.product.garmentUrl} product /> : null}
+          <Text className="flex-1 font-sans text-body-md font-semibold text-primary-container" numberOfLines={2}>{review.product.name}</Text>
+        </View>
       ) : null}
 
-      <View className="flex-row items-start">
-        <View className="mr-md h-11 w-11 items-center justify-center rounded-full bg-primary-soft">
-          <Text className="text-headline-sm text-primary-strong">{initial}</Text>
+      <View className="flex-row items-start gap-md">
+        <View className="h-10 w-10 items-center justify-center rounded-full bg-catalog-muted">
+          <Text className="font-sans text-body-md font-bold text-primary-container">{initial}</Text>
         </View>
         <View className="flex-1">
-          <Text className="text-label-lg text-on-surface">{displayName}</Text>
-          <RatingStars value={review.rating} />
+          <Text className="font-sans text-body-md font-semibold text-primary-container">{displayName}</Text>
+          <Text className="mt-xs font-sans text-body-sm text-catalog-muted-text">{formatReviewDate(review.createdAt)}</Text>
         </View>
-        <Text className="text-body-sm text-on-surface-variant">
-          {formatReviewDate(review.createdAt)}
-        </Text>
+        <RatingStars value={review.rating} />
       </View>
 
       {review.comment ? (
-        <Text className="mt-md text-body-md text-on-surface">{review.comment}</Text>
+        <Text className="mt-lg font-sans text-body-md leading-relaxed text-on-surface-variant">{review.comment}</Text>
       ) : (
-        <Text className="mt-md italic text-body-sm text-on-surface-variant">
+        <Text className="mt-lg font-sans text-body-sm italic text-catalog-muted-text">
           Không có nhận xét bằng chữ.
         </Text>
       )}
@@ -84,36 +80,37 @@ export function ReviewCard({ review, owned, onEdit, onDelete }: ReviewCardProps)
       ) : null}
 
       {review.replies?.length ? (
-        <View className="mt-lg gap-sm border-l-2 border-primary-soft-strong pl-md">
+        <View className="mt-lg gap-md border-t border-catalog-line pt-lg">
           {review.replies.map((reply) => (
-            <View key={reply.id} className="rounded-lg bg-surface-low p-md">
-              <Text className="text-label-lg text-on-surface">
+            <View key={reply.id} className="rounded-xl border-l-2 border-primary-container bg-catalog-muted p-lg">
+              <Text className="font-sans text-label-lg text-primary-container">
                 {reply.user?.role === 'ADMIN' ? 'Phản hồi từ FashionAI' : reply.user?.name || 'Phản hồi'}
               </Text>
-              <Text className="mt-xs text-body-sm text-on-surface">{reply.content}</Text>
+              <Text className="mt-sm font-sans text-body-sm leading-relaxed text-on-surface-variant">{reply.content}</Text>
             </View>
           ))}
         </View>
       ) : null}
 
       {owned ? (
-        <View className="mt-md flex-row justify-end gap-sm border-t border-surface-line pt-sm">
-          <Pressable
-            accessibilityRole="button"
-            className="min-h-11 justify-center px-md"
+        <View className="mt-lg flex-row flex-wrap justify-end gap-sm border-t border-catalog-line pt-md">
+          <Button
+            title="Chỉnh sửa"
+            variant="outline"
+            size="sm"
+            className="!rounded-xl !border-catalog-line"
+            textClassName="font-sans !text-primary-container"
             onPress={() => onEdit(review)}
-          >
-            <Text className="text-label-lg text-primary-container">Chỉnh sửa</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            className="min-h-11 justify-center px-md"
+          />
+          <Button
+            title="Xóa"
+            variant="ghost"
+            size="sm"
+            textClassName="font-sans !text-danger"
             onPress={() => onDelete(review)}
-          >
-            <Text className="text-label-lg text-danger">Xóa</Text>
-          </Pressable>
+          />
         </View>
       ) : null}
-    </View>
+    </Card>
   );
 }

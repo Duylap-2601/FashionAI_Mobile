@@ -24,6 +24,7 @@ import { CheckoutScreen } from "../features/checkout/screens/CheckoutScreen";
 import { PaymentScreen } from "../features/checkout/screens/PaymentScreen";
 import { NotificationsScreen } from "../features/notifications/screens/NotificationsScreen";
 import { ChatScreen } from "../features/chat/screens/ChatScreen";
+import { SubscriptionPlansScreen } from "../features/subscription/screens/SubscriptionPlansScreen";
 
 import { useAuth } from "../features/auth/hooks/use-auth";
 import { COLORS, FONT_SIZE } from "../constants/theme";
@@ -217,8 +218,8 @@ export const RootNavigator: React.FC = () => {
             />
 
             <Stack.Screen
-              name="Chat"
-              component={ChatScreen}
+              name="SubscriptionPlans"
+              component={SubscriptionPlansScreen}
               options={{
                 headerShown: false,
               }}

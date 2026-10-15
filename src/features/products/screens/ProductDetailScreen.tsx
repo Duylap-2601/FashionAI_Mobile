@@ -4,7 +4,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -12,13 +11,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorView } from '@/components/common/ErrorView';
 import { Button } from '@/components/ui/Button';
-import {
-  BORDER_RADIUS,
-  COLORS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-  SPACING,
-} from '@/constants/theme';
+import { COLORS } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
 import { ApiError } from '@/types/api';
 import { useCartStore } from '@/features/cart/store/use-cart-store';
@@ -139,7 +132,10 @@ export function ProductDetailScreen({
     void pinToRackMutation
       .mutateAsync(product.id)
       .then(() => {
-        Alert.alert('Đã lưu vào Tủ đồ', `${product.name} đã có trong Tủ đồ của bạn.`);
+        Alert.alert(
+          'Đã lưu vào Tủ đồ',
+          `${product.name} đã có trong Tủ đồ của bạn.`,
+        );
       })
       .catch((error: unknown) => {
         Alert.alert(
@@ -200,9 +196,9 @@ export function ProductDetailScreen({
   }
 
   return (
-    <View style={styles.screen}>
+    <View className="flex-1 bg-surface-lowest">
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerClassName="pb-xxl"
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
           <RefreshControl
@@ -215,41 +211,38 @@ export function ProductDetailScreen({
         showsVerticalScrollIndicator={false}
       >
         {productQuery.isError ? (
-          <View accessibilityRole="alert" style={styles.refreshError}>
-            <Text style={styles.refreshErrorText}>
-              Chưa thể cập nhật thông tin mới nhất. Nội dung đã tải vẫn được giữ lại.
+          <View
+            accessibilityRole="alert"
+            className="mx-lg mt-lg min-h-12 flex-row items-center gap-md rounded-md bg-catalog-muted p-md"
+          >
+            <Text className="flex-1 font-sans text-body-sm leading-relaxed text-on-surface-variant">
+              Chưa thể cập nhật thông tin mới nhất. Nội dung đã tải vẫn được giữ
+              lại.
             </Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Thử tải lại thông tin sản phẩm"
               onPress={() => void productQuery.refetch()}
-              style={({ pressed }) => pressed && styles.pressed}
+              className="min-h-11 min-w-11 items-center justify-center px-sm active:opacity-70"
             >
-              <Text style={styles.retryText}>Thử lại</Text>
+              <Text className="font-sans text-body-sm font-bold text-primary-container">
+                Thử lại
+              </Text>
             </Pressable>
           </View>
         ) : null}
 
-        <ProductImageGallery
-          imageUrls={imageUrls}
-          productName={product.name}
-        />
-        <View className="px-lg pt-lg">
-          <Button
-            title="Lưu vào Tủ đồ"
-            variant="outline"
-            loading={pinToRackMutation.isPending}
-            onPress={handleSaveToRack}
-          />
-          <Button
-            className="mt-md"
-            title="Tư vấn với AI"
-            variant="ghost"
-            onPress={handleAskAI}
-          />
-        </View>
+        <ProductImageGallery imageUrls={imageUrls} productName={product.name} />
         <ProductDetailContent
           product={product}
+          rackAction={
+            <Button
+              title="Lưu vào Tủ đồ"
+              variant="outline"
+              loading={pinToRackMutation.isPending}
+              onPress={handleSaveToRack}
+            />
+          }
           selectedColor={selectedColor}
           unavailable={unavailable}
           onReviewsPress={handleReviewsPress}
@@ -265,41 +258,3 @@ export function ProductDetailScreen({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.commerceSurface,
-  },
-  scrollContent: {
-    paddingBottom: SPACING.xxl,
-  },
-  refreshError: {
-    minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    margin: SPACING.lg,
-    marginBottom: 0,
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.surfaceLow,
-  },
-  refreshErrorText: {
-    flex: 1,
-    fontSize: FONT_SIZE.xs,
-    lineHeight: 18,
-    color: COLORS.onSurfaceVariant,
-  },
-  retryText: {
-    minHeight: 44,
-    paddingHorizontal: SPACING.sm,
-    textAlignVertical: 'center',
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryContainer,
-  },
-  pressed: {
-    opacity: 0.68,
-  },
-});

@@ -4,18 +4,12 @@ import {
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  StyleSheet,
   Text,
   useWindowDimensions,
   View,
 } from 'react-native';
-import {
-  BORDER_RADIUS,
-  COLORS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-  SPACING,
-} from '@/constants/theme';
+import { tva } from '@gluestack-ui/nativewind-utils/tva';
+import { SPACING } from '@/constants/theme';
 
 interface ProductImageGalleryProps {
   imageUrls: string[];
@@ -23,6 +17,15 @@ interface ProductImageGalleryProps {
 }
 
 const MAX_IMAGE_WIDTH = 420;
+const dotStyle = tva({
+  base: 'h-1.5 rounded-full',
+  variants: {
+    active: {
+      true: 'w-4 bg-primary-container',
+      false: 'w-1.5 bg-surface-line',
+    },
+  },
+});
 
 export function ProductImageGallery({
   imageUrls,
@@ -33,143 +36,105 @@ export function ProductImageGallery({
   const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(
     () => new Set(),
   );
-  const imageWidth = Math.min(screenWidth, MAX_IMAGE_WIDTH);
+  const imageWidth = Math.max(
+    1,
+    Math.min(screenWidth - SPACING.lg * 2, MAX_IMAGE_WIDTH),
+  );
   const imageHeight = imageWidth / 0.75;
 
   const handleMomentumScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const nextIndex = Math.round(
-        event.nativeEvent.contentOffset.x / screenWidth,
+        event.nativeEvent.contentOffset.x / imageWidth,
       );
       setActiveIndex(Math.max(0, Math.min(nextIndex, imageUrls.length - 1)));
     },
-    [imageUrls.length, screenWidth],
+    [imageUrls.length, imageWidth],
   );
 
   const handleImageError = useCallback((imageUrl: string) => {
-    setFailedImageUrls((currentUrls) => {
-      const nextUrls = new Set(currentUrls);
-      nextUrls.add(imageUrl);
-      return nextUrls;
-    });
+    setFailedImageUrls((currentUrls) => new Set(currentUrls).add(imageUrl));
   }, []);
 
-  if (imageUrls.length === 0) {
-    return (
-      <View
-        accessibilityLabel={`${productName}, chưa có ảnh sản phẩm`}
-        style={[styles.emptyMedia, { width: imageWidth, height: imageHeight }]}
-      >
-        <Text style={styles.placeholderMark}>◇</Text>
-        <Text style={styles.placeholderText}>Chưa có ảnh sản phẩm</Text>
-      </View>
-    );
-  }
-
   return (
-    <View accessibilityLabel={`Thư viện ảnh của ${productName}`}>
-      <FlatList
-        data={imageUrls}
-        horizontal
-        pagingEnabled
-        keyExtractor={(imageUrl) => imageUrl}
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={handleMomentumScrollEnd}
-        renderItem={({ item: imageUrl, index }) => (
-          <View style={[styles.slide, { width: screenWidth }]}>
-            {failedImageUrls.has(imageUrl) ? (
+    <View
+      accessibilityLabel={`Thư viện ảnh của ${productName}`}
+      className="items-center px-lg pt-lg"
+    >
+      <View style={{ width: imageWidth }}>
+        <View className="overflow-hidden rounded-catalog-gallery bg-catalog-muted">
+          {imageUrls.length === 0 ? (
+            <View style={{ height: imageHeight }}>
               <View
-                accessibilityLabel={`Không thể hiển thị ảnh ${index + 1} của ${productName}`}
-                style={[
-                  styles.emptyMedia,
-                  { width: imageWidth, height: imageHeight },
-                ]}
+                accessibilityLabel={`${productName}, chưa có ảnh sản phẩm`}
+                className="flex-1 items-center justify-center gap-sm"
               >
-                <Text style={styles.placeholderMark}>◇</Text>
-                <Text style={styles.placeholderText}>Không thể hiển thị ảnh</Text>
+                <Text className="font-sans text-display text-catalog-muted-text">
+                  ◇
+                </Text>
+                <Text className="font-sans text-body-md text-catalog-muted-text">
+                  Chưa có ảnh sản phẩm
+                </Text>
               </View>
-            ) : (
-              <Image
-                accessibilityLabel={`${productName}, ảnh ${index + 1}`}
-                source={{ uri: imageUrl }}
-                contentFit="cover"
-                transition={150}
-                style={{ width: imageWidth, height: imageHeight }}
-                onError={() => handleImageError(imageUrl)}
-              />
-            )}
-          </View>
-        )}
-      />
-
-      {imageUrls.length > 1 ? (
-        <View style={styles.pagination}>
-          <Text style={styles.paginationText}>
-            {activeIndex + 1} / {imageUrls.length}
-          </Text>
-          <View style={styles.dots}>
+            </View>
+          ) : (
+            <FlatList
+              data={imageUrls}
+              horizontal
+              pagingEnabled
+              keyExtractor={(imageUrl) => imageUrl}
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={handleMomentumScrollEnd}
+              renderItem={({ item: imageUrl, index }) => (
+                <View style={{ width: imageWidth, height: imageHeight }}>
+                  {failedImageUrls.has(imageUrl) ? (
+                    <View
+                      accessibilityLabel={`Không thể hiển thị ảnh ${index + 1} của ${productName}`}
+                      className="flex-1 items-center justify-center gap-sm"
+                    >
+                      <Text className="font-sans text-display text-catalog-muted-text">
+                        ◇
+                      </Text>
+                      <Text className="font-sans text-body-md text-catalog-muted-text">
+                        Không thể hiển thị ảnh
+                      </Text>
+                    </View>
+                  ) : (
+                    <Image
+                      accessibilityLabel={`${productName}, ảnh ${index + 1}`}
+                      source={{ uri: imageUrl }}
+                      contentFit="cover"
+                      transition={150}
+                      style={{ width: imageWidth, height: imageHeight }}
+                      onError={() => handleImageError(imageUrl)}
+                    />
+                  )}
+                </View>
+              )}
+            />
+          )}
+          {imageUrls.length > 1 ? (
+            <View
+              pointerEvents="none"
+              className="absolute bottom-md right-md rounded-full bg-surface-lowest/90 px-md py-xs"
+            >
+              <Text className="font-sans text-label-md tabular-nums text-primary-container">
+                {activeIndex + 1} / {imageUrls.length}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        {imageUrls.length > 1 ? (
+          <View className="min-h-11 flex-row items-center justify-center gap-xs overflow-hidden">
             {imageUrls.map((imageUrl, index) => (
               <View
                 key={imageUrl}
-                style={[styles.dot, index === activeIndex && styles.activeDot]}
+                className={dotStyle({ active: index === activeIndex })}
               />
             ))}
           </View>
-        </View>
-      ) : null}
+        ) : null}
+      </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  slide: {
-    alignItems: 'center',
-    backgroundColor: COLORS.surfaceLow,
-  },
-  emptyMedia: {
-    alignSelf: 'center',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    backgroundColor: COLORS.surfaceLow,
-  },
-  placeholderMark: {
-    fontSize: FONT_SIZE.display,
-    color: COLORS.outline,
-  },
-  placeholderText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.onSurfaceVariant,
-  },
-  pagination: {
-    minHeight: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.md,
-    backgroundColor: COLORS.surfaceLowest,
-  },
-  paginationText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.onSurfaceVariant,
-    fontVariant: ['tabular-nums'],
-  },
-  dots: {
-    maxWidth: 160,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-    overflow: 'hidden',
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.outlineVariant,
-  },
-  activeDot: {
-    width: 18,
-    backgroundColor: COLORS.primaryContainer,
-  },
-});
