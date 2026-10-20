@@ -42,8 +42,10 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, onRetry }) =>
       <View className="max-w-[90%] rounded-xl rounded-bl-sm border border-surface-line bg-surface-lowest px-md py-sm shadow-sm">
         {message.content ? (
           <FormattedAssistantText content={message.content} streaming={message.streaming} />
-        ) : (
+        ) : message.streaming ? (
           <Text className="text-body-md text-on-surface-variant">Đang suy nghĩ...</Text>
+        ) : (
+          <Text className="text-body-md text-on-surface-variant">Đã dừng trả lời.</Text>
         )}
       </View>
       {message.product?.image ? (

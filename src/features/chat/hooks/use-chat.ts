@@ -15,18 +15,16 @@ import {
   IChatMessage,
   IChatProductContext,
 } from '@/features/chat/types/chat';
-
-export type ChatErrorAction = 'subscription' | null;
+import {
+  buildFailedAssistantContent,
+  ChatErrorState,
+  mapChatError,
+} from '@/features/chat/utils/chat-error';
 
 interface SendOptions {
   productId?: string;
   product?: IChatProductContext;
   context?: IChatContextPayload;
-}
-
-interface ChatErrorState {
-  message: string;
-  action: ChatErrorAction;
 }
 
 type SendOutcome =
@@ -37,39 +35,6 @@ type SendOutcome =
 
 const CONNECT_TIMEOUT_MS = 12_000;
 const FIRST_TOKEN_TIMEOUT_MS = 12_000;
-
-function mapChatError(code: string, fallback: string): ChatErrorState {
-  switch (code) {
-    case 'QUOTA_EXCEEDED':
-      return {
-        message: 'Bạn đã hết lượt trò chuyện hôm nay. Hạn mức sẽ làm mới vào ngày mai.',
-        action: 'subscription',
-      };
-    case 'SUBSCRIPTION_REQUIRED':
-      return {
-        message: 'Tính năng trò chuyện AI cần gói hội viên. Nâng cấp để tiếp tục.',
-        action: 'subscription',
-      };
-    case 'BUSY':
-      return {
-        message: 'AI đang trả lời tin trước. Vui lòng đợi chút rồi gửi lại.',
-        action: null,
-      };
-    case 'STREAM_ERROR':
-      return {
-        message: 'AI trả lời dở dang do sự cố. Gửi lại tin này không mất thêm lượt.',
-        action: null,
-      };
-    case 'TOKEN_EXPIRED':
-    case 'UNAUTHORIZED':
-      return {
-        message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
-        action: null,
-      };
-    default:
-      return { message: fallback || 'Đã xảy ra lỗi, vui lòng thử lại.', action: null };
-  }
-}
 
 function waitForConnect(socket: Socket, timeoutMs: number): Promise<void> {
   if (socket.connected) return Promise.resolve();
@@ -235,10 +200,23 @@ export function useChat(initialSessionId?: string) {
     (assistantId: string, code: string, message: string) => {
       streamingRef.current = false;
       setIsStreaming(false);
-      finishAssistant(assistantId);
+      // Đánh dấu bubble lỗi để ChatMessage hiện nút thử lại theo từng tin;
+      // giữ đoạn đã stream (nếu có) và ghi rõ lý do dừng thay vì để trống.
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.id === assistantId
+            ? {
+                ...item,
+                streaming: false,
+                isError: true,
+                content: buildFailedAssistantContent(item.content),
+              }
+            : item,
+        ),
+      );
       setError(mapChatError(code, message));
     },
-    [finishAssistant],
+    [],
   );
 
   const runSend = useCallback(

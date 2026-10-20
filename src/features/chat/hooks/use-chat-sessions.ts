@@ -1,5 +1,4 @@
 import {
-  InfiniteData,
   useInfiniteQuery,
   useMutation,
   useQueryClient,
@@ -8,29 +7,12 @@ import { isCanceledError } from '@/api/http';
 import { chatApi } from '@/features/chat/api/chat.api';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { chatKeys } from '@/features/chat/hooks/chat-keys';
-import type { IChatSessionPage } from '@/features/chat/types/chat';
+import {
+  removeSessionFromPages,
+  SessionPages,
+} from '@/features/chat/utils/chat-session-pages';
 
 const PAGE_LIMIT = 20;
-
-type SessionPages = InfiniteData<IChatSessionPage>;
-
-function removeSessionFromPages(
-  data: SessionPages | undefined,
-  sessionId: string,
-): SessionPages | undefined {
-  if (!data) return data;
-  return {
-    ...data,
-    pages: data.pages.map((page) => ({
-      ...page,
-      data: page.data.filter((item) => item.id !== sessionId),
-      meta: {
-        ...page.meta,
-        total: Math.max(0, page.meta.total - 1),
-      },
-    })),
-  };
-}
 
 export function useChatSessions(limit: number = PAGE_LIMIT) {
   const { isAuthenticated } = useAuth();
