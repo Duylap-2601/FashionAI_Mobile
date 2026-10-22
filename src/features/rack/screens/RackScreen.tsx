@@ -16,7 +16,7 @@ import { useClearRack, useRackItems, useRemoveRackItem } from '../hooks/useRack'
 import type { IRackItem } from '../types/rack';
 
 type RackNavigation = CompositeNavigationProp<
-  BottomTabNavigationProp<MainTabParamList, 'RackTab'>,
+  BottomTabNavigationProp<MainTabParamList>,
   NativeStackNavigationProp<RootStackParamList>
 >;
 

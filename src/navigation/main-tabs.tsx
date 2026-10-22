@@ -3,7 +3,7 @@ import { View, Pressable, Text, Image } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabParamList, RootStackParamList } from './types';
-import { Heart, ShoppingBag, Home, Package, Sparkles, Shirt, User, type LucideIcon } from 'lucide-react-native';
+import { Heart, ShoppingBag, Home, Package, Sparkles, WandSparkles, User, type LucideIcon } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../features/auth/hooks/use-auth';
@@ -11,7 +11,7 @@ import { useCartStore } from '../features/cart/store/use-cart-store';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { TryOnStack } from './try-on-stack';
 import { ShopScreen } from '../features/products/screens/ShopScreen';
-import { RackScreen } from '../features/rack/screens/RackScreen';
+import { StylistScreen } from '../features/stylist/screens/StylistScreen';
 import { ProfileStack } from './profile-stack';
 import { NotificationBell } from '../features/notifications/components/NotificationBell';
 import { FloatingChatBubble } from '../features/chat/components/FloatingChatBubble';
@@ -174,12 +174,12 @@ export const MainTabs: React.FC = () => {
         }}
       />
       <Tab.Screen
-        name="RackTab"
-        component={RackScreen}
+        name="StylistTab"
+        component={StylistScreen}
         options={{
-          title: 'Tủ đồ',
-          tabBarLabel: ({ focused }) => <TabLabel label="Tủ đồ" focused={focused} />,
-          tabBarIcon: ({ focused }) => <TabIcon Icon={Shirt} focused={focused} />,
+          title: 'AI Stylist',
+          tabBarLabel: ({ focused }) => <TabLabel label="AI Stylist" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon Icon={WandSparkles} focused={focused} />,
         }}
       />
       <Tab.Screen

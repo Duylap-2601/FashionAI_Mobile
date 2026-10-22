@@ -11,7 +11,8 @@ export interface IStylistImageFile {
 }
 
 export interface IStylistAnalyzeInput {
-  humanImage: IStylistImageFile;
+  humanImage?: IStylistImageFile;
+  imageConsent?: boolean;
   productId?: string;
   garmentDescription?: string;
   occasion?: string;

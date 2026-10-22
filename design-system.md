@@ -195,7 +195,7 @@ Shadow rules:
 
 ### Mobile Tab Shell
 
-Used for Home, Product Discovery, Try-On, AI Stylist, Wardrobe/Profile tabs.
+Used for Home, Product Discovery, Try-On, AI Stylist, Profile tabs.
 
 Pattern:
 
@@ -211,7 +211,7 @@ Recommended bottom tabs:
 | Home | `Trang chủ` | Editorial home and quick entry. |
 | Shop | `Khám phá` or `Sản phẩm` | Catalog and search. |
 | Try-On | `Thử đồ` | Photo/camera fitting room. |
-| Wardrobe | `Tủ đồ` | Saved garments/outfits. |
+| AI Stylist | `AI Stylist` | Tư vấn outfit theo dịp, phong cách, ngân sách. |
 | Profile | `Tài khoản` | Account, orders, measurements, subscription. |
 
 Bottom tab rules:

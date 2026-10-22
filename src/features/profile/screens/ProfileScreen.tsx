@@ -34,7 +34,6 @@ import {
   Clock,
   X,
   Check,
-  MessageCircle,
   ShieldCheck,
 } from 'lucide-react-native';
 import { useAuth } from '@/features/auth/hooks/use-auth';
@@ -623,19 +622,6 @@ export const ProfileScreen: React.FC = () => {
           <Text className="text-[14px] font-semibold text-[#6B7280]">Đăng xuất</Text>
         </TouchableOpacity>
       </ScrollView>
-
-      {/* ── Floating AI Chat Button ── */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => (navigation as any).navigate('Stylist')}
-        className="absolute bottom-6 right-5 w-14 h-14 rounded-full bg-[#5D1C34] shadow-lg shadow-black/30 items-center justify-center z-30"
-      >
-        <MessageCircle size={24} color="#FFFFFF" />
-        {/* Yellow unread badge */}
-        <View className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#F59E0B] border-2 border-white items-center justify-center">
-          <Text className="text-[10px] font-bold text-black">1</Text>
-        </View>
-      </TouchableOpacity>
 
       {/* ── Addresses Modal ── */}
       <AddressesModal

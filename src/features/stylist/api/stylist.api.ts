@@ -37,12 +37,25 @@ function appendOptional(form: FormData, key: string, value?: string) {
 }
 
 export function buildStylistFormData(input: IStylistAnalyzeInput): FormData {
-  if (!input.productId?.trim() && !input.garmentDescription?.trim()) {
-    throw new TypeError('Product ID or garment description is required');
+  const hasImage = input.humanImage != null;
+  const hasTextInput = Boolean(
+    input.garmentDescription?.trim() ||
+      input.occasion?.trim() ||
+      input.stylePreference?.trim(),
+  );
+
+  if (hasImage && input.imageConsent !== true) {
+    throw new TypeError('Image consent is required when uploading a human image');
+  }
+  if (!hasImage && !input.productId?.trim() && !hasTextInput) {
+    throw new TypeError('At least one stylist input is required');
   }
 
   const form = new FormData();
-  form.append('humanImage', input.humanImage as unknown as Blob);
+  if (input.humanImage) {
+    form.append('humanImage', input.humanImage as unknown as Blob);
+    form.append('imageConsent', 'true');
+  }
   appendOptional(form, 'productId', input.productId);
   appendOptional(form, 'garmentDescription', input.garmentDescription);
   appendOptional(form, 'occasion', input.occasion);
