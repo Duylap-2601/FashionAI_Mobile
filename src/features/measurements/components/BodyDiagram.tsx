@@ -7,7 +7,9 @@ interface BodyDiagramProps {
   gender?: 'female' | 'male' | 'other';
 }
 
-export const BodyDiagram: React.FC<BodyDiagramProps> = ({ values, gender = 'female' }) => {
+const KEY_FIELDS = ['height', 'weight', 'shoulder', 'chest', 'waist', 'hip', 'inseam'];
+
+const BodyDiagramComponent: React.FC<BodyDiagramProps> = ({ values, gender = 'female' }) => {
   const isFemale = gender !== 'male';
 
   const filledPoints = [
@@ -19,9 +21,8 @@ export const BodyDiagram: React.FC<BodyDiagramProps> = ({ values, gender = 'fema
     { id: 'thigh', label: 'Đùi', top: 242 },
   ];
 
-  const keyFields = ['height', 'weight', 'shoulder', 'chest', 'waist', 'hip', 'inseam'];
-  const filledCount = keyFields.filter((k) => !!values[k] && Number(values[k]) > 0).length;
-  const pct = Math.round((filledCount / keyFields.length) * 100);
+  const filledCount = KEY_FIELDS.filter((k) => !!values[k] && Number(values[k]) > 0).length;
+  const pct = Math.round((filledCount / KEY_FIELDS.length) * 100);
 
   return (
     <View className="items-center w-full">
@@ -109,9 +110,14 @@ export const BodyDiagram: React.FC<BodyDiagramProps> = ({ values, gender = 'fema
           />
         </View>
         <Text className="text-[11.5px] text-[#9CA3AF] mt-2 text-center">
-          {filledCount}/{keyFields.length} số đo cơ bản
+          {filledCount}/{KEY_FIELDS.length} số đo cơ bản
         </Text>
       </View>
     </View>
   );
 };
+
+export const BodyDiagram = React.memo(BodyDiagramComponent, (prev, next) => {
+  if (prev.gender !== next.gender) return false;
+  return KEY_FIELDS.every((k) => prev.values[k] === next.values[k]);
+});

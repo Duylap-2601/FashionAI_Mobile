@@ -7,7 +7,6 @@ import {
   Pressable,
   Image,
   Modal,
-  TextInput,
   ActivityIndicator,
   Platform,
 } from 'react-native';
@@ -31,11 +30,11 @@ import {
   Sparkles,
   Camera,
   LogOut,
-  MessageCircle,
   Star,
   Clock,
   X,
   Check,
+  MessageCircle,
 } from 'lucide-react-native';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { ProfileStackParamList, RootStackParamList } from '@/navigation/types';
@@ -48,131 +47,6 @@ type ProfileNavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<ProfileStackParamList, 'ProfileHome'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
-
-// ─── Edit Profile Modal ──────────────────────────────────────────────────────
-interface EditProfileModalProps {
-  visible: boolean;
-  initialName: string;
-  initialPhone?: string;
-  onClose: () => void;
-  onSuccess: () => void;
-}
-
-const EditProfileModal: React.FC<EditProfileModalProps> = ({
-  visible,
-  initialName,
-  initialPhone = '',
-  onClose,
-  onSuccess,
-}) => {
-  const [name, setName] = useState(initialName);
-  const [phone, setPhone] = useState(initialPhone);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (visible) {
-      setName(initialName);
-      setPhone(initialPhone);
-      setError(null);
-    }
-  }, [visible, initialName, initialPhone]);
-
-  const handleSave = async () => {
-    if (!name.trim()) {
-      setError('Họ và tên không được để trống');
-      return;
-    }
-    try {
-      setIsSubmitting(true);
-      setError(null);
-      await usersApi.updateMe({
-        name: name.trim(),
-        phone: phone.trim() || undefined,
-      });
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      setError(err?.message || 'Không thể cập nhật hồ sơ. Vui lòng thử lại.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View className="flex-1 justify-center items-center bg-black/50 px-4">
-        <View className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-xl">
-          <View className="flex-row items-center justify-between mb-4">
-            <View className="flex-row items-center gap-2.5">
-              <View className="w-9 h-9 rounded-xl bg-[#5D1C34]/10 items-center justify-center">
-                <Pencil size={18} color="#5D1C34" />
-              </View>
-              <Text className="text-[17px] font-bold text-[#1B1C1B]">Chỉnh sửa hồ sơ</Text>
-            </View>
-            <TouchableOpacity
-              onPress={onClose}
-              className="w-8 h-8 rounded-full bg-[#F3F4F6] items-center justify-center"
-            >
-              <X size={16} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
-
-          {error && (
-            <View className="mb-3.5 flex-row items-center gap-2 rounded-xl bg-[#FEF2F2] border border-[#FEE2E2] p-2.5">
-              <AlertCircle size={15} color="#DC2626" />
-              <Text className="text-[12px] text-[#DC2626] flex-1">{error}</Text>
-            </View>
-          )}
-
-          <View className="mb-3.5">
-            <Text className="mb-1 text-[12px] font-semibold text-[#4B5563]">Họ và tên</Text>
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholder="Nhập họ và tên"
-              placeholderTextColor="#9CA3AF"
-              className="h-11 rounded-xl border border-[#D1D5DB] px-3.5 text-[14px] text-[#1B1C1B]"
-            />
-          </View>
-
-          <View className="mb-5">
-            <Text className="mb-1 text-[12px] font-semibold text-[#4B5563]">Số điện thoại</Text>
-            <TextInput
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="Nhập số điện thoại"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="phone-pad"
-              className="h-11 rounded-xl border border-[#D1D5DB] px-3.5 text-[14px] text-[#1B1C1B]"
-            />
-          </View>
-
-          <View className="flex-row gap-3">
-            <TouchableOpacity
-              onPress={onClose}
-              disabled={isSubmitting}
-              className="flex-1 h-11 rounded-xl border border-[#D1D5DB] items-center justify-center"
-            >
-              <Text className="text-[14px] font-semibold text-[#4B5563]">Hủy</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleSave}
-              disabled={isSubmitting}
-              className="flex-1 h-11 rounded-xl bg-[#5D1C34] items-center justify-center flex-row gap-2"
-            >
-              {isSubmitting ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text className="text-[14px] font-semibold text-white">Lưu thay đổi</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-};
 
 // ─── Addresses Modal ─────────────────────────────────────────────────────────
 interface AddressesModalProps {
@@ -359,14 +233,13 @@ const NavCard: React.FC<NavCardProps> = ({ icon: Icon, label, desc, badge, onPre
 // ─── Main Profile Screen ─────────────────────────────────────────────────────
 export const ProfileScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { user, logout, refreshUser } = useAuth();
+  const { user, logout } = useAuth();
   const navigation = useNavigation<ProfileNavigationProp>();
   const totalCartItems = useCartStore((state) => state.getTotalItems());
   const { hasMeasurement } = useMeasurementsCompleteness();
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showAddressesModal, setShowAddressesModal] = useState(false);
 
   const tier = (user?.tier || 'FREE').toUpperCase();
@@ -546,7 +419,7 @@ export const ProfileScreen: React.FC = () => {
               <View className="flex-col gap-2">
                 <TouchableOpacity
                   activeOpacity={0.8}
-                  onPress={() => setShowEditModal(true)}
+                  onPress={() => navigation.navigate('Measurements', { tab: 'profile' })}
                   className="self-start flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#5D1C34]"
                 >
                   <Pencil size={12} color="#FFFFFF" />
@@ -741,17 +614,6 @@ export const ProfileScreen: React.FC = () => {
           <Text className="text-[10px] font-bold text-black">1</Text>
         </View>
       </TouchableOpacity>
-
-      {/* ── Edit Profile Modal ── */}
-      <EditProfileModal
-        visible={showEditModal}
-        initialName={user?.name || ''}
-        initialPhone={user?.phone || ''}
-        onClose={() => setShowEditModal(false)}
-        onSuccess={() => {
-          refreshUser();
-        }}
-      />
 
       {/* ── Addresses Modal ── */}
       <AddressesModal

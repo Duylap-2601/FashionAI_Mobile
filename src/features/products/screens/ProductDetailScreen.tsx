@@ -99,6 +99,11 @@ export function ProductDetailScreen({
     });
   }, [navigation, product, mainImageUrl]);
 
+  const handleAskAI = useCallback(() => {
+    if (!product) return;
+    navigation.navigate('Chat', { productId: String(product.id) });
+  }, [navigation, product]);
+
   const handleAddToCart = useCallback(() => {
     if (!product || product.status !== 'ACTIVE') {
       return;

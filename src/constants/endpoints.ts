@@ -60,6 +60,7 @@ export const ENDPOINTS = {
   CHAT: {
     SESSIONS: '/chat/sessions',
     SESSION_DETAIL: (sessionId: string) => `/chat/sessions/${sessionId}`,
+    SESSION_DELETE: (sessionId: string) => `/chat/sessions/${sessionId}`,
   },
   STYLIST: {
     ANALYZE: '/stylist/analyze',
