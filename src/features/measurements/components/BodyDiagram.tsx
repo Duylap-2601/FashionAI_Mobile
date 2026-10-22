@@ -119,5 +119,11 @@ const BodyDiagramComponent: React.FC<BodyDiagramProps> = ({ values, gender = 'fe
 
 export const BodyDiagram = React.memo(BodyDiagramComponent, (prev, next) => {
   if (prev.gender !== next.gender) return false;
-  return KEY_FIELDS.every((k) => prev.values[k] === next.values[k]);
+  const allDiagramFields = ['height', 'weight', 'shoulder', 'chest', 'waist', 'hip', 'inseam', 'neck', 'thigh'];
+  return allDiagramFields.every((k) => {
+    const prevFilled = !!prev.values?.[k] && Number(prev.values[k]) > 0;
+    const nextFilled = !!next.values?.[k] && Number(next.values[k]) > 0;
+    return prevFilled === nextFilled;
+  });
 });
+

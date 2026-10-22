@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, useDeferredValue } from 'react';
 import {
   View,
   Text,
@@ -144,13 +144,13 @@ const MeasurementField = React.memo(function MeasurementField({
 });
 
 const OVERVIEW_FIELD_DEFS: FieldDef[] = [
-  { id: 'height', label: 'Chiều cao', unit: 'cm', min: 130, max: 220, desc: 'Từ gót chân đến đỉnh đầu', requiredFor: 'Bắt buộc tất cả' },
-  { id: 'weight', label: 'Cân nặng', unit: 'kg', min: 35, max: 150, desc: 'Cân nặng cơ thể tính theo kilogam' },
+  { id: 'height', label: 'Chiều cao', unit: 'cm', min: 100, max: 250, desc: 'Từ gót chân đến đỉnh đầu', requiredFor: 'Bắt buộc tất cả' },
+  { id: 'weight', label: 'Cân nặng', unit: 'kg', min: 30, max: 250, desc: 'Cân nặng cơ thể tính theo kilogam' },
 ];
 
 const UPPER_FIELD_DEFS: FieldDef[] = [
-  { id: 'shoulder', label: 'Rộng vai', unit: 'cm', min: 30, max: 70, desc: 'Từ đầu vai trái đến vai phải', requiredFor: 'Áo & Đồ liền' },
-  { id: 'chest', label: 'Vòng ngực', unit: 'cm', min: 60, max: 140, desc: 'Vòng lớn nhất của ngực', requiredFor: 'Áo & Đồ liền' },
+  { id: 'shoulder', label: 'Rộng vai', unit: 'cm', min: 30, max: 80, desc: 'Từ đầu vai trái đến vai phải', requiredFor: 'Áo & Đồ liền' },
+  { id: 'chest', label: 'Vòng ngực', unit: 'cm', min: 50, max: 200, desc: 'Vòng lớn nhất của ngực', requiredFor: 'Áo & Đồ liền' },
   { id: 'shirtLength', label: 'Dài thân áo', unit: 'cm', min: 50, max: 85, desc: 'Từ điểm vai đến lai áo', requiredFor: 'Áo & Đồ liền' },
   { id: 'sleeveLength', label: 'Dài tay áo', unit: 'cm', min: 45, max: 80, desc: 'Từ vai đến cổ tay', requiredFor: 'Áo' },
   { id: 'neck', label: 'Vòng cổ', unit: 'cm', min: 28, max: 55, desc: 'Vòng quanh cổ, cách cổ áo 2cm' },
@@ -159,8 +159,8 @@ const UPPER_FIELD_DEFS: FieldDef[] = [
 ];
 
 const LOWER_FIELD_DEFS: FieldDef[] = [
-  { id: 'waist', label: 'Vòng eo', unit: 'cm', min: 50, max: 130, desc: 'Phần thắt nhỏ nhất của eo', requiredFor: 'Quần & Váy' },
-  { id: 'hip', label: 'Vòng hông', unit: 'cm', min: 60, max: 145, desc: 'Vòng lớn nhất của mông', requiredFor: 'Quần & Váy' },
+  { id: 'waist', label: 'Vòng eo', unit: 'cm', min: 50, max: 200, desc: 'Phần thắt nhỏ nhất của eo', requiredFor: 'Quần & Váy' },
+  { id: 'hip', label: 'Vòng hông', unit: 'cm', min: 50, max: 200, desc: 'Vòng lớn nhất của mông', requiredFor: 'Quần & Váy' },
   { id: 'trouserLength', label: 'Dài quần', unit: 'cm', min: 80, max: 120, desc: 'Từ cạp xuống gấu quần', requiredFor: 'Quần & Váy' },
   { id: 'thigh', label: 'Vòng đùi', unit: 'cm', min: 35, max: 90, desc: 'Vòng lớn nhất của đùi', requiredFor: 'Quần & Váy' },
   { id: 'inseam', label: 'Dài đũng quần', unit: 'cm', min: 55, max: 95, desc: 'Từ đáy đũng quần đến mắt cá chân' },
@@ -277,25 +277,35 @@ export function MeasurementsScreen() {
     }
   }, [user]);
 
+  const prefillDone = useRef(false);
+
   useEffect(() => {
+    if (prefillDone.current) return;
     if (fetchedMeasurements) {
+      prefillDone.current = true;
       const formatted: Record<string, string> = {
-        height: fetchedMeasurements.height?.toString() || '',
-        weight: fetchedMeasurements.weight?.toString() || '',
-        shoulder: fetchedMeasurements.shoulder?.toString() || '',
-        chest: fetchedMeasurements.chest?.toString() || '',
-        shirtLength: (fetchedMeasurements.shirtLength ?? (fetchedMeasurements as any).bodyLength)?.toString() || '',
-        sleeveLength: fetchedMeasurements.sleeveLength?.toString() || '',
-        neck: fetchedMeasurements.neck?.toString() || '',
-        underbust: fetchedMeasurements.underbust?.toString() || '',
-        wrist: (fetchedMeasurements as any).wrist?.toString() || '',
-        waist: fetchedMeasurements.waist?.toString() || '',
-        hip: (fetchedMeasurements.hip ?? fetchedMeasurements.hips)?.toString() || '',
-        trouserLength: (fetchedMeasurements.trouserLength ?? fetchedMeasurements.outseam)?.toString() || '',
-        thigh: fetchedMeasurements.thigh?.toString() || '',
-        inseam: fetchedMeasurements.inseam?.toString() || '',
-        knee: (fetchedMeasurements as any).knee?.toString() || '',
-        calf: fetchedMeasurements.calf?.toString() || '',
+        height: fetchedMeasurements.height != null ? String(fetchedMeasurements.height) : '',
+        weight: fetchedMeasurements.weight != null ? String(fetchedMeasurements.weight) : '',
+        shoulder: fetchedMeasurements.shoulder != null ? String(fetchedMeasurements.shoulder) : '',
+        chest: fetchedMeasurements.chest != null ? String(fetchedMeasurements.chest) : '',
+        shirtLength: (fetchedMeasurements.shirtLength ?? (fetchedMeasurements as any).bodyLength) != null
+          ? String(fetchedMeasurements.shirtLength ?? (fetchedMeasurements as any).bodyLength)
+          : '',
+        sleeveLength: fetchedMeasurements.sleeveLength != null ? String(fetchedMeasurements.sleeveLength) : '',
+        neck: fetchedMeasurements.neck != null ? String(fetchedMeasurements.neck) : '',
+        underbust: fetchedMeasurements.underbust != null ? String(fetchedMeasurements.underbust) : '',
+        wrist: (fetchedMeasurements as any).wrist != null ? String((fetchedMeasurements as any).wrist) : '',
+        waist: fetchedMeasurements.waist != null ? String(fetchedMeasurements.waist) : '',
+        hip: (fetchedMeasurements.hip ?? fetchedMeasurements.hips) != null
+          ? String(fetchedMeasurements.hip ?? fetchedMeasurements.hips)
+          : '',
+        trouserLength: (fetchedMeasurements.trouserLength ?? fetchedMeasurements.outseam) != null
+          ? String(fetchedMeasurements.trouserLength ?? fetchedMeasurements.outseam)
+          : '',
+        thigh: fetchedMeasurements.thigh != null ? String(fetchedMeasurements.thigh) : '',
+        inseam: fetchedMeasurements.inseam != null ? String(fetchedMeasurements.inseam) : '',
+        knee: (fetchedMeasurements as any).knee != null ? String((fetchedMeasurements as any).knee) : '',
+        calf: fetchedMeasurements.calf != null ? String(fetchedMeasurements.calf) : '',
       };
       setInitialMeasurements(formatted);
       setMeasurements(formatted);
@@ -304,6 +314,8 @@ export function MeasurementsScreen() {
       }
     }
   }, [fetchedMeasurements]);
+
+  const deferredMeasurements = useDeferredValue(measurements);
 
   const isMeasurementsDirty = useMemo(() => {
     return ALL_MEASUREMENT_DEFS.some(
@@ -368,25 +380,32 @@ export function MeasurementsScreen() {
 
   // Handle Save Measurements
   const handleSaveMeasurements = async () => {
+    if (hasInvalidMeasurements) {
+      Alert.alert('Chưa hợp lệ', 'Vui lòng kiểm tra lại các số đo nằm ngoài khoảng cho phép.');
+      return;
+    }
     try {
       setIsSavingMeasurements(true);
-      // Chỉ gửi các field BE chấp nhận (UpdateMeasurementsDto đã whitelist).
-      // bodyType/hips/outseam/bodyLength không có trong DTO → BE trả 400
-      // "Dữ liệu đầu vào không hợp lệ" nếu gửi kèm.
       const snapshot = { ...measurements };
       const payload: Record<string, any> = {};
       Object.entries(snapshot).forEach(([k, v]) => {
-        if (v && !isNaN(parseFloat(v))) {
+        if (v && v.trim() !== '' && !isNaN(parseFloat(v))) {
           payload[k] = parseFloat(v);
         }
       });
 
+      // Đồng bộ aliases để tương thích 100% với backend & web
+      if (payload.shirtLength !== undefined) payload.bodyLength = payload.shirtLength;
+      if (payload.trouserLength !== undefined) payload.outseam = payload.trouserLength;
+
       await measurementsApi.update(payload as any);
-      await refreshUser();
-      await queryClient.invalidateQueries({ queryKey: ['user-measurements'] });
-      await queryClient.invalidateQueries({ queryKey: ['measurements-completeness'] });
       setInitialMeasurements(snapshot);
       setShowSavedToast(true);
+
+      // Invalidate và refresh ở background (không chặn UI để tránh đơ app)
+      void refreshUser();
+      void queryClient.invalidateQueries({ queryKey: ['user-measurements'] });
+      void queryClient.invalidateQueries({ queryKey: ['measurements-completeness'] });
     } catch (err: any) {
       Alert.alert('Lỗi', err?.message || 'Chưa thể lưu số đo.');
     } finally {
@@ -466,68 +485,34 @@ export function MeasurementsScreen() {
         </View>
       </View>
 
-      {/* ── Banner "Bạn có thay đổi chưa lưu" ──
-          Luôn mount (chỉ ẩn bằng display:none) để thứ tự component con không
-          đổi → không remount cả form/ScrollView khi bắt đầu gõ. */}
-      <View
-        className={`mx-4 mt-3 flex-row items-center gap-2.5 rounded-2xl border border-warning/40 bg-warning/15 px-3.5 py-2 ${
-          bannerVisible ? 'flex' : 'hidden'
-        }`}
-      >
-        <AlertCircle size={18} color={COLORS.warning} />
-        <Text className="flex-1 text-sm font-medium text-on-surface-strong" numberOfLines={1}>
-          Bạn có thay đổi chưa lưu
-        </Text>
-        <TouchableOpacity
-          accessibilityLabel="Hủy thay đổi số đo"
-          disabled={isSavingMeasurements}
-          onPress={() => setMeasurements({ ...initialMeasurements })}
-          className="min-h-11 justify-center px-2.5"
+      {/* ── Toast "Đã lưu số đo cơ thể thành công!" (Floating Overlay) ── */}
+      {showSavedToast && (
+        <View
+          style={{ top: insets.top + 60 }}
+          className="absolute left-4 right-4 z-50 flex-row items-center gap-2.5 rounded-2xl border border-success/40 bg-white px-4 py-3 shadow-xl"
         >
-          <Text className="text-sm font-semibold text-on-surface-variant">Hủy</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          accessibilityLabel="Lưu số đo"
-          disabled={hasInvalidMeasurements || isSavingMeasurements}
-          onPress={handleSaveMeasurements}
-          className={`min-h-11 justify-center rounded-full bg-primary-container px-5 ${
-            hasInvalidMeasurements || isSavingMeasurements ? 'opacity-40' : 'opacity-100'
-          }`}
-        >
-          {isSavingMeasurements ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text className="text-sm font-semibold text-primary-foreground">Lưu</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* ── Toast "Đã lưu số đo cơ thể thành công!" ── */}
-      <View
-        className={`mx-4 mt-3 flex-row items-center gap-2.5 rounded-2xl border border-success/40 bg-success/15 px-3.5 py-2 ${
-          showSavedToast ? 'flex' : 'hidden'
-        }`}
-      >
-        <CheckCircle2 size={18} color={COLORS.success} />
-        <Text className="flex-1 text-sm font-semibold text-success" numberOfLines={1}>
-          Đã lưu số đo cơ thể thành công!
-        </Text>
-        <TouchableOpacity
-          accessibilityLabel="Đóng thông báo"
-          onPress={() => setShowSavedToast(false)}
-          className="min-h-11 min-w-11 items-center justify-center"
-        >
-          <X size={16} color={COLORS.onSurfaceVariant} />
-        </TouchableOpacity>
-      </View>
+          <CheckCircle2 size={18} color={COLORS.success} />
+          <Text className="flex-1 text-sm font-semibold text-[#10B981]" numberOfLines={1}>
+            Đã lưu số đo cơ thể thành công!
+          </Text>
+          <TouchableOpacity
+            accessibilityLabel="Đóng thông báo"
+            onPress={() => setShowSavedToast(false)}
+            className="min-h-9 min-w-9 items-center justify-center rounded-full active:bg-[#F3F4F6]"
+          >
+            <X size={16} color={COLORS.onSurfaceVariant} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* ── Scrollable Body ── */}
       <ScrollView
         className="flex-1"
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 16,
-          paddingBottom: 40,
+          paddingBottom: bannerVisible ? 110 : 40,
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -930,7 +915,7 @@ export function MeasurementsScreen() {
 
               {/* Mannequin Vector Diagram */}
               <View className="bg-[#FAF8F5] rounded-2xl border border-[#ECE8E3] p-4 mb-6">
-                <BodyDiagram values={measurements} gender={profileForm.gender} />
+                <BodyDiagram values={deferredMeasurements} gender={profileForm.gender} />
               </View>
 
               {/* Section 1: Tổng quan */}
@@ -1037,9 +1022,9 @@ export function MeasurementsScreen() {
               {/* Bottom Action Button: Lưu số đo */}
               <TouchableOpacity
                 onPress={handleSaveMeasurements}
-                disabled={isSavingMeasurements}
+                disabled={hasInvalidMeasurements || isSavingMeasurements || !isMeasurementsDirty}
                 className={`w-full py-3.5 rounded-xl items-center justify-center flex-row gap-2 ${
-                  isMeasurementsDirty
+                  isMeasurementsDirty && !hasInvalidMeasurements && !isSavingMeasurements
                     ? 'bg-[#5D1C34] active:bg-[#5D1C34]/90 shadow-sm'
                     : 'bg-[#EFECE6]'
                 }`}
@@ -1050,14 +1035,14 @@ export function MeasurementsScreen() {
                   <>
                     <Save
                       size={16}
-                      color={isMeasurementsDirty ? '#FFFFFF' : '#6B7280'}
+                      color={isMeasurementsDirty && !hasInvalidMeasurements ? '#FFFFFF' : '#6B7280'}
                     />
                     <Text
                       className={`text-[14px] font-bold ${
-                        isMeasurementsDirty ? 'text-white' : 'text-[#6B7280]'
+                        isMeasurementsDirty && !hasInvalidMeasurements ? 'text-white' : 'text-[#6B7280]'
                       }`}
                     >
-                      Lưu số đo
+                      {hasInvalidMeasurements ? 'Số đo chưa hợp lệ' : 'Lưu số đo'}
                     </Text>
                   </>
                 )}
@@ -1294,11 +1279,50 @@ export function MeasurementsScreen() {
         </View>
       </Modal>
 
+      {/* ── Floating Action Bar "Bạn có thay đổi chưa lưu" (Docked Bottom) ── */}
+      {bannerVisible && (
+        <View
+          style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+          className="absolute bottom-0 left-0 right-0 bg-white/95 border-t border-[#ECE8E3] px-4 pt-3 flex-row items-center justify-between shadow-2xl z-30"
+        >
+          <View className="flex-row items-center gap-2 flex-1 mr-3">
+            <AlertCircle size={18} color={hasInvalidMeasurements ? '#DC2626' : COLORS.warning} />
+            <Text className="flex-1 text-[13px] font-medium text-on-surface-strong" numberOfLines={1}>
+              {hasInvalidMeasurements ? 'Số đo chưa hợp lệ' : 'Bạn có thay đổi chưa lưu'}
+            </Text>
+          </View>
+          <View className="flex-row items-center gap-2">
+            <TouchableOpacity
+              accessibilityLabel="Hủy thay đổi số đo"
+              disabled={isSavingMeasurements}
+              onPress={() => setMeasurements({ ...initialMeasurements })}
+              className="min-h-10 justify-center px-3.5 rounded-xl border border-[#D1D5DB] active:bg-[#F9FAFB]"
+            >
+              <Text className="text-[12.5px] font-semibold text-on-surface-variant">Hủy</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityLabel="Lưu số đo"
+              disabled={hasInvalidMeasurements || isSavingMeasurements}
+              onPress={handleSaveMeasurements}
+              className={`min-h-10 justify-center rounded-xl bg-[#5D1C34] px-4 ${
+                hasInvalidMeasurements || isSavingMeasurements ? 'opacity-40' : 'opacity-100'
+              }`}
+            >
+              {isSavingMeasurements ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text className="text-[12.5px] font-semibold text-white">Lưu số đo</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* ── Floating AI Chat Button ── */}
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={() => navigation.navigate('Stylist')}
-        className="absolute bottom-6 right-5 w-14 h-14 rounded-full bg-[#5D1C34] shadow-lg shadow-black/30 items-center justify-center z-30"
+        className={`absolute ${bannerVisible ? 'bottom-24' : 'bottom-6'} right-5 w-14 h-14 rounded-full bg-[#5D1C34] shadow-lg shadow-black/30 items-center justify-center z-20`}
       >
         <MessageCircle size={24} color="#FFFFFF" />
         <View className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#F59E0B] border-2 border-white items-center justify-center">
@@ -1308,3 +1332,4 @@ export function MeasurementsScreen() {
     </View>
   );
 }
+
