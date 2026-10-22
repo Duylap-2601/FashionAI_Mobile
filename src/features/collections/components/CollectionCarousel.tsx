@@ -11,22 +11,36 @@ import { CollectionCard } from './CollectionCard';
 
 interface CollectionCarouselProps {
   collections: Collection[];
+  selectedCollectionId?: string | null;
   isFetchingNextPage?: boolean;
   onEndReached?: () => void;
   onPressCollection: (slug: string) => void;
+  onSelectCollection?: (collection: Collection) => void;
 }
 
 export function CollectionCarousel({
   collections,
+  selectedCollectionId,
   isFetchingNextPage = false,
   onEndReached,
   onPressCollection,
+  onSelectCollection,
 }: CollectionCarouselProps) {
   const renderCollection = useCallback<ListRenderItem<Collection>>(
     ({ item }) => (
-      <CollectionCard collection={item} onPress={onPressCollection} />
+      <CollectionCard
+        collection={item}
+        isSelected={selectedCollectionId === item.id}
+        onPress={() => {
+          if (onSelectCollection) {
+            onSelectCollection(item);
+          } else {
+            onPressCollection(item.slug);
+          }
+        }}
+      />
     ),
-    [onPressCollection],
+    [onPressCollection, onSelectCollection, selectedCollectionId],
   );
 
   return (

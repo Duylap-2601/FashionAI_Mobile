@@ -24,6 +24,7 @@ export interface TryOnResultGarment {
 export interface TryOnResult {
   id: string;
   resultUrl: string;
+  humanImageUrl?: string;
   category: TryOnCategory;
   garments: TryOnResultGarment[];
   product?: {

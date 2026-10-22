@@ -102,6 +102,21 @@ export function StylistResultScreen({ navigation, route }: Props) {
       <StylistResultContent
         result={result}
         onProductPress={(productId) => navigation.navigate('ProductDetail', { productId })}
+        onTryOnPress={(product) => {
+          navigation.navigate('Main', {
+            screen: 'TryOnTab',
+            params: {
+              screen: 'TryOnHome',
+              params: product
+                ? {
+                    productId: product.id,
+                    productName: product.name,
+                    productImageUrl: product.imageUrl,
+                  }
+                : undefined,
+            },
+          });
+        }}
       />
     </ScrollView>
   );

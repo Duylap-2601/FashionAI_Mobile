@@ -35,6 +35,7 @@ import {
   X,
   Check,
   MessageCircle,
+  ShieldCheck,
 } from 'lucide-react-native';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { ProfileStackParamList, RootStackParamList } from '@/navigation/types';
@@ -297,7 +298,7 @@ export const ProfileScreen: React.FC = () => {
         <View className="flex-row items-center gap-1">
           <TouchableOpacity
             accessibilityLabel="Tìm kiếm"
-            onPress={() => (navigation as any).navigate('Main', { screen: 'ShopTab' })}
+            onPress={() => (navigation as any).navigate('Search')}
             className="w-10 h-10 items-center justify-center rounded-full"
           >
             <Search size={22} color="#1B1C1B" />
@@ -530,6 +531,13 @@ export const ProfileScreen: React.FC = () => {
           />
 
           <NavCard
+            icon={Clock}
+            label="Lịch sử gói dịch vụ"
+            desc="Xem các kỳ đăng ký và giao dịch thanh toán gói"
+            onPress={() => (navigation as any).navigate('SubscriptionHistory')}
+          />
+
+          <NavCard
             icon={Ruler}
             label="Số đo & Hồ sơ"
             desc="Cập nhật số đo, thông tin cá nhân"
@@ -588,6 +596,20 @@ export const ProfileScreen: React.FC = () => {
             label="Tư vấn phong cách"
             desc="AI phân tích và gợi ý outfit phù hợp"
             onPress={() => (navigation as any).navigate('Stylist')}
+          />
+        </View>
+
+        {/* ── Section: THÔNG TIN & HỖ TRỢ ── */}
+        <View className="mb-4">
+          <Text className="text-[12px] font-bold text-[#9CA3AF] uppercase tracking-wider px-1 mb-2.5">
+            THÔNG TIN &amp; HỖ TRỢ
+          </Text>
+
+          <NavCard
+            icon={ShieldCheck}
+            label="Chính sách &amp; Điều khoản"
+            desc="Bảo mật, điều khoản sử dụng &amp; chính sách may đo đổi trả"
+            onPress={() => (navigation as any).navigate('Policy')}
           />
         </View>
 

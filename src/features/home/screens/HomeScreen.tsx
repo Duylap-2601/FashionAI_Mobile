@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import {
   CompositeNavigationProp,
@@ -12,65 +12,104 @@ import {
 } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Shirt, Sparkles } from 'lucide-react-native';
 import { MainTabParamList, RootStackParamList } from '@/navigation/types';
-import { useAuth } from '@/features/auth/hooks/use-auth';
-import { authApi } from '@/features/auth/api/auth.api';
 import { COLORS } from '@/constants/theme';
-import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorView } from '@/components/common/ErrorView';
 import { CollectionCarousel } from '@/features/collections/components/CollectionCarousel';
-import { CollectionHeroCard } from '@/features/collections/components/CollectionHeroCard';
 import { CollectionSkeleton } from '@/features/collections/components/CollectionSkeleton';
 import { usePublishedCollections } from '@/features/collections/hooks/usePublishedCollections';
 import { useCollectionProducts } from '@/features/collections/hooks/useCollectionProducts';
-import { HomeFeaturedProducts } from '../components/HomeFeaturedProducts';
+import { useProducts } from '@/features/products/hooks/useProducts';
+import { OnboardingModal } from '@/features/auth/components/OnboardingModal';
+
+import { AnnouncementBar } from '../components/AnnouncementBar';
+import { HomeHeroBanner } from '../components/HomeHeroBanner';
+import { SaleBannerText } from '../components/SaleBannerText';
+import { HomeProductSection } from '../components/HomeProductSection';
+import { EditorialLookbook } from '../components/EditorialLookbook';
+import { AiTryOnFeatureBanner } from '../components/AiTryOnFeatureBanner';
+import { NewsletterBar } from '../components/NewsletterBar';
+import type { IProduct } from '@/features/products/types/product';
+import type { Collection } from '@/features/collections/types/collection';
 
 type HomeNavigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'HomeTab'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
 
+function getTrendingScore(product: IProduct): number {
+  let score = 0;
+  if (product.reviewCount && product.reviewCount > 0) {
+    score += product.reviewCount * 50;
+  }
+  if (product.avgRating && product.avgRating > 0) {
+    score += product.avgRating * 10;
+  }
+  const nameLower = (product.name || '').toLowerCase();
+  const garmentType = (product as any).garmentType || '';
+  if (nameLower.includes('blazer') || garmentType === 'JACKET') score += 15;
+  if (nameLower.includes('vest') || garmentType === 'VEST') score += 12;
+  if (nameLower.includes('đầm') || garmentType === 'DRESS') score += 10;
+  if (nameLower.includes('combo')) score += 8;
+
+  return score;
+}
+
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeNavigation>();
-  const { user } = useAuth();
-  const [quota, setQuota] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  // 1. Collections Query
   const collectionsQuery = usePublishedCollections();
   const collections = useMemo(
     () => collectionsQuery.data?.pages.flatMap((page) => page.data) ?? [],
     [collectionsQuery.data],
   );
-  const featuredCollection = collections[0] ?? null;
-  const featuredProductsQuery = useCollectionProducts(featuredCollection?.id);
-  const featuredProducts = useMemo(
-    () =>
-      featuredProductsQuery.data?.pages
-        .flatMap((page) => page.data)
-        .slice(0, 4) ?? [],
-    [featuredProductsQuery.data],
+
+  // Selected collection for interactive filtering (defaults to collections[0])
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
+
+  const selectedCollection = useMemo(() => {
+    if (selectedCollectionId) {
+      const found = collections.find((c) => c.id === selectedCollectionId);
+      if (found) return found;
+    }
+    return collections[0] ?? null;
+  }, [collections, selectedCollectionId]);
+
+  // 2. Collection Products Query
+  const collectionProductsQuery = useCollectionProducts(selectedCollection?.id);
+  const collectionProducts = useMemo(
+    () => collectionProductsQuery.data?.pages.flatMap((page) => page.data) ?? [],
+    [collectionProductsQuery.data],
   );
 
-  const fetchQuota = async () => {
-    try {
-      const data = await authApi.getUserQuota();
-      setQuota(data);
-    } catch (err) {
-      console.warn('Failed to load quota:', err);
-    }
-  };
+  // 3. Catalog Products (for Best Sellers / Trending)
+  const catalogQuery = useProducts({ limit: 12 });
+  const allCatalogProducts = useMemo(
+    () => catalogQuery.data?.pages.flatMap((page) => page.data) ?? [],
+    [catalogQuery.data],
+  );
 
-  useEffect(() => {
-    fetchQuota();
-  }, []);
+  const bestSellers = useMemo(() => {
+    return [...allCatalogProducts]
+      .sort((a, b) => getTrendingScore(b) - getTrendingScore(a))
+      .slice(0, 8);
+  }, [allCatalogProducts]);
+
+  // Fallback products if collection products are empty
+  const displayCollectionProducts =
+    collectionProducts.length > 0
+      ? collectionProducts
+      : allCatalogProducts.slice(0, 6);
 
   const onRefresh = async () => {
     setRefreshing(true);
     await Promise.all([
-      fetchQuota(),
       collectionsQuery.refetch(),
-      ...(featuredCollection ? [featuredProductsQuery.refetch()] : []),
+      catalogQuery.refetch(),
+      ...(selectedCollection ? [collectionProductsQuery.refetch()] : []),
     ]);
     setRefreshing(false);
   };
@@ -83,9 +122,19 @@ export const HomeScreen: React.FC = () => {
   );
 
   const handleProductPress = useCallback(
-    (productId: string) => navigation.navigate('ProductDetail', { productId }),
+    (productId: string) => {
+      navigation.navigate('ProductDetail', { productId });
+    },
     [navigation],
   );
+
+  const handleTryOnPress = useCallback(() => {
+    navigation.navigate('TryOnTab');
+  }, [navigation]);
+
+  const handleShopPress = useCallback(() => {
+    navigation.navigate('ShopTab');
+  }, [navigation]);
 
   const handleCollectionsEndReached = useCallback(() => {
     if (collectionsQuery.hasNextPage && !collectionsQuery.isFetchingNextPage) {
@@ -96,7 +145,7 @@ export const HomeScreen: React.FC = () => {
   return (
     <ScrollView
       className="flex-1 bg-surface-lowest"
-      contentContainerClassName="pb-giant"
+      contentContainerClassName="pb-16"
       contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}
       refreshControl={
@@ -108,6 +157,13 @@ export const HomeScreen: React.FC = () => {
         />
       }
     >
+      {/* 1. Announcement Bar (Top Rotator) */}
+      <AnnouncementBar
+        onPressTryOn={handleTryOnPress}
+        onPressShop={handleShopPress}
+      />
+
+      {/* Loading / Error States for Collections */}
       {collectionsQuery.isLoading && collections.length === 0 ? (
         <CollectionSkeleton />
       ) : collectionsQuery.isError && collections.length === 0 ? (
@@ -124,153 +180,117 @@ export const HomeScreen: React.FC = () => {
         />
       ) : (
         <>
-          {collectionsQuery.isError ? (
+          {collectionsQuery.isError && (
             <View
               accessibilityRole="alert"
-              className="m-lg min-h-12 flex-row items-center gap-md rounded-md bg-catalog-muted p-md"
+              className="m-4 min-h-12 flex-row items-center gap-3 rounded-md bg-catalog-muted p-3"
             >
               <Text className="flex-1 font-sans text-body-sm text-on-surface-variant">
                 Chưa thể cập nhật danh sách mới nhất.
               </Text>
               <TouchableOpacity
                 accessibilityRole="button"
-                activeOpacity={0.68}
+                activeOpacity={0.7}
                 onPress={() => void collectionsQuery.refetch()}
-                className="min-h-11 min-w-11 justify-center px-sm"
+                className="justify-center px-2 py-1"
               >
                 <Text className="font-sans text-body-sm font-bold text-primary-container">
                   Thử lại
                 </Text>
               </TouchableOpacity>
             </View>
-          ) : null}
-          {featuredCollection ? (
-            <View className="bg-editorial-background px-lg pb-giant pt-xxxl">
-              <CollectionHeroCard
-                collection={featuredCollection}
-                onPress={handleCollectionPress}
-                onTryOnPress={() => navigation.navigate('TryOnTab')}
-              />
-            </View>
-          ) : null}
-          <View className="gap-xxxl border-b border-catalog-line py-14">
-            <View className="gap-sm px-lg">
-              <Text className="font-sans text-label-md uppercase tracking-widest text-primary-container">
+          )}
+
+          {/* 2. Hero Banner (Collections Slider) */}
+          <HomeHeroBanner
+            collections={collections}
+            onPressCollection={handleCollectionPress}
+            onPressTryOn={handleTryOnPress}
+          />
+
+          {/* 3. Collection Carousel (Horizontal) */}
+          <View className="py-10 bg-white border-b border-catalog-line">
+            <View className="px-4 mb-4">
+              <Text className="font-sans text-[11px] font-bold text-[#15434e] uppercase tracking-[0.18em] mb-1">
                 BỘ SƯU TẬP ĐỘC QUYỀN
               </Text>
-              <Text className="font-sans text-headline-lg font-bold uppercase text-on-surface-strong">
+              <Text className="font-sans text-[22px] font-extrabold uppercase text-neutral-900 tracking-tight">
                 Bộ sưu tập mới nhất
               </Text>
-              <Text className="font-sans text-body-md text-catalog-muted-text">
-                Những thiết kế đã được công bố, sẵn sàng để bạn khám phá.
+              <Text className="font-sans text-[12.5px] text-neutral-500 mt-1">
+                Được thiết kế tinh xảo theo từng mùa thời trang, định hình phong cách quý cô và quý ông hiện đại.
               </Text>
             </View>
+
             <CollectionCarousel
               collections={collections}
+              selectedCollectionId={selectedCollection?.id}
               isFetchingNextPage={collectionsQuery.isFetchingNextPage}
               onEndReached={handleCollectionsEndReached}
               onPressCollection={handleCollectionPress}
+              onSelectCollection={(col: Collection) => setSelectedCollectionId(col.id)}
             />
           </View>
-          {featuredCollection ? (
-            <HomeFeaturedProducts
-              collection={featuredCollection}
-              products={featuredProducts}
-              isLoading={featuredProductsQuery.isPending}
-              isError={featuredProductsQuery.isError}
-              onRetry={() => void featuredProductsQuery.refetch()}
-              onPressCollection={handleCollectionPress}
-              onPressProduct={handleProductPress}
-            />
-          ) : null}
+
+          {/* 4. Sale Banner Text */}
+          <SaleBannerText
+            onPressShop={handleShopPress}
+            onPressTryOn={handleTryOnPress}
+          />
+
+          {/* 5. Featured Products (From Selected Collection) */}
+          <HomeProductSection
+            badge="BỘ SƯU TẬP"
+            title={
+              selectedCollection
+                ? `THIẾT KẾ: ${selectedCollection.name}`
+                : 'SẢN PHẨM MỚI NHẤT'
+            }
+            subtitle={
+              selectedCollection?.description ||
+              'Chuẩn dáng từ đầu, đẹp từng đường may'
+            }
+            products={displayCollectionProducts}
+            isLoading={collectionProductsQuery.isPending}
+            isError={collectionProductsQuery.isError}
+            onRetry={() => void collectionProductsQuery.refetch()}
+            showCategories={true}
+            onPressProduct={handleProductPress}
+            onPressViewAll={handleShopPress}
+          />
+
+          {/* 6. Editorial Lookbook */}
+          <EditorialLookbook
+            collection={selectedCollection}
+            onPressTryOn={handleTryOnPress}
+          />
+
+          {/* 7. Best Sellers / Top Trending Products */}
+          <HomeProductSection
+            badge="TOP TRENDING"
+            title="SẢN PHẨM BÁN CHẠY NHẤT"
+            subtitle="Được khách hàng và stylist tin chọn nhiều nhất trong tháng"
+            products={bestSellers}
+            isLoading={catalogQuery.isPending}
+            isError={catalogQuery.isError}
+            onRetry={() => void catalogQuery.refetch()}
+            showCategories={false}
+            onPressProduct={handleProductPress}
+            onPressViewAll={handleShopPress}
+          />
+
+          {/* 8. AI Try-On Feature Banner */}
+          <AiTryOnFeatureBanner
+            onPressTryOn={handleTryOnPress}
+          />
+
+          {/* 9. Newsletter Bar & Brand Footer */}
+          <NewsletterBar />
         </>
       )}
 
-      <View className="gap-xxl bg-catalog-muted px-lg py-giant">
-        <View className="flex-row items-center justify-between gap-lg">
-          <View className="flex-1 gap-xs">
-            <Text className="font-sans text-body-sm text-catalog-muted-text">
-              Xin chào,
-            </Text>
-            <Text className="font-sans text-headline-md text-primary-container">
-              {user?.name || user?.email || 'Người dùng'}
-            </Text>
-          </View>
-          <View className="rounded-full border border-surface-line bg-surface-lowest px-md py-sm">
-            <Text className="font-sans text-label-md tracking-wide text-primary-container">
-              {user?.tier || 'FREE'}
-            </Text>
-          </View>
-        </View>
-        <Card
-          variant="outlined"
-          className="!rounded-catalog-gallery !border-catalog-line !p-xl"
-        >
-          <Text className="font-sans text-headline-sm text-primary-container">
-            Hạn mức AI hôm nay
-          </Text>
-          <Text className="mt-sm font-sans text-body-sm leading-relaxed text-catalog-muted-text">
-            Virtual Try-On & AI Stylist được cấp theo gói dịch vụ của bạn.
-          </Text>
-          {quota ? (
-            <View className="mt-lg flex-row border-t border-catalog-line pt-lg">
-              <View className="flex-1 items-center">
-                <Text className="font-sans text-headline-lg text-primary-container">
-                  {quota.remaining ?? '-'}
-                </Text>
-                <Text className="mt-xs font-sans text-body-sm text-catalog-muted-text">
-                  Lượt còn lại
-                </Text>
-              </View>
-              <View className="flex-1 items-center">
-                <Text className="font-sans text-headline-lg text-primary-container">
-                  {quota.limit ?? '-'}
-                </Text>
-                <Text className="mt-xs font-sans text-body-sm text-catalog-muted-text">
-                  Tổng hạn mức
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <Text className="mt-md font-sans text-body-sm italic text-catalog-muted-text">
-              Đang cập nhật hạn mức...
-            </Text>
-          )}
-        </Card>
-        <Text className="font-sans text-headline-sm text-primary-container">
-          Tính năng nổi bật
-        </Text>
-        <View className="flex-row items-stretch gap-md">
-          <TouchableOpacity
-            className="min-h-11 flex-1 gap-sm rounded-catalog-gallery border border-catalog-line bg-surface-lowest p-lg"
-            onPress={() => navigation.navigate('TryOnTab')}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-          >
-            <Shirt size={24} color={COLORS.primaryContainer} />
-            <Text className="font-sans text-body-lg font-bold text-primary-container">
-              Virtual Try-On
-            </Text>
-            <Text className="font-sans text-body-sm leading-relaxed text-catalog-muted-text">
-              Thử trang phục với ảnh người thật bằng AI
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="min-h-11 flex-1 gap-sm rounded-catalog-gallery bg-primary-container p-lg"
-            onPress={() => navigation.navigate('Stylist')}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-          >
-            <Sparkles size={24} color={COLORS.tertiaryFixed} />
-            <Text className="font-sans text-body-lg font-bold text-on-primary">
-              AI Stylist
-            </Text>
-            <Text className="font-sans text-body-sm leading-relaxed text-on-primary/85">
-              Phân tích màu sắc, vóc dáng và cách phối đồ
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* 10. First-time Onboarding Modal */}
+      <OnboardingModal />
     </ScrollView>
   );
 };

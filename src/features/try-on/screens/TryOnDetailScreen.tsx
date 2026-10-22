@@ -12,6 +12,7 @@ import { Loading } from '@/components/common/Loading';
 import { ErrorView } from '@/components/common/ErrorView';
 import { Button } from '@/components/ui/Button';
 import { FeedbackModal } from '@/components/ui/FeedbackModal';
+import { ComparisonSlider } from '../components/ComparisonSlider';
 import { formatDateTime } from '@/utils/date';
 
 type Props = NativeStackScreenProps<TryOnStackParamList, 'TryOnDetail'>;
@@ -70,16 +71,7 @@ export const TryOnDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         <Ionicons name="arrow-back" size={20} className="text-on-surface" />
         <Text className="text-label-lg text-on-surface">Quay lại</Text>
       </Pressable>
-      <View className="overflow-hidden rounded-xl border border-surface-line bg-surface-lowest shadow-sm">
-        {/* NativeWind không có token aspect 3:4 nên dùng aspectRatio tính toán */}
-        <Image
-          source={{ uri: data.resultUrl }}
-          style={{ aspectRatio: 3 / 4 }}
-          className="w-full"
-          contentFit="cover"
-          transition={300}
-        />
-      </View>
+      <ComparisonSlider before={data.humanImageUrl} after={data.resultUrl} />
 
       <View className="mt-xl rounded-xl border border-surface-line bg-surface-lowest p-lg shadow-sm">
         <View className="flex-row items-center justify-between">

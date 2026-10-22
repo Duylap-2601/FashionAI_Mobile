@@ -6,6 +6,7 @@ export interface BackendCollection {
   coverImages: string[];
   isPublished: boolean;
   displayOrder: number;
+  season?: string | null;
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -22,6 +23,7 @@ export interface Collection {
   isPublished: boolean;
   displayOrder: number;
   productCount: number;
+  season?: string | null;
   createdAt: string;
   updatedAt: string;
 }

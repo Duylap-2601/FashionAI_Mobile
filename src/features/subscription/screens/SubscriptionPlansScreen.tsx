@@ -293,7 +293,7 @@ export const SubscriptionPlansScreen: React.FC = () => {
         <View className="flex-row items-center gap-1">
           <TouchableOpacity
             accessibilityLabel="Tìm kiếm"
-            onPress={() => navigation.navigate('Main', { screen: 'ShopTab' })}
+            onPress={() => navigation.navigate('Search')}
             className="w-10 h-10 items-center justify-center rounded-full"
           >
             <Search size={22} color="#1B1C1B" />
@@ -697,9 +697,24 @@ export const SubscriptionPlansScreen: React.FC = () => {
                 © 2026 StAle. All rights reserved.
               </Text>
               <View className="flex-row gap-5">
-                <Text className="text-[12px] font-medium text-[#6B7280]">Điều khoản</Text>
-                <Text className="text-[12px] font-medium text-[#6B7280]">Bảo mật</Text>
-                <Text className="text-[12px] font-medium text-[#6B7280]">Hỗ trợ</Text>
+                <TouchableOpacity
+                  onPress={() => (navigation as any).navigate('Policy', { type: 'terms' })}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text className="text-[12px] font-medium text-[#6B7280]">Điều khoản</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => (navigation as any).navigate('Policy', { type: 'privacy' })}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text className="text-[12px] font-medium text-[#6B7280]">Bảo mật</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => (navigation as any).navigate('Policy', { type: 'return' })}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text className="text-[12px] font-medium text-[#6B7280]">Đổi trả &amp; Hỗ trợ</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>

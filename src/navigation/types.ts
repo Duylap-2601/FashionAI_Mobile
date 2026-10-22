@@ -54,9 +54,16 @@ export type RootStackParamList = {
   StylistResult: { resultId: string };
 
   OrderDetail: { orderId: string | number };
+  OrderSuccess: {
+    orderId: string | number;
+    orderCode?: string;
+    totalAmount?: number;
+  };
 
   Cart: undefined;
   SubscriptionPlans: undefined;
+  SubscriptionHistory: undefined;
+  Search: { query?: string } | undefined;
   Chat: { sessionId?: string; productId?: string } | undefined;
   Checkout: undefined;
   Payment: {
@@ -71,4 +78,5 @@ export type RootStackParamList = {
     returnRoute?: string;
   };
   Notifications: undefined;
+  Policy: { type?: 'privacy' | 'terms' | 'return' } | undefined;
 };

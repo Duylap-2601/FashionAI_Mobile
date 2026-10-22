@@ -11,16 +11,19 @@ const CARD_WIDTH = 280;
 
 interface CollectionCardProps {
   collection: Collection;
+  isSelected?: boolean;
   onPress: (slug: string) => void;
 }
 
-export function CollectionCard({ collection, onPress }: CollectionCardProps) {
+export function CollectionCard({ collection, isSelected, onPress }: CollectionCardProps) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Mở bộ sưu tập ${collection.name}`}
       onPress={() => onPress(collection.slug)}
-      className="aspect-[3/4] w-collection-card overflow-hidden rounded-catalog-gallery border border-catalog-line bg-editorial-background active:opacity-80"
+      className={`aspect-[3/4] w-collection-card overflow-hidden rounded-catalog-gallery border ${
+        isSelected ? 'border-2 border-[#5D1C34]' : 'border-catalog-line'
+      } bg-editorial-background active:opacity-80`}
     >
       <CollectionCover
         imageUrl={collection.coverImages[0] ?? null}
@@ -29,10 +32,19 @@ export function CollectionCard({ collection, onPress }: CollectionCardProps) {
         height={(CARD_WIDTH - 2) / 0.75}
       />
       <View className="flex-1 justify-between p-lg">
-        <View className="self-start rounded-full border border-surface-lowest/20 bg-surface-lowest/20 px-md py-xs">
-          <Text className="font-sans text-2xs font-bold uppercase tracking-wide text-on-primary">
-            MAY ĐO
-          </Text>
+        <View className="flex-row items-center justify-between">
+          <View className="self-start rounded-full border border-surface-lowest/20 bg-surface-lowest/20 px-md py-xs">
+            <Text className="font-sans text-2xs font-bold uppercase tracking-wide text-on-primary">
+              MAY ĐO
+            </Text>
+          </View>
+          {isSelected && (
+            <View className="rounded-full bg-[#C5A880] px-2.5 py-0.5">
+              <Text className="text-[10px] font-bold text-[#1A1A24]">
+                Đang chọn
+              </Text>
+            </View>
+          )}
         </View>
         <View className="gap-sm">
           <Text

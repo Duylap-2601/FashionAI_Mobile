@@ -10,6 +10,7 @@ import { tva } from '@gluestack-ui/nativewind-utils/tva';
 import { Button } from '@/components/ui/Button';
 import { Input, type InputProps } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
+import { QuotaExhaustedModal } from '@/components/ui/QuotaExhaustedModal';
 import { COLORS } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
 import { ApiError } from '@/types/api';
@@ -114,6 +115,7 @@ export function StylistScreen({ navigation }: Props) {
   const analyzeMutation = useAnalyzeStylist();
   const [humanImage, setHumanImage] = useState<IStylistImageFile | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [showQuotaModal, setShowQuotaModal] = useState(false);
   const {
     control,
     handleSubmit,
@@ -180,8 +182,10 @@ export function StylistScreen({ navigation }: Props) {
         genderPreference: values.genderPreference || undefined,
       });
       navigation.navigate('StylistResult', { resultId: result.id });
-    } catch {
-      // The mutation preserves the form and exposes the normalized error below.
+    } catch (err: any) {
+      if (err?.statusCode === 429 || err?.code === 'QUOTA_EXCEEDED' || err?.message?.includes('hết lượt')) {
+        setShowQuotaModal(true);
+      }
     }
   };
 
@@ -399,6 +403,12 @@ export function StylistScreen({ navigation }: Props) {
         className="!rounded-xl !border-catalog-line bg-surface-lowest"
         textClassName="font-sans !text-body-sm !text-primary-container"
         onPress={() => navigation.navigate('StylistHistory')}
+      />
+
+      <QuotaExhaustedModal
+        visible={showQuotaModal}
+        onClose={() => setShowQuotaModal(false)}
+        actionName="AI Stylist"
       />
     </ScrollView>
   );

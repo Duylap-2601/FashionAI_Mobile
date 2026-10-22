@@ -65,4 +65,38 @@ export const ordersApi = {
   updateMeasurement: (orderId: string | number, itemId: string | number, data: any, opts?: HttpOptions): Promise<any> => {
     return http.patch<any>(ENDPOINTS.ORDERS.UPDATE_MEASUREMENT(orderId, itemId), data, opts);
   },
+
+  getOrderIssues: async (orderId: string | number, opts?: HttpOptions): Promise<any[]> => {
+    const res = await http.get<any>(ENDPOINTS.ORDERS.ISSUES(orderId), opts);
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray(res.data)) return res.data;
+    return [];
+  },
+
+  createOrderIssue: (payload: {
+    orderId: string | number;
+    orderItemId: string | number;
+    reason: string;
+    description: string;
+    desiredResolution: string;
+    evidenceImages?: Array<{ uri: string; name: string; type: string }>;
+  }, opts?: HttpOptions): Promise<any> => {
+    const form = new FormData();
+    form.append('reason', payload.reason);
+    form.append('description', payload.description);
+    form.append('desiredResolution', payload.desiredResolution);
+
+    if (payload.evidenceImages?.length) {
+      payload.evidenceImages.forEach((img) => {
+        form.append('evidenceImages', img as unknown as Blob);
+      });
+    }
+
+    return http.upload<any>(
+      ENDPOINTS.ORDERS.REPORT_ISSUE(payload.orderId, payload.orderItemId),
+      form,
+      { ...opts, timeout: opts?.timeout ?? 30000 }
+    );
+  },
 };
+

@@ -36,6 +36,7 @@ import { Loading } from '@/components/common/Loading';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorView } from '@/components/common/ErrorView';
 import { Button } from '@/components/ui/Button';
+import { QuotaExhaustedModal } from '@/components/ui/QuotaExhaustedModal';
 import { COLORS } from '@/constants/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
@@ -73,6 +74,7 @@ export const ChatScreen: React.FC<Props> = ({ navigation, route }) => {
   const [loadingSession, setLoadingSession] = useState(() => !!initialSessionId);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [showJump, setShowJump] = useState(false);
+  const [showQuotaModal, setShowQuotaModal] = useState(false);
   const measurementsRef = useRef<Record<string, number | string | undefined> | null>(null);
   const followRef = useRef(true);
   const listRef = useRef<FlatList>(null);
@@ -173,13 +175,17 @@ export const ChatScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const handleSend = useCallback(
     (text: string) => {
+      if (typeof quota?.remaining === 'number' && quota.remaining <= 0) {
+        setShowQuotaModal(true);
+        return;
+      }
       sendMessage(text, {
         productId: attachedProduct?.id,
         product: attachedProduct ?? undefined,
         context: buildContext(measurementsRef.current, user?.tier),
       });
     },
-    [sendMessage, attachedProduct, user?.tier],
+    [sendMessage, attachedProduct, user?.tier, quota?.remaining],
   );
 
   const handleRetry = useCallback(() => {
@@ -421,6 +427,12 @@ export const ChatScreen: React.FC<Props> = ({ navigation, route }) => {
         onDeletedSession={(id) => {
           if (id === currentSessionId) newChat();
         }}
+      />
+
+      <QuotaExhaustedModal
+        visible={showQuotaModal}
+        onClose={() => setShowQuotaModal(false)}
+        actionName="AI Chatbot"
       />
     </SafeAreaView>
   );
