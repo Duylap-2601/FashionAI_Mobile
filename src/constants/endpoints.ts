@@ -74,11 +74,9 @@ export const ENDPOINTS = {
     ALL: '/rack/all',
   },
   SHIPPING: {
-    PROVINCES: '/shipping/provinces',
-    DISTRICTS: '/shipping/districts',
-    WARDS: '/shipping/wards',
-    LOCATIONS: '/shipping/locations',
-    CALCULATE_FEE: '/shipping/calculate-fee',
+    CAPABILITIES: '/shipping/capabilities',
+    ADDRESS_CATALOG_PROVINCES: '/shipping/address-catalog/provinces',
+    ADDRESS_CATALOG_WARDS: '/shipping/address-catalog/wards',
   },
   ORDERS: {
     QUOTE: '/orders/quote',

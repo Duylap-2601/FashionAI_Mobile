@@ -7,17 +7,13 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
-  Platform,
   RefreshControl,
   ListRenderItemInfo,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import {
   Search,
-  ShoppingBag,
-  ChevronLeft,
   Camera,
   Check,
   Trash2,
@@ -27,11 +23,10 @@ import {
   MessageCircle,
   X,
   Sparkles,
-  ShoppingBag as BagIcon,
 } from 'lucide-react-native';
 import { useAuth } from '@/features/auth/hooks/use-auth';
-import { useCartStore } from '@/features/cart/store/use-cart-store';
-import { NotificationBell } from '@/features/notifications/components/NotificationBell';
+import { AppHeader } from '@/components/common/AppHeader';
+import { BackButton } from '@/components/common/BackButton';
 import { useTryOnHistory } from '@/features/try-on/hooks/use-try-on-history';
 import { useTryOnDelete } from '@/features/try-on/hooks/use-try-on-delete';
 import { tryOnApi } from '@/features/try-on/api/try-on.api';
@@ -41,10 +36,8 @@ import { formatDate } from '@/utils/date';
 const CATEGORIES = ['Tất cả', 'Tops', 'Bottoms', 'One-pieces'] as const;
 
 export const TryOnHistoryScreen: React.FC = () => {
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { user } = useAuth();
-  const totalCartItems = useCartStore((state) => state.getTotalItems());
   const userTier = (user?.tier || 'FREE').toUpperCase();
 
   const {
@@ -295,69 +288,7 @@ export const TryOnHistoryScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-[#FBF9F7]">
-      {/* ── Top Header ── */}
-      <View
-        style={{ paddingTop: insets.top + 6 }}
-        className="px-4 pb-3 flex-row items-center justify-between border-b border-[#ECE8E3] bg-[#FBF9F7] z-20"
-      >
-        {/* Brand Logo "StAle." */}
-        <View className="flex-row items-center">
-          <Text
-            style={{
-              fontFamily: Platform.OS === 'ios' ? 'Playfair Display' : 'serif',
-              fontSize: 26,
-              fontWeight: '700',
-              color: '#5D1C34',
-              letterSpacing: -0.5,
-            }}
-          >
-            St<Text style={{ fontWeight: '900' }}>A</Text>le.
-          </Text>
-        </View>
-
-        {/* Right Header Icons */}
-        <View className="flex-row items-center gap-1">
-          <TouchableOpacity
-            accessibilityLabel="Tìm kiếm"
-            onPress={() => navigation.navigate('Main', { screen: 'ShopTab' })}
-            className="w-10 h-10 items-center justify-center rounded-full"
-          >
-            <Search size={22} color="#1B1C1B" />
-          </TouchableOpacity>
-
-          <NotificationBell />
-
-          <TouchableOpacity
-            accessibilityLabel="Giỏ hàng"
-            onPress={() => navigation.navigate('Cart')}
-            className="w-10 h-10 items-center justify-center rounded-full relative"
-          >
-            <ShoppingBag size={22} color="#1B1C1B" />
-            {totalCartItems > 0 && (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 4,
-                  right: 4,
-                  backgroundColor: '#C81E51',
-                  borderRadius: 9,
-                  minWidth: 18,
-                  height: 18,
-                  paddingHorizontal: 4,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderWidth: 1.5,
-                  borderColor: '#FFFFFF',
-                }}
-              >
-                <Text style={{ fontSize: 10, fontWeight: '700', color: '#FFFFFF' }}>
-                  {totalCartItems > 99 ? '99+' : totalCartItems}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
+      <AppHeader />
 
       {/* ── Main List & Content ── */}
       <FlatList
@@ -385,18 +316,9 @@ export const TryOnHistoryScreen: React.FC = () => {
         onEndReachedThreshold={0.4}
         ListHeaderComponent={
           <View className="mb-2">
-            {/* Breadcrumb: Quay lại Hồ sơ */}
-            <TouchableOpacity
-              onPress={handleGoBack}
-              className="flex-row items-center gap-1.5 self-start mb-3"
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <ChevronLeft size={16} color="#6B7280" />
-              <Text className="text-[13.5px] font-medium text-[#6B7280]">Quay lại Hồ sơ</Text>
-            </TouchableOpacity>
-
             {/* Title & Badge */}
-            <View className="flex-row items-center gap-2.5 mb-4">
+            <BackButton onPress={handleGoBack} label="Quay lại" />
+            <View className="mb-4 flex-row items-center gap-2.5">
               <Text className="text-[26px] font-bold text-[#1B1C1B]">Lịch sử Try-On</Text>
               {!isLoading && (
                 <View className="px-2.5 py-0.5 rounded-full bg-[#E5E7EB]">

@@ -13,6 +13,7 @@ export type ProfileStackParamList = {
   ProfileHome: undefined;
   ChangePassword: undefined;
   Measurements: { tab?: 'profile' | 'measurements' | 'sizes' } | undefined;
+  Addresses: undefined;
   Orders: undefined;
   TryOnHistory: undefined;
   TryOnDetail: { id: string };

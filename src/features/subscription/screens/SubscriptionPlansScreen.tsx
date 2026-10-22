@@ -3,33 +3,25 @@ import {
   View,
   Text,
   ScrollView,
-  Pressable,
   ActivityIndicator,
   Alert,
   TouchableOpacity,
   RefreshControl,
-  Platform,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import {
-  ArrowLeft,
   Check,
   Crown,
   Shield,
   Clock,
   RefreshCw,
   Sparkles,
-  Search,
-  ShoppingBag,
   Zap,
   ArrowRight,
-  AlertTriangle,
   MessageCircle,
 } from 'lucide-react-native';
 import { useAuth } from '@/features/auth/hooks/use-auth';
-import { NotificationBell } from '@/features/notifications/components/NotificationBell';
-import { useCartStore } from '@/features/cart/store/use-cart-store';
+import { AppHeader } from '@/components/common/AppHeader';
 import {
   useSubscriptionPlans,
   useMySubscription,
@@ -39,15 +31,13 @@ import {
   useCancelScheduledSubscription,
   useUpgradeSubscription,
 } from '../hooks/use-subscription';
-import { QUOTA_COMPARISON, SUBSCRIPTION_FAQS, DEFAULT_PLANS } from '../constants/plans';
+import { QUOTA_COMPARISON, SUBSCRIPTION_FAQS } from '../constants/plans';
 import { SubscriptionTier, PlanCardData } from '../types/subscription';
 import { formatCurrency } from '@/utils/format';
 
 export const SubscriptionPlansScreen: React.FC = () => {
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { user, refreshUser } = useAuth();
-  const totalCartItems = useCartStore((state) => state.getTotalItems());
 
   const [activeTab, setActiveTab] = useState<'plans' | 'current' | 'history'>('plans');
   const [refreshing, setRefreshing] = useState(false);
@@ -263,75 +253,7 @@ export const SubscriptionPlansScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-[#FBF9F7]">
-      {/* ── Top Header ── */}
-      <View
-        style={{ paddingTop: insets.top + 6 }}
-        className="px-4 pb-3 flex-row items-center justify-between border-b border-[#ECE8E3] bg-[#FBF9F7] z-20"
-      >
-        <View className="flex-row items-center gap-1.5">
-          {navigation.canGoBack() && (
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              className="mr-1 -ml-1.5 p-1.5 rounded-full active:bg-[#F3EFEA]"
-            >
-              <ArrowLeft size={22} color="#5D1C34" />
-            </TouchableOpacity>
-          )}
-          <Text
-            style={{
-              fontFamily: Platform.OS === 'ios' ? 'Playfair Display' : 'serif',
-              fontSize: 26,
-              fontWeight: '700',
-              color: '#5D1C34',
-              letterSpacing: -0.5,
-            }}
-          >
-            St<Text style={{ fontWeight: '900' }}>A</Text>le.
-          </Text>
-        </View>
-
-        <View className="flex-row items-center gap-1">
-          <TouchableOpacity
-            accessibilityLabel="Tìm kiếm"
-            onPress={() => navigation.navigate('Search')}
-            className="w-10 h-10 items-center justify-center rounded-full"
-          >
-            <Search size={22} color="#1B1C1B" />
-          </TouchableOpacity>
-
-          <NotificationBell />
-
-          <TouchableOpacity
-            accessibilityLabel="Giỏ hàng"
-            onPress={() => navigation.navigate('Cart')}
-            className="w-10 h-10 items-center justify-center rounded-full relative"
-          >
-            <ShoppingBag size={22} color="#1B1C1B" />
-            {totalCartItems > 0 && (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 4,
-                  right: 4,
-                  backgroundColor: '#C81E51',
-                  borderRadius: 9,
-                  minWidth: 18,
-                  height: 18,
-                  paddingHorizontal: 4,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderWidth: 1.5,
-                  borderColor: '#FFFFFF',
-                }}
-              >
-                <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700' }}>
-                  {totalCartItems > 99 ? '99+' : totalCartItems}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
+      <AppHeader onBack={navigation.canGoBack() ? () => navigation.goBack() : undefined} />
 
       {/* ── Scrollable Body ── */}
       <ScrollView

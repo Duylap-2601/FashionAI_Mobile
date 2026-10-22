@@ -18,15 +18,15 @@ export enum EPaymentMethod {
 }
 
 export interface IShippingAddress {
-  fullName: string;
+  fullName?: string;
+  name?: string;
   phone: string;
   address: string;
-  provinceId: number;
-  provinceName: string;
-  districtId: number;
-  districtName: string;
-  wardCode: string;
-  wardName: string;
+  addressLine?: string;
+  provinceName?: string;
+  wardName?: string;
+  ghnProvinceV3Id?: string;
+  ghnWardV3Id?: string;
   note?: string;
 }
 
@@ -102,6 +102,6 @@ export interface ICreateOrderIssuePayload {
   reason: OrderIssueReason;
   description: string;
   desiredResolution: OrderIssueDesiredResolution;
-  evidenceImages?: Array<{ uri: string; name: string; type: string }>;
+  evidenceImages?: { uri: string; name: string; type: string }[];
 }
 

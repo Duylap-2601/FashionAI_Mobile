@@ -6,11 +6,8 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  ActivityIndicator,
-  Platform,
   RefreshControl,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import * as Clipboard from 'expo-clipboard';
@@ -30,13 +27,12 @@ import {
   Phone,
   Scissors,
   RotateCcw,
-  MessageCircle,
   X,
   ExternalLink,
 } from 'lucide-react-native';
-import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useCartStore } from '@/features/cart/store/use-cart-store';
-import { NotificationBell } from '@/features/notifications/components/NotificationBell';
+import { AppHeader } from '@/components/common/AppHeader';
+import { BackButton } from '@/components/common/BackButton';
 import { useOrders, useCancelOrder, useConfirmDelivery } from '../hooks/use-orders';
 import { formatDate } from '@/utils/date';
 
@@ -570,12 +566,10 @@ function matchStatus(status: string | undefined, filterId: string): boolean {
 
 // ─── Main Orders Screen ───────────────────────────────────────────────────────
 export function OrdersScreen() {
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const totalCartItems = useCartStore((state) => state.getTotalItems());
   const addItem = useCartStore((state) => state.addItem);
 
-  const { orders: fetchedOrders, isLoading, refetch, isError } = useOrders();
+  const { orders: fetchedOrders, isLoading, refetch } = useOrders();
   const { cancelOrder, isCancelling } = useCancelOrder();
   const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
 
@@ -688,69 +682,7 @@ export function OrdersScreen() {
 
   return (
     <View className="flex-1 bg-[#FBF9F7]">
-      {/* ── Top Header ── */}
-      <View
-        style={{ paddingTop: insets.top + 6 }}
-        className="px-4 pb-3 flex-row items-center justify-between border-b border-[#ECE8E3] bg-[#FBF9F7] z-20"
-      >
-        {/* Brand Logo "StAle." */}
-        <View className="flex-row items-center">
-          <Text
-            style={{
-              fontFamily: Platform.OS === 'ios' ? 'Playfair Display' : 'serif',
-              fontSize: 26,
-              fontWeight: '700',
-              color: '#5D1C34',
-              letterSpacing: -0.5,
-            }}
-          >
-            St<Text style={{ fontWeight: '900' }}>A</Text>le.
-          </Text>
-        </View>
-
-        {/* Right Header Icons */}
-        <View className="flex-row items-center gap-1">
-          <TouchableOpacity
-            accessibilityLabel="Tìm kiếm"
-            onPress={() => (navigation as any).navigate('Search')}
-            className="w-10 h-10 items-center justify-center rounded-full"
-          >
-            <Search size={22} color="#1B1C1B" />
-          </TouchableOpacity>
-
-          <NotificationBell />
-
-          <TouchableOpacity
-            accessibilityLabel="Giỏ hàng"
-            onPress={() => navigation.navigate('Cart')}
-            className="w-10 h-10 items-center justify-center rounded-full relative"
-          >
-            <ShoppingBag size={22} color="#1B1C1B" />
-            {totalCartItems > 0 && (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 4,
-                  right: 4,
-                  backgroundColor: '#C81E51',
-                  borderRadius: 9,
-                  minWidth: 18,
-                  height: 18,
-                  paddingHorizontal: 4,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderWidth: 1.5,
-                  borderColor: '#FFFFFF',
-                }}
-              >
-                <Text style={{ fontSize: 10, fontWeight: '700', color: '#FFFFFF' }}>
-                  {totalCartItems > 99 ? '99+' : totalCartItems}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
+      <AppHeader />
 
       {/* ── Scrollable Body ── */}
       <ScrollView
@@ -771,8 +703,9 @@ export function OrdersScreen() {
         }
       >
         {/* ── Heading & Subtitle ── */}
-        <Text className="text-[28px] font-bold text-[#5D1C34] mb-1">Đơn hàng</Text>
-        <Text className="text-[13.5px] text-[#6B7280] mb-4">
+        <BackButton onPress={() => navigation.goBack()} />
+        <Text className="mb-1 text-[28px] font-bold text-[#5D1C34]">Đơn hàng</Text>
+        <Text className="mb-4 text-[13.5px] text-[#6B7280]">
           Theo dõi và quản lý tất cả đơn hàng của bạn
         </Text>
 
@@ -1243,17 +1176,6 @@ export function OrdersScreen() {
         )}
       </ScrollView>
 
-      {/* ── Floating AI Chat Button ── */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => navigation.navigate('Stylist')}
-        className="absolute bottom-6 right-5 w-14 h-14 rounded-full bg-[#5D1C34] shadow-lg shadow-black/30 items-center justify-center z-30"
-      >
-        <MessageCircle size={24} color="#FFFFFF" />
-        <View className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#F59E0B] border-2 border-white items-center justify-center">
-          <Text className="text-[10px] font-bold text-black">1</Text>
-        </View>
-      </TouchableOpacity>
     </View>
   );
 }

@@ -1,19 +1,16 @@
 import React from 'react';
-import { View, Pressable, Text, Image } from 'react-native';
+import { View, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MainTabParamList, RootStackParamList } from './types';
-import { Heart, ShoppingBag, Home, Package, Sparkles, WandSparkles, User, type LucideIcon } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useAuth } from '../features/auth/hooks/use-auth';
-import { useCartStore } from '../features/cart/store/use-cart-store';
+import { MainTabParamList } from './types';
+import { Home, Package, Sparkles, WandSparkles, User, type LucideIcon } from 'lucide-react-native';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { TryOnStack } from './try-on-stack';
 import { ShopScreen } from '../features/products/screens/ShopScreen';
 import { StylistScreen } from '../features/stylist/screens/StylistScreen';
 import { ProfileStack } from './profile-stack';
-import { NotificationBell } from '../features/notifications/components/NotificationBell';
+import { AppHeader } from '../components/common/AppHeader';
 import { FloatingChatBubble } from '../features/chat/components/FloatingChatBubble';
 
 // React Navigation's screenOptions/tabBarIcon require plain style objects
@@ -79,40 +76,6 @@ const TabLabel = ({ label, focused }: { label: string; focused: boolean }) => (
   </View>
 );
 
-const HeaderRight = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { user } = useAuth();
-  const totalItems = useCartStore(state => state.getTotalItems());
-
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16, gap: 16 }}>
-      <Pressable onPress={() => {}}>
-        <Heart size={24} color={COLORS.onSurface} />
-      </Pressable>
-      
-      <NotificationBell />
-
-      <Pressable onPress={() => navigation.navigate('Cart')} style={{ position: 'relative' }}>
-        <ShoppingBag size={24} color={COLORS.onSurface} />
-        {totalItems > 0 && (
-          <View style={{
-            position: 'absolute', top: -6, right: -6, 
-            backgroundColor: '#C81E51', 
-            borderRadius: 10, minWidth: 18, height: 18, paddingHorizontal: 4,
-            justifyContent: 'center', alignItems: 'center',
-            borderWidth: 1.5, borderColor: COLORS.surface
-          }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: 'bold' }}>
-              {totalItems > 99 ? '99+' : totalItems}
-            </Text>
-          </View>
-        )}
-      </Pressable>
-      
-    </View>
-  );
-};
-
 export const MainTabs: React.FC = () => {
   const insets = useSafeAreaInsets();
 
@@ -122,15 +85,7 @@ export const MainTabs: React.FC = () => {
       initialRouteName="HomeTab"
       screenOptions={{
         headerShown: true,
-        headerStyle: {
-          backgroundColor: COLORS.surface,
-        },
-        headerTitleStyle: {
-          fontWeight: '700' as const,
-          color: COLORS.onSurface,
-          fontSize: 18,
-        },
-        headerRight: () => <HeaderRight />,
+        header: () => <AppHeader />,
         tabBarActiveTintColor: COLORS.primaryContainer,
         tabBarInactiveTintColor: COLORS.onSurfaceVariant,
         tabBarStyle: {
@@ -167,11 +122,12 @@ export const MainTabs: React.FC = () => {
       <Tab.Screen
         name="TryOnTab"
         component={TryOnStack}
-        options={{
+        options={({ route }) => ({
           title: 'Try-On',
-          tabBarLabel: ({ focused }) => <TabLabel label="Try-On" focused={focused} />,    
+          headerShown: (getFocusedRouteNameFromRoute(route) ?? 'TryOnHome') === 'TryOnHome',
+          tabBarLabel: ({ focused }) => <TabLabel label="Try-On" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={Sparkles} focused={focused} />,
-        }}
+        })}
       />
       <Tab.Screen
         name="StylistTab"
@@ -186,10 +142,10 @@ export const MainTabs: React.FC = () => {
         name="ProfileTab"
         component={ProfileStack}
         options={{
-          title: 'Tài khoản',
+          title: 'Profile',
           headerShown: false,
           popToTopOnBlur: true,
-          tabBarLabel: ({ focused }) => <TabLabel label="Tài khoản" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Profile" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={User} focused={focused} />,
         }}
       />

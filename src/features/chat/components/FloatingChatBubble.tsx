@@ -1,15 +1,35 @@
 import React from 'react';
 import { Pressable } from 'react-native';
 import { MessageCircle } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
 import { COLORS } from '@/constants/theme';
+
+type NestedRoute = {
+  name?: string;
+  state?: {
+    index?: number;
+    routes: readonly NestedRoute[];
+  };
+};
+
+function getLeafRouteName(route: NestedRoute | undefined): string | undefined {
+  if (!route?.state) return route?.name;
+  return getLeafRouteName(route.state.routes[route.state.index ?? 0]);
+}
 
 // Bubble tròn burgundy cố định góc phải, nổi trên tab bar (theo ảnh thiết kế).
 // Mount 1 lần trong MainTabs nên hiện trên mọi tab; màn Chat (RootStack) đè lên trên.
 export const FloatingChatBubble: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const focusedRouteName = useNavigationState((state) =>
+    getLeafRouteName(state.routes[state.index]),
+  );
+
+  if (focusedRouteName === 'Orders') {
+    return null;
+  }
 
   return (
     <Pressable

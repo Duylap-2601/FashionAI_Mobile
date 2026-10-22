@@ -1,30 +1,47 @@
 import { http, HttpOptions } from '@/api/http';
 import { ENDPOINTS } from '@/constants/endpoints';
 
-export interface Location {
-  id: number;
+export interface IAddressCatalogLocation {
+  id: string;
   name: string;
+  aliases: string[];
+  catalogRevision: string;
 }
 
-export interface WardLocation {
-  code: string;
-  name: string;
+export interface IShippingCapabilities {
+  capabilityVersion: string;
+  policyVersion: string;
+  serverTime: string;
+  catalogRevision: string | null;
+  catalogEnabled: boolean;
+  newAddressWriteEnabled: boolean;
+  newAddressCheckoutEnabled: boolean;
+  upgradeRequired: boolean;
 }
 
 export const shippingApi = {
-  getProvinces: (opts?: HttpOptions) => {
-    return http.get<Location[]>(ENDPOINTS.SHIPPING.PROVINCES, opts);
+  getCapabilities(opts?: HttpOptions): Promise<IShippingCapabilities> {
+    return http.get<IShippingCapabilities>(ENDPOINTS.SHIPPING.CAPABILITIES, opts);
   },
-  getDistricts: (provinceId: number, opts?: HttpOptions) => {
-    return http.get<Location[]>(ENDPOINTS.SHIPPING.DISTRICTS, { ...opts, params: { provinceId: provinceId } });
+
+  getAddressCatalogProvinces(
+    revision: string,
+    opts?: HttpOptions,
+  ): Promise<IAddressCatalogLocation[]> {
+    return http.get<IAddressCatalogLocation[]>(
+      ENDPOINTS.SHIPPING.ADDRESS_CATALOG_PROVINCES,
+      { ...opts, params: { revision } },
+    );
   },
-  getWards: (districtId: number, opts?: HttpOptions) => {
-    return http.get<WardLocation[]>(ENDPOINTS.SHIPPING.WARDS, { ...opts, params: { districtId: districtId } });
-  },
-  calculateFee: (payload: any, opts?: HttpOptions) => {
-    return http.post<{ fee: number }>(ENDPOINTS.SHIPPING.CALCULATE_FEE, payload, opts);
-  },
-  getLocations: (opts?: HttpOptions) => {
-    return http.get<any>(ENDPOINTS.SHIPPING.LOCATIONS, opts);
+
+  getAddressCatalogWards(
+    provinceId: string,
+    revision: string,
+    opts?: HttpOptions,
+  ): Promise<IAddressCatalogLocation[]> {
+    return http.get<IAddressCatalogLocation[]>(
+      ENDPOINTS.SHIPPING.ADDRESS_CATALOG_WARDS,
+      { ...opts, params: { provinceId, revision } },
+    );
   },
 };
