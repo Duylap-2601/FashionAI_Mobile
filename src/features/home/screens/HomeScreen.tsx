@@ -26,6 +26,7 @@ import { CollectionSkeleton } from '@/features/collections/components/Collection
 import { usePublishedCollections } from '@/features/collections/hooks/usePublishedCollections';
 import { useCollectionProducts } from '@/features/collections/hooks/useCollectionProducts';
 import { HomeFeaturedProducts } from '../components/HomeFeaturedProducts';
+import { OnboardingModal } from '@/features/auth/components/OnboardingModal';
 
 type HomeNavigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'HomeTab'>,
@@ -271,6 +272,7 @@ export const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </View>
+      <OnboardingModal />
     </ScrollView>
   );
 };

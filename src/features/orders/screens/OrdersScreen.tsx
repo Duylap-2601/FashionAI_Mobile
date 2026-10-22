@@ -712,7 +712,7 @@ export function OrdersScreen() {
         <View className="flex-row items-center gap-1">
           <TouchableOpacity
             accessibilityLabel="Tìm kiếm"
-            onPress={() => navigation.navigate('Main', { screen: 'ShopTab' })}
+            onPress={() => (navigation as any).navigate('Search')}
             className="w-10 h-10 items-center justify-center rounded-full"
           >
             <Search size={22} color="#1B1C1B" />

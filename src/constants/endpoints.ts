@@ -90,6 +90,10 @@ export const ENDPOINTS = {
     CONFIRM_DELIVERY: (id: string | number) => `/orders/${id}/confirm-delivery`,
     UPDATE_MEASUREMENT: (orderId: string | number, itemId: string | number) =>
       `/orders/${orderId}/items/${itemId}/measurement`,
+    REPORT_ISSUE: (orderId: string | number, itemId: string | number) =>
+      `/orders/${orderId}/items/${itemId}/issues`,
+    ISSUES: (orderId: string | number) => `/orders/${orderId}/issues`,
+    ISSUE_DETAIL: (issueId: string | number) => `/order-issues/${issueId}`,
   },
   PAYMENTS: {
     CHECKOUT: '/payments/checkout',

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Sparkles, ArrowRight, Shirt } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import type { IStylistResult } from '../types/stylist';
 
 interface StylistResultContentProps {
   result: IStylistResult;
   onProductPress?: (productId: string) => void;
+  onTryOnPress?: (product?: { id: string; name: string; imageUrl?: string }) => void;
 }
 
 function ResultSection({
@@ -29,6 +31,7 @@ function ResultSection({
 export function StylistResultContent({
   result,
   onProductPress,
+  onTryOnPress,
 }: StylistResultContentProps) {
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const imageFailed = failedImageUrl === result.humanImageUrl;
@@ -70,15 +73,31 @@ export function StylistResultContent({
             </Text>
           ) : null}
           {result.product ? (
-            <Pressable
-              accessibilityRole="button"
-              className="min-h-11 justify-center self-start"
-              onPress={() => onProductPress?.(result.product!.id)}
-            >
-              <Text className="font-sans text-body-sm font-semibold text-primary-container">
-                Sản phẩm: {result.product.name}
-              </Text>
-            </Pressable>
+            <View className="mt-2 pt-2 border-t border-catalog-line/60 gap-2">
+              <Pressable
+                accessibilityRole="button"
+                className="min-h-11 justify-center self-start"
+                onPress={() => onProductPress?.(result.product!.id)}
+              >
+                <Text className="font-sans text-body-sm font-semibold text-primary-container">
+                  Sản phẩm: {result.product.name}
+                </Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                className="min-h-11 flex-row items-center justify-center gap-2 bg-primary px-4 py-3 rounded-xl active:opacity-90"
+                onPress={() =>
+                  onTryOnPress?.({
+                    id: result.product!.id,
+                    name: result.product!.name,
+                    imageUrl: (result.product as any).imageUrl || (result.product as any).image,
+                  })
+                }
+              >
+                <Sparkles size={16} color="#FFFFFF" />
+                <Text className="text-white font-bold text-label-md">Thử đồ AI với sản phẩm này</Text>
+              </Pressable>
+            </View>
           ) : null}
         </View>
       </Card>
@@ -153,6 +172,32 @@ export function StylistResultContent({
         <View className="my-md h-px bg-catalog-line" />
         <Text selectable className="font-sans text-body-sm leading-relaxed text-on-surface-variant">{analysis.stylingTips}</Text>
       </ResultSection>
+
+      <Card variant="outlined" className="gap-md !rounded-2xl !border-primary/30 !bg-primary/5 !p-xxl">
+        <View className="flex-row items-center gap-2.5">
+          <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">
+            <Shirt size={20} color="#5D1C34" />
+          </View>
+          <View className="flex-1">
+            <Text className="font-sans text-body-md font-bold text-primary">
+              Trải nghiệm phòng thử đồ ảo AI
+            </Text>
+            <Text className="font-sans text-[12px] text-on-surface-variant">
+              Ứng dụng gợi ý phối đồ này lên ảnh toàn thân của bạn
+            </Text>
+          </View>
+        </View>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => onTryOnPress?.(result.product ? { id: result.product.id, name: result.product.name } : undefined)}
+          className="mt-2 min-h-11 flex-row items-center justify-center gap-2 bg-primary px-4 py-3 rounded-xl active:opacity-90 shadow-sm"
+        >
+          <Sparkles size={16} color="#FFFFFF" />
+          <Text className="text-white font-bold text-label-md">Chuyển sang Thử đồ AI</Text>
+          <ArrowRight size={16} color="#FFFFFF" />
+        </Pressable>
+      </Card>
     </View>
   );
 }

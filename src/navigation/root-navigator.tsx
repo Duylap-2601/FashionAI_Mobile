@@ -9,11 +9,13 @@ import { MainTabs } from "./main-tabs";
 import { navigationTheme } from "./navigation-theme";
 
 import { ProductDetailScreen } from "../features/products/screens/ProductDetailScreen";
+import { SearchScreen } from "../features/products/screens/SearchScreen";
 import { CollectionDetailScreen } from "../features/collections/screens/CollectionDetailScreen";
 import { ReviewsScreen } from "../features/reviews/screens/ReviewsScreen";
 import { MyReviewsScreen } from "../features/reviews/screens/MyReviewsScreen";
 
 import { OrderDetailScreen } from "../features/orders/screens/OrderDetailScreen";
+import { OrderSuccessScreen } from "../features/orders/screens/OrderSuccessScreen";
 
 import { StylistScreen } from "../features/stylist/screens/StylistScreen";
 import { StylistHistoryScreen } from "../features/stylist/screens/StylistHistoryScreen";
@@ -25,6 +27,8 @@ import { PaymentScreen } from "../features/checkout/screens/PaymentScreen";
 import { NotificationsScreen } from "../features/notifications/screens/NotificationsScreen";
 import { ChatScreen } from "../features/chat/screens/ChatScreen";
 import { SubscriptionPlansScreen } from "../features/subscription/screens/SubscriptionPlansScreen";
+import { SubscriptionHistoryScreen } from "../features/subscription/screens/SubscriptionHistoryScreen";
+import { PolicyScreen } from "../features/profile/screens/PolicyScreen";
 
 import { useAuth } from "../features/auth/hooks/use-auth";
 import { COLORS, FONT_SIZE } from "../constants/theme";
@@ -98,6 +102,14 @@ export const RootNavigator: React.FC = () => {
             />
 
             <Stack.Screen
+              name="OrderSuccess"
+              component={OrderSuccessScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
+
+            <Stack.Screen
               name="ProductDetail"
               component={ProductDetailScreen}
               options={{
@@ -110,6 +122,14 @@ export const RootNavigator: React.FC = () => {
                   color: COLORS.onSurface,
                   fontSize: FONT_SIZE.md,
                 },
+              }}
+            />
+
+            <Stack.Screen
+              name="Search"
+              component={SearchScreen}
+              options={{
+                headerShown: false,
               }}
             />
 
@@ -226,8 +246,24 @@ export const RootNavigator: React.FC = () => {
             />
 
             <Stack.Screen
+              name="SubscriptionHistory"
+              component={SubscriptionHistoryScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
+
+            <Stack.Screen
               name="Chat"
               component={ChatScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
+
+            <Stack.Screen
+              name="Policy"
+              component={PolicyScreen}
               options={{
                 headerShown: false,
               }}

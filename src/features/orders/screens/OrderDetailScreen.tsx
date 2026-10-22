@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Copy, CheckCircle2, Clock, Package, Check, Truck, XCircle, MapPin, Phone } from 'lucide-react-native';
+import { ArrowLeft, Copy, CheckCircle2, Clock, Package, Check, Truck, XCircle, MapPin, Phone, AlertTriangle } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Clipboard from 'expo-clipboard';
 import { formatCurrency } from '@/utils/format';
 import { RootStackParamList } from '@/navigation/types';
 import { useOrder, useCancelOrder, useConfirmDelivery } from '../hooks/use-orders';
+import { ReportIssueModal } from '../components/ReportIssueModal';
+import { OrderIssuesList } from '../components/OrderIssuesList';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderDetail'>;
 
@@ -47,6 +49,7 @@ export function OrderDetailScreen({ route, navigation }: Props) {
   const { cancelOrder, isCancelling } = useCancelOrder();
   const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
   const [copied, setCopied] = useState(false);
+  const [reportingItem, setReportingItem] = useState<any | null>(null);
 
   if (isLoading) {
     return (
@@ -182,40 +185,67 @@ export function OrderDetailScreen({ route, navigation }: Props) {
           <Text className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">
             Sản phẩm đã đặt
           </Text>
-          <View className="gap-4">
+          <View className="gap-3.5">
             {items.map((item: any, idx: number) => (
-              <Pressable 
-                key={item.id || idx} 
-                className="flex-row gap-3"
-                onPress={() => handleProductPress(item.productId || (item.product && item.product.id))}
+              <View
+                key={item.id || idx}
+                className="p-3 bg-surface rounded-xl border border-surface-line"
               >
-                <View className="w-20 h-24 rounded-lg bg-surface border border-surface-line overflow-hidden">
-                  <Image source={{ uri: getProductImage(item) }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-body-md font-semibold text-on-surface mb-1" numberOfLines={2}>
-                    {item.productName || item.product?.name || 'Sản phẩm'}
-                  </Text>
-                  {item.color && (
-                    <Text className="text-label-sm text-on-surface-variant mb-1">
-                      Màu sắc: {item.color}
+                <Pressable
+                  className="flex-row gap-3"
+                  onPress={() => handleProductPress(item.productId || (item.product && item.product.id))}
+                >
+                  <View className="w-16 h-20 rounded-lg bg-surface-line border border-surface-line overflow-hidden shrink-0">
+                    <Image
+                      source={{ uri: getProductImage(item) }}
+                      style={{ width: '100%', height: '100%' }}
+                      contentFit="cover"
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-body-md font-semibold text-on-surface mb-0.5" numberOfLines={2}>
+                      {item.productName || item.product?.name || 'Sản phẩm'}
                     </Text>
-                  )}
-                  {item.size && (
-                    <Text className="text-label-sm text-on-surface-variant mb-1">
-                      Kích cỡ: {item.size}
-                    </Text>
-                  )}
-                  <Text className="text-body-sm font-bold text-on-surface mt-auto">
-                    {formatCurrency(item.price)}
-                  </Text>
-                </View>
-                <View className="items-end">
-                  <Text className="text-label-md font-medium text-on-surface">x{item.quantity}</Text>
-                </View>
-              </Pressable>
+                    {item.color && (
+                      <Text className="text-label-sm text-on-surface-variant">
+                        Màu sắc: {item.color}
+                      </Text>
+                    )}
+                    {item.size && (
+                      <Text className="text-label-sm text-on-surface-variant">
+                        Kích cỡ: {item.size}
+                      </Text>
+                    )}
+                    <View className="flex-row items-center justify-between mt-auto">
+                      <Text className="text-body-sm font-bold text-on-surface">
+                        {formatCurrency(item.price)}
+                      </Text>
+                      <Text className="text-label-md font-medium text-on-surface">x{item.quantity}</Text>
+                    </View>
+                  </View>
+                </Pressable>
+
+                {status !== 'CANCELLED' && status !== 'PENDING_PAYMENT' && (
+                  <View className="mt-2.5 pt-2 border-t border-surface-line/60 flex-row justify-end">
+                    <Pressable
+                      onPress={() => setReportingItem(item)}
+                      className="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 flex-row items-center gap-1.5 active:opacity-70"
+                      accessibilityRole="button"
+                      accessibilityLabel="Báo sự cố sản phẩm"
+                    >
+                      <AlertTriangle size={13} color="#D97706" />
+                      <Text className="text-[12px] font-bold text-amber-800">Báo sự cố / Đổi trả</Text>
+                    </Pressable>
+                  </View>
+                )}
+              </View>
             ))}
           </View>
+        </View>
+
+        {/* Order Issues List */}
+        <View className="px-4 mb-2">
+          <OrderIssuesList orderId={orderId} />
         </View>
 
         {/* Order Summary */}
@@ -273,6 +303,14 @@ export function OrderDetailScreen({ route, navigation }: Props) {
           )}
         </View>
       )}
+
+      <ReportIssueModal
+        visible={!!reportingItem}
+        onClose={() => setReportingItem(null)}
+        orderId={orderId}
+        orderItem={reportingItem}
+        onSuccess={() => refetch()}
+      />
     </SafeAreaView>
   );
 }

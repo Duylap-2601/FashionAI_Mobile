@@ -21,6 +21,7 @@ import {
   TryOnCategory,
   TryOnResult,
 } from '@/features/try-on/types/try-on';
+import { QuotaExhaustedModal } from '@/components/ui/QuotaExhaustedModal';
 import {
   UploadableImage,
   toUploadableImage,
@@ -152,6 +153,7 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
   const [formError, setFormError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [serverAction, setServerAction] = useState<'subscription' | null>(null);
+  const [showQuotaModal, setShowQuotaModal] = useState(false);
   const isBusy = generate.isPending;
 
   const handleHumanPick = async (useCamera: boolean) => {
@@ -243,6 +245,7 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
         setServerAction('subscription');
         break;
       case 'quota-exceeded':
+        setShowQuotaModal(true);
         setServerError(
           action.remaining === 0
             ? 'Bạn đã hết lượt thử đồ hôm nay. Quota sẽ được làm mới vào ngày mai.'
@@ -528,6 +531,12 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
           </Text>
         </View>
       )}
+
+      <QuotaExhaustedModal
+        visible={showQuotaModal}
+        onClose={() => setShowQuotaModal(false)}
+        actionName="Thử đồ AI"
+      />
     </View>
   );
 };
