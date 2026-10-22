@@ -12,7 +12,7 @@ export type AuthStackParamList = {
 export type ProfileStackParamList = {
   ProfileHome: undefined;
   ChangePassword: undefined;
-  Measurements: undefined;
+  Measurements: { tab?: 'profile' | 'measurements' | 'sizes' } | undefined;
   Orders: undefined;
   TryOnHistory: undefined;
   TryOnDetail: { id: string };

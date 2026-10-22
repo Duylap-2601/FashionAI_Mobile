@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -42,6 +42,8 @@ import { NotificationBell } from '@/features/notifications/components/Notificati
 import { useCartStore } from '@/features/cart/store/use-cart-store';
 import { measurementsApi } from '@/features/measurements/api/measurements.api';
 import { usersApi } from '@/features/profile/api/users.api';
+import { ProfileStackParamList } from '@/navigation/types';
+import { COLORS } from '@/constants/theme';
 import { BodyDiagram } from '../components/BodyDiagram';
 
 type Tab = 'profile' | 'measurements' | 'sizes';
@@ -56,6 +58,90 @@ interface FieldDef {
   desc: string;
   requiredFor?: string;
 }
+
+function isMeasurementFieldValid(field: FieldDef, value: string): boolean | null {
+  if (!value || value.trim() === '') return null;
+  const num = parseFloat(value);
+  if (isNaN(num)) return false;
+  return num >= field.min && num <= field.max;
+}
+
+interface MeasurementFieldProps {
+  field: FieldDef;
+  value: string;
+  onChange: (id: string, value: string) => void;
+  onHelp: (field: FieldDef) => void;
+}
+
+const MeasurementField = React.memo(function MeasurementField({
+  field,
+  value,
+  onChange,
+  onHelp,
+}: MeasurementFieldProps) {
+  const validStatus = isMeasurementFieldValid(field, value);
+
+  return (
+    <View className="mb-4">
+      {/* Top Label Row */}
+      <View className="flex-row items-center justify-between mb-1.5">
+        <View className="flex-row items-center gap-1.5 flex-wrap">
+          <Text className="text-[14px] font-bold text-[#1B1C1B]">{field.label}</Text>
+          {field.requiredFor && (
+            <View className="px-2 py-0.5 rounded-full bg-[#5D1C34]/10">
+              <Text className="text-[10.5px] font-semibold text-[#5D1C34]">
+                {field.requiredFor}
+              </Text>
+            </View>
+          )}
+        </View>
+        <TouchableOpacity
+          onPress={() => onHelp(field)}
+          className="p-1 rounded-full active:bg-[#F3EFEA]"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <HelpCircle size={15} color="#9CA3AF" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Input Container */}
+      <View
+        className={`h-12 flex-row items-center justify-between px-3.5 rounded-xl border ${
+          validStatus === false
+            ? 'border-[#DC2626] bg-[#FEF2F2]'
+            : validStatus === true
+            ? 'border-[#10B981] bg-white'
+            : 'border-[#D1D5DB] bg-white'
+        }`}
+      >
+        <TextInput
+          value={value}
+          onChangeText={(v) => onChange(field.id, v)}
+          placeholder="—"
+          placeholderTextColor="#9CA3AF"
+          keyboardType="numeric"
+          className="flex-1 text-[15px] font-semibold text-[#1B1C1B] h-full"
+        />
+        <View className="flex-row items-center gap-1.5 pl-2">
+          {validStatus === true && <CheckCircle2 size={16} color="#059669" />}
+          {validStatus === false && <AlertCircle size={16} color="#DC2626" />}
+          <Text className="text-[13px] font-medium text-[#6B7280]">{field.unit}</Text>
+        </View>
+      </View>
+
+      {/* Helper / Range text */}
+      <Text
+        className={`text-[11.5px] mt-1 ${
+          validStatus === false ? 'text-[#DC2626] font-medium' : 'text-[#9CA3AF]'
+        }`}
+      >
+        {validStatus === false
+          ? `Phải từ ${field.min}–${field.max} ${field.unit}`
+          : `${field.min}–${field.max} ${field.unit}`}
+      </Text>
+    </View>
+  );
+});
 
 const OVERVIEW_FIELD_DEFS: FieldDef[] = [
   { id: 'height', label: 'Chiều cao', unit: 'cm', min: 130, max: 220, desc: 'Từ gót chân đến đỉnh đầu', requiredFor: 'Bắt buộc tất cả' },
@@ -84,6 +170,8 @@ const LOWER_FIELD_DEFS: FieldDef[] = [
 
 const ALL_MEASUREMENT_DEFS = [...OVERVIEW_FIELD_DEFS, ...UPPER_FIELD_DEFS, ...LOWER_FIELD_DEFS];
 
+const MEASUREMENT_DEFS_BY_ID = new Map(ALL_MEASUREMENT_DEFS.map((f) => [f.id, f]));
+
 const BODY_TYPES: { id: BodyType; label: string; desc: string }[] = [
   { id: 'slim', label: 'Mảnh mai', desc: 'Vai hẹp, eo thon' },
   { id: 'regular', label: 'Cân đối', desc: 'Tỷ lệ hài hòa' },
@@ -108,11 +196,12 @@ const SIZE_GUIDE: Record<string, { chest: string; waist: string; hip: string }> 
 export function MeasurementsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<ProfileStackParamList, 'Measurements'>>();
   const queryClient = useQueryClient();
   const { user, refreshUser } = useAuth();
   const totalCartItems = useCartStore((state) => state.getTotalItems());
 
-  const [activeTab, setActiveTab] = useState<Tab>('measurements');
+  const [activeTab, setActiveTab] = useState<Tab>(route.params?.tab ?? 'measurements');
   const [activeHelpField, setActiveHelpField] = useState<FieldDef | null>(null);
 
   // Profile Form States
@@ -146,6 +235,7 @@ export function MeasurementsScreen() {
   const [isSavingMeasurements, setIsSavingMeasurements] = useState(false);
   const [bodyType, setBodyType] = useState<BodyType>('regular');
   const [initialMeasurements, setInitialMeasurements] = useState<Record<string, string>>({});
+  const [showSavedToast, setShowSavedToast] = useState(false);
   const [measurements, setMeasurements] = useState<Record<string, string>>({
     height: '',
     weight: '',
@@ -221,12 +311,36 @@ export function MeasurementsScreen() {
     );
   }, [measurements, initialMeasurements]);
 
-  const isFieldValid = (field: FieldDef, value: string): boolean | null => {
-    if (!value || value.trim() === '') return null;
-    const num = parseFloat(value);
-    if (isNaN(num)) return false;
-    return num >= field.min && num <= field.max;
-  };
+  const bannerVisible = isMeasurementsDirty && activeTab === 'measurements';
+
+  const handleMeasurementChange = useCallback((id: string, value: string) => {
+    setMeasurements((p) => ({ ...p, [id]: value }));
+  }, []);
+
+  const handleHelpField = useCallback((field: FieldDef) => {
+    setActiveHelpField(field);
+  }, []);
+
+  // Có field nào đã nhập mà vượt khoảng hợp lệ → nút Lưu trên banner bị mờ,
+  // tránh gửi số đo sai để BE trả lỗi.
+  const hasInvalidMeasurements = useMemo(
+    () =>
+      Object.entries(measurements).some(([id, v]) => {
+        if (!v || v.trim() === '') return false;
+        const def = MEASUREMENT_DEFS_BY_ID.get(id);
+        if (!def) return false;
+        const num = parseFloat(v);
+        return isNaN(num) || num < def.min || num > def.max;
+      }),
+    [measurements]
+  );
+
+  // Toast "Đã lưu số đo cơ thể thành công!" tự ẩn sau 3.5s, có nút X tắt ngay.
+  useEffect(() => {
+    if (!showSavedToast) return;
+    const timer = setTimeout(() => setShowSavedToast(false), 3500);
+    return () => clearTimeout(timer);
+  }, [showSavedToast]);
 
   // Handle Save Profile
   const handleSaveProfile = async () => {
@@ -256,26 +370,23 @@ export function MeasurementsScreen() {
   const handleSaveMeasurements = async () => {
     try {
       setIsSavingMeasurements(true);
-      const payload: Record<string, any> = {
-        bodyType,
-      };
-      Object.entries(measurements).forEach(([k, v]) => {
+      // Chỉ gửi các field BE chấp nhận (UpdateMeasurementsDto đã whitelist).
+      // bodyType/hips/outseam/bodyLength không có trong DTO → BE trả 400
+      // "Dữ liệu đầu vào không hợp lệ" nếu gửi kèm.
+      const snapshot = { ...measurements };
+      const payload: Record<string, any> = {};
+      Object.entries(snapshot).forEach(([k, v]) => {
         if (v && !isNaN(parseFloat(v))) {
           payload[k] = parseFloat(v);
         }
       });
 
-      // Alias mapping
-      if (payload.hip !== undefined) payload.hips = payload.hip;
-      if (payload.trouserLength !== undefined) payload.outseam = payload.trouserLength;
-      if (payload.shirtLength !== undefined) payload.bodyLength = payload.shirtLength;
-
       await measurementsApi.update(payload as any);
       await refreshUser();
       await queryClient.invalidateQueries({ queryKey: ['user-measurements'] });
       await queryClient.invalidateQueries({ queryKey: ['measurements-completeness'] });
-      setInitialMeasurements({ ...measurements });
-      Alert.alert('Thành công', 'Đã lưu số đo cơ thể.');
+      setInitialMeasurements(snapshot);
+      setShowSavedToast(true);
     } catch (err: any) {
       Alert.alert('Lỗi', err?.message || 'Chưa thể lưu số đo.');
     } finally {
@@ -291,73 +402,6 @@ export function MeasurementsScreen() {
   const quotaLimit = tryOnQuota?.limit ?? 0;
   const quotaPct = quotaLimit > 0 ? Math.min(100, Math.round((quotaUsed / quotaLimit) * 100)) : 100;
 
-  // Single Measurement Input Renderer matching FE screenshot
-  const renderMeasurementField = (field: FieldDef) => {
-    const val = measurements[field.id] || '';
-    const validStatus = isFieldValid(field, val);
-
-    return (
-      <View key={field.id} className="mb-4">
-        {/* Top Label Row */}
-        <View className="flex-row items-center justify-between mb-1.5">
-          <View className="flex-row items-center gap-1.5 flex-wrap">
-            <Text className="text-[14px] font-bold text-[#1B1C1B]">{field.label}</Text>
-            {field.requiredFor && (
-              <View className="px-2 py-0.5 rounded-full bg-[#5D1C34]/10">
-                <Text className="text-[10.5px] font-semibold text-[#5D1C34]">
-                  {field.requiredFor}
-                </Text>
-              </View>
-            )}
-          </View>
-          <TouchableOpacity
-            onPress={() => setActiveHelpField(field)}
-            className="p-1 rounded-full active:bg-[#F3EFEA]"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <HelpCircle size={15} color="#9CA3AF" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Input Container */}
-        <View
-          className={`h-12 flex-row items-center justify-between px-3.5 rounded-xl border ${
-            validStatus === false
-              ? 'border-[#DC2626] bg-[#FEF2F2]'
-              : validStatus === true
-              ? 'border-[#10B981] bg-white'
-              : 'border-[#D1D5DB] bg-white'
-          }`}
-        >
-          <TextInput
-            value={val}
-            onChangeText={(v) => setMeasurements((p) => ({ ...p, [field.id]: v }))}
-            placeholder="—"
-            placeholderTextColor="#9CA3AF"
-            keyboardType="numeric"
-            className="flex-1 text-[15px] font-semibold text-[#1B1C1B] h-full"
-          />
-          <View className="flex-row items-center gap-1.5 pl-2">
-            {validStatus === true && <CheckCircle2 size={16} color="#059669" />}
-            {validStatus === false && <AlertCircle size={16} color="#DC2626" />}
-            <Text className="text-[13px] font-medium text-[#6B7280]">{field.unit}</Text>
-          </View>
-        </View>
-
-        {/* Helper / Range text */}
-        <Text
-          className={`text-[11.5px] mt-1 ${
-            validStatus === false ? 'text-[#DC2626] font-medium' : 'text-[#9CA3AF]'
-          }`}
-        >
-          {validStatus === false
-            ? `Phải từ ${field.min}–${field.max} ${field.unit}`
-            : `${field.min}–${field.max} ${field.unit}`}
-        </Text>
-      </View>
-    );
-  };
-
   return (
     <View className="flex-1 bg-[#FBF9F7]">
       {/* ── Top Header ── */}
@@ -366,12 +410,6 @@ export function MeasurementsScreen() {
         className="px-4 pb-3 flex-row items-center justify-between border-b border-[#ECE8E3] bg-[#FBF9F7] z-20"
       >
         <View className="flex-row items-center gap-1.5">
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            className="mr-1 -ml-1.5 p-1.5 rounded-full active:bg-[#F3EFEA]"
-          >
-            <ArrowLeft size={22} color="#5D1C34" />
-          </TouchableOpacity>
           <Text
             style={{
               fontFamily: Platform.OS === 'ios' ? 'Playfair Display' : 'serif',
@@ -426,6 +464,61 @@ export function MeasurementsScreen() {
             )}
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* ── Banner "Bạn có thay đổi chưa lưu" ──
+          Luôn mount (chỉ ẩn bằng display:none) để thứ tự component con không
+          đổi → không remount cả form/ScrollView khi bắt đầu gõ. */}
+      <View
+        className={`mx-4 mt-3 flex-row items-center gap-2.5 rounded-2xl border border-warning/40 bg-warning/15 px-3.5 py-2 ${
+          bannerVisible ? 'flex' : 'hidden'
+        }`}
+      >
+        <AlertCircle size={18} color={COLORS.warning} />
+        <Text className="flex-1 text-sm font-medium text-on-surface-strong" numberOfLines={1}>
+          Bạn có thay đổi chưa lưu
+        </Text>
+        <TouchableOpacity
+          accessibilityLabel="Hủy thay đổi số đo"
+          disabled={isSavingMeasurements}
+          onPress={() => setMeasurements({ ...initialMeasurements })}
+          className="min-h-11 justify-center px-2.5"
+        >
+          <Text className="text-sm font-semibold text-on-surface-variant">Hủy</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityLabel="Lưu số đo"
+          disabled={hasInvalidMeasurements || isSavingMeasurements}
+          onPress={handleSaveMeasurements}
+          className={`min-h-11 justify-center rounded-full bg-primary-container px-5 ${
+            hasInvalidMeasurements || isSavingMeasurements ? 'opacity-40' : 'opacity-100'
+          }`}
+        >
+          {isSavingMeasurements ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text className="text-sm font-semibold text-primary-foreground">Lưu</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* ── Toast "Đã lưu số đo cơ thể thành công!" ── */}
+      <View
+        className={`mx-4 mt-3 flex-row items-center gap-2.5 rounded-2xl border border-success/40 bg-success/15 px-3.5 py-2 ${
+          showSavedToast ? 'flex' : 'hidden'
+        }`}
+      >
+        <CheckCircle2 size={18} color={COLORS.success} />
+        <Text className="flex-1 text-sm font-semibold text-success" numberOfLines={1}>
+          Đã lưu số đo cơ thể thành công!
+        </Text>
+        <TouchableOpacity
+          accessibilityLabel="Đóng thông báo"
+          onPress={() => setShowSavedToast(false)}
+          className="min-h-11 min-w-11 items-center justify-center"
+        >
+          <X size={16} color={COLORS.onSurfaceVariant} />
+        </TouchableOpacity>
       </View>
 
       {/* ── Scrollable Body ── */}
@@ -850,7 +943,15 @@ export function MeasurementsScreen() {
                   Thông tin cơ bản về cơ thể
                 </Text>
 
-                {OVERVIEW_FIELD_DEFS.map((f) => renderMeasurementField(f))}
+                {OVERVIEW_FIELD_DEFS.map((f) => (
+                  <MeasurementField
+                    key={f.id}
+                    field={f}
+                    value={measurements[f.id] || ''}
+                    onChange={handleMeasurementChange}
+                    onHelp={handleHelpField}
+                  />
+                ))}
 
                 {/* Sub-Section: Dáng người */}
                 <View className="mt-2 mb-2">
@@ -901,7 +1002,15 @@ export function MeasurementsScreen() {
                   Áo sơ mi, blazer, vest
                 </Text>
 
-                {UPPER_FIELD_DEFS.map((f) => renderMeasurementField(f))}
+                {UPPER_FIELD_DEFS.map((f) => (
+                  <MeasurementField
+                    key={f.id}
+                    field={f}
+                    value={measurements[f.id] || ''}
+                    onChange={handleMeasurementChange}
+                    onHelp={handleHelpField}
+                  />
+                ))}
               </View>
 
               {/* Section 3: Thân dưới */}
@@ -914,7 +1023,15 @@ export function MeasurementsScreen() {
                   Quần tây, chân váy
                 </Text>
 
-                {LOWER_FIELD_DEFS.map((f) => renderMeasurementField(f))}
+                {LOWER_FIELD_DEFS.map((f) => (
+                  <MeasurementField
+                    key={f.id}
+                    field={f}
+                    value={measurements[f.id] || ''}
+                    onChange={handleMeasurementChange}
+                    onHelp={handleHelpField}
+                  />
+                ))}
               </View>
 
               {/* Bottom Action Button: Lưu số đo */}
