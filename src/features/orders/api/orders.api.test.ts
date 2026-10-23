@@ -26,6 +26,8 @@ describe('ordersApi', () => {
   it('quote posts quote payload and returns quote response', async () => {
     const payload = {
       items: [{ productId: 'prod-1', quantity: 1, price: 500000 }],
+      shippingAddressId: 'addr-1',
+      addressVersion: 2,
     };
     const quoteData = {
       itemsTotal: 500000,
@@ -39,6 +41,23 @@ describe('ordersApi', () => {
 
     const result = await ordersApi.quote(payload);
     expect(result).toEqual(quoteData);
+  });
+
+  it('createOrder posts quote token and returns created order', async () => {
+    const payload = {
+      items: [{ productId: 'prod-1', quantity: 1, price: 500000 }],
+      shippingAddressId: 'addr-1',
+      addressVersion: 2,
+      quoteToken: 'token-123',
+      totalAmount: 530000,
+      paymentMethod: 'BANK_TRANSFER',
+    };
+    const orderData = { id: 'order-1', orderCode: 'FASHION-1', totalAmount: 530000 };
+
+    mock.onPost(ENDPOINTS.ORDERS.CREATE).reply(200, envelope(orderData));
+
+    const result = await ordersApi.createOrder(payload);
+    expect(result).toEqual(orderData);
   });
 
   it('getOrders fetches list of orders', async () => {

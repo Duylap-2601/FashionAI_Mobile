@@ -1,6 +1,6 @@
 import { http } from '@/api/http';
 import { ENDPOINTS } from '@/constants/endpoints';
-import { usersApi } from './users.api';
+import { usersApi, IUpsertUserAddressDto } from './users.api';
 
 jest.mock('@/api/http', () => ({
   http: {
@@ -48,13 +48,56 @@ describe('usersApi', () => {
     expect(res).toHaveLength(1);
   });
 
+  it('createAddress posts a typed address payload', async () => {
+    const payload: IUpsertUserAddressDto = {
+      recipientName: 'Nguyễn Văn A',
+      phone: '0901234567',
+      addressLine: '123 Nguyễn Trãi',
+      label: 'Nhà riêng',
+      ghnProvinceV3Id: '1000001',
+      ghnWardV3Id: '1003575',
+      isDefault: true,
+    };
+    (http.post as jest.Mock).mockResolvedValueOnce({ id: 'addr-1', ...payload, version: 1 });
+    const res = await usersApi.createAddress(payload);
+    expect(http.post).toHaveBeenCalledWith(ENDPOINTS.USERS.ADDRESSES, payload, undefined);
+    expect(res.id).toBe('addr-1');
+  });
+
+  it('updateAddress calls PATCH /users/me/addresses/:id', async () => {
+    const payload: IUpsertUserAddressDto = {
+      recipientName: 'Nguyễn Văn A',
+      phone: '0901234567',
+      addressLine: '123 Nguyễn Trãi',
+      ghnProvinceV3Id: '1000001',
+      ghnWardV3Id: '1003575',
+      expectedVersion: 2,
+    };
+    (http.patch as jest.Mock).mockResolvedValueOnce({ id: 'addr-1', ...payload, version: 3 });
+    await usersApi.updateAddress('addr-1', payload);
+    expect(http.patch).toHaveBeenCalledWith(
+      `${ENDPOINTS.USERS.ADDRESSES}/addr-1`,
+      payload,
+      undefined,
+    );
+  });
+
+  it('deleteAddress calls DELETE /users/me/addresses/:id', async () => {
+    (http.delete as jest.Mock).mockResolvedValueOnce({ deleted: true });
+    await usersApi.deleteAddress('addr-1');
+    expect(http.delete).toHaveBeenCalledWith(
+      `${ENDPOINTS.USERS.ADDRESSES}/addr-1`,
+      undefined,
+    );
+  });
+
   it('setDefaultAddress calls PATCH /users/me/addresses/:id/default', async () => {
     (http.patch as jest.Mock).mockResolvedValueOnce({ id: 'addr-1', isDefault: true });
     await usersApi.setDefaultAddress('addr-1');
     expect(http.patch).toHaveBeenCalledWith(
       `${ENDPOINTS.USERS.ADDRESSES}/addr-1/default`,
       undefined,
-      undefined
+      undefined,
     );
   });
 });

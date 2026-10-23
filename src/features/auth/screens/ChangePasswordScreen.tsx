@@ -5,6 +5,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProfileStackParamList } from '@/navigation/types';
 import { useAuth } from '@/features/auth/hooks/use-auth';
+import { AppHeader } from '@/components/common/AppHeader';
+import { BackButton } from '@/components/common/BackButton';
 import {
   changePasswordSchema,
   ChangePasswordFormValues,
@@ -14,7 +16,7 @@ import { Button } from '@/components/ui/Button';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'ChangePassword'>;
 
-export const ChangePasswordScreen: React.FC<Props> = () => {
+export const ChangePasswordScreen: React.FC<Props> = ({ navigation }) => {
   const { changePassword } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -40,75 +42,79 @@ export const ChangePasswordScreen: React.FC<Props> = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-surface"
-    >
-      <ScrollView contentContainerClassName="grow justify-center px-xxl py-xxxl">
-        <View className="mb-xxxl items-center">
-          <Text className="text-xxxl font-extrabold text-on-surface-strong">Đổi mật khẩu</Text>
-          <Text className="mt-sm text-center text-body-sm leading-5 text-on-surface-variant">
+    <View className="flex-1 bg-surface">
+      <AppHeader />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1 bg-surface"
+      >
+        <ScrollView contentContainerClassName="grow px-xxl py-xxxl">
+          <BackButton onPress={() => navigation.goBack()} />
+          <Text className="text-xxxl font-extrabold text-on-surface-strong">
+            Đổi mật khẩu
+          </Text>
+          <Text className="mb-xxxl mt-sm text-body-sm leading-5 text-on-surface-variant">
             Nhập mật khẩu hiện tại và mật khẩu mới cho tài khoản của bạn.
           </Text>
-        </View>
 
-        <View className="mb-xxl">
-          <Controller
-            control={control}
-            name="currentPassword"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <Input
-                label="Mật khẩu hiện tại"
-                placeholder="••••••••"
-                secureTextEntry
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.currentPassword?.message}
-              />
-            )}
-          />
+          <View className="mb-xxl">
+            <Controller
+              control={control}
+              name="currentPassword"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <Input
+                  label="Mật khẩu hiện tại"
+                  placeholder="••••••••"
+                  secureTextEntry
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.currentPassword?.message}
+                />
+              )}
+            />
 
-          <Controller
-            control={control}
-            name="newPassword"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <Input
-                label="Mật khẩu mới"
-                placeholder="Ít nhất 8 ký tự"
-                secureTextEntry
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.newPassword?.message}
-              />
-            )}
-          />
+            <Controller
+              control={control}
+              name="newPassword"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <Input
+                  label="Mật khẩu mới"
+                  placeholder="Ít nhất 8 ký tự"
+                  secureTextEntry
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.newPassword?.message}
+                />
+              )}
+            />
 
-          <Controller
-            control={control}
-            name="confirmNewPassword"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <Input
-                label="Xác nhận mật khẩu mới"
-                placeholder="••••••••"
-                secureTextEntry
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.confirmNewPassword?.message}
-              />
-            )}
-          />
+            <Controller
+              control={control}
+              name="confirmNewPassword"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <Input
+                  label="Xác nhận mật khẩu mới"
+                  placeholder="••••••••"
+                  secureTextEntry
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.confirmNewPassword?.message}
+                />
+              )}
+            />
 
-          <Button
-            title="Lưu mật khẩu mới"
-            onPress={handleSubmit(onSubmit)}
-            loading={isSubmitting}
-            textClassName="text-primary-foreground"
-          />
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <Button
+              title="Lưu mật khẩu mới"
+              onPress={handleSubmit(onSubmit)}
+              loading={isSubmitting}
+              textClassName="text-primary-foreground"
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };

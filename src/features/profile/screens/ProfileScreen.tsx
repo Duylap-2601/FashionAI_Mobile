@@ -4,18 +4,14 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Pressable,
   Image,
   Modal,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
-  Search,
   ShoppingBag,
   Pencil,
   Crown,
@@ -32,14 +28,11 @@ import {
   LogOut,
   Star,
   Clock,
-  X,
-  Check,
   ShieldCheck,
 } from 'lucide-react-native';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { ProfileStackParamList, RootStackParamList } from '@/navigation/types';
-import { NotificationBell } from '@/features/notifications/components/NotificationBell';
-import { useCartStore } from '@/features/cart/store/use-cart-store';
+import { AppHeader } from '@/components/common/AppHeader';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/use-measurements-completeness';
 import { usersApi, UserQuotaResponse } from '@/features/profile/api/users.api';
 
@@ -47,116 +40,6 @@ type ProfileNavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<ProfileStackParamList, 'ProfileHome'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
-
-// ─── Addresses Modal ─────────────────────────────────────────────────────────
-interface AddressesModalProps {
-  visible: boolean;
-  onClose: () => void;
-}
-
-const AddressesModal: React.FC<AddressesModalProps> = ({ visible, onClose }) => {
-  const queryClient = useQueryClient();
-  const { data: addresses = [], isLoading } = useQuery({
-    queryKey: ['user-addresses'],
-    queryFn: () => usersApi.getAddresses(),
-    enabled: visible,
-  });
-
-  const handleSetDefault = async (id: string) => {
-    try {
-      await usersApi.setDefaultAddress(id);
-      queryClient.invalidateQueries({ queryKey: ['user-addresses'] });
-    } catch {
-      // Ignored for now
-    }
-  };
-
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 justify-end bg-black/50">
-        <View className="max-h-[80%] rounded-t-3xl bg-white p-5 shadow-2xl">
-          <View className="flex-row items-center justify-between pb-3.5 border-b border-[#F3F4F6] mb-4">
-            <View className="flex-row items-center gap-2">
-              <MapPin size={20} color="#5D1C34" />
-              <Text className="text-[17px] font-bold text-[#1B1C1B]">Sổ địa chỉ giao hàng</Text>
-            </View>
-            <TouchableOpacity
-              onPress={onClose}
-              className="w-8 h-8 rounded-full bg-[#F3F4F6] items-center justify-center"
-            >
-              <X size={16} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
-
-          {isLoading ? (
-            <View className="py-12 items-center justify-center">
-              <ActivityIndicator size="large" color="#5D1C34" />
-              <Text className="mt-3 text-[13px] text-[#6B7280]">Đang tải địa chỉ...</Text>
-            </View>
-          ) : addresses.length === 0 ? (
-            <View className="py-12 items-center justify-center text-center">
-              <MapPin size={40} color="#D1D5DB" />
-              <Text className="mt-3 text-[15px] font-semibold text-[#374151]">Chưa có địa chỉ nào</Text>
-              <Text className="mt-1 text-[13px] text-[#9CA3AF] text-center px-4">
-                Địa chỉ giao hàng sẽ tự động được lưu khi bạn tiến hành đặt hàng tại quầy thanh toán.
-              </Text>
-            </View>
-          ) : (
-            <ScrollView className="max-h-[420px]" showsVerticalScrollIndicator={false}>
-              {addresses.map((addr: any) => (
-                <View
-                  key={addr.id}
-                  className={`p-4 rounded-2xl border mb-3 ${
-                    addr.isDefault
-                      ? 'border-[#5D1C34] bg-[#5D1C34]/5'
-                      : 'border-[#E5E7EB] bg-white'
-                  }`}
-                >
-                  <View className="flex-row items-center justify-between mb-1.5">
-                    <View className="flex-row items-center gap-2">
-                      <Text className="text-[14px] font-bold text-[#1B1C1B]">
-                        {addr.recipientName}
-                      </Text>
-                      {addr.isDefault && (
-                        <View className="px-2 py-0.5 rounded-full bg-[#5D1C34] items-center justify-center">
-                          <Text className="text-[10px] font-bold text-white">Mặc định</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text className="text-[13px] text-[#6B7280]">{addr.phone}</Text>
-                  </View>
-                  <Text className="text-[13px] text-[#4B5563] mb-2 leading-5">
-                    {addr.addressLine}
-                    {addr.wardName ? `, ${addr.wardName}` : ''}
-                    {addr.districtName ? `, ${addr.districtName}` : ''}
-                    {addr.provinceName ? `, ${addr.provinceName}` : ''}
-                  </Text>
-                  {!addr.isDefault && (
-                    <TouchableOpacity
-                      onPress={() => handleSetDefault(addr.id)}
-                      className="self-start py-1 px-3 rounded-lg border border-[#D1D5DB] bg-white active:bg-[#F9FAFB]"
-                    >
-                      <Text className="text-[11px] font-semibold text-[#5D1C34]">
-                        Đặt làm mặc định
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              ))}
-            </ScrollView>
-          )}
-
-          <TouchableOpacity
-            onPress={onClose}
-            className="mt-4 h-11 rounded-xl bg-[#5D1C34] items-center justify-center"
-          >
-            <Text className="text-[14px] font-semibold text-white">Đóng</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-};
 
 // ─── Quota Progress Bar Component ───────────────────────────────────────────
 interface QuotaBarProps {
@@ -232,15 +115,12 @@ const NavCard: React.FC<NavCardProps> = ({ icon: Icon, label, desc, badge, onPre
 
 // ─── Main Profile Screen ─────────────────────────────────────────────────────
 export const ProfileScreen: React.FC = () => {
-  const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const navigation = useNavigation<ProfileNavigationProp>();
-  const totalCartItems = useCartStore((state) => state.getTotalItems());
   const { hasMeasurement } = useMeasurementsCompleteness();
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [showAddressesModal, setShowAddressesModal] = useState(false);
 
   const tier = (user?.tier || 'FREE').toUpperCase();
 
@@ -273,69 +153,7 @@ export const ProfileScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-[#FBF9F7]">
-      {/* ── Top Header ── */}
-      <View
-        style={{ paddingTop: insets.top + 6 }}
-        className="px-4 pb-3 flex-row items-center justify-between border-b border-[#ECE8E3] bg-[#FBF9F7] z-20"
-      >
-        {/* Brand Logo "StAle." */}
-        <View className="flex-row items-center">
-          <Text
-            style={{
-              fontFamily: Platform.OS === 'ios' ? 'Playfair Display' : 'serif',
-              fontSize: 26,
-              fontWeight: '700',
-              color: '#5D1C34',
-              letterSpacing: -0.5,
-            }}
-          >
-            St<Text style={{ fontWeight: '900' }}>A</Text>le.
-          </Text>
-        </View>
-
-        {/* Right Header Icons */}
-        <View className="flex-row items-center gap-1">
-          <TouchableOpacity
-            accessibilityLabel="Tìm kiếm"
-            onPress={() => (navigation as any).navigate('Search')}
-            className="w-10 h-10 items-center justify-center rounded-full"
-          >
-            <Search size={22} color="#1B1C1B" />
-          </TouchableOpacity>
-
-          <NotificationBell />
-
-          <TouchableOpacity
-            accessibilityLabel="Giỏ hàng"
-            onPress={() => (navigation as any).navigate('Cart')}
-            className="w-10 h-10 items-center justify-center rounded-full relative"
-          >
-            <ShoppingBag size={22} color="#1B1C1B" />
-            {totalCartItems > 0 && (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 4,
-                  right: 4,
-                  backgroundColor: '#C81E51',
-                  borderRadius: 9,
-                  minWidth: 18,
-                  height: 18,
-                  paddingHorizontal: 4,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderWidth: 1.5,
-                  borderColor: '#FFFFFF',
-                }}
-              >
-                <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700' }}>
-                  {totalCartItems > 99 ? '99+' : totalCartItems}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
+      <AppHeader />
 
       {/* ── Scrollable Content ── */}
       <ScrollView
@@ -548,7 +366,7 @@ export const ProfileScreen: React.FC = () => {
             icon={MapPin}
             label="Sổ địa chỉ"
             desc="Thêm, sửa và chọn địa chỉ giao hàng mặc định"
-            onPress={() => setShowAddressesModal(true)}
+            onPress={() => navigation.navigate('Addresses')}
           />
 
           <NavCard
@@ -622,12 +440,6 @@ export const ProfileScreen: React.FC = () => {
           <Text className="text-[14px] font-semibold text-[#6B7280]">Đăng xuất</Text>
         </TouchableOpacity>
       </ScrollView>
-
-      {/* ── Addresses Modal ── */}
-      <AddressesModal
-        visible={showAddressesModal}
-        onClose={() => setShowAddressesModal(false)}
-      />
 
       {/* ── Logout Confirmation Modal ── */}
       <Modal

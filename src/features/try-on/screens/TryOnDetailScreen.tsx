@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { TryOnStackParamList } from '@/navigation/types';
 import { tryOnApi } from '@/features/try-on/api/try-on.api';
 import { useTryOnDelete } from '@/features/try-on/hooks/use-try-on-delete';
 import { TryOnCategory } from '@/features/try-on/types/try-on';
+import { AppHeader } from '@/components/common/AppHeader';
+import { BackButton } from '@/components/common/BackButton';
 import { Loading } from '@/components/common/Loading';
 import { ErrorView } from '@/components/common/ErrorView';
 import { Button } from '@/components/ui/Button';
@@ -47,30 +48,34 @@ export const TryOnDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   if (isLoading) {
-    return <Loading fullscreen message="Đang tải chi tiết..." />;
+    return (
+      <View className="flex-1 bg-background">
+        <AppHeader />
+        <Loading fullscreen message="Đang tải chi tiết..." />
+      </View>
+    );
   }
 
   if (isError || !data) {
     return (
-      <ErrorView
-        fullscreen
-        title="Không tải được chi tiết"
-        message="Kết quả này có thể đã bị xóa. Vui lòng thử lại."
-        onRetry={() => refetch()}
-      />
+      <View className="flex-1 bg-background">
+        <AppHeader />
+        <ErrorView
+          fullscreen
+          title="Không tải được chi tiết"
+          message="Kết quả này có thể đã bị xóa. Vui lòng thử lại."
+          onRetry={() => refetch()}
+        />
+      </View>
     );
   }
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerClassName="p-xl">
-      <Pressable
-        className="mb-md min-h-11 flex-row items-center gap-xs self-start"
-        accessibilityLabel="Quay lại"
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="arrow-back" size={20} className="text-on-surface" />
-        <Text className="text-label-lg text-on-surface">Quay lại</Text>
-      </Pressable>
+    <View className="flex-1 bg-background">
+      <AppHeader />
+      <ScrollView className="flex-1 bg-background" contentContainerClassName="p-xl">
+        <BackButton onPress={() => navigation.goBack()} label="Quay lại" />
+      <Text className="mb-md text-headline-lg font-bold text-on-surface">Chi tiết Try-On</Text>
       <ComparisonSlider before={data.humanImageUrl} after={data.resultUrl} />
 
       <View className="mt-xl rounded-xl border border-surface-line bg-surface-lowest p-lg shadow-sm">
@@ -173,7 +178,8 @@ export const TryOnDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         secondaryButtonText="Hủy"
         secondaryButtonDisabled={remove.isPending}
       />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 

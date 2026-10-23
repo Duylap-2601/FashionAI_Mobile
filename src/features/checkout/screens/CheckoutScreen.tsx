@@ -1,115 +1,267 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Modal, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, ChevronRight, CheckCircle2, QrCode, Banknote, ShieldCheck, X, MapPin } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  ChevronRight,
+  MapPin,
+  Plus,
+  QrCode,
+  RefreshCw,
+  X,
+} from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { useNavigation } from '@react-navigation/native';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCartStore } from '@/features/cart/store/use-cart-store';
 import { formatCurrency } from '@/utils/format';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { shippingApi, Location, WardLocation } from '@/features/shipping/api/shipping.api';
-import { ordersApi } from '@/features/orders/api/orders.api';
+import {
+  IOrderShippingInfo,
+  OrderCreatePayload,
+  ordersApi,
+} from '@/features/orders/api/orders.api';
+import { EPaymentMethod } from '@/features/orders/types/order';
 import { paymentsApi } from '@/features/payments/api/payments.api';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/use-measurements-completeness';
-import * as WebBrowser from 'expo-web-browser';
-import { Alert } from 'react-native';
-import { EPaymentMethod } from '@/features/orders/types/order';
 import { useAuth } from '@/features/auth/hooks/use-auth';
+import { ApiError } from '@/types/api';
+import { Button } from '@/components/ui/Button';
+import { IUserAddress } from '@/features/profile/api/users.api';
+import { AddressForm, IAddressDraft } from '@/features/profile/components/AddressForm';
+import { useUserAddresses } from '@/features/profile/hooks/use-address-book';
+
+function formatAddress(address: IUserAddress) {
+  return [address.addressLine, address.wardName, address.provinceName]
+    .filter(Boolean)
+    .join(', ');
+}
+
+function formatDraftAddress(address: IAddressDraft) {
+  return [address.addressLine, address.wardName, address.provinceName]
+    .filter(Boolean)
+    .join(', ');
+}
+
+function buildShippingInfo(address: IAddressDraft): IOrderShippingInfo {
+  return {
+    name: address.recipientName,
+    phone: address.phone,
+    address: formatDraftAddress(address),
+    provinceName: address.provinceName,
+    wardName: address.wardName,
+    ghnProvinceV3Id: address.ghnProvinceV3Id,
+    ghnWardV3Id: address.ghnWardV3Id,
+  };
+}
+
+function getQuoteErrorMessage(error: unknown) {
+  if (!(error instanceof ApiError)) {
+    return 'Không thể tính phí vận chuyển. Vui lòng thử lại.';
+  }
+  if (
+    error.code === 'ADDRESS_RECONFIRM_REQUIRED' ||
+    error.code === 'SHIPPING_ROUTE_UNAVAILABLE'
+  ) {
+    return 'GHN báo địa chỉ này không giao được. Vui lòng kiểm tra lại số nhà và Phường/Xã.';
+  }
+  if (error.code === 'ADDRESS_VERSION_CONFLICT') {
+    return 'Địa chỉ vừa được cập nhật. Vui lòng tải lại địa chỉ rồi thử lại.';
+  }
+  if (error.code === 'ADDRESS_INVALID') {
+    return error.message || 'Địa chỉ giao hàng không hợp lệ.';
+  }
+  return error.message || 'Không thể tính phí vận chuyển. Vui lòng thử lại.';
+}
 
 export function CheckoutScreen() {
   const navigation = useNavigation<any>();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState<EPaymentMethod>(EPaymentMethod.SEPAY);
 
-  // Lấy danh sách sản phẩm thực từ giỏ hàng
   const { items, getTotalItems } = useCartStore();
   const totalItems = getTotalItems();
 
-  // State cho việc chọn địa chỉ
-  const [selectedProvince, setSelectedProvince] = useState<Location | null>(null);
-  const [selectedDistrict, setSelectedDistrict] = useState<Location | null>(null);
-  const [selectedWard, setSelectedWard] = useState<WardLocation | null>(null);
+  const addressesQuery = useUserAddresses();
+  const addresses = useMemo(() => addressesQuery.data ?? [], [addressesQuery.data]);
 
-  // State cho UI Modal chọn địa chỉ
-  const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
-  const [locationStep, setLocationStep] = useState<'PROVINCE' | 'DISTRICT' | 'WARD'>('PROVINCE');
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [manualAddress, setManualAddress] = useState<IAddressDraft | null>(null);
+  const [showAddressPicker, setShowAddressPicker] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
 
-  // Gọi API lấy Tỉnh/Thành
-  const { data: provinces, isLoading: isLoadingProvinces } = useQuery({
-    queryKey: ['provinces'],
-    queryFn: shippingApi.getProvinces,
+  const selectedAddress = useMemo(() => {
+    if (manualAddress) return null;
+    return (
+      addresses.find((address) => address.id === selectedAddressId) ??
+      addresses.find((address) => address.isDefault) ??
+      addresses[0] ??
+      null
+    );
+  }, [addresses, manualAddress, selectedAddressId]);
+  const hasShippingAddress = !!selectedAddress || !!manualAddress;
+
+  const quoteAddress = useMemo(() => {
+    if (selectedAddress) {
+      return {
+        shippingAddressId: selectedAddress.id,
+        addressVersion: selectedAddress.version,
+      };
+    }
+    if (manualAddress) {
+      return { shippingInfo: buildShippingInfo(manualAddress) };
+    }
+    return null;
+  }, [manualAddress, selectedAddress]);
+
+  const quoteQuery = useQuery({
+    queryKey: [
+      'orderQuote',
+      items,
+      selectedAddress?.id,
+      selectedAddress?.version,
+      manualAddress,
+    ],
+    queryFn: ({ signal }) => {
+      if (!quoteAddress) throw new Error('Chưa có địa chỉ giao hàng.');
+      return ordersApi.quote(
+        {
+          items: items.map((item) => ({
+            productId: item.productId,
+            color: item.color,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          ...quoteAddress,
+          paymentMethod: 'BANK_TRANSFER',
+        },
+        { signal },
+      );
+    },
+    enabled: items.length > 0 && !!quoteAddress,
+    staleTime: 4 * 60 * 1000,
+    retry: (failureCount, error) => {
+      if (
+        error instanceof ApiError &&
+        error.statusCode &&
+        error.statusCode >= 400 &&
+        error.statusCode < 500
+      ) {
+        return false;
+      }
+      return failureCount < 1;
+    },
   });
 
-  // Gọi API lấy Quận/Huyện khi đã chọn Tỉnh
-  const { data: districts, isLoading: isLoadingDistricts } = useQuery({
-    queryKey: ['districts', selectedProvince?.id],
-    queryFn: () => shippingApi.getDistricts(selectedProvince!.id),
-    enabled: !!selectedProvince,
-  });
-
-  // Gọi API lấy Phường/Xã khi đã chọn Quận
-  const { data: wards, isLoading: isLoadingWards } = useQuery({
-    queryKey: ['wards', selectedDistrict?.id],
-    queryFn: () => shippingApi.getWards(selectedDistrict!.id),
-    enabled: !!selectedDistrict,
-  });
-
-  const hasFullAddress = selectedProvince && selectedDistrict && selectedWard;
-
-  // Gọi API lấy báo giá đơn hàng (Quote) để tính tổng tiền và phí ship
-  const { data: quoteRes, isLoading: isQuoting } = useQuery({
-    queryKey: ['orderQuote', items, selectedWard?.code],
-    queryFn: () => ordersApi.quote({
-      items: items.map(i => ({
-        productId: i.productId,
-        color: i.color,
-        quantity: i.quantity,
-        price: i.price
-      })),
-      shippingInfo: hasFullAddress ? {
-        name: user?.fullName || 'Người nhận',
-        phone: user?.phone || '0912345678',
-        address: `${selectedWard?.name}, ${selectedDistrict?.name}, ${selectedProvince?.name}`,
-        provinceName: selectedProvince?.name,
-        districtName: selectedDistrict?.name,
-        wardName: selectedWard?.name,
-        ghnProvinceId: selectedProvince?.id,
-        ghnDistrictId: selectedDistrict?.id,
-        ghnWardCode: selectedWard?.code,
-      } : undefined,
-      paymentMethod: 'BANK_TRANSFER',
-    }),
-    enabled: items.length > 0 && !!hasFullAddress,
-  });
-
+  const quoteRes = quoteQuery.data;
+  const isQuoting = quoteQuery.isFetching;
+  const quoteErrorMessage = quoteQuery.error
+    ? getQuoteErrorMessage(quoteQuery.error)
+    : null;
+  const quoteReady = !!quoteRes && !isQuoting && !quoteErrorMessage;
   const shippingFee = quoteRes?.shippingFee ?? 0;
 
-  // Gọi API lấy báo giá đơn hàng (Quote) để tính tổng tiền
-  // Fallback tính toán tại máy (local)
-  const localSubtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const localSubtotal = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
   const localTotal = localSubtotal + shippingFee;
-
   const displaySubtotal = quoteRes?.itemsTotal ?? localSubtotal;
   const displayTotal = quoteRes?.totalAmount ?? localTotal;
 
-  // Mutation đặt hàng
   const createOrderMutation = useMutation({
-    mutationFn: (payload: any) => ordersApi.createOrder(payload)
+    mutationFn: (payload: OrderCreatePayload) => ordersApi.createOrder(payload),
   });
 
-  // Mutation checkout
   const checkoutPaymentMutation = useMutation({
-    mutationFn: (payload: { orderId: string | number, provider: string }) => paymentsApi.checkout(payload)
+    mutationFn: (payload: { orderId: string | number; provider: string }) =>
+      paymentsApi.checkout(payload),
   });
 
   const { canOrder, completeness, byCategory } = useMeasurementsCompleteness();
 
-  const handlePlaceOrder = async () => {
-    if (!hasFullAddress) {
-      Alert.alert('Lỗi', 'Vui lòng chọn địa chỉ giao hàng');
+  const manualInitial = useMemo<Partial<IUserAddress>>(() => {
+    if (manualAddress) {
+      return {
+        recipientName: manualAddress.recipientName,
+        phone: manualAddress.phone,
+        addressLine: manualAddress.addressLine,
+        ghnProvinceV3Id: manualAddress.ghnProvinceV3Id,
+        ghnWardV3Id: manualAddress.ghnWardV3Id,
+        provinceName: manualAddress.provinceName,
+        wardName: manualAddress.wardName,
+      };
+    }
+    return { recipientName: user?.name ?? '' };
+  }, [manualAddress, user?.name]);
+
+  const handleChangeAddress = () => {
+    if (addresses.length > 0) {
+      setShowAddressPicker(true);
       return;
     }
-    
+    setShowManualForm(true);
+  };
+
+  const handleRetryQuote = async () => {
+    const error = quoteQuery.error;
+    const shouldReloadAddress =
+      !!selectedAddress &&
+      error instanceof ApiError &&
+      (error.code === 'ADDRESS_VERSION_CONFLICT' || error.code === 'ADDRESS_INVALID');
+
+    if (shouldReloadAddress) {
+      await addressesQuery.refetch();
+      await queryClient.invalidateQueries({ queryKey: ['orderQuote'] });
+      return;
+    }
+    await quoteQuery.refetch();
+  };
+
+  const handleSelectSavedAddress = (address: IUserAddress) => {
+    setSelectedAddressId(address.id);
+    setManualAddress(null);
+    setShowManualForm(false);
+    setShowAddressPicker(false);
+  };
+
+  const handleAddNewAddress = () => {
+    setShowAddressPicker(false);
+    setManualAddress(null);
+    setShowManualForm(true);
+  };
+
+  const handleManualSubmit = (address: IAddressDraft) => {
+    setManualAddress(address);
+    setSelectedAddressId(null);
+    setShowManualForm(false);
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!hasShippingAddress) {
+      Alert.alert('Thiếu địa chỉ', 'Vui lòng chọn hoặc thêm địa chỉ giao hàng.');
+      return;
+    }
+    if (!quoteReady || !quoteRes) {
+      Alert.alert(
+        'Chưa có báo giá',
+        isQuoting
+          ? 'Hệ thống đang tính phí vận chuyển. Vui lòng chờ một chút.'
+          : quoteErrorMessage || 'Vui lòng kiểm tra lại địa chỉ giao hàng.',
+      );
+      return;
+    }
     if (completeness && !canOrder) {
       const missingLabels: string[] = [];
       completeness.byCategory.forEach((cat: any) => {
@@ -119,393 +271,606 @@ export function CheckoutScreen() {
           });
         }
       });
-      
-      const missingText = missingLabels.length > 0 ? `\n\nBạn còn thiếu các số đo: ${missingLabels.join(', ')}` : '';
-      
+
+      const missingText =
+        missingLabels.length > 0
+          ? `\n\nBạn còn thiếu các số đo: ${missingLabels.join(', ')}`
+          : '';
+
       Alert.alert(
-        'Lỗi đặt hàng',
+        'Chưa thể đặt hàng',
         `Vui lòng cập nhật đầy đủ số đo cơ thể trong hồ sơ trước khi đặt may.${missingText}`,
-        [{ text: 'Đóng', style: 'cancel' }]
+        [{ text: 'Đóng', style: 'cancel' }],
       );
       return;
     }
 
+    const addressPayload = selectedAddress
+      ? {
+          shippingAddressId: selectedAddress.id,
+          addressVersion: selectedAddress.version,
+        }
+      : manualAddress
+        ? { shippingInfo: buildShippingInfo(manualAddress) }
+        : null;
+
+    if (!addressPayload) {
+      Alert.alert('Thiếu địa chỉ', 'Vui lòng chọn hoặc thêm địa chỉ giao hàng.');
+      return;
+    }
+
     try {
-      const orderPayload = {
-        items: items.map(i => ({
-          productId: i.productId,
-          color: i.color,
-          quantity: i.quantity,
-          price: i.price,
+      const orderPayload: OrderCreatePayload = {
+        items: items.map((item) => ({
+          productId: item.productId,
+          color: item.color,
+          quantity: item.quantity,
+          price: item.price,
         })),
-        shippingInfo: {
-          name: user?.fullName || 'Người nhận',
-          phone: user?.phone || '0912345678',
-          address: `${selectedWard?.name}, ${selectedDistrict?.name}, ${selectedProvince?.name}`,
-          provinceName: selectedProvince?.name,
-          districtName: selectedDistrict?.name,
-          wardName: selectedWard?.name,
-          ghnProvinceId: selectedProvince?.id,
-          ghnDistrictId: selectedDistrict?.id,
-          ghnWardCode: selectedWard?.code,
-        },
-        shippingFee,
-        totalAmount: displayTotal,
-        quoteToken: quoteRes?.quoteToken,
+        ...addressPayload,
+        quoteToken: quoteRes.quoteToken,
+        totalAmount: quoteRes.totalAmount,
         paymentMethod: 'BANK_TRANSFER',
       };
 
       const newOrder = await createOrderMutation.mutateAsync(orderPayload);
-      const orderId = newOrder.id; // Tùy thuộc vào response thực tế
+      const orderId = newOrder.id;
 
-      // Mở cổng thanh toán thông qua PaymentScreen
-      const provider = paymentMethod === EPaymentMethod.SEPAY ? 'SEPAY' : 'ZALOPAY';
-      const checkoutInfo = await checkoutPaymentMutation.mutateAsync({ orderId, provider });
-      
+      const provider =
+        paymentMethod === EPaymentMethod.SEPAY ? 'SEPAY' : 'ZALOPAY';
+      const checkoutInfo = await checkoutPaymentMutation.mutateAsync({
+        orderId,
+        provider,
+      });
+
       const url = checkoutInfo.checkoutUrl || checkoutInfo.payUrl;
-      const qrCode = checkoutInfo.qrCode || url; // Fallback to URL if qrCode is missing (ZaloPay SDK handles this)
-      
+      const qrCode = checkoutInfo.qrCode || url;
+
       if (url) {
         navigation.navigate('Payment', {
           checkoutUrl: url,
-          provider: provider,
-          qrCode: qrCode,
+          provider,
+          qrCode,
           orderCode: checkoutInfo.orderCode,
-          totalAmount: displayTotal,
+          totalAmount: quoteRes.totalAmount,
           paymentId: checkoutInfo.paymentId,
-          orderId: orderId,
+          orderId,
         });
       } else {
         Alert.alert('Lỗi', 'Không lấy được đường dẫn thanh toán.');
       }
-    } catch (error: any) {
-      const details = error.details ? JSON.stringify(error.details) : '';
-      Alert.alert('Lỗi đặt hàng', (error.message || 'Có lỗi xảy ra khi tạo đơn hàng') + (details ? `\n${details}` : ''));
-    }
-  };
+    } catch (error) {
+      if (
+        error instanceof ApiError &&
+        (error.code === 'QUOTE_EXPIRED' || error.code === 'QUOTE_CHANGED')
+      ) {
+        await quoteQuery.refetch();
+        Alert.alert(
+          'Báo giá đã thay đổi',
+          'Thông tin đơn hàng hoặc địa chỉ vừa được cập nhật. Vui lòng kiểm tra tổng tiền và đặt hàng lại.',
+        );
+        return;
+      }
+      if (error instanceof ApiError && error.code === 'ADDRESS_VERSION_CONFLICT') {
+        await addressesQuery.refetch();
+        await queryClient.invalidateQueries({ queryKey: ['orderQuote'] });
+        Alert.alert(
+          'Địa chỉ đã thay đổi',
+          'Địa chỉ giao hàng vừa được cập nhật. Vui lòng kiểm tra lại thông tin và đặt hàng lại.',
+        );
+        return;
+      }
 
-  // Helper render danh sách chọn vị trí
-  const renderLocationList = () => {
-    let data: any[] = [];
-    let isLoading = false;
-    let onSelect = (item: any) => {};
-
-    if (locationStep === 'PROVINCE') {
-      data = provinces || [];
-      isLoading = isLoadingProvinces;
-      onSelect = (item: Location) => {
-        setSelectedProvince(item);
-        setSelectedDistrict(null);
-        setSelectedWard(null);
-        setLocationStep('DISTRICT');
-      };
-    } else if (locationStep === 'DISTRICT') {
-      data = districts || [];
-      isLoading = isLoadingDistricts;
-      onSelect = (item: Location) => {
-        setSelectedDistrict(item);
-        setSelectedWard(null);
-        setLocationStep('WARD');
-      };
-    } else if (locationStep === 'WARD') {
-      data = wards || [];
-      isLoading = isLoadingWards;
-      onSelect = (item: WardLocation) => {
-        setSelectedWard(item);
-        setIsLocationModalVisible(false);
-      };
-    }
-
-    if (isLoading) {
-      return (
-        <View className="p-8 items-center justify-center">
-          <ActivityIndicator size="large" color="#5D1C34" />
-          <Text className="mt-4 text-on-surface-variant">Đang tải dữ liệu...</Text>
-        </View>
+      Alert.alert(
+        'Lỗi đặt hàng',
+        error instanceof ApiError
+          ? error.message
+          : 'Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.',
       );
     }
-
-    return (
-      <FlatList
-        data={data}
-        keyExtractor={(item: any) => item.id?.toString() || item.code}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            className="px-6 py-4 border-b border-surface-line flex-row items-center justify-between active:bg-surface"
-            onPress={() => onSelect(item)}
-          >
-            <Text className="text-body-lg text-on-surface">{item.name}</Text>
-            <ChevronRight size={16} color="#CCCCCC" />
-          </TouchableOpacity>
-        )}
-      />
-    );
   };
 
-  const handleOpenLocationModal = () => {
-    setLocationStep('PROVINCE');
-    setIsLocationModalVisible(true);
-  };
-
-
+  const canPlaceOrder =
+    hasShippingAddress &&
+    quoteReady &&
+    !isQuoting &&
+    createOrderMutation.isPending === false &&
+    checkoutPaymentMutation.isPending === false;
 
   return (
     <SafeAreaView className="flex-1 bg-surface-lowest">
-      <View className="flex-row items-center px-4 py-3 bg-surface-lowest border-b border-surface-line">
-        <Pressable 
+      <View className="flex-row items-center border-b border-surface-line bg-surface-lowest px-4 py-3">
+        <Pressable
           onPress={() => navigation.goBack()}
-          className="p-2 -ml-2 rounded-full active:bg-surface-line"
+          accessibilityRole="button"
+          accessibilityLabel="Quay lại"
+          className="-ml-2 min-h-11 min-w-11 items-center justify-center rounded-full active:bg-surface-line"
         >
           <ArrowLeft size={24} color="#1A1A1A" />
         </Pressable>
-        <Text className="flex-1 text-center text-headline-sm text-on-surface font-semibold pr-8">
+        <Text className="flex-1 pr-8 text-center text-headline-sm font-semibold text-on-surface">
           Thanh toán
         </Text>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {!canOrder && completeness && (
-          <View className="bg-[#FFF1F2] p-4 mx-4 my-2 rounded-xl border border-[#FDA4AF]">
-            <Text className="text-body-md font-bold text-[#BE123C] mb-2">Cần bổ sung số đo cơ thể</Text>
-            <Text className="text-body-sm text-[#9F1239] mb-3">
-              Giỏ hàng của bạn có trang phục may đo. Vui lòng cập nhật đầy đủ các số đo sau:
+          <View className="mx-4 my-2 rounded-xl border border-danger/30 bg-danger/5 p-4">
+            <Text className="mb-2 text-body-md font-bold text-danger">
+              Cần bổ sung số đo cơ thể
             </Text>
-            <View className="pl-2 mb-3">
-              {byCategory.filter(c => !c.complete).map((cat, i) => (
-                <View key={i} className="mb-2">
-                  <Text className="text-label-sm font-semibold text-[#9F1239] mb-1">
-                    {cat.category === 'UPPER' ? 'Áo (Thân trên)' : cat.category === 'LOWER' ? 'Quần/Váy (Thân dưới)' : 'Đồ bộ (Toàn thân)'}:
-                  </Text>
-                  {cat.missing.map((m, j) => (
-                    <Text key={j} className="text-body-sm text-[#9F1239]">• {m.label}</Text>
-                  ))}
-                </View>
-              ))}
+            <Text className="mb-3 text-body-sm text-on-surface-variant">
+              Giỏ hàng của bạn có trang phục may đo. Vui lòng cập nhật đầy đủ các
+              số đo sau:
+            </Text>
+            <View className="mb-3 pl-2">
+              {byCategory
+                .filter((cat) => !cat.complete)
+                .map((cat, index) => (
+                  <View key={index} className="mb-2">
+                    <Text className="mb-1 text-label-md font-semibold text-danger">
+                      {cat.category === 'UPPER'
+                        ? 'Áo (Thân trên)'
+                        : cat.category === 'LOWER'
+                          ? 'Quần/Váy (Thân dưới)'
+                          : 'Đồ bộ (Toàn thân)'}
+                      :
+                    </Text>
+                    {cat.missing.map((measurement, measurementIndex) => (
+                      <Text
+                        key={measurementIndex}
+                        className="text-body-sm text-on-surface-variant"
+                      >
+                        • {measurement.label}
+                      </Text>
+                    ))}
+                  </View>
+                ))}
             </View>
-            <Pressable 
-              className="bg-[#BE123C] py-2 px-4 rounded-lg self-start active:bg-[#9F1239]"
-              onPress={() => (navigation.navigate as any)('Main', { 
-                screen: 'ProfileTab', 
-                params: { screen: 'Measurements' } 
-              })}
+            <Pressable
+              className="self-start rounded-lg bg-danger px-4 py-2 active:opacity-80"
+              onPress={() =>
+                navigation.navigate('Main', {
+                  screen: 'ProfileTab',
+                  params: { screen: 'Measurements' },
+                })
+              }
             >
-              <Text className="text-white text-label-md font-bold">Cập nhật số đo</Text>
+              <Text className="text-label-md font-bold text-white">
+                Cập nhật số đo
+              </Text>
             </Pressable>
           </View>
         )}
 
-        {/* Địa chỉ giao hàng */}
-        <View className="bg-surface-lowest p-4 mb-2 border-y border-surface-line mt-2">
-          <View className="flex-row justify-between items-center mb-3">
-             <Text className="text-headline-sm font-bold text-on-surface">Giao đến</Text>
-             <Pressable className="flex-row items-center p-1" onPress={handleOpenLocationModal}>
-               <Text className="text-label-md text-primary font-semibold mr-1">
-                 {hasFullAddress ? 'Thay đổi' : 'Chọn địa chỉ'}
-               </Text>
-               <ChevronRight size={16} color="#5D1C34" />
-             </Pressable>
+        <View className="mb-2 mt-2 border-y border-surface-line bg-surface-lowest p-4">
+          <View className="mb-3 flex-row items-center justify-between">
+            <Text className="text-headline-sm font-bold text-on-surface">Giao đến</Text>
+            <Pressable
+              onPress={handleChangeAddress}
+              disabled={addressesQuery.isLoading}
+              className="min-h-11 flex-row items-center p-1 active:opacity-70"
+            >
+              <Text className="mr-1 text-label-md font-semibold text-primary">
+                {hasShippingAddress ? 'Thay đổi' : 'Chọn địa chỉ'}
+              </Text>
+              <ChevronRight size={16} color="#5D1C34" />
+            </Pressable>
           </View>
-          
-          {hasFullAddress ? (
+
+          {addressesQuery.isLoading && !manualAddress ? (
+            <View className="flex-row items-center rounded-xl border border-surface-line bg-surface p-3">
+              <ActivityIndicator size="small" color="#5D1C34" />
+              <Text className="ml-3 text-body-sm text-on-surface-variant">
+                Đang tải sổ địa chỉ...
+              </Text>
+            </View>
+          ) : addressesQuery.isError && !manualAddress ? (
+            <View className="rounded-xl border border-danger/30 bg-danger/5 p-3">
+              <Text className="text-body-sm text-danger">
+                {addressesQuery.error instanceof ApiError
+                  ? addressesQuery.error.message
+                  : 'Không thể tải sổ địa chỉ.'}
+              </Text>
+              <Pressable
+                onPress={() => addressesQuery.refetch()}
+                className="mt-2 min-h-11 flex-row items-center gap-2 self-start"
+              >
+                <RefreshCw size={15} className="text-danger" />
+                <Text className="text-label-md font-semibold text-danger">
+                  Thử lại
+                </Text>
+              </Pressable>
+            </View>
+          ) : hasShippingAddress ? (
             <>
-              <Text className="text-body-md font-bold text-on-surface mb-1">
-                {user?.fullName || 'Người nhận'} • {user?.phone || 'Chưa cập nhật SĐT'}
-              </Text>
-              <Text className="text-body-sm text-on-surface-variant mb-3">
-                {`${selectedWard?.name}, ${selectedDistrict?.name}, ${selectedProvince?.name}`}
-              </Text>
-              <View className="flex-row items-center">
-                <CheckCircle2 size={16} color="#10B981" />
-                <Text className="text-label-sm font-medium text-[#10B981] ml-2">GHN hỗ trợ giao đến địa chỉ này</Text>
+              <View className="mb-1 flex-row flex-wrap items-center gap-2">
+                <Text className="text-body-md font-bold text-on-surface">
+                  {selectedAddress?.recipientName || manualAddress?.recipientName}
+                </Text>
+                <Text className="text-body-sm text-on-surface-variant">•</Text>
+                <Text className="text-body-sm text-on-surface-variant">
+                  {selectedAddress?.phone || manualAddress?.phone}
+                </Text>
+                {selectedAddress?.isDefault && (
+                  <View className="rounded-full bg-primary/10 px-2 py-0.5">
+                    <Text className="text-2xs font-bold text-primary">Mặc định</Text>
+                  </View>
+                )}
               </View>
+              <Text className="mb-2 text-body-sm leading-5 text-on-surface-variant">
+                {selectedAddress
+                  ? formatAddress(selectedAddress)
+                  : manualAddress
+                    ? formatDraftAddress(manualAddress)
+                    : ''}
+              </Text>
+
+              {isQuoting ? (
+                <View className="flex-row items-center">
+                  <ActivityIndicator size="small" color="#5D1C34" />
+                  <Text className="ml-2 text-body-sm text-on-surface-variant">
+                    Đang tính phí vận chuyển...
+                  </Text>
+                </View>
+              ) : quoteErrorMessage ? (
+                <View className="rounded-xl border border-danger/30 bg-danger/5 p-3">
+                  <Text className="text-body-sm text-danger">{quoteErrorMessage}</Text>
+                  <Pressable
+                    onPress={handleRetryQuote}
+                    className="mt-2 min-h-11 flex-row items-center gap-2 self-start"
+                  >
+                    <RefreshCw size={15} className="text-danger" />
+                    <Text className="text-label-md font-semibold text-danger">
+                      Thử lại
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : quoteReady ? (
+                <View className="flex-row items-center">
+                  <CheckCircle2 size={16} color="#10B981" />
+                  <Text className="ml-2 text-body-sm font-medium text-success">
+                    GHN hỗ trợ giao đến địa chỉ này
+                  </Text>
+                </View>
+              ) : null}
             </>
           ) : (
-            <View className="flex-row items-center bg-surface p-3 rounded-lg border border-surface-line">
-              <MapPin size={20} color="#666" />
-              <Text className="ml-3 text-body-sm text-on-surface-variant">Vui lòng chọn địa chỉ giao hàng để tính phí vận chuyển.</Text>
+            <View className="rounded-xl border border-surface-line bg-surface p-3">
+              <View className="flex-row items-center">
+                <MapPin size={20} color="#6B7280" />
+                <Text className="ml-3 flex-1 text-body-sm text-on-surface-variant">
+                  Vui lòng chọn hoặc thêm địa chỉ giao hàng để tính phí vận chuyển.
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {showManualForm && (
+            <View className="mt-4">
+              <AddressForm
+                key={manualAddress ? 'manual-filled' : 'manual-empty'}
+                initial={manualInitial}
+                mode="checkout"
+                onCancel={() => setShowManualForm(false)}
+                onSubmit={handleManualSubmit}
+              />
             </View>
           )}
         </View>
 
-        {/* Sản phẩm */}
-        <View className="bg-surface-lowest p-4 mb-2 border-y border-surface-line">
-          <View className="flex-row justify-between items-center mb-4">
-             <View className="flex-row items-center gap-2">
-               <Text className="text-headline-sm font-bold text-on-surface">Sản phẩm</Text>
-               <Text className="text-body-sm text-on-surface-variant">({totalItems} món)</Text>
-             </View>
-             <Pressable onPress={() => navigation.goBack()}>
-               <Text className="text-label-md text-on-surface-variant">Xem lại</Text>
-             </Pressable>
+        <View className="mb-2 border-y border-surface-line bg-surface-lowest p-4">
+          <View className="mb-4 flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2">
+              <Text className="text-headline-sm font-bold text-on-surface">Sản phẩm</Text>
+              <Text className="text-body-sm text-on-surface-variant">
+                ({totalItems} món)
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => navigation.goBack()}
+              className="min-h-11 justify-center"
+            >
+              <Text className="text-label-md text-on-surface-variant">Xem lại</Text>
+            </Pressable>
           </View>
-          
+
           {items.map((item, index) => (
-            <View key={index} className="flex-row gap-4 mb-4">
-              <View className="w-[72px] h-[72px] rounded-lg bg-surface-container overflow-hidden border border-surface-line">
-                 {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />}
+            <View key={index} className="mb-4 flex-row gap-4">
+              <View className="h-[72px] w-[72px] overflow-hidden rounded-lg border border-surface-line bg-surface-container">
+                {item.imageUrl && (
+                  <Image
+                    source={{ uri: item.imageUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                    contentFit="cover"
+                  />
+                )}
               </View>
               <View className="flex-1 justify-center">
-                <Text className="text-label-md font-semibold text-on-surface" numberOfLines={1}>{item.productName}</Text>
-                <Text className="text-body-sm text-on-surface-variant mt-1">
-                  {item.color ? `Màu ${item.color} • ` : ''}Size {item.size || 'Standard'}
+                <Text
+                  className="text-label-md font-semibold text-on-surface"
+                  numberOfLines={1}
+                >
+                  {item.productName}
                 </Text>
-                <Text className="text-label-md font-bold text-on-surface mt-2">
-                  {item.quantity} × {formatCurrency ? formatCurrency(item.price) : `${item.price.toLocaleString('vi-VN')}đ`}
+                <Text className="mt-1 text-body-sm text-on-surface-variant">
+                  {item.color ? `Màu ${item.color} • ` : ''}Size{' '}
+                  {item.size || 'Standard'}
+                </Text>
+                <Text className="mt-2 text-label-md font-bold text-on-surface">
+                  {item.quantity} × {formatCurrency(item.price)}
                 </Text>
               </View>
             </View>
           ))}
         </View>
 
-        {/* Giao hàng */}
-        <View className="bg-surface-lowest p-4 mb-2 border-y border-surface-line">
-          <Text className="text-headline-sm font-bold text-on-surface mb-3">Phương thức giao hàng</Text>
-          <View className="flex-row justify-between items-center bg-surface p-3 rounded-xl border border-surface-line">
-             <View>
-               <View className="flex-row items-center gap-2 mb-1">
-                 <Text className="text-label-md font-bold text-on-surface">🚚 GHN Express</Text>
-                 {shippingFee === 0 && hasFullAddress && (
-                   <View className="bg-[#E6F4EA] px-2 py-0.5 rounded border border-[#34A853]/30">
-                     <Text className="text-[10px] font-bold text-[#34A853]">Freeship</Text>
-                   </View>
-                 )}
-               </View>
-               <Text className="text-body-sm text-on-surface-variant">Thời gian giao hàng tiêu chuẩn</Text>
-             </View>
-             <View className="items-end">
-               {isQuoting ? (
-                 <ActivityIndicator size="small" color="#5D1C34" />
-               ) : hasFullAddress ? (
-                 <Text className="text-label-md font-bold text-on-surface">
-                   {shippingFee === 0 ? 'Miễn phí' : (formatCurrency ? formatCurrency(shippingFee) : `${shippingFee.toLocaleString('vi-VN')}đ`)}
-                 </Text>
-               ) : (
-                 <Text className="text-label-sm text-on-surface-variant italic">Chưa xác định</Text>
-               )}
-             </View>
+        <View className="mb-2 border-y border-surface-line bg-surface-lowest p-4">
+          <Text className="mb-3 text-headline-sm font-bold text-on-surface">
+            Phương thức giao hàng
+          </Text>
+          <View className="flex-row items-center justify-between rounded-xl border border-surface-line bg-surface p-3">
+            <View>
+              <View className="mb-1 flex-row items-center gap-2">
+                <Text className="text-label-md font-bold text-on-surface">
+                  🚚 GHN Express
+                </Text>
+                {quoteReady && shippingFee === 0 && (
+                  <View className="rounded border border-success/30 bg-success/10 px-2 py-0.5">
+                    <Text className="text-2xs font-bold text-success">Freeship</Text>
+                  </View>
+                )}
+              </View>
+              <Text className="text-body-sm text-on-surface-variant">
+                Thời gian giao hàng tiêu chuẩn
+              </Text>
+            </View>
+            <View className="items-end">
+              {isQuoting ? (
+                <ActivityIndicator size="small" color="#5D1C34" />
+              ) : quoteReady ? (
+                <Text className="text-label-md font-bold text-on-surface">
+                  {shippingFee === 0 ? 'Miễn phí' : formatCurrency(shippingFee)}
+                </Text>
+              ) : (
+                <Text className="text-label-md italic text-on-surface-variant">
+                  Chưa xác định
+                </Text>
+              )}
+            </View>
           </View>
         </View>
 
-        {/* Thanh toán */}
-        <View className="bg-surface-lowest p-4 mb-2 border-y border-surface-line">
-          <Text className="text-headline-sm font-bold text-on-surface mb-3">Phương thức thanh toán</Text>
-          
-          <Pressable 
+        <View className="mb-2 border-y border-surface-line bg-surface-lowest p-4">
+          <Text className="mb-3 text-headline-sm font-bold text-on-surface">
+            Phương thức thanh toán
+          </Text>
+
+          <Pressable
             onPress={() => setPaymentMethod(EPaymentMethod.SEPAY)}
-            className={`flex-row items-center p-4 rounded-xl border mb-3 ${paymentMethod === EPaymentMethod.SEPAY ? 'border-primary bg-primary/5' : 'border-surface-line bg-surface'}`}
+            className={`mb-3 flex-row items-center rounded-xl border p-4 ${
+              paymentMethod === EPaymentMethod.SEPAY
+                ? 'border-primary bg-primary/5'
+                : 'border-surface-line bg-surface'
+            }`}
           >
-            <View className="w-10 h-10 bg-primary/10 rounded-lg items-center justify-center mr-3">
-               <QrCode size={20} color="#5D1C34" />
+            <View className="mr-3 h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <QrCode size={20} color="#5D1C34" />
             </View>
             <View className="flex-1">
-              <Text className="text-label-md font-bold text-on-surface">Chuyển khoản QR (SePay)</Text>
-              <Text className="text-body-sm text-on-surface-variant mt-1">Quét mã QR bằng ứng dụng ngân hàng 24/7</Text>
+              <Text className="text-label-md font-bold text-on-surface">
+                Chuyển khoản QR (SePay)
+              </Text>
+              <Text className="mt-1 text-body-sm text-on-surface-variant">
+                Quét mã QR bằng ứng dụng ngân hàng 24/7
+              </Text>
             </View>
-            <View className={`w-5 h-5 rounded-full border-2 items-center justify-center ${paymentMethod === EPaymentMethod.SEPAY ? 'border-primary' : 'border-surface-line'}`}>
-              {paymentMethod === EPaymentMethod.SEPAY && <View className="w-2.5 h-2.5 rounded-full bg-primary" />}
+            <View
+              className={`h-5 w-5 items-center justify-center rounded-full border-2 ${
+                paymentMethod === EPaymentMethod.SEPAY
+                  ? 'border-primary'
+                  : 'border-surface-line'
+              }`}
+            >
+              {paymentMethod === EPaymentMethod.SEPAY && (
+                <View className="h-2.5 w-2.5 rounded-full bg-primary" />
+              )}
             </View>
           </Pressable>
 
-          <Pressable 
+          <Pressable
             onPress={() => setPaymentMethod(EPaymentMethod.ZALOPAY)}
-            className={`flex-row items-center p-4 rounded-xl border mb-4 ${paymentMethod === EPaymentMethod.ZALOPAY ? 'border-primary bg-primary/5' : 'border-surface-line bg-surface'}`}
+            className={`mb-4 flex-row items-center rounded-xl border p-4 ${
+              paymentMethod === EPaymentMethod.ZALOPAY
+                ? 'border-primary bg-primary/5'
+                : 'border-surface-line bg-surface'
+            }`}
           >
-            <View className="w-10 h-10 bg-blue-50 rounded-lg items-center justify-center mr-3">
-               <Text className="text-blue-600 font-bold text-[10px]">ZaloPay</Text>
+            <View className="mr-3 h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
+              <Text className="text-2xs font-bold text-blue-600">ZaloPay</Text>
             </View>
             <View className="flex-1">
-              <Text className="text-label-md font-bold text-on-surface">Ví ZaloPay</Text>
-              <Text className="text-body-sm text-on-surface-variant mt-1">Thanh toán qua ví điện tử ZaloPay</Text>
+              <Text className="text-label-md font-bold text-on-surface">
+                Ví ZaloPay
+              </Text>
+              <Text className="mt-1 text-body-sm text-on-surface-variant">
+                Thanh toán qua ví điện tử ZaloPay
+              </Text>
             </View>
-            <View className={`w-5 h-5 rounded-full border-2 items-center justify-center ${paymentMethod === EPaymentMethod.ZALOPAY ? 'border-primary' : 'border-surface-line'}`}>
-              {paymentMethod === EPaymentMethod.ZALOPAY && <View className="w-2.5 h-2.5 rounded-full bg-primary" />}
+            <View
+              className={`h-5 w-5 items-center justify-center rounded-full border-2 ${
+                paymentMethod === EPaymentMethod.ZALOPAY
+                  ? 'border-primary'
+                  : 'border-surface-line'
+              }`}
+            >
+              {paymentMethod === EPaymentMethod.ZALOPAY && (
+                <View className="h-2.5 w-2.5 rounded-full bg-primary" />
+              )}
             </View>
           </Pressable>
         </View>
 
-        {/* Tổng kết */}
-        <View className="bg-surface-lowest p-4 pb-32 border-t border-surface-line">
-          <Text className="text-headline-sm font-bold text-on-surface mb-4">Chi tiết thanh toán</Text>
-          <View className="flex-row justify-between mb-3">
+        <View className="border-t border-surface-line bg-surface-lowest p-4 pb-32">
+          <Text className="mb-4 text-headline-sm font-bold text-on-surface">
+            Chi tiết thanh toán
+          </Text>
+          <View className="mb-3 flex-row justify-between">
             <Text className="text-body-md text-on-surface-variant">Tạm tính</Text>
             <Text className="text-body-md font-semibold text-on-surface">
-              {displaySubtotal !== undefined 
-                ? (formatCurrency ? formatCurrency(displaySubtotal) : `${displaySubtotal.toLocaleString('vi-VN')}đ`)
-                : 'Đang tính...'}
+              {formatCurrency(displaySubtotal)}
             </Text>
           </View>
-          <View className="flex-row justify-between mb-5">
+          <View className="mb-5 flex-row justify-between">
             <Text className="text-body-md text-on-surface-variant">Phí vận chuyển</Text>
             <Text className="text-body-md font-semibold text-on-surface">
-              {!hasFullAddress 
-                ? 'Chưa tính' 
-                : shippingFee === 0 
-                  ? 'Miễn phí' 
-                  : (formatCurrency ? formatCurrency(shippingFee) : `${shippingFee.toLocaleString('vi-VN')}đ`)}
+              {!hasShippingAddress
+                ? 'Chưa tính'
+                : isQuoting
+                  ? 'Đang tính...'
+                  : quoteReady
+                    ? shippingFee === 0
+                      ? 'Miễn phí'
+                      : formatCurrency(shippingFee)
+                    : 'Chưa tính'}
             </Text>
           </View>
-          <View className="flex-row justify-between items-end">
+          <View className="flex-row items-end justify-between">
             <View>
-              <Text className="text-body-lg font-bold text-on-surface">Tổng thanh toán</Text>
-              <Text className="text-body-sm text-on-surface-variant mt-0.5">(Đã bao gồm VAT)</Text>
+              <Text className="text-body-lg font-bold text-on-surface">
+                Tổng thanh toán
+              </Text>
+              <Text className="mt-0.5 text-body-sm text-on-surface-variant">
+                (Đã bao gồm VAT)
+              </Text>
             </View>
             {isQuoting && items.length > 0 && !quoteRes ? (
-               <ActivityIndicator size="small" color="#5D1C34" />
+              <ActivityIndicator size="small" color="#5D1C34" />
             ) : (
               <Text className="text-headline-md font-bold text-on-surface">
-                 {displayTotal !== undefined 
-                    ? (formatCurrency ? formatCurrency(displayTotal) : `${displayTotal.toLocaleString('vi-VN')}đ`)
-                    : '---'}
+                {formatCurrency(displayTotal)}
               </Text>
             )}
           </View>
         </View>
       </ScrollView>
 
-      {/* Footer Mua Hàng */}
-      <View className="absolute bottom-0 left-0 right-0 bg-surface-lowest px-4 py-4 border-t border-surface-line flex-row items-center justify-between pb-8 shadow-hard-4">
+      <View className="absolute bottom-0 left-0 right-0 flex-row items-center justify-between border-t border-surface-line bg-surface-lowest px-4 py-4 pb-8 shadow-hard-4">
         <View>
-          <Text className="text-[10px] text-on-surface-variant uppercase tracking-wider mb-1 font-semibold">
+          <Text className="mb-1 text-2xs font-semibold uppercase tracking-wider text-on-surface-variant">
             Tổng thanh toán
           </Text>
           <Text className="text-headline-md font-bold text-on-surface">
-             {displayTotal !== undefined 
-                ? (formatCurrency ? formatCurrency(displayTotal) : `${displayTotal.toLocaleString('vi-VN')}đ`)
-                : '---'}
+            {formatCurrency(displayTotal)}
           </Text>
         </View>
-        <Pressable 
-          className={`px-8 py-3.5 rounded-xl flex-row items-center justify-center ${hasFullAddress ? 'bg-primary active:bg-primary-strong' : 'bg-surface-line'}`}
-          disabled={!hasFullAddress || isQuoting || createOrderMutation.isPending || checkoutPaymentMutation.isPending}
+        <Pressable
+          className={`flex-row items-center justify-center rounded-xl px-8 py-3.5 ${
+            canPlaceOrder ? 'bg-primary active:bg-primary-strong' : 'bg-surface-line'
+          }`}
+          disabled={!canPlaceOrder}
           onPress={handlePlaceOrder}
         >
           {createOrderMutation.isPending || checkoutPaymentMutation.isPending ? (
-            <ActivityIndicator size="small" color="#FFF" />
+            <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Text className={`text-label-lg font-bold ${hasFullAddress ? 'text-on-primary' : 'text-on-surface-variant'}`}>
+            <Text
+              className={`text-label-lg font-bold ${
+                canPlaceOrder ? 'text-on-primary' : 'text-on-surface-variant'
+              }`}
+            >
               Đặt hàng
             </Text>
           )}
         </Pressable>
       </View>
 
-      {/* Modal Chọn Địa Chỉ */}
-      <Modal visible={isLocationModalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setIsLocationModalVisible(false)}>
+      <Modal
+        visible={showAddressPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowAddressPicker(false)}
+      >
         <SafeAreaView className="flex-1 bg-surface-lowest">
-          <View className="flex-row items-center px-4 py-4 border-b border-surface-line">
-            <Pressable onPress={() => setIsLocationModalVisible(false)} className="p-2 -ml-2 rounded-full">
-              <X size={24} color="#1A1A1A" />
-            </Pressable>
-            <Text className="flex-1 text-center text-headline-sm text-on-surface font-semibold pr-8">
-              {locationStep === 'PROVINCE' ? 'Chọn Tỉnh / Thành' : locationStep === 'DISTRICT' ? 'Chọn Quận / Huyện' : 'Chọn Phường / Xã'}
+          <View className="flex-row items-center border-b border-surface-line px-4 py-3">
+            <Text className="flex-1 text-headline-sm font-semibold text-on-surface">
+              Chọn địa chỉ giao hàng
             </Text>
+            <Pressable
+              onPress={() => setShowAddressPicker(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Đóng"
+              className="min-h-11 min-w-11 items-center justify-center rounded-full active:bg-surface"
+            >
+              <X size={22} className="text-on-surface" />
+            </Pressable>
           </View>
-          <View className="flex-1">
-             {renderLocationList()}
+
+          <FlatList
+            className="flex-1"
+            data={addresses}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+            ListEmptyComponent={
+              <View className="items-center justify-center py-12">
+                <MapPin size={36} className="text-outline" />
+                <Text className="mt-3 text-center text-body-md text-on-surface-variant">
+                  Bạn chưa có địa chỉ giao hàng.
+                </Text>
+              </View>
+            }
+            renderItem={({ item }) => {
+              const isSelected = item.id === selectedAddressId;
+              return (
+                <Pressable
+                  onPress={() => handleSelectSavedAddress(item)}
+                  className={`mb-3 rounded-2xl border p-4 ${
+                    isSelected
+                      ? 'border-primary bg-primary/5'
+                      : 'border-surface-line bg-surface-lowest'
+                  }`}
+                >
+                  <View className="mb-1 flex-row items-center justify-between gap-3">
+                    <View className="flex-1 flex-row flex-wrap items-center gap-2">
+                      <Text className="text-body-md font-bold text-on-surface">
+                        {item.recipientName}
+                      </Text>
+                      {item.isDefault && (
+                        <View className="rounded-full bg-primary/10 px-2 py-0.5">
+                          <Text className="text-2xs font-bold text-primary">
+                            Mặc định
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    {isSelected && <Check size={18} className="text-primary" />}
+                  </View>
+                  <Text className="mb-1 text-body-sm text-on-surface-variant">
+                    {item.phone}
+                  </Text>
+                  <Text className="text-body-sm leading-5 text-on-surface-variant">
+                    {formatAddress(item)}
+                  </Text>
+                </Pressable>
+              );
+            }}
+          />
+
+          <View className="border-t border-surface-line p-4">
+            <Button
+              title="Thêm địa chỉ mới"
+              variant="outline"
+              onPress={handleAddNewAddress}
+              className="w-full rounded-xl"
+              leftIcon={<Plus size={18} color="#5D1C34" />}
+            />
           </View>
         </SafeAreaView>
       </Modal>
-
     </SafeAreaView>
   );
 }

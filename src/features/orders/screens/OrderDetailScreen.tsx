@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Copy, CheckCircle2, Clock, Package, Check, Truck, XCircle, MapPin, Phone, AlertTriangle } from 'lucide-react-native';
+import { Copy, CheckCircle2, Clock, Package, Check, Truck, XCircle, MapPin, AlertTriangle } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Clipboard from 'expo-clipboard';
@@ -38,7 +38,7 @@ function getProductImage(item: any) {
           return first.url || first.uri || first.imageUrl || fallbackImg;
         }
       }
-    } catch (e) {}
+    } catch {}
   }
   return fallbackImg;
 }
@@ -53,13 +53,7 @@ export function OrderDetailScreen({ route, navigation }: Props) {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-surface-lowest">
-        <View className="flex-row items-center px-4 py-3 border-b border-surface-line bg-surface-lowest">
-          <Pressable onPress={() => navigation.goBack()} className="p-2 -ml-2 rounded-full active:bg-surface-line">
-            <ArrowLeft size={24} color="#1A1A1A" />
-          </Pressable>
-          <Text className="flex-1 text-center text-headline-sm font-semibold text-on-surface pr-8">Chi tiết đơn hàng</Text>
-        </View>
+      <SafeAreaView edges={['bottom']} className="flex-1 bg-surface-lowest">
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#5D1C34" />
         </View>
@@ -69,13 +63,7 @@ export function OrderDetailScreen({ route, navigation }: Props) {
 
   if (isError || !order) {
     return (
-      <SafeAreaView className="flex-1 bg-surface-lowest">
-        <View className="flex-row items-center px-4 py-3 border-b border-surface-line bg-surface-lowest">
-          <Pressable onPress={() => navigation.goBack()} className="p-2 -ml-2 rounded-full active:bg-surface-line">
-            <ArrowLeft size={24} color="#1A1A1A" />
-          </Pressable>
-          <Text className="flex-1 text-center text-headline-sm font-semibold text-on-surface pr-8">Chi tiết đơn hàng</Text>
-        </View>
+      <SafeAreaView edges={['bottom']} className="flex-1 bg-surface-lowest">
         <View className="flex-1 justify-center items-center px-6">
           <Text className="text-body-md text-on-surface mb-4">Không thể tải thông tin đơn hàng</Text>
           <Pressable className="px-6 py-3 bg-primary rounded-xl" onPress={() => void refetch()}>
@@ -128,17 +116,7 @@ export function OrderDetailScreen({ route, navigation }: Props) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-lowest">
-      {/* Header */}
-      <View className="flex-row items-center px-4 py-3 border-b border-surface-line bg-surface-lowest">
-        <Pressable onPress={() => navigation.goBack()} className="p-2 -ml-2 rounded-full active:bg-surface-line">
-          <ArrowLeft size={24} color="#1A1A1A" />
-        </Pressable>
-        <Text className="flex-1 text-center text-headline-sm font-semibold text-on-surface pr-8">
-          Chi tiết đơn hàng
-        </Text>
-      </View>
-
+    <SafeAreaView edges={['bottom']} className="flex-1 bg-surface-lowest">
       <ScrollView className="flex-1 bg-surface" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Status Banner */}
         <View className={`px-4 py-4 ${cfg.bg} border-b border-surface-line`}>
