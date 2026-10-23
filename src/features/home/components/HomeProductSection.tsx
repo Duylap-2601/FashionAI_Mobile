@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, Pressable, ScrollView, useWindowDimensions } from 'react-native';
 import { ArrowRight, Sparkles } from 'lucide-react-native';
-import { SPACING } from '@/constants/theme';
+import { COLORS, SPACING } from '@/constants/theme';
 import { ProductCard } from '@/features/products/components/ProductCard';
 import { ProductGridSkeleton } from '@/features/products/components/ProductGridSkeleton';
 import type { IProduct } from '@/features/products/types/product';
@@ -40,7 +40,7 @@ export function HomeProductSection({
   onPressViewAll,
 }: HomeProductSectionProps) {
   const { width } = useWindowDimensions();
-  const cardWidth = Math.max(1, (width - SPACING.lg * 2 - SPACING.catalogGap) / 2);
+  const cardWidth = Math.max(1, width < 420 ? width - SPACING.lg * 2 : (width - SPACING.lg * 2 - SPACING.catalogGap) / 2);
 
   const [activeCategoryKey, setActiveCategoryKey] = useState('ALL');
 
@@ -53,18 +53,18 @@ export function HomeProductSection({
 
     return products.filter((p) => {
       const name = (p.name || '').toLowerCase();
-      const garment = (p as any).garmentType ? String((p as any).garmentType).toLowerCase() : '';
+      const garment = p.garmentType?.toLowerCase() ?? '';
       return tab.keywords.some((kw) => name.includes(kw) || garment.includes(kw));
     });
   }, [products, activeCategoryKey, showCategories]);
 
   return (
-    <View className="py-10 bg-white border-b border-catalog-line">
+    <View className="border-b border-catalog-line bg-surface-lowest py-14">
       {/* Header */}
-      <View className="px-4 mb-4">
-        <View className="flex-row items-center gap-1.5 self-start px-2.5 py-0.5 rounded-full bg-[#5D1C34]/10 mb-2">
-          <Sparkles size={11} color="#5D1C34" />
-          <Text className="text-[#5D1C34] text-[10.5px] font-bold tracking-widest uppercase">
+      <View className="mb-xxxl gap-md px-lg">
+        <View className="flex-row items-center gap-xs self-start">
+          <Sparkles size={12} color={COLORS.primaryContainer} />
+          <Text className="font-sans text-label-md font-bold uppercase tracking-widest text-primary-container">
             {badge}
           </Text>
         </View>
@@ -72,7 +72,7 @@ export function HomeProductSection({
         <View className="flex-row items-center justify-between">
           <Text
             numberOfLines={2}
-            className="flex-1 text-neutral-900 text-[20px] font-extrabold uppercase tracking-tight mr-2"
+            className="flex-1 font-sans text-headline-lg font-bold uppercase tracking-tight text-on-surface-strong"
           >
             {title}
           </Text>
@@ -81,10 +81,16 @@ export function HomeProductSection({
         {subtitle ? (
           <Text
             numberOfLines={2}
-            className="text-neutral-500 text-[12.5px] leading-relaxed mt-1"
+            className="font-sans text-body-md leading-relaxed text-catalog-muted-text"
           >
             {subtitle}
           </Text>
+        ) : null}
+        {products.length > 0 ? (
+          <Pressable accessibilityRole="button" onPress={onPressViewAll} className="min-h-11 flex-row items-center gap-sm self-start active:opacity-70">
+            <Text className="font-sans text-body-md font-semibold text-primary-container">Xem tất cả</Text>
+            <ArrowRight size={16} color={COLORS.primaryContainer} />
+          </Pressable>
         ) : null}
       </View>
 
@@ -93,7 +99,7 @@ export function HomeProductSection({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingBottom: 14 }}
+          contentContainerClassName="gap-sm px-lg pb-xxxl"
         >
           {CATEGORY_TABS.map((tab) => {
             const isActive = tab.key === activeCategoryKey;
@@ -101,15 +107,17 @@ export function HomeProductSection({
               <Pressable
                 key={tab.key}
                 onPress={() => setActiveCategoryKey(tab.key)}
-                className={`h-9 px-4 rounded-full items-center justify-center border ${
+                accessibilityRole="button"
+                accessibilityState={{ selected: isActive }}
+                className={`min-h-11 px-lg rounded-full items-center justify-center border ${
                   isActive
-                    ? 'bg-[#5D1C34] border-[#5D1C34] shadow-sm'
-                    : 'bg-neutral-100 border-neutral-200'
+                    ? 'bg-primary-container border-primary-container'
+                    : 'bg-catalog-muted border-catalog-line'
                 }`}
               >
                 <Text
-                  className={`text-[12px] font-semibold ${
-                    isActive ? 'text-white font-bold' : 'text-neutral-700'
+                  className={`font-sans text-body-sm font-semibold ${
+                    isActive ? 'text-on-primary font-bold' : 'text-on-surface-variant'
                   }`}
                 >
                   {tab.label}
@@ -127,21 +135,22 @@ export function HomeProductSection({
         </View>
       ) : isError && products.length === 0 ? (
         <View className="px-4 py-8 items-center justify-center">
-          <Text className="text-neutral-500 text-[13px] mb-3">
+          <Text className="mb-md font-sans text-body-md text-catalog-muted-text">
             Chưa thể tải sản phẩm. Vui lòng thử lại.
           </Text>
           {onRetry && (
             <Pressable
               onPress={onRetry}
-              className="px-4 py-2 rounded-xl bg-[#5D1C34] items-center"
+              accessibilityRole="button"
+              className="min-h-11 items-center justify-center rounded-xl bg-primary-container px-lg"
             >
-              <Text className="text-white text-[12px] font-bold">Thử lại</Text>
+              <Text className="font-sans text-body-sm font-bold text-on-primary">Thử lại</Text>
             </Pressable>
           )}
         </View>
       ) : filteredProducts.length === 0 ? (
         <View className="mx-4 py-10 rounded-2xl bg-neutral-50 border border-dashed border-neutral-200 items-center justify-center px-4">
-          <Text className="text-neutral-500 text-[13px] text-center">
+          <Text className="text-center font-sans text-body-md text-catalog-muted-text">
             Không tìm thấy sản phẩm trong danh mục này.
           </Text>
         </View>
@@ -159,20 +168,6 @@ export function HomeProductSection({
         </View>
       )}
 
-      {/* View All Button */}
-      {products.length > 0 && (
-        <View className="px-4 mt-6 items-center">
-          <Pressable
-            onPress={onPressViewAll}
-            className="flex-row items-center gap-1.5 px-6 py-2.5 rounded-full border border-neutral-300 bg-white active:bg-neutral-50 shadow-xs"
-          >
-            <Text className="text-neutral-800 text-[12.5px] font-bold uppercase tracking-wider">
-              Xem tất cả sản phẩm
-            </Text>
-            <ArrowRight size={14} color="#262626" />
-          </Pressable>
-        </View>
-      )}
     </View>
   );
 }

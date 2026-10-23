@@ -1,129 +1,74 @@
-import React from 'react';
-import { View, Text, Pressable, ScrollView, useWindowDimensions } from 'react-native';
-import { Image } from 'expo-image';
-import { ArrowUpRight, Sparkles } from 'lucide-react-native';
-import type { Collection } from '@/features/collections/types/collection';
+import React from "react";
+import { View, Text, Pressable, useWindowDimensions } from "react-native";
+import { ArrowUpRight, Sparkles } from "lucide-react-native";
+import { CollectionCover } from "@/features/collections/components/CollectionCover";
+import { COLORS, SPACING } from "@/constants/theme";
+import type { Collection } from "@/features/collections/types/collection";
 
 interface EditorialLookbookProps {
   collection?: Collection | null;
   onPressTryOn: () => void;
 }
 
-const DEFAULT_LOOKS = [
-  {
-    url: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1000&q=85',
-    title: 'THE MONOCHROME ESSENCE',
-    subtitle: 'Blazer dáng ôm & Quần âu xếp ly',
-    category: 'LOOK 01',
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1000&q=85',
-    title: 'URBAN POWER DRESSING',
-    subtitle: 'Suit hai hàng khuy dáng quyền lực',
-    category: 'LOOK 02',
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1000&q=85',
-    title: 'CONTEMPORARY CHIC',
-    subtitle: 'Sơ mi lụa cổ nơ & Chân váy midi',
-    category: 'LOOK 03',
-  },
-];
-
-export function EditorialLookbook({ collection, onPressTryOn }: EditorialLookbookProps) {
+export function EditorialLookbook({
+  collection,
+  onPressTryOn,
+}: EditorialLookbookProps) {
   const { width } = useWindowDimensions();
-  const cardWidth = Math.min(width * 0.78, 290);
-
-  const sectionTitle = collection?.name
-    ? collection.name.toUpperCase()
-    : 'LOOKBOOK 2026: SẮC VÓC LÃNH ĐẠO';
-
-  const sectionSubtitle = collection?.description
-    ? collection.description
-    : 'Mỗi góc nhìn là một lời khẳng định cho phong cách chuyên nghiệp, thanh lịch và tự tin nơi công sở.';
-
+  const images = collection?.coverImages.slice(0, 3) ?? [];
+  if (!collection || images.length === 0) return null;
+  const cardWidth = width - SPACING.lg * 2;
   return (
-    <View className="py-12 bg-[#0F172A]">
-      {/* Header */}
-      <View className="px-5 items-center mb-6">
-        <View className="flex-row items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/10 mb-2.5">
-          <Sparkles size={11} color="#C5A880" />
-          <Text className="text-[#C5A880] text-[10px] font-bold tracking-widest uppercase">
+    <View className="gap-xxxl bg-editorial-background px-lg py-14">
+      <View className="items-center gap-md">
+        <View className="flex-row items-center gap-xs rounded-full border border-on-primary/10 bg-surface-lowest/10 px-md py-xs">
+          <Sparkles size={12} color={COLORS.tertiaryFixed} />
+          <Text className="font-sans text-label-md uppercase tracking-widest text-tertiary-fixed">
             EDITORIAL CAMPAIGN
           </Text>
         </View>
-
-        <Text
-          numberOfLines={2}
-          className="text-white text-[22px] font-extrabold uppercase text-center tracking-tight mb-2"
-        >
-          {sectionTitle}
+        <Text className="text-center font-sans text-headline-lg font-bold uppercase text-on-primary">
+          {collection.name}
         </Text>
-
-        <Text
-          numberOfLines={3}
-          className="text-neutral-400 text-[12.5px] font-light text-center leading-relaxed max-w-[340px]"
-        >
-          {sectionSubtitle}
-        </Text>
-      </View>
-
-      {/* Lookbook Horizontal Carousel */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 14 }}
-      >
-        {DEFAULT_LOOKS.map((look, i) => (
-          <View
-            key={i}
-            style={{ width: cardWidth, height: cardWidth / (9 / 14) }}
-            className="rounded-2xl overflow-hidden relative shadow-2xl border border-white/10 justify-end p-5"
+        {collection.description ? (
+          <Text
+            numberOfLines={3}
+            className="text-center font-sans text-body-md leading-relaxed text-on-primary/65"
           >
-            <Image
-              source={{ uri: look.url }}
-              contentFit="cover"
-              transition={200}
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+            {collection.description}
+          </Text>
+        ) : null}
+      </View>
+      <View className="gap-xl">
+        {images.map((url, index) => (
+          <View
+            key={`${url}-${index}`}
+            className="relative aspect-[9/14] w-full justify-end overflow-hidden rounded-catalog-gallery border border-on-primary/10 p-xxl"
+          >
+            <CollectionCover
+              imageUrl={url}
+              name={collection.name}
+              width={cardWidth}
+              height={(cardWidth * 14) / 9}
             />
-
-            {/* Gradient Overlay */}
-            <View
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.45)',
-              }}
-            />
-
-            {/* Content & Action */}
-            <View className="relative z-10">
-              <Text className="text-[11px] font-bold tracking-[0.2em] text-[#C5A880] uppercase mb-1">
-                {look.category}
+            <View className="gap-lg">
+              <Text className="font-sans text-label-md font-bold uppercase tracking-widest text-tertiary-fixed">
+                LOOK {String(index + 1).padStart(2, "0")}
               </Text>
-              <Text className="text-[15px] font-bold text-white mb-0.5">
-                {look.title}
-              </Text>
-              <Text className="text-[12px] text-white/80 font-light mb-3" numberOfLines={1}>
-                {look.subtitle}
-              </Text>
-
               <Pressable
+                accessibilityRole="button"
                 onPress={onPressTryOn}
-                className="self-start flex-row items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/20 border border-white/30 backdrop-blur-md active:bg-white"
+                className="min-h-11 flex-row items-center justify-center gap-sm self-start rounded-xl border border-on-primary/30 bg-surface-lowest/20 px-lg py-sm active:opacity-70"
               >
-                <Text className="text-white font-bold text-[11px] uppercase tracking-wider">
-                  Thử outfit này
+                <Text className="font-sans text-label-md font-bold uppercase text-on-primary">
+                  Khám phá thử đồ AI
                 </Text>
-                <ArrowUpRight size={13} color="#FFFFFF" />
+                <ArrowUpRight size={16} color={COLORS.onPrimary} />
               </Pressable>
             </View>
           </View>
         ))}
-      </ScrollView>
+      </View>
     </View>
   );
 }

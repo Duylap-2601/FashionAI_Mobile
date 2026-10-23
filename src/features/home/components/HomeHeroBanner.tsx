@@ -1,17 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, useWindowDimensions } from 'react-native';
-import { Image } from 'expo-image';
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react-native';
-import type { Collection } from '@/features/collections/types/collection';
+import React, { useState, useEffect, useCallback } from "react";
+import { View, Text, Pressable, useWindowDimensions } from "react-native";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react-native";
+import { CollectionCover } from "@/features/collections/components/CollectionCover";
+import { COLORS, SPACING } from "@/constants/theme";
+import type { Collection } from "@/features/collections/types/collection";
 
 interface HomeHeroBannerProps {
   collections: Collection[];
   onPressCollection: (slug: string) => void;
   onPressTryOn: () => void;
 }
-
-const FALLBACK_BANNER =
-  'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1000&q=85';
 
 export function HomeHeroBanner({
   collections,
@@ -20,147 +18,119 @@ export function HomeHeroBanner({
 }: HomeHeroBannerProps) {
   const { width } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
-
   const activeCollection = collections[activeIndex] || collections[0];
-
   const handleNext = useCallback(() => {
     if (collections.length <= 1) return;
     setActiveIndex((prev) => (prev + 1) % collections.length);
   }, [collections.length]);
-
   const handlePrev = useCallback(() => {
     if (collections.length <= 1) return;
-    setActiveIndex((prev) => (prev - 1 + collections.length) % collections.length);
+    setActiveIndex(
+      (prev) => (prev - 1 + collections.length) % collections.length,
+    );
   }, [collections.length]);
-
   useEffect(() => {
     if (collections.length <= 1) return;
-    const timer = setInterval(() => {
-      handleNext();
-    }, 6000);
+    const timer = setInterval(handleNext, 6000);
     return () => clearInterval(timer);
   }, [collections.length, handleNext]);
-
   if (!activeCollection) return null;
-
-  const coverImages = activeCollection.coverImages || [];
   const heroImage =
-    coverImages[1] || coverImages[0] || FALLBACK_BANNER;
-
-  const cardHeight = Math.min(width * 1.25, 480);
+    activeCollection.coverImages[1] || activeCollection.coverImages[0] || null;
 
   return (
-    <View className="w-full bg-[#0e161c] pt-4 pb-6 px-4">
-      {/* Editorial Main Hero Panel */}
-      <View
-        style={{ height: cardHeight }}
-        className="w-full rounded-3xl overflow-hidden relative shadow-2xl justify-end p-5"
-      >
-        <Image
-          source={{ uri: heroImage }}
-          contentFit="cover"
-          transition={300}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+    <View className="w-full bg-editorial-background px-lg pb-12 pt-xxxl">
+      <View className="relative h-collection-hero w-full justify-end overflow-hidden rounded-catalog-gallery p-xl">
+        <CollectionCover
+          imageUrl={heroImage}
+          name={activeCollection.name}
+          width={width - SPACING.lg * 2}
+          height={440}
+          alignTop
         />
-
-        {/* Dark Gradient Overlay */}
-        <View
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.45)',
-          }}
-        />
-
-        {/* Hero Overlay Content */}
-        <View className="relative z-10 items-center">
-          {/* Season Pill Badge */}
-          <View className="px-3.5 py-1 rounded-full bg-white/95 border border-white/60 mb-3 shadow-sm">
-            <Text className="text-[#5D1C34] text-[11px] font-bold tracking-widest uppercase">
-              {activeCollection.season || 'BỘ SƯU TẬP 2026'}
+        <View className="items-center gap-lg">
+          <View className="rounded-full border border-on-primary/60 bg-surface-lowest/90 px-md py-xs">
+            <Text className="font-sans text-label-md font-bold uppercase tracking-widest text-primary-container">
+              {activeCollection.season || "Bộ sưu tập may đo"}
             </Text>
           </View>
-
-          {/* Collection Name */}
           <Text
             numberOfLines={2}
-            className="text-white text-[26px] font-extrabold text-center tracking-tight leading-tight mb-2"
+            className="text-center font-sans text-headline-lg font-bold text-on-primary"
           >
             {activeCollection.name}
           </Text>
-
-          {/* Tagline / Description */}
           {activeCollection.description ? (
             <Text
               numberOfLines={2}
-              className="text-white/85 text-[13px] font-light italic text-center mb-5 px-3"
+              className="text-center font-sans text-body-md italic leading-relaxed text-on-primary/85"
             >
               “{activeCollection.description}”
             </Text>
           ) : null}
-
-          {/* CTAs */}
-          <View className="flex-row items-center justify-center gap-3 w-full">
+          <View className="w-full flex-row flex-wrap items-center justify-center gap-md">
             <Pressable
+              accessibilityRole="button"
               onPress={() => onPressCollection(activeCollection.slug)}
-              className="h-11 px-5 rounded-full bg-white flex-row items-center justify-center gap-2 shadow-lg active:opacity-90"
+              className="min-h-11 flex-row items-center justify-center gap-sm rounded-full bg-surface-lowest px-xl py-sm active:opacity-80"
             >
-              <Text className="text-neutral-900 font-bold text-[13px]">
+              <Text className="font-sans text-label-lg font-semibold text-on-surface-strong">
                 Khám phá BST
               </Text>
-              <ArrowRight size={15} color="#171717" />
+              <ArrowRight size={16} color={COLORS.onSurfaceStrong} />
             </Pressable>
-
             <Pressable
+              accessibilityRole="button"
               onPress={onPressTryOn}
-              className="h-11 px-5 rounded-full bg-[#5D1C34] border border-white/20 flex-row items-center justify-center gap-1.5 shadow-lg active:opacity-90"
+              className="min-h-11 items-center justify-center rounded-full border border-on-primary/10 bg-primary-container px-xl py-sm active:opacity-80"
             >
-              <Text className="text-white font-bold text-[13px]">
+              <Text className="font-sans text-label-lg font-semibold text-on-primary">
                 Thử đồ AI
               </Text>
             </Pressable>
           </View>
         </View>
       </View>
-
-      {/* Pagination Controls */}
-      {collections.length > 1 && (
-        <View className="flex-row items-center justify-between mt-4 px-2">
+      {collections.length > 1 ? (
+        <View className="mt-xxxl flex-row items-center justify-between gap-sm">
           <Pressable
-            onPress={handlePrev}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            className="w-8 h-8 rounded-full bg-white/10 items-center justify-center active:bg-white/20"
+            accessibilityRole="button"
             accessibilityLabel="Bộ sưu tập trước"
+            onPress={handlePrev}
+            className="min-h-11 min-w-11 items-center justify-center rounded-full bg-surface-lowest/10 active:bg-surface-lowest/20"
           >
-            <ChevronLeft size={18} color="#FFFFFF" />
+            <ChevronLeft size={20} color={COLORS.onPrimary} />
           </Pressable>
-
-          {/* Dots Indicator */}
-          <View className="flex-row items-center gap-2">
-            {collections.map((col, idx) => (
+          <View className="flex-1 flex-row flex-wrap justify-center">
+            {collections.map((collection, index) => (
               <Pressable
-                key={col.id}
-                onPress={() => setActiveIndex(idx)}
-                className={`h-2 rounded-full transition-all ${
-                  activeIndex === idx ? 'w-6 bg-[#C5A880]' : 'w-2 bg-white/30'
-                }`}
-              />
+                key={collection.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Hiển thị ${collection.name}`}
+                accessibilityState={{ selected: activeIndex === index }}
+                onPress={() => setActiveIndex(index)}
+                className="min-h-11 min-w-11 items-center justify-center"
+              >
+                <View
+                  className={
+                    activeIndex === index
+                      ? "h-2.5 w-8 rounded-full bg-tertiary-fixed"
+                      : "h-2.5 w-2.5 rounded-full bg-surface-lowest/30"
+                  }
+                />
+              </Pressable>
             ))}
           </View>
-
           <Pressable
-            onPress={handleNext}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            className="w-8 h-8 rounded-full bg-white/10 items-center justify-center active:bg-white/20"
+            accessibilityRole="button"
             accessibilityLabel="Bộ sưu tập tiếp theo"
+            onPress={handleNext}
+            className="min-h-11 min-w-11 items-center justify-center rounded-full bg-surface-lowest/10 active:bg-surface-lowest/20"
           >
-            <ChevronRight size={18} color="#FFFFFF" />
+            <ChevronRight size={20} color={COLORS.onPrimary} />
           </Pressable>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }

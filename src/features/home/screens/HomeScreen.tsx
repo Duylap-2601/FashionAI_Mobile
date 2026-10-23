@@ -209,15 +209,15 @@ export const HomeScreen: React.FC = () => {
           />
 
           {/* 3. Collection Carousel (Horizontal) */}
-          <View className="py-10 bg-white border-b border-catalog-line">
-            <View className="px-4 mb-4">
-              <Text className="font-sans text-[11px] font-bold text-[#15434e] uppercase tracking-[0.18em] mb-1">
+          <View className="border-b border-catalog-line bg-surface-lowest py-14">
+            <View className="mb-xxxl gap-md px-lg">
+              <Text className="font-sans text-label-md font-bold uppercase tracking-widest text-primary-container">
                 BỘ SƯU TẬP ĐỘC QUYỀN
               </Text>
-              <Text className="font-sans text-[22px] font-extrabold uppercase text-neutral-900 tracking-tight">
+              <Text className="font-sans text-headline-lg font-bold uppercase tracking-tight text-on-surface-strong">
                 Bộ sưu tập mới nhất
               </Text>
-              <Text className="font-sans text-[12.5px] text-neutral-500 mt-1">
+              <Text className="font-sans text-body-md leading-relaxed text-catalog-muted-text">
                 Được thiết kế tinh xảo theo từng mùa thời trang, định hình phong cách quý cô và quý ông hiện đại.
               </Text>
             </View>
