@@ -70,6 +70,7 @@ describe('stylist API', () => {
       analyzeStylist(
         {
           humanImage: image,
+          imageConsent: true,
           garmentDescription: ' Blazer navy may đo ',
           occasion: ' Họp quan trọng ',
           stylePreference: ' Tối giản ',
@@ -90,6 +91,7 @@ describe('stylist API', () => {
     );
     const form = upload.mock.calls[0]?.[1];
     expect(form?.get('humanImage')).toBeTruthy();
+    expect(form?.get('imageConsent')).toBe('true');
     expect(form?.get('garmentDescription')).toBe('Blazer navy may đo');
     expect(form?.get('occasion')).toBe('Họp quan trọng');
     expect(form?.get('stylePreference')).toBe('Tối giản');
@@ -97,14 +99,48 @@ describe('stylist API', () => {
     expect(form?.get('genderPreference')).toBe('female');
   });
 
-  it('requires either a product id or a garment description', () => {
+  it('builds a text-only request without an image', () => {
+    const form = buildStylistFormData({
+      garmentDescription: ' Blazer navy may đo ',
+      occasion: ' Đi làm ',
+    });
+
+    expect(form.get('humanImage')).toBeNull();
+    expect(form.get('imageConsent')).toBeNull();
+    expect(form.get('garmentDescription')).toBe('Blazer navy may đo');
+    expect(form.get('occasion')).toBe('Đi làm');
+  });
+
+  it('builds a product request with consent when an image is attached', () => {
+    const image = Object.assign(new Blob(['image'], { type: 'image/jpeg' }), {
+      uri: 'file:///human.jpg',
+      name: 'human.jpg',
+    }) as unknown as IStylistImageFile;
+    const form = buildStylistFormData({
+      humanImage: image,
+      imageConsent: true,
+      productId: ' product-1 ',
+    });
+
+    expect(form.get('humanImage')).toBeTruthy();
+    expect(form.get('imageConsent')).toBe('true');
+    expect(form.get('productId')).toBe('product-1');
+  });
+
+  it('requires image consent when a human image is uploaded', () => {
     const image = Object.assign(new Blob(['image'], { type: 'image/jpeg' }), {
       uri: 'file:///human.jpg',
       name: 'human.jpg',
     }) as unknown as IStylistImageFile;
 
     expect(() => buildStylistFormData({ humanImage: image })).toThrow(
-      'Product ID or garment description is required',
+      'Image consent is required when uploading a human image',
+    );
+  });
+
+  it('requires at least one stylist input', () => {
+    expect(() => buildStylistFormData({})).toThrow(
+      'At least one stylist input is required',
     );
   });
 

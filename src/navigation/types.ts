@@ -36,7 +36,7 @@ export type MainTabParamList = {
   HomeTab: undefined;
   TryOnTab: NavigatorScreenParams<TryOnStackParamList> | undefined;
   ShopTab: undefined;
-  RackTab: undefined;
+  StylistTab: undefined;
   ProfileTab: NavigatorScreenParams<ProfileStackParamList> | undefined;
 };
 

@@ -31,7 +31,7 @@
 | Navigator | Screens | Description |
 |---|---|---|
 | **AuthStack** | Login, Register, ForgotPassword, ResetPassword | Unauthenticated flow — email/password + Google OAuth |
-| **MainTabs** | HomeTab, TryOnTab, ShopTab, StylistTab, ProfileTab | Authenticated bottom tabs (5 tabs) |
+| **MainTabs** | HomeTab, ShopTab, TryOnTab, StylistTab, ProfileTab | Authenticated bottom tabs (5 tabs). StylistTab hosts the AI Stylist form; Tủ đồ (Rack) is not currently in the tab bar. |
 | **RootNavigator** | Auth / Main | Switches based on `isAuthenticated` from `AuthContext` |
 
 ## Mobile Design System
@@ -85,9 +85,9 @@ Rules:
 | Tab | Screen | File | Status |
 |---|---|---|---|
 | Home | HomeScreen | `src/features/home/screens/HomeScreen.tsx` | ✅ Done — Quota card, feature grid |
-| Try-On | TryOnScreen | `src/features/try-on/screens/TryOnScreen.tsx` | 🚧 Placeholder |
 | Shop | ShopScreen | `src/features/products/screens/ShopScreen.tsx` | 🚧 Placeholder |
-| Stylist | StylistScreen | `src/features/stylist/screens/StylistScreen.tsx` | 🚧 Placeholder |
+| Try-On | TryOnScreen | `src/features/try-on/screens/TryOnScreen.tsx` | 🚧 Placeholder |
+| Stylist | StylistScreen | `src/features/stylist/screens/StylistScreen.tsx` | ✅ Tab "AI Stylist" — form tư vấn; kết quả/lịch sử vẫn là RootStack |
 | Profile | ProfileScreen | `src/features/profile/screens/ProfileScreen.tsx` | ✅ Done — User info, logout |
 
 ## Feature Modules (Referencing FashionAI_FE & FashionAI_BE)
