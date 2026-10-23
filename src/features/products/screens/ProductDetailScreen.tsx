@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -11,6 +11,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorView } from '@/components/common/ErrorView';
 import { Button } from '@/components/ui/Button';
+import { FeedbackModal } from '@/components/ui/FeedbackModal';
+import { CheckCircle2 } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
 import { ApiError } from '@/types/api';
@@ -21,6 +23,8 @@ import { ProductDetailContent } from '../components/ProductDetailContent';
 import { ProductDetailSkeleton } from '../components/ProductDetailSkeleton';
 import { ProductImageGallery } from '../components/ProductImageGallery';
 import { useProduct } from '../hooks/useProduct';
+import { useLocalCartReady } from '../hooks/use-local-cart-ready';
+import { ProductCartButton } from '../components/ProductCartButton';
 import {
   getProductImageUrls,
   getProductMainImage,
@@ -39,12 +43,31 @@ function getInitialColor(
   return firstColor ?? color?.trim() ?? null;
 }
 
-export function ProductDetailScreen({
+export function ProductDetailScreen(props: ProductDetailScreenProps) {
+  // Reset product-local selections and feedback when this route changes product.
+  return <ProductDetail key={props.route.params.productId} {...props} />;
+}
+
+function ProductDetail({
   navigation,
   route,
 }: ProductDetailScreenProps) {
   const productId = route.params.productId.trim();
   const addItem = useCartStore((state) => state.addItem);
+  const cartReady = useLocalCartReady();
+  const cartActionLocked = useRef(false);
+  const [cartFeedback, setCartFeedback] = useState<{ productId: string; name: string; color: string | null } | null>(null);
+  const closeCartFeedback = useCallback(() => {
+    setCartFeedback(null);
+    cartActionLocked.current = false;
+  }, []);
+  const openCart = useCallback(() => {
+    closeCartFeedback();
+    navigation.navigate('Cart');
+  }, [closeCartFeedback, navigation]);
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerRight: () => <ProductCartButton onPress={openCart} /> });
+  }, [navigation, openCart]);
   const productQuery = useProduct(productId);
   const pinToRackMutation = usePinProductToRack();
   const product = productQuery.data;
@@ -105,24 +128,25 @@ export function ProductDetailScreen({
   }, [navigation, product]);
 
   const handleAddToCart = useCallback(() => {
-    if (!product || product.status !== 'ACTIVE') {
+    if (!product || product.status !== 'ACTIVE' || !cartReady || cartActionLocked.current) {
       return;
     }
-
-    addItem({
-      productId: product.id,
-      productName: product.name,
-      color: selectedColor ?? undefined,
-      quantity: 1,
-      price: product.price,
-      imageUrl: mainImageUrl ?? undefined,
-    });
-
-    Alert.alert(
-      'Đã thêm vào giỏ hàng',
-      `${product.name}${selectedColor ? ` · Màu ${selectedColor}` : ''}`,
-    );
-  }, [addItem, mainImageUrl, product, selectedColor]);
+    cartActionLocked.current = true;
+    try {
+      addItem({
+        productId: product.id,
+        productName: product.name,
+        color: selectedColor ?? undefined,
+        quantity: 1,
+        price: product.price,
+        imageUrl: mainImageUrl ?? undefined,
+      });
+      setCartFeedback({ productId: product.id, name: product.name, color: selectedColor });
+    } catch {
+      cartActionLocked.current = false;
+      Alert.alert('Chưa thể thêm vào giỏ hàng', 'Vui lòng thử lại.');
+    }
+  }, [addItem, cartReady, mainImageUrl, product, selectedColor]);
 
   const handleSaveToRack = useCallback(() => {
     if (!product) {
@@ -252,9 +276,32 @@ export function ProductDetailScreen({
 
       <ProductDetailActionBar
         canPurchase={!unavailable}
+        cartReady={cartReady}
         onAddToCart={handleAddToCart}
         onTryOn={handleTryOn}
       />
+      <FeedbackModal
+        visible={cartFeedback !== null && cartFeedback.productId === product.id}
+        title="Đã thêm vào giỏ hàng"
+        type="success"
+        customIcon={<CheckCircle2 size={36} color={COLORS.primaryContainer} />}
+        iconBgClassName="bg-catalog-muted"
+        dismissible
+        onClose={closeCartFeedback}
+        primaryButtonText="Xem giỏ hàng"
+        onPrimaryPress={openCart}
+        secondaryButtonText="Đóng"
+        onSecondaryPress={closeCartFeedback}
+      >
+        <View accessibilityLiveRegion="polite" className="w-full gap-sm">
+          <Text numberOfLines={3} className="text-center font-sans text-body-md font-semibold text-on-surface">
+            {cartFeedback?.name}{cartFeedback?.color ? ` · ${cartFeedback.color}` : ''}
+          </Text>
+          <Text className="text-center font-sans text-body-sm leading-relaxed text-catalog-muted-text">
+            Sản phẩm đã được thêm vào giỏ hàng trên thiết bị này.
+          </Text>
+        </View>
+      </FeedbackModal>
     </View>
   );
 }

@@ -3,6 +3,7 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { tva } from '@gluestack-ui/nativewind-utils/tva';
 import type { GarmentCategory, GarmentType, IProduct } from '../types/product';
 import { formatProductPrice } from '../utils/product-display';
+import { ProductDescription } from './ProductDescription';
 
 interface ProductDetailContentProps {
   product: IProduct;
@@ -242,17 +243,12 @@ export function ProductDetailContent({
         ) : null}
       </View>
 
-      {product.description ? (
+      {product.description?.trim() ? (
         <View className="gap-md border-t border-catalog-line pt-xl">
           <Text className="font-sans text-body-lg font-semibold text-primary-container">
             Chi tiết
           </Text>
-          <Text
-            selectable
-            className="font-sans text-body-md leading-relaxed text-on-surface-variant"
-          >
-            {product.description}
-          </Text>
+          <ProductDescription key={`${product.id}:${product.description}`} description={product.description} />
         </View>
       ) : null}
     </View>
