@@ -18,10 +18,10 @@ import {
   Sparkles,
   Zap,
   ArrowRight,
-  MessageCircle,
 } from 'lucide-react-native';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { AppHeader } from '@/components/common/AppHeader';
+import { BackButton } from '@/components/common/BackButton';
 import {
   useSubscriptionPlans,
   useMySubscription,
@@ -253,7 +253,7 @@ export const SubscriptionPlansScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-[#FBF9F7]">
-      <AppHeader onBack={navigation.canGoBack() ? () => navigation.goBack() : undefined} />
+      <AppHeader />
 
       {/* ── Scrollable Body ── */}
       <ScrollView
@@ -266,6 +266,8 @@ export const SubscriptionPlansScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
+        <BackButton onPress={() => navigation.goBack()} />
+
         {/* ── Hero Heading & Badge ── */}
         <View className="items-center mt-2 mb-3">
           <View className="flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#5D1C34]/10">
@@ -790,18 +792,6 @@ export const SubscriptionPlansScreen: React.FC = () => {
           </View>
         )}
       </ScrollView>
-
-      {/* ── Floating AI Chat Button ── */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => navigation.navigate('Stylist')}
-        className="absolute bottom-6 right-5 w-14 h-14 rounded-full bg-[#5D1C34] shadow-lg shadow-black/30 items-center justify-center z-30"
-      >
-        <MessageCircle size={24} color="#FFFFFF" />
-        <View className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#F59E0B] border-2 border-white items-center justify-center">
-          <Text className="text-[10px] font-bold text-black">1</Text>
-        </View>
-      </TouchableOpacity>
     </View>
   );
 };

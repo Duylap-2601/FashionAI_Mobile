@@ -20,7 +20,6 @@ import {
   Eye,
   Download,
   Zap,
-  MessageCircle,
   X,
   Sparkles,
 } from 'lucide-react-native';
@@ -487,18 +486,6 @@ export const TryOnHistoryScreen: React.FC = () => {
           ) : null
         }
       />
-
-      {/* ── Floating AI Chat Button ── */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => navigation.navigate('Stylist')}
-        className="absolute bottom-6 right-5 w-14 h-14 rounded-full bg-[#5D1C34] shadow-lg shadow-black/30 items-center justify-center z-30"
-      >
-        <MessageCircle size={24} color="#FFFFFF" />
-        <View className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#F59E0B] border-2 border-white items-center justify-center">
-          <Text className="text-[10px] font-bold text-black">1</Text>
-        </View>
-      </TouchableOpacity>
     </View>
   );
 };

@@ -36,7 +36,10 @@
               "./node_modules/@expo-google-fonts/be-vietnam-pro/400Regular/BeVietnamPro_400Regular.ttf",
               "./node_modules/@expo-google-fonts/be-vietnam-pro/500Medium/BeVietnamPro_500Medium.ttf",
               "./node_modules/@expo-google-fonts/be-vietnam-pro/600SemiBold/BeVietnamPro_600SemiBold.ttf",
-              "./node_modules/@expo-google-fonts/be-vietnam-pro/700Bold/BeVietnamPro_700Bold.ttf"
+              "./node_modules/@expo-google-fonts/be-vietnam-pro/700Bold/BeVietnamPro_700Bold.ttf",
+              "./node_modules/@expo-google-fonts/be-vietnam-pro/800ExtraBold/BeVietnamPro_800ExtraBold.ttf",
+              "./node_modules/@expo-google-fonts/be-vietnam-pro/900Black/BeVietnamPro_900Black.ttf",
+              "./node_modules/@expo-google-fonts/be-vietnam-pro/900Black_Italic/BeVietnamPro_900Black_Italic.ttf"
             ]
           },
           "android": {
@@ -59,6 +62,19 @@
                   {
                     "path": "./node_modules/@expo-google-fonts/be-vietnam-pro/700Bold/BeVietnamPro_700Bold.ttf",
                     "weight": 700
+                  },
+                  {
+                    "path": "./node_modules/@expo-google-fonts/be-vietnam-pro/800ExtraBold/BeVietnamPro_800ExtraBold.ttf",
+                    "weight": 800
+                  },
+                  {
+                    "path": "./node_modules/@expo-google-fonts/be-vietnam-pro/900Black/BeVietnamPro_900Black.ttf",
+                    "weight": 900
+                  },
+                  {
+                    "path": "./node_modules/@expo-google-fonts/be-vietnam-pro/900Black_Italic/BeVietnamPro_900Black_Italic.ttf",
+                    "weight": 900,
+                    "style": "italic"
                   }
                 ]
               }

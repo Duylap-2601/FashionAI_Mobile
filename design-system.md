@@ -129,7 +129,9 @@ Radius: `rounded-sm|md|lg|xl|2xl|full` = 6/10/14/18/24/9999.
 
 Target font: `Be Vietnam Pro`.
 
-Be Vietnam Pro `400`/`500`/`600`/`700` is embedded at build time by the `expo-font` plugin in `app.json` (from `@expo-google-fonts/be-vietnam-pro`), registered under the single family name `Be Vietnam Pro` on iOS and Android, so the weight picks the right file. Changing the font list requires a new native build.
+Be Vietnam Pro `400`/`500`/`600`/`700`/`800`/`900` plus the `900` italic face is embedded at build time by the `expo-font` plugin in `app.json` (from `@expo-google-fonts/be-vietnam-pro`), registered under the single family name `Be Vietnam Pro` on iOS and Android, so the weight picks the right file. Changing the font list requires a new native build.
+
+The header wordmark uses the `text-wordmark` role (`26/34`, weight `800`, tracking `-0.8px`); the `AI` accent is `font-black` (`900`) in the real `900` italic face and the trailing period is `font-black` (`900`).
 
 - NativeWind: `font-sans` / `font-body` / `font-heading` plus a weight class (`font-semibold`) or a typography role (`text-headline-sm`). gluestack Text/Heading already apply `font-body` / `font-heading`.
 - `StyleSheet` code: `fontFamily: FONT_FAMILY` from `src/constants/theme.ts`.

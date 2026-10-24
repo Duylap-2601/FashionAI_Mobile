@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import { ArrowLeft, Search, ShoppingBag } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,16 +31,8 @@ export const AppHeader: React.FC<IAppHeaderProps> = ({ onBack }) => {
             </TouchableOpacity>
           ) : null}
 
-          <Text
-            style={{
-              fontFamily: Platform.OS === 'ios' ? 'Playfair Display' : 'serif',
-              fontSize: 26,
-              fontWeight: '700',
-              color: COLORS.primaryContainer,
-              letterSpacing: -0.5,
-            }}
-          >
-            St<Text style={{ fontWeight: '900' }}>A</Text>le.
+          <Text className="font-heading text-wordmark font-extrabold text-primary">
+            St<Text className="font-black italic">AI</Text>e<Text className="font-black">.</Text>
           </Text>
         </View>
 

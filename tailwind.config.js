@@ -116,6 +116,7 @@ module.exports = {
       },
       // design-system.md › Typography roles, e.g. `text-headline-sm`, `text-price-lg`
       fontSize: {
+        wordmark: ["26px", { lineHeight: "34px", fontWeight: "800", letterSpacing: "-0.8px" }],
         "product-title": ["32px", { lineHeight: "40px", fontWeight: "700" }],
         "product-price": ["22px", { lineHeight: "28px", fontWeight: "700" }],
         "2xs": "10px",

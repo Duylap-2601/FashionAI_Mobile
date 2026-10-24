@@ -51,6 +51,7 @@ export const TryOnDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     return (
       <View className="flex-1 bg-background">
         <AppHeader />
+        <BackButton onPress={() => navigation.goBack()} label="Quay lại" />
         <Loading fullscreen message="Đang tải chi tiết..." />
       </View>
     );
@@ -60,6 +61,7 @@ export const TryOnDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     return (
       <View className="flex-1 bg-background">
         <AppHeader />
+        <BackButton onPress={() => navigation.goBack()} label="Quay lại" />
         <ErrorView
           fullscreen
           title="Không tải được chi tiết"
