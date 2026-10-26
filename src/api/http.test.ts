@@ -50,6 +50,17 @@ describe('http wrapper', () => {
       await expect(http.delete('/c')).resolves.toBeNull();
     });
 
+    it('sends the body and returns data on delete', async () => {
+      mock.onDelete('/device-tokens').reply((config) => {
+        expect(JSON.parse(config.data)).toEqual({ token: 'x' });
+        return [200, envelope({ deleted: 1 })];
+      });
+
+      await expect(http.delete('/device-tokens', { token: 'x' })).resolves.toEqual({
+        deleted: 1,
+      });
+    });
+
     it('forwards query params', async () => {
       mock.onGet('/users/me/quota').reply((config) => {
         expect(config.params).toEqual({ action: 'TRY_ON' });

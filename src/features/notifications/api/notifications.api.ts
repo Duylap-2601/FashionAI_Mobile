@@ -15,6 +15,15 @@ export interface MarkAllReadResult {
   updated: number;
 }
 
+export type DeviceTokenPlatform = 'ios' | 'android';
+
+export interface DeviceTokenResult {
+  id: string;
+  platform: DeviceTokenPlatform;
+  createdAt: string;
+  updatedAt: string;
+}
+
 function parseListMeta(value: unknown): INotificationMeta {
   if (!value || typeof value !== 'object') {
     throw new ApiError(
@@ -77,6 +86,29 @@ export const notificationsApi = {
     return http.patch<MarkAllReadResult>(
       ENDPOINTS.NOTIFICATIONS.READ_ALL,
       undefined,
+      opts,
+    );
+  },
+
+  registerDeviceToken(
+    token: string,
+    platform: DeviceTokenPlatform,
+    opts?: HttpOptions,
+  ): Promise<DeviceTokenResult> {
+    return http.post<DeviceTokenResult>(
+      ENDPOINTS.NOTIFICATIONS.DEVICE_TOKEN,
+      { token, platform },
+      opts,
+    );
+  },
+
+  unregisterDeviceToken(
+    token: string,
+    opts?: HttpOptions,
+  ): Promise<{ deleted: number }> {
+    return http.delete<{ deleted: number }>(
+      ENDPOINTS.NOTIFICATIONS.DEVICE_TOKEN,
+      { token },
       opts,
     );
   },

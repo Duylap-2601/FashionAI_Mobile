@@ -128,7 +128,7 @@ Thin generic layer over `api`. Every feature `*.api.ts` MUST use it instead of c
 |---|---|---|
 | `http.get<T>(url, opts)` | `T` | Reads |
 | `http.post/put/patch<T>(url, data, opts)` | `T` | Mutations |
-| `http.delete<T = void>(url, opts)` | `T` | Deletes |
+| `http.delete<T = void>(url, data?, opts?)` | `T` | Deletes (optional request body) |
 | `http.getPaged<T>(url, opts)` | `{ data: T, meta }` | Paginated lists (products, reviews, orders) |
 | `http.upload<T>(url, formData, { onProgress })` | `T` | `multipart/form-data` (try-on, stylist, reviews) |
 | `http.raw<T>(method, url, data, opts)` | `ApiSuccessResponse<T>` | Only when BE `code`/`message` is needed |
@@ -252,6 +252,7 @@ unwrap<T>(response) → T (throws ApiError on failure)
 ENV = {
   API_URL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api',
   SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+  EAS_PROJECT_ID: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
   OAUTH_REDIRECT_SCHEME: 'fashionai://auth',
 }
 ```

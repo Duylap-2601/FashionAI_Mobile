@@ -109,5 +109,6 @@ export const ENDPOINTS = {
     UNREAD_COUNT: '/notifications/unread-count',
     READ: (id: string | number) => `/notifications/${id}/read`,
     READ_ALL: '/notifications/read-all',
+    DEVICE_TOKEN: '/device-tokens',
   },
 } as const;

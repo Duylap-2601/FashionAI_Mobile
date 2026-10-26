@@ -68,6 +68,14 @@
       ],
       "expo-web-browser",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#5D1C34",
+          "defaultChannel": "default"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "FashionAI cần truy cập ảnh để phân tích phong cách của bạn.",

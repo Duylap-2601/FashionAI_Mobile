@@ -25,6 +25,7 @@ import { CartScreen } from "../features/cart/screens/CartScreen";
 import { CheckoutScreen } from "../features/checkout/screens/CheckoutScreen";
 import { PaymentScreen } from "../features/checkout/screens/PaymentScreen";
 import { NotificationsScreen } from "../features/notifications/screens/NotificationsScreen";
+import { PushNotificationsHandler } from "../features/notifications/hooks/use-push-notifications";
 import { ChatScreen } from "../features/chat/screens/ChatScreen";
 import { SubscriptionPlansScreen } from "../features/subscription/screens/SubscriptionPlansScreen";
 import { SubscriptionHistoryScreen } from "../features/subscription/screens/SubscriptionHistoryScreen";
@@ -273,6 +274,7 @@ export const RootNavigator: React.FC = () => {
           <Stack.Screen name="Auth" component={AuthStack} />
         )}
       </Stack.Navigator>
+      {isAuthenticated ? <PushNotificationsHandler /> : null}
     </NavigationContainer>
   );
 };

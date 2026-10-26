@@ -82,4 +82,50 @@ describe('notifications API', () => {
 
     await expect(notificationsApi.markAllRead()).resolves.toEqual({ updated: 5 });
   });
+
+  it('registerDeviceToken posts token and platform', async () => {
+    mock.onPost(ENDPOINTS.NOTIFICATIONS.DEVICE_TOKEN).reply((config) => {
+      expect(JSON.parse(config.data)).toEqual({
+        token: 'ExponentPushToken[x]',
+        platform: 'android',
+      });
+      return [
+        200,
+        {
+          success: true,
+          code: 'OK',
+          message: 'Thành công',
+          data: {
+            id: 'd1',
+            platform: 'android',
+            createdAt: '2026-10-26T00:00:00.000Z',
+            updatedAt: '2026-10-26T00:00:00.000Z',
+          },
+        },
+      ];
+    });
+
+    await expect(
+      notificationsApi.registerDeviceToken('ExponentPushToken[x]', 'android'),
+    ).resolves.toMatchObject({ id: 'd1', platform: 'android' });
+  });
+
+  it('unregisterDeviceToken sends the token in the DELETE body', async () => {
+    mock.onDelete(ENDPOINTS.NOTIFICATIONS.DEVICE_TOKEN).reply((config) => {
+      expect(JSON.parse(config.data)).toEqual({ token: 'ExponentPushToken[x]' });
+      return [
+        200,
+        {
+          success: true,
+          code: 'OK',
+          message: 'Thành công',
+          data: { deleted: 1 },
+        },
+      ];
+    });
+
+    await expect(
+      notificationsApi.unregisterDeviceToken('ExponentPushToken[x]'),
+    ).resolves.toEqual({ deleted: 1 });
+  });
 });
