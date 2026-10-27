@@ -45,10 +45,10 @@ function getPlatform(): DeviceTokenPlatform {
 }
 
 async function getExpoPushToken(): Promise<string | null> {
-  if (!Device.isDevice) {
-    // Simulator/emulator không nhận remote push.
-    return null;
-  }
+  // TEMP TEST ONLY: cho phép emulator đăng ký token, revert sau khi test.
+  // if (!Device.isDevice) {
+  //   return null;
+  // }
 
   const projectId = getProjectId();
   if (!projectId) {
