@@ -13,6 +13,7 @@ Core experience:
 - Shop office wear quickly on mobile.
 - Try before buying with photo/camera try-on.
 - Ask AI Stylist for complete outfits by occasion, weather, style, and budget.
+- Chat with AI Chatbot for product advice and style questions.
 - Move smoothly from discovery to product detail, cart, checkout, and order completion.
 
 Brand personality:
@@ -45,6 +46,8 @@ P11 Shop and Product Detail follow the deployed mobile viewport audit in `P11_VI
 
 P11 Home/Collections adds `editorialBackground` (#0E161C) and `editorialShade` (#000000) for the deployed editorial surround and image scrim. Existing defaults remain intact. `h-collection-hero` is 440px; `w-collection-card` is a fixed 280px, with 3:4 cards and 16px gaps/corners. `CollectionCover` uses the existing SVG dependency for the image gradient. Home and Collection Detail opt into the existing catalog cards. Native member/quota and feature access remain below Home's collection/product presentation. No season, sale claim or collection is fabricated when it is absent from the API.
 
+`theme.ts` also carries legacy aliases (`commerceSurface`, `surfaceMuted`, `textPrimary`, `textSecondary`, `textMuted`, `textInverse`, `border`, `borderDark`) still referenced by older StyleSheet code. New screens must not use these aliases — use the burgundy/cream tokens below.
+
 Rules:
 
 - Use NativeWind, `StyleSheet.create`, and imported theme constants where each is appropriate.
@@ -71,7 +74,7 @@ Target palette from references:
 | `colors.outline` | `#857276` | Disabled/secondary outlines. |
 | `colors.primary` | `#41051F` | Deep burgundy, pressed/strong brand surfaces. |
 | `colors.primaryContainer` | `#5D1C34` | Main CTA, active tab, badges, selected states. |
-| `colors.primarySoft` | `#FFD9E1` | Soft selected background and AI hint tint. |
+| `colors.primarySoft` | `#FFD9E1` | Soft selected background and AI hint tint; also used as focused tab icon background. |
 | `colors.primarySoftStrong` | `#FFB1C6` | Stronger pink tint, rare highlight. |
 | `colors.onPrimary` | `#FFFFFF` | Text/icons on burgundy. |
 | `colors.onSurface` | `#1B1C1B` | Primary text. |
@@ -135,6 +138,7 @@ Be Vietnam Pro `400`/`500`/`600`/`700` is embedded at build time by the `expo-fo
 - `StyleSheet` code: `fontFamily: FONT_FAMILY` from `src/constants/theme.ts`.
 - React Native has no global default font: a bare `<Text>` without one of the above renders in the system font. Headers and tab labels get the font from `src/navigation/navigation-theme.ts`.
 - Web is not covered (the font is native-only); it falls back to the system stack.
+- The `AppHeader` wordmark uses Playfair Display/serif (iOS/Android system serif) for the "StAele." logotype — this is intentional and does not require a new font build.
 
 | Role | Size | Line Height | Weight | Usage |
 | --- | --- | --- | --- | --- |
@@ -153,7 +157,7 @@ Be Vietnam Pro `400`/`500`/`600`/`700` is embedded at build time by the `expo-fo
 Typography rules:
 
 - User-facing copy is Vietnamese with proper diacritics.
-- Keep headers short: `Sản phẩm`, `Chi tiết`, `Thanh toán`, `Bộ lọc tìm kiếm`.
+- Keep headers short: `San pham`, `Chi tiet`, `Thanh toan`, `Bo loc tim kiem`.
 - Product/card titles use 1-2 lines max.
 - Avoid all-caps for long Vietnamese text; reserve uppercase for small labels and metadata.
 - Price text should use tabular alignment where available and stay visually dominant in commerce contexts.
@@ -199,27 +203,28 @@ Used for Home, Product Discovery, Try-On, AI Stylist, Profile tabs.
 
 Pattern:
 
-- Fixed/visible top header, `52-56px` content height plus safe area.
-- Fixed bottom tab bar, `56-64px` height plus safe area.
-- Content padding bottom large enough to avoid being covered by the bottom tab and sticky composer/action bars.
+- Shared `AppHeader` rendered by `MainTabs` (`src/components/common/AppHeader.tsx`): StAele. wordmark, Search icon, NotificationBell, Cart bag with badge.
+- Fixed bottom tab bar, `78px` height + safe area insets. Each tab: icon (38x38 pill, `primarySoft` when active), label (12.5px, `Be Vietnam Pro`, active dot indicator).
 - Background `surface`.
 
-Recommended bottom tabs:
+Tab bar visual rules (implemented in `src/navigation/main-tabs.tsx`):
 
-| Tab | Label | Intent |
-| --- | --- | --- |
-| Home | `Trang chủ` | Editorial home and quick entry. |
-| Shop | `Khám phá` or `Sản phẩm` | Catalog and search. |
-| Try-On | `Thử đồ` | Photo/camera fitting room. |
-| AI Stylist | `AI Stylist` | Tư vấn outfit theo dịp, phong cách, ngân sách. |
-| Profile | `Tài khoản` | Account, orders, measurements, subscription. |
+- Active icon: 38x38 rounded pill with `primarySoft` background + `primaryContainer` stroke, `strokeWidth 2.2`.
+- Inactive icon: transparent background + `onSurfaceVariant` stroke, `strokeWidth 1.8`.
+- Active label: `primaryContainer`, weight `700`.
+- Inactive label: `onSurfaceVariant`, weight `600`.
+- Active dot: 4x4 `primaryContainer` circle below label.
+- **Icon library**: `lucide-react-native` (Home, Package, Sparkles, WandSparkles, User icons for tabs).
 
-Bottom tab rules:
+Bottom tabs:
 
-- Active color: `primaryContainer`.
-- Inactive color: `secondary` or `onSurfaceVariant`.
-- Label size: `10-11`, medium/semibold depending on active state.
-- Hit target should be at least `44x44`.
+| Tab | Route | Label | Icon |
+| --- | --- | --- | --- |
+| Home | `HomeTab` | `Home` | `<Home>` |
+| Shop | `ShopTab` | `San Pham` | `<Package>` |
+| Try-On | `TryOnTab` | `Try-On` | `<Sparkles>` |
+| AI Stylist | `StylistTab` | `AI Stylist` | `<WandSparkles>` |
+| Profile | `ProfileTab` | `Profile` | `<User>` |
 
 ### Stack Shell
 
@@ -235,10 +240,10 @@ Pattern:
 
 Header patterns from references:
 
-- Commerce header: title left or centered, wishlist/cart/account actions on the right.
-- Try-On header: brand mark plus 3-mode segmented control below: `Ảnh`, `Camera`, `Stylist`.
-- Checkout header: back button, centered `Thanh toán`, no extra actions.
-- Product detail header: back, `Chi tiết`, wishlist/cart/account actions.
+- Commerce header (`AppHeader`): StAele. wordmark left, Search + NotificationBell + Cart right.
+- Try-On header (`TryOnHeader`): brand mark plus `Anh / Camera / Stylist` segmented control — implemented as `SegmentedControl` from `src/components/ui`.
+- Checkout header: back button, centered `Thanh toan`, no extra actions.
+- Product detail header: back, `Chi tiet san pham`, standard RN header.
 
 Header rules:
 
@@ -246,8 +251,34 @@ Header rules:
 - Background: `surface` with subtle transparency/backdrop equivalent where possible. In React Native, use solid `surface` if blur is unavailable.
 - Bottom border: `surfaceLine` or soft shadow, not both strongly.
 - Icon-only actions need accessible labels.
+- **Navigation config exception**: `tabBarStyle`, `headerStyle`, and similar React Navigation `screenOptions` only accept plain JS style objects (no `className`). In these configs, read values from `src/constants/theme.ts` (`COLORS.*`) and include a comment referencing `design-system.md Color System`. Do not use bare hex literals that bypass the theme.
 
 ## Core Components
+
+### AppHeader (`src/components/common/AppHeader.tsx`)
+
+Shared top-level header used by `MainTabs` and optionally individual screens via `onBack` prop.
+
+Specs:
+
+- Left: optional back button (ArrowLeft, `primaryContainer`), then StAele. wordmark (Playfair Display/serif, 26px bold, `primaryContainer`).
+- Right: Search (`<Search>` 22px), NotificationBell (feature component), Cart (`<ShoppingBag>` 22px) with badge showing count.
+- Badge: 20px min-width pill, `danger` background, `onPrimary` text, `Label MD`.
+- Touch targets: `h-11 w-11` (44px) rounded full.
+- Icon color: `onSurface`. Back arrow + wordmark: `primaryContainer`.
+- Background: `surface` with `surfaceLine` bottom border.
+
+### SegmentedControl (`src/components/ui/SegmentedControl.tsx`)
+
+Generic segmented control used in TryOnHeader and other features.
+
+Specs:
+
+- Track: `bg-surface-container`, `rounded-lg`, `p-xs`.
+- Active segment: `bg-primary-container`, `rounded-md`.
+- Inactive segment: transparent.
+- Label: `text-label-lg`. Active: `text-primary-foreground`. Inactive: `text-on-surface-variant`.
+- Min height: `min-h-11` (44px touch target).
 
 ### Search Bar
 
@@ -264,8 +295,8 @@ Specs:
 
 Copy examples:
 
-- `Tìm sản phẩm, phong cách, chất liệu...`
-- `Tìm sản phẩm, chất liệu, phong cách...`
+- `Tim san pham, phong cach, chat lieu...`
+- `Tim san pham, chat lieu, phong cach...`
 
 ### Chips And Segmented Controls
 
@@ -280,26 +311,32 @@ Chips:
 Segmented controls:
 
 - Track background: `surfaceContainer`.
-- Active segment: `surfaceLowest` or `primaryContainer` depending context.
-- Height: `36-40`.
+- Active segment: `primaryContainer` (default per `SegmentedControl` implementation).
+- Height: `36-40` (min-h-11 for touch).
 - Radius: `12`.
-- Use for `Ảnh / Camera / Stylist`, `1 Món / Set đồ`, `Ảnh của bạn / Người mẫu AI`.
+- Use for `Anh / Camera / Stylist`, `1 Mon / Set do`, `Anh cua ban / Nguoi mau AI`.
 
 ### Buttons
 
-Primary button:
+Primary button (from `src/components/ui/Button.tsx`):
 
-- Background: `primaryContainer`.
-- Text: `onPrimary`.
-- Height: `48-50` for major actions.
-- Radius: `14`.
-- Weight: `600`.
+- Background: `bg-primary-container` (variant `primary`).
+- Text: `text-primary-foreground`.
+- Height: `min-h-11` minimum; `48-50` for major actions with `size="lg"`.
+- Radius: `rounded-md`.
+- Weight: `font-bold`.
 
 Secondary button:
 
-- Background: `surfaceLowest` or transparent.
-- Border: `surfaceLine` or `outlineVariant`.
-- Text: `onSurface` or `primaryContainer`.
+- Background: `bg-secondary` (variant `secondary`).
+- Border: none (use `outline` variant for bordered).
+- Text: `text-primary-foreground`.
+- Height: `44-48`.
+
+Outline button:
+
+- Border: `border border-outline-variant`.
+- Text: `text-on-surface`.
 - Height: `44-48`.
 
 Icon button:
@@ -311,8 +348,8 @@ Icon button:
 
 Danger button:
 
-- Use `danger` sparingly for destructive confirmations.
-- In lists, delete/remove can be an icon action with danger hover/pressed state.
+- Use `danger` variant sparingly for destructive confirmations.
+- In lists, delete/remove can be an icon action with danger pressed state.
 
 ### Cards And Product Media
 
@@ -327,7 +364,7 @@ Card rules:
 
 - Product grid cards should feel light: no heavy container, image plus text below.
 - Image corners: `12-18` depending prominence.
-- Use overlays only for key states: `Bán chạy`, `Mới`, `Tạm hết hàng`, `Thử đồ`.
+- Use overlays only for key states: `Ban chay`, `Moi`, `Tam het hang`, `Thu do`.
 - Product title: `13-14`, medium, 1-2 lines.
 - Product meta: `12`, secondary, 1 line.
 - Price: `15-18`, semibold/bold, burgundy for emphasis.
@@ -364,10 +401,10 @@ Specs:
 
 Copy examples:
 
-- `Đã thêm vào giỏ hàng`
-- `Đã áp dụng 2 bộ lọc`
-- `Đã lưu vào Tủ đồ`
-- `Đã cập nhật phối trang phục AI`
+- `Da them vao gio hang`
+- `Da ap dung 2 bo loc`
+- `Da luu vao Tu do`
+- `Da cap nhat phoi trang phuc AI`
 
 ## Screen Patterns
 
@@ -375,15 +412,28 @@ Copy examples:
 
 Required sections:
 
-- Compact header with FashionAI wordmark and commerce actions.
+- `AppHeader` (shared).
 - Greeting/search block.
 - Editorial collection hero with image, gradient overlay, title, subtitle, CTA.
 - Horizontal category cards.
-- Try-before-buy AI promo.
-- Personalized 2-column product grid.
+- Try-before-buy AI promo (`AiTryOnFeatureBanner`).
+- Personalized 2-column product grid (`HomeFeaturedProducts`).
 - AI Stylist promo.
-- New arrivals.
-- Style guide/editorial content.
+- New arrivals (`HomeProductSection`).
+- Editorial lookbook (`EditorialLookbook`).
+
+Feature components in `src/features/home/components/`:
+
+| Component | Purpose |
+| --- | --- |
+| `AnnouncementBar` | Top announcement strip |
+| `HomeHeroBanner` | Collection hero image with gradient |
+| `AiTryOnFeatureBanner` | Try-on promo section |
+| `HomeFeaturedProducts` | Personalized 2-column product grid |
+| `HomeProductSection` | New arrivals / themed product section |
+| `EditorialLookbook` | Editorial style guide content |
+| `NewsletterBar` | Newsletter sign-up bar |
+| `SaleBannerText` | Promotional sale text |
 
 Rules:
 
@@ -395,7 +445,7 @@ Rules:
 
 Required sections:
 
-- Sticky compact header with title `Sản phẩm` and actions.
+- `AppHeader` (shared via MainTabs).
 - Search bar.
 - Horizontal category chips.
 - Toolbar with product count, filter button with badge, sort button.
@@ -408,8 +458,8 @@ Product card rules:
 - Two columns on phone.
 - Horizontal gap around `12`; vertical gap around `24`.
 - Image ratio `3:4`.
-- Show `Thử đồ` affordance on supported products without relying on hover.
-- Out-of-stock cards can lower opacity and show `Tạm hết hàng` plus `Báo khi có hàng`.
+- Show `Thu do` affordance on supported products without relying on hover.
+- Out-of-stock cards can lower opacity and show `Tam het hang` plus `Bao khi co hang`.
 
 ### Product Detail
 
@@ -424,7 +474,7 @@ Required sections:
 - AI Try-On banner.
 - Accordions for detail/material/shipping.
 - Stylist recommendation carousel.
-- Sticky bottom bar with `Thử Đồ Ảo` and `Thêm Vào Giỏ`.
+- Sticky bottom bar with `Thu Do Ao` and `Them Vao Gio`.
 
 Rules:
 
@@ -432,35 +482,35 @@ Rules:
 - AI fit confidence must not be fake if unavailable.
 - Product data and checkout totals must come from backend or validated product state.
 
-### Photo Try-On
+### Photo Try-On (`TryOnScreen`)
 
 Required sections:
 
-- Two-level try-on header with brand/actions and `Ảnh / Camera / Stylist` segmented nav.
-- Source toggle: `Ảnh của bạn` and `Người mẫu AI`.
-- Large `3:4` preview viewport.
-- Processing overlay: spinner, `AI đang khớp trang phục...`, helper copy.
-- Compare toggle: `Ảnh gốc` and `Kết quả`.
-- Selected garment row and `1 Món / Set đồ` control.
-- Result CTA group: `Thử món khác`, `Thêm vào giỏ`; before result, use one primary `Bắt đầu thử đồ`.
+- `TryOnHeader` with `Anh / Camera` segmented control (navigates between TryOnHome and TryOnLive).
+- Source toggle: `Anh cua ban` and `Nguoi mau AI`.
+- Large `3:4` preview viewport (`TryOnWorkspace`).
+- Processing overlay: spinner, `AI dang khop trang phuc...`, helper copy.
+- Compare toggle (`ComparisonSlider`): `Anh goc` and `Ket qua`.
+- Selected garment row (`GarmentProductCard`) and `1 Mon / Set do` control.
+- Result CTA group: `Thu mon khac`, `Them vao gio`; before result, use one primary `Bat dau thu do`.
 - Privacy reassurance text.
 
 Rules:
 
 - Never claim photos are processed locally unless the implementation is actually local.
-- Use precise privacy copy such as `Ảnh của bạn chỉ dùng để tạo kết quả thử đồ và được bảo mật`.
+- Use precise privacy copy such as `Anh cua ban chi dung de tao ket qua thu do va duoc bao mat`.
 - Disable duplicate try-on requests while processing.
 
-### Camera Try-On
+### Camera / Live Try-On (`TryOnLiveScreen`)
 
 Required sections:
 
-- Camera-dominant viewport taking roughly half the screen height.
+- Camera-dominant viewport (`expo-camera`) taking roughly half the screen height.
 - Live status pill and camera controls.
 - Body alignment guide with state: ready, aligning, not detected.
-- Mode toggle: `1 Món` and `Set đồ`.
-- Selected garment/outfit row.
-- Primary CTA: `Bắt đầu thử đồ`, loading state, active stop state.
+- Mode toggle: `1 Mon` and `Set do`.
+- Selected garment/outfit row (`ProductPickerSheet`).
+- Primary CTA: `Bat dau thu do`, loading state, active stop state.
 - Session timer if real session limits exist.
 - Privacy reassurance.
 
@@ -469,28 +519,54 @@ Rules:
 - Camera UI must prioritize ergonomics and visibility over decoration.
 - Alignment state must reflect actual detection state if integrated.
 - Do not show fake live processing, timer, or detection if unavailable.
+- Use `LiveTryOnContent` component for the live session UI.
 
-### AI Stylist
+### AI Stylist (`StylistScreen`)
 
 Required sections:
 
-- Header and segmented nav shared with Try-On.
+- Header via RootStack (title `AI Stylist`).
 - Assistant identity and welcome prompt.
-- Quick occasion prompt chips.
-- User message bubble.
-- AI response with explanation.
-- Lookbook hero card.
+- Form: occasion, style, budget, season + optional product picker (`StylistProductPickerModal`).
+- Submit CTA.
+- Result navigates to `StylistResult` screen.
+
+`StylistResultScreen` required sections:
+
+- `StylistResultContent` with lookbook hero card.
 - Outfit product breakdown.
 - Set total and actions: save, try set, add set.
 - Rationale accordion.
-- Follow-up chips.
-- Sticky composer with attach menu.
+- Follow-up navigation.
+
+`StylistHistoryScreen` required sections:
+
+- List of `StylistHistoryCard` items.
+- Navigate to `StylistResult` on tap.
 
 Rules:
 
 - AI Stylist copy should sound like a helpful Vietnamese stylist.
 - Outfit recommendations must clearly show product availability, color, price, and total.
 - Do not invent product availability, savings, or fit metrics if the backend does not return them.
+
+### AI Chatbot (`ChatScreen`)
+
+Required sections:
+
+- Header with session controls and `SessionSheet` (past sessions list).
+- Scrollable message list: `ChatMessage` bubbles for user and assistant.
+- `FormattedAssistantText` for streaming/formatted AI responses.
+- `QuickChips` for suggested prompts.
+- `ChatComposer` sticky at bottom (text input + send + optional product context).
+- Streaming indicator while AI token stream is active.
+
+Rules:
+
+- Chat messages stream via Socket.IO `/chat` namespace (`chat:token` events).
+- Product context can be pre-loaded from `RootStack Chat` params (`productId`).
+- `FloatingChatBubble` (in `MainTabs`) gives quick access from any tab.
+- Session list is paginated; use `use-chat-sessions.ts`.
 
 ### Cart
 
@@ -499,7 +575,7 @@ Required sections:
 - Stack header with back action and item count.
 - Product rows with image, name, color, price, quantity stepper, remove action, save action.
 - Voucher/privilege row.
-- Cross-sell carousel: `Hoàn thiện set đồ`.
+- Cross-sell carousel: `Hoan thien set do`.
 - Order summary.
 - Sticky checkout bar.
 - Empty state.
@@ -515,7 +591,7 @@ Rules:
 Required sections:
 
 - Focused stack header.
-- Breadcrumb/progress: `Giỏ hàng · Thanh toán · Hoàn tất`.
+- Breadcrumb/progress: `Gio hang · Thanh toan · Hoan tat`.
 - Delivery address section.
 - Product summary section.
 - Shipping method section.
@@ -530,16 +606,78 @@ Rules:
 - Do not submit frontend-resolved `shippingFee` or `discountAmount` as source of truth.
 - Payment security copy must be accurate to the actual payment flow.
 
+### Orders (`OrdersScreen`, `OrderDetailScreen`, `OrderSuccessScreen`)
+
+Required sections:
+
+- Orders list with status chips (`PENDING`, `CONFIRMED`, `SHIPPING`, `DELIVERED`, etc.).
+- Order detail: address, items, shipping, payment, tracking, issue reporting.
+- Order success: order code, total, next actions.
+
+### Profile Stack Screens
+
+| Screen | File | Contents |
+| --- | --- | --- |
+| ProfileScreen | `src/features/profile/screens/ProfileScreen.tsx` | Avatar, user info, quota summary, menu links, logout |
+| AddressesScreen | `src/features/profile/screens/AddressesScreen.tsx` | Address book with `AddressForm` |
+| ChangePasswordScreen | `src/features/auth/screens/ChangePasswordScreen.tsx` | Current + new password |
+| MeasurementsScreen | `src/features/measurements/screens/MeasurementsScreen.tsx` | Body measurements with `BodyDiagram` |
+| PolicyScreen | `src/features/profile/screens/PolicyScreen.tsx` | Privacy, terms, return policy |
+
+### Notifications (`NotificationsScreen`)
+
+Required sections:
+
+- List of notifications (ORDER_STATUS, PAYMENT, PROMOTION, SYSTEM, REVIEW types).
+- Unread indicator.
+- Mark all read action.
+
+### Rack / Wardrobe (`RackScreen`)
+
+Required sections:
+
+- Grid of saved garment items.
+- Remove and clear actions.
+- Navigate to product detail on tap.
+
+### Subscription (`SubscriptionPlansScreen`, `SubscriptionHistoryScreen`)
+
+Required sections:
+
+- Plan cards (FREE, MEMBER, VIP) with quota limits, price, CTA.
+- Subscription history list with status.
+- Cancel / resume actions.
+
 ## Iconography
 
-The HTML references use Material Symbols. React Native cannot use those web fonts directly unless a native icon strategy is added.
+The app uses **`lucide-react-native`** as the primary icon library for all new code. Match semantic intent from Lucide's icon set:
 
-Guidance:
+| Intent | Lucide icon |
+| --- | --- |
+| Home | `Home` |
+| Shop / Products | `Package` |
+| Try-On / Sparkles | `Sparkles` |
+| AI Stylist / Wand | `WandSparkles` |
+| Profile / Person | `User` |
+| Search | `Search` |
+| Cart / Bag | `ShoppingBag` |
+| Back arrow | `ArrowLeft` |
+| Notification bell | `Bell` |
+| Close / X | `X` |
+| Filter | `SlidersHorizontal` |
+| Chevron right | `ChevronRight` |
+| Clock / history | `Clock` |
+| Camera | `Camera` |
+| AI / sparkle | `Sparkles` |
 
-- Prefer a single native icon system if icons are introduced later.
-- Match semantic intent rather than exact Material glyphs.
-- Common icon meanings: search, favorite, shopping bag, person, grid, home, checkroom/wardrobe, auto-awesome/sparkles, tune/filter, close, chevron, camera, lock.
-- Until an icon library exists, keep icon-like UI minimal and avoid inconsistent emoji usage except where intentionally approved.
+`@expo/vector-icons` (Ionicons) is still present as a dependency but limited to the `Input.tsx` password eye toggle. New code must use `lucide-react-native`.
+
+Rules:
+
+- All icon-only controls need `accessibilityLabel`.
+- Touch targets for icon buttons: `h-11 w-11` (44px) minimum.
+- Prefer `size={22}` for header icons, `size={24-26}` for tab icons, `size={20}` for inline icons.
+- `strokeWidth`: use `2.2` for active/primary states, `1.8` for inactive/secondary states.
 
 ## Motion And Interaction
 
@@ -571,30 +709,30 @@ Required:
 
 Use these labels consistently:
 
-- `Trang chủ`
-- `Khám phá` or `Sản phẩm`
-- `Thử đồ`
-- `Tủ đồ`
-- `Tài khoản`
-- `Ảnh`
+- `Trang chu`
+- `Kham pha` or `San pham`
+- `Thu do`
+- `Tu do`
+- `Tai khoan`
+- `Anh`
 - `Camera`
 - `Stylist`
 - `AI Stylist`
-- `Thêm vào giỏ`
-- `Thêm cả set`
-- `Thử món khác`
-- `Bắt đầu thử đồ`
-- `Bộ lọc tìm kiếm`
-- `Sắp xếp theo`
-- `Thanh toán`
-- `Đặt hàng`
+- `Them vao gio`
+- `Them ca set`
+- `Thu mon khac`
+- `Bat dau thu do`
+- `Bo loc tim kiem`
+- `Sap xep theo`
+- `Thanh toan`
+- `Dat hang`
 
 Avoid:
 
 - Backend terms such as `endpoint`, `payload`, `fallback`, `mock`, `public endpoint`.
 - Raw technical errors like `Axios error` or `500 internal server error`.
 - English labels for normal navigation, except established feature names such as `AI Stylist`.
-- Claims such as `xử lý trên thiết bị` unless implementation proves local processing.
+- Claims such as `xu ly tren thiet bi` unless implementation proves local processing.
 
 ## Implementation Checklist
 
@@ -602,8 +740,9 @@ Before implementing a mobile screen:
 
 - Update or confirm `src/constants/theme.ts` includes the burgundy/cream token set.
 - Build with gluestack components from `src/components/ui` and React Native primitives styled with NativeWind classes (see *NativeWind Tokens*).
-- Reuse `src/components/ui/Button`, `Input`, and `Card` when suitable until they are replaced by gluestack versions.
-- Use `expo-image` or React Native image primitives consistently for product/media images.
+- Reuse `src/components/ui/Button`, `Input`, `Card`, and `SegmentedControl` when suitable.
+- Use `expo-image` for product/media images.
+- Use `lucide-react-native` for all icons; avoid adding new Ionicons usage.
 - Ensure sticky bottom bars account for safe area.
 - Ensure important mobile actions do not depend on hover.
 - Keep backend-owned pricing authoritative in cart/checkout.
