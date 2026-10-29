@@ -21,6 +21,19 @@ export const COLORS = {
   editorialBackground: "#0E161C",
   editorialShade: "#000000",
 
+  // Atelier Paper – Saigon Editorial palette (aligned with FE)
+  paper: "#EFE9E1",
+  ivory: "#FDF8F6",
+  obsidian: "#11100F",
+  oxblood: "#5D1C34",
+  brass: "#A67D44",
+  brassInk: "#7C5722",
+  taupe: "#CDBCAB",
+  sage: "#899481",
+  sageInk: "#59654F",
+  muted: "#6B625A",
+  line: "#CDBCAB",
+
   // FashionAI commerce palette. Existing aliases above remain unchanged so
   // feature work can migrate without restyling unrelated screens.
   primary: "#41051F",
@@ -97,6 +110,8 @@ export const FONT_WEIGHT = {
 } as const;
 
 export const BORDER_RADIUS = {
+  none: 0,
+  subtle: 2,
   sm: 6,
   md: 10,
   lg: 14,

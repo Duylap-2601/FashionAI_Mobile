@@ -7,6 +7,7 @@ export interface IProductImage {
   id: string;
   productId: string;
   imageUrl: string;
+  colorName: string | null;
   isMain: boolean;
   createdAt: string;
 }
@@ -59,6 +60,7 @@ export interface BackendProductImage {
   id: string;
   productId: string;
   imageUrl: string;
+  colorName: string | null;
   isMain: boolean;
   createdAt: string;
 }

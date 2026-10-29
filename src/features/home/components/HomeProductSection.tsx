@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, Pressable, ScrollView, useWindowDimensions } from 'react-native';
-import { ArrowRight, Sparkles } from 'lucide-react-native';
-import { COLORS, SPACING } from '@/constants/theme';
+import { ArrowUpRight } from 'lucide-react-native';
+import { SPACING } from '@/constants/theme';
 import { ProductCard } from '@/features/products/components/ProductCard';
 import { ProductGridSkeleton } from '@/features/products/components/ProductGridSkeleton';
+import { LandingSectionHeading } from './LandingSectionHeading';
 import type { IProduct } from '@/features/products/types/product';
 
 interface HomeProductSectionProps {
+  chapter?: string;
   badge: string;
   title: string;
   subtitle?: string;
@@ -28,6 +30,7 @@ const CATEGORY_TABS = [
 ];
 
 export function HomeProductSection({
+  chapter = '03',
   badge,
   title,
   subtitle,
@@ -40,7 +43,12 @@ export function HomeProductSection({
   onPressViewAll,
 }: HomeProductSectionProps) {
   const { width } = useWindowDimensions();
-  const cardWidth = Math.max(1, width < 420 ? width - SPACING.lg * 2 : (width - SPACING.lg * 2 - SPACING.catalogGap) / 2);
+  const cardWidth = Math.max(
+    1,
+    width < 420
+      ? (width - SPACING.lg * 2 - 12) / 2
+      : (width - SPACING.lg * 2 - SPACING.catalogGap) / 2,
+  );
 
   const [activeCategoryKey, setActiveCategoryKey] = useState('ALL');
 
@@ -59,47 +67,38 @@ export function HomeProductSection({
   }, [products, activeCategoryKey, showCategories]);
 
   return (
-    <View className="border-b border-catalog-line bg-surface-lowest py-14">
-      {/* Header */}
-      <View className="mb-xxxl gap-md px-lg">
-        <View className="flex-row items-center gap-xs self-start">
-          <Sparkles size={12} color={COLORS.primaryContainer} />
-          <Text className="font-sans text-label-md font-bold uppercase tracking-widest text-primary-container">
-            {badge}
-          </Text>
-        </View>
-
-        <View className="flex-row items-center justify-between">
-          <Text
-            numberOfLines={2}
-            className="flex-1 font-sans text-headline-lg font-bold uppercase tracking-tight text-on-surface-strong"
-          >
-            {title}
-          </Text>
-        </View>
-
-        {subtitle ? (
-          <Text
-            numberOfLines={2}
-            className="font-sans text-body-md leading-relaxed text-catalog-muted-text"
-          >
-            {subtitle}
-          </Text>
-        ) : null}
-        {products.length > 0 ? (
-          <Pressable accessibilityRole="button" onPress={onPressViewAll} className="min-h-11 flex-row items-center gap-sm self-start active:opacity-70">
-            <Text className="font-sans text-body-md font-semibold text-primary-container">Xem tất cả</Text>
-            <ArrowRight size={16} color={COLORS.primaryContainer} />
-          </Pressable>
-        ) : null}
+    <View className="bg-landing-ivory py-16">
+      {/* Chapter 03 Section Heading */}
+      <View className="px-lg">
+        <LandingSectionHeading
+          chapter={chapter}
+          eyebrow={badge}
+          title={title}
+          description={subtitle}
+          action={
+            products.length > 0 ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={onPressViewAll}
+                className="flex-row items-center gap-1.5 active:opacity-75"
+              >
+                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-oxblood">
+                  Xem tất cả
+                </Text>
+                <ArrowUpRight size={14} color="#5D1C34" />
+              </Pressable>
+            ) : null
+          }
+        />
       </View>
 
-      {/* Category Tabs (Horizontal Scrollable) */}
+      {/* Category Tabs: Underline Text Tabs */}
       {showCategories && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-sm px-lg pb-xxxl"
+          contentContainerClassName="gap-6 px-lg pb-1"
+          className="mt-8 mb-6 border-b border-landing-line/50"
         >
           {CATEGORY_TABS.map((tab) => {
             const isActive = tab.key === activeCategoryKey;
@@ -107,17 +106,17 @@ export function HomeProductSection({
               <Pressable
                 key={tab.key}
                 onPress={() => setActiveCategoryKey(tab.key)}
-                accessibilityRole="button"
+                accessibilityRole="tab"
                 accessibilityState={{ selected: isActive }}
-                className={`min-h-11 px-lg rounded-full items-center justify-center border ${
-                  isActive
-                    ? 'bg-primary-container border-primary-container'
-                    : 'bg-catalog-muted border-catalog-line'
+                className={`min-h-11 justify-center pb-2.5 ${
+                  isActive ? 'border-b-2 border-landing-oxblood' : ''
                 }`}
               >
                 <Text
-                  className={`font-sans text-body-sm font-semibold ${
-                    isActive ? 'text-on-primary font-bold' : 'text-on-surface-variant'
+                  className={`font-sans text-[11px] uppercase tracking-[0.16em] ${
+                    isActive
+                      ? 'font-bold text-landing-oxblood'
+                      : 'font-normal text-landing-muted'
                   }`}
                 >
                   {tab.label}
@@ -130,32 +129,34 @@ export function HomeProductSection({
 
       {/* Grid Content */}
       {isLoading && products.length === 0 ? (
-        <View className="px-4">
+        <View className="mt-6 px-lg">
           <ProductGridSkeleton presentation="catalog" cardWidth={cardWidth} />
         </View>
       ) : isError && products.length === 0 ? (
-        <View className="px-4 py-8 items-center justify-center">
-          <Text className="mb-md font-sans text-body-md text-catalog-muted-text">
+        <View className="mt-6 items-center justify-center px-lg py-8">
+          <Text className="mb-md font-sans text-body-md text-landing-muted">
             Chưa thể tải sản phẩm. Vui lòng thử lại.
           </Text>
           {onRetry && (
             <Pressable
               onPress={onRetry}
               accessibilityRole="button"
-              className="min-h-11 items-center justify-center rounded-xl bg-primary-container px-lg"
+              className="min-h-11 items-center justify-center rounded-subtle bg-landing-oxblood px-lg active:opacity-80"
             >
-              <Text className="font-sans text-body-sm font-bold text-on-primary">Thử lại</Text>
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-wider text-landing-paper">
+                Thử lại
+              </Text>
             </Pressable>
           )}
         </View>
       ) : filteredProducts.length === 0 ? (
-        <View className="mx-4 py-10 rounded-2xl bg-neutral-50 border border-dashed border-neutral-200 items-center justify-center px-4">
-          <Text className="text-center font-sans text-body-md text-catalog-muted-text">
-            Không tìm thấy sản phẩm trong danh mục này.
+        <View className="mx-lg mt-6 items-center justify-center rounded-subtle border border-landing-line/60 bg-landing-paper p-8">
+          <Text className="text-center font-sans text-body-sm text-landing-muted">
+            Không tìm thấy sản phẩm phù hợp trong danh mục này.
           </Text>
         </View>
       ) : (
-        <View className="flex-row flex-wrap gap-x-catalog-gap gap-y-4 px-4">
+        <View className="mt-4 flex-row flex-wrap justify-between px-lg gap-y-4">
           {filteredProducts.map((product) => (
             <ProductCard
               key={product.id}
@@ -167,7 +168,6 @@ export function HomeProductSection({
           ))}
         </View>
       )}
-
     </View>
   );
 }

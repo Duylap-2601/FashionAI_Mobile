@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Image } from 'expo-image';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   BORDER_RADIUS,
   COLORS,
@@ -34,7 +34,13 @@ export function ProductCard({
   const showOriginalPrice =
     product.originalPrice !== null && product.originalPrice > product.price;
 
-  // Shop opts into deployed styling; collection cards retain their presentation.
+  const discountPercent = showOriginalPrice
+    ? Math.round(((product.originalPrice! - product.price) / product.originalPrice!) * 100)
+    : 0;
+
+  const fontFamilyDisplay = Platform.OS === 'ios' ? 'Playfair Display' : 'serif';
+
+  // Shop and Home opt into Atelier Paper catalog styling
   if (presentation === 'catalog') {
     // The two 1px card borders are excluded from the image's measured width.
     const mediaWidth = Math.max(1, cardWidth - 2);
@@ -42,68 +48,94 @@ export function ProductCard({
       <View style={{ width: cardWidth }}>
         <Card
           variant="outlined"
-          className="overflow-hidden !rounded-catalog-card !border-catalog-line !p-0"
+          className="overflow-hidden !rounded-subtle !border-landing-line/40 !p-0 bg-landing-paper"
         >
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`${product.name}, ${formatProductPrice(product.price)}`}
             onPress={() => onPress(product.id)}
-            className="w-full active:opacity-70"
+            className="w-full active:opacity-85"
           >
-            {imageUrl && !imageFailed ? (
-              <View className="aspect-[3/4] w-full bg-catalog-muted">
+            <View className="relative aspect-[3/4] w-full bg-landing-ivory">
+              {imageUrl && !imageFailed ? (
                 <Image
                   source={{ uri: imageUrl }}
                   contentFit="cover"
+                  contentPosition="top"
                   transition={150}
                   style={{ width: mediaWidth, height: mediaWidth / 0.75 }}
                   onError={() => setFailedImageUrl(imageUrl)}
                 />
+              ) : (
+                <View className="aspect-[3/4] w-full items-center justify-center gap-xs bg-landing-ivory">
+                  <Text className="font-sans text-headline-md text-landing-muted">
+                    ◇
+                  </Text>
+                  <Text className="font-sans text-body-sm text-landing-muted">
+                    Chưa có ảnh
+                  </Text>
+                </View>
+              )}
+
+              {/* Badges top-left */}
+              <View className="absolute left-2 top-2 z-10 flex-row flex-wrap gap-1">
+                {showOriginalPrice && discountPercent > 0 ? (
+                  <View className="rounded-subtle bg-landing-oxblood px-1.5 py-0.5">
+                    <Text className="font-mono text-[10px] font-bold text-landing-paper">
+                      -{discountPercent}%
+                    </Text>
+                  </View>
+                ) : (product as any).isNew ? (
+                  <View className="rounded-subtle bg-landing-sage px-1.5 py-0.5">
+                    <Text className="font-sans text-[10px] font-bold text-landing-obsidian">
+                      Mới
+                    </Text>
+                  </View>
+                ) : null}
               </View>
-            ) : (
-              <View className="aspect-[3/4] w-full items-center justify-center gap-xs bg-catalog-muted">
-                <Text className="font-sans text-headline-md text-catalog-muted-text">
-                  ◇
-                </Text>
-                <Text className="font-sans text-body-sm text-catalog-muted-text">
-                  Chưa có ảnh
-                </Text>
-              </View>
-            )}
-            <View className="gap-xs p-sm">
+            </View>
+
+            <View className="gap-1 p-2.5">
               {product.brand ? (
                 <Text
                   numberOfLines={1}
-                  className="font-sans text-2xs uppercase tracking-wide text-catalog-muted-text"
+                  className="font-sans text-2xs uppercase tracking-widest text-landing-muted"
                 >
                   {product.brand}
                 </Text>
               ) : null}
               <Text
                 numberOfLines={2}
-                className="min-h-8 font-sans text-body-sm font-medium text-primary-container"
+                style={{
+                  fontFamily: fontFamilyDisplay,
+                  fontSize: 14,
+                  lineHeight: 18,
+                  color: '#11100F',
+                  fontWeight: '600',
+                  minHeight: 36,
+                }}
               >
                 {product.name}
               </Text>
-              <View className="flex-row flex-wrap items-baseline gap-xs">
-                <Text className="font-sans text-price-sm font-bold tabular-nums text-primary-container">
+              <View className="mt-0.5 flex-row flex-wrap items-baseline gap-1.5">
+                <Text className="font-mono text-body-sm font-bold tabular-nums text-landing-oxblood">
                   {formatProductPrice(product.price)}
                 </Text>
                 {showOriginalPrice ? (
-                  <Text className="font-sans text-2xs tabular-nums text-catalog-muted-text line-through">
+                  <Text className="font-mono text-2xs tabular-nums text-landing-muted line-through">
                     {formatProductPrice(product.originalPrice!)}
                   </Text>
                 ) : null}
               </View>
               {product.reviewCount > 0 ? (
-                <View className="flex-row items-center gap-xs">
+                <View className="flex-row items-center gap-1">
                   <Text
                     accessibilityElementsHidden
-                    className="text-body-sm text-tertiary"
+                    className="text-[11px] text-landing-brass"
                   >
                     ★
                   </Text>
-                  <Text className="font-sans text-body-sm tabular-nums text-catalog-muted-text">
+                  <Text className="font-sans text-[11px] tabular-nums text-landing-muted">
                     {product.avgRating.toFixed(1)} ({product.reviewCount})
                   </Text>
                 </View>
@@ -154,14 +186,16 @@ export function ProductCard({
             ) : null}
           </View>
 
-          <View style={styles.ratingRow}>
-            <Text accessibilityElementsHidden style={styles.star}>
-              ★
-            </Text>
-            <Text style={styles.rating}>
-              {product.avgRating.toFixed(1)} ({product.reviewCount})
-            </Text>
-          </View>
+          {product.reviewCount > 0 ? (
+            <View style={styles.ratingRow}>
+              <Text accessibilityElementsHidden style={styles.star}>
+                ★
+              </Text>
+              <Text style={styles.rating}>
+                {product.avgRating.toFixed(1)} ({product.reviewCount})
+              </Text>
+            </View>
+          ) : null}
         </View>
       </Pressable>
     </View>
@@ -182,7 +216,7 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 0.78,
     overflow: 'hidden',
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.subtle,
     backgroundColor: COLORS.surfaceLow,
     borderWidth: 1,
     borderColor: COLORS.surfaceLine,

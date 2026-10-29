@@ -8,10 +8,10 @@ interface AnnouncementBarProps {
 }
 
 const ANNOUNCEMENT_MESSAGES = [
-  { text: '✨ StAle. — CHUẨN DÁNG TỪ ĐẦU, ĐẸP TỪNG ĐƯỜNG MAY', target: 'shop' },
-  { text: '🌟 TRẢI NGHIỆM THỬ ĐỒ ẢO AI MIỄN PHÍ — THẤY KẾT QUẢ TRƯỚC KHI MUA', target: 'try-on' },
-  { text: '🚚 FREESHIP TOÀN QUỐC CHO MỌI ĐƠN HÀNG TỪ 500.000₫', target: 'shop' },
-  { text: '👔 BỘ SƯU TẬP MỚI 2026 ĐÃ CHÍNH THỨC RA MẮT — XEM NGAY', target: 'shop' },
+  { text: 'StAie. Chuẩn dáng từ đầu, đẹp từng đường may', target: 'shop' },
+  { text: 'Thử đồ AI miễn phí, xem kết quả trước khi mua', target: 'try-on' },
+  { text: 'Freeship toàn quốc cho đơn hàng từ 500.000₫', target: 'shop' },
+  { text: 'Bộ sưu tập mới 2026 đã chính thức ra mắt', target: 'shop' },
 ];
 
 export function AnnouncementBar({ onPressTryOn, onPressShop }: AnnouncementBarProps) {
@@ -20,7 +20,7 @@ export function AnnouncementBar({ onPressTryOn, onPressShop }: AnnouncementBarPr
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentIdx((prev) => (prev + 1) % ANNOUNCEMENT_MESSAGES.length);
-    }, 4500);
+    }, 5000);
     return () => clearInterval(timer);
   }, []);
 
@@ -43,23 +43,27 @@ export function AnnouncementBar({ onPressTryOn, onPressShop }: AnnouncementBarPr
   };
 
   return (
-    <View className="w-full bg-[#15434e] h-10 flex-row items-center justify-between px-3 border-b border-[#1b505c]">
+    <View
+      accessibilityRole="header"
+      className="z-50 h-10 w-full flex-row items-center justify-between border-b border-landing-paper/10 bg-landing-obsidian px-2"
+    >
       <Pressable
         onPress={handlePrev}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        className="w-7 h-7 items-center justify-center rounded-full active:bg-white/10"
+        className="h-8 w-8 items-center justify-center rounded-full active:bg-landing-paper/10"
         accessibilityLabel="Thông báo trước"
       >
-        <ChevronLeft size={16} color="rgba(255, 255, 255, 0.75)" />
+        <ChevronLeft size={14} color="rgba(239, 233, 225, 0.45)" />
       </Pressable>
 
       <Pressable
         onPress={handlePress}
-        className="flex-1 mx-2 items-center justify-center active:opacity-80"
+        className="mx-2 flex-1 flex-row items-center justify-center active:opacity-80"
       >
+        <View className="mr-2 h-1.5 w-1.5 rounded-full bg-landing-brass" />
         <Text
           numberOfLines={1}
-          className="text-white text-[11px] font-semibold tracking-wider text-center"
+          className="text-center font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-paper/85"
         >
           {current.text}
         </Text>
@@ -68,10 +72,10 @@ export function AnnouncementBar({ onPressTryOn, onPressShop }: AnnouncementBarPr
       <Pressable
         onPress={handleNext}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        className="w-7 h-7 items-center justify-center rounded-full active:bg-white/10"
+        className="h-8 w-8 items-center justify-center rounded-full active:bg-landing-paper/10"
         accessibilityLabel="Thông báo tiếp theo"
       >
-        <ChevronRight size={16} color="rgba(255, 255, 255, 0.75)" />
+        <ChevronRight size={14} color="rgba(239, 233, 225, 0.45)" />
       </Pressable>
     </View>
   );

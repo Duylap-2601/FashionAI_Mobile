@@ -65,6 +65,18 @@ const tokenMap: Record<string, ColorKey> = {
   '--success': 'success',
   '--warning': 'warning',
   '--danger': 'danger',
+  // Atelier Paper – Saigon Editorial tokens
+  '--paper': 'paper',
+  '--ivory': 'ivory',
+  '--obsidian': 'obsidian',
+  '--oxblood': 'oxblood',
+  '--brass': 'brass',
+  '--brass-ink': 'brassInk',
+  '--taupe': 'taupe',
+  '--sage': 'sage',
+  '--sage-ink': 'sageInk',
+  '--landing-muted': 'muted',
+  '--landing-line': 'line',
 };
 
 // The design system defines a light palette only (app.json pins userInterfaceStyle: light).

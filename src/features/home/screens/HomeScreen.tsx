@@ -5,6 +5,7 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  Pressable,
 } from 'react-native';
 import {
   CompositeNavigationProp,
@@ -12,6 +13,7 @@ import {
 } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ArrowUpRight } from 'lucide-react-native';
 import { MainTabParamList, RootStackParamList } from '@/navigation/types';
 import { COLORS } from '@/constants/theme';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -25,10 +27,11 @@ import { OnboardingModal } from '@/features/auth/components/OnboardingModal';
 
 import { AnnouncementBar } from '../components/AnnouncementBar';
 import { HomeHeroBanner } from '../components/HomeHeroBanner';
-import { SaleBannerText } from '../components/SaleBannerText';
+import { LandingSectionHeading } from '../components/LandingSectionHeading';
 import { HomeProductSection } from '../components/HomeProductSection';
 import { EditorialLookbook } from '../components/EditorialLookbook';
 import { AiTryOnFeatureBanner } from '../components/AiTryOnFeatureBanner';
+import { AiStylistCapsule } from '../components/AiStylistCapsule';
 import { NewsletterBar } from '../components/NewsletterBar';
 import type { IProduct } from '@/features/products/types/product';
 import type { Collection } from '@/features/collections/types/collection';
@@ -128,8 +131,22 @@ export const HomeScreen: React.FC = () => {
     [navigation],
   );
 
-  const handleTryOnPress = useCallback(() => {
-    navigation.navigate('TryOnTab');
+  const handleTryOnPress = useCallback(
+    (productId?: string) => {
+      if (productId) {
+        navigation.navigate('TryOnTab', {
+          screen: 'TryOnHome',
+          params: { productId },
+        });
+        return;
+      }
+      navigation.navigate('TryOnTab');
+    },
+    [navigation],
+  );
+
+  const handleStylistPress = useCallback(() => {
+    navigation.navigate('StylistTab');
   }, [navigation]);
 
   const handleShopPress = useCallback(() => {
@@ -144,7 +161,7 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <ScrollView
-      className="flex-1 bg-surface-lowest"
+      className="flex-1 bg-landing-paper"
       contentContainerClassName="pb-16"
       contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}
@@ -157,7 +174,7 @@ export const HomeScreen: React.FC = () => {
         />
       }
     >
-      {/* 1. Announcement Bar (Top Rotator) */}
+      {/* 1. Announcement Bar */}
       <AnnouncementBar
         onPressTryOn={handleTryOnPress}
         onPressShop={handleShopPress}
@@ -183,9 +200,9 @@ export const HomeScreen: React.FC = () => {
           {collectionsQuery.isError && (
             <View
               accessibilityRole="alert"
-              className="m-4 min-h-12 flex-row items-center gap-3 rounded-md bg-catalog-muted p-3"
+              className="m-4 min-h-12 flex-row items-center gap-3 rounded-subtle border border-landing-line/50 bg-landing-ivory p-3"
             >
-              <Text className="flex-1 font-sans text-body-sm text-on-surface-variant">
+              <Text className="flex-1 font-sans text-body-sm text-landing-muted">
                 Chưa thể cập nhật danh sách mới nhất.
               </Text>
               <TouchableOpacity
@@ -194,7 +211,7 @@ export const HomeScreen: React.FC = () => {
                 onPress={() => void collectionsQuery.refetch()}
                 className="justify-center px-2 py-1"
               >
-                <Text className="font-sans text-body-sm font-bold text-primary-container">
+                <Text className="font-sans text-body-sm font-bold text-landing-oxblood">
                   Thử lại
                 </Text>
               </TouchableOpacity>
@@ -208,47 +225,53 @@ export const HomeScreen: React.FC = () => {
             onPressTryOn={handleTryOnPress}
           />
 
-          {/* 3. Collection Carousel (Horizontal) */}
-          <View className="border-b border-catalog-line bg-surface-lowest py-14">
-            <View className="mb-xxxl gap-md px-lg">
-              <Text className="font-sans text-label-md font-bold uppercase tracking-widest text-primary-container">
-                BỘ SƯU TẬP ĐỘC QUYỀN
-              </Text>
-              <Text className="font-sans text-headline-lg font-bold uppercase tracking-tight text-on-surface-strong">
-                Bộ sưu tập mới nhất
-              </Text>
-              <Text className="font-sans text-body-md leading-relaxed text-catalog-muted-text">
-                Được thiết kế tinh xảo theo từng mùa thời trang, định hình phong cách quý cô và quý ông hiện đại.
-              </Text>
+          {/* 3. Collection Carousel (Chapter 02) */}
+          <View className="bg-landing-paper py-16">
+            <View className="px-lg">
+              <LandingSectionHeading
+                chapter="02"
+                eyebrow="BỘ SƯU TẬP"
+                title="BỐN CHƯƠNG. MỘT PHONG CÁCH."
+                description="Mỗi bộ sưu tập là một lớp cắt may riêng cho nhịp sống công sở. Chọn một chương để xem thiết kế."
+                action={
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={handleShopPress}
+                    className="flex-row items-center gap-1.5 active:opacity-75"
+                  >
+                    <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-oxblood">
+                      Xem tất cả
+                    </Text>
+                    <ArrowUpRight size={14} color="#5D1C34" />
+                  </Pressable>
+                }
+              />
             </View>
 
-            <CollectionCarousel
-              collections={collections}
-              selectedCollectionId={selectedCollection?.id}
-              isFetchingNextPage={collectionsQuery.isFetchingNextPage}
-              onEndReached={handleCollectionsEndReached}
-              onPressCollection={handleCollectionPress}
-              onSelectCollection={(col: Collection) => setSelectedCollectionId(col.id)}
-            />
+            <View className="mt-8">
+              <CollectionCarousel
+                collections={collections}
+                selectedCollectionId={selectedCollection?.id}
+                isFetchingNextPage={collectionsQuery.isFetchingNextPage}
+                onEndReached={handleCollectionsEndReached}
+                onPressCollection={handleCollectionPress}
+                onSelectCollection={(col: Collection) => setSelectedCollectionId(col.id)}
+              />
+            </View>
           </View>
 
-          {/* 4. Sale Banner Text */}
-          <SaleBannerText
-            onPressShop={handleShopPress}
-            onPressTryOn={handleTryOnPress}
-          />
-
-          {/* 5. Featured Products (From Selected Collection) */}
+          {/* 4. Featured Products (Chapter 03) */}
           <HomeProductSection
-            badge="BỘ SƯU TẬP"
+            chapter="03"
+            badge="SẢN PHẨM"
             title={
               selectedCollection
-                ? `THIẾT KẾ: ${selectedCollection.name}`
-                : 'SẢN PHẨM MỚI NHẤT'
+                ? selectedCollection.name
+                : 'SẢN PHẨM TIÊU BIỂU'
             }
             subtitle={
               selectedCollection?.description ||
-              'Chuẩn dáng từ đầu, đẹp từng đường may'
+              'Chuẩn dáng từ đầu, đẹp từng đường may.'
             }
             products={displayCollectionProducts}
             isLoading={collectionProductsQuery.isPending}
@@ -259,37 +282,31 @@ export const HomeScreen: React.FC = () => {
             onPressViewAll={handleShopPress}
           />
 
-          {/* 6. Editorial Lookbook */}
+          {/* 5. Editorial Lookbook (Chapter 04) */}
           <EditorialLookbook
             collection={selectedCollection}
             onPressTryOn={handleTryOnPress}
           />
 
-          {/* 7. Best Sellers / Top Trending Products */}
-          <HomeProductSection
-            badge="TOP TRENDING"
-            title="SẢN PHẨM BÁN CHẠY NHẤT"
-            subtitle="Được khách hàng và stylist tin chọn nhiều nhất trong tháng"
-            products={bestSellers}
-            isLoading={catalogQuery.isPending}
-            isError={catalogQuery.isError}
-            onRetry={() => void catalogQuery.refetch()}
-            showCategories={false}
-            onPressProduct={handleProductPress}
-            onPressViewAll={handleShopPress}
-          />
-
-          {/* 8. AI Try-On Feature Banner */}
+          {/* 6. AI Try-On Feature Banner (Chapter 05) */}
           <AiTryOnFeatureBanner
+            products={displayCollectionProducts}
             onPressTryOn={handleTryOnPress}
           />
 
-          {/* 9. Newsletter Bar & Brand Footer */}
+          {/* 7. AI Stylist Capsule (Chapter 06) */}
+          <AiStylistCapsule
+            products={bestSellers}
+            onPressStylist={handleStylistPress}
+            onPressProduct={handleProductPress}
+          />
+
+          {/* 8. Newsletter Bar & Brand Footer */}
           <NewsletterBar />
         </>
       )}
 
-      {/* 10. First-time Onboarding Modal */}
+      {/* 9. First-time Onboarding Modal */}
       <OnboardingModal />
     </ScrollView>
   );

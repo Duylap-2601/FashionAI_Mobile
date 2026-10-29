@@ -105,6 +105,32 @@ module.exports = {
         success: token("success"),
         warning: token("warning"),
         danger: token("danger"),
+
+        // Atelier Paper – Saigon Editorial tokens
+        paper: token("paper"),
+        ivory: token("ivory"),
+        obsidian: token("obsidian"),
+        oxblood: token("oxblood"),
+        brass: {
+          DEFAULT: token("brass"),
+          ink: token("brass-ink"),
+        },
+        taupe: token("taupe"),
+        sage: {
+          DEFAULT: token("sage"),
+          ink: token("sage-ink"),
+        },
+        "landing-paper": token("paper"),
+        "landing-ivory": token("ivory"),
+        "landing-obsidian": token("obsidian"),
+        "landing-oxblood": token("oxblood"),
+        "landing-brass": token("brass"),
+        "landing-brass-ink": token("brass-ink"),
+        "landing-taupe": token("taupe"),
+        "landing-sage": token("sage"),
+        "landing-sage-ink": token("sage-ink"),
+        "landing-muted": token("landing-muted"),
+        "landing-line": token("landing-line"),
       },
       // Be Vietnam Pro is embedded natively (app.json › expo-font); NativeWind uses only
       // the first family on native, the rest is the web fallback.
@@ -113,6 +139,9 @@ module.exports = {
         sans: ["Be Vietnam Pro", "system-ui", "sans-serif"],
         body: ["Be Vietnam Pro", "system-ui", "sans-serif"],
         heading: ["Be Vietnam Pro", "system-ui", "sans-serif"],
+        display: ["Playfair Display", "serif"],
+        serif: ["Playfair Display", "serif"],
+        mono: ["Courier New", "monospace"],
       },
       // design-system.md › Typography roles, e.g. `text-headline-sm`, `text-price-lg`
       fontSize: {
@@ -133,6 +162,8 @@ module.exports = {
       },
       // design-system.md › Radius scale
       borderRadius: {
+        none: "0px",
+        subtle: "2px",
         "catalog-card": "12px",
         "catalog-gallery": "16px",
         sm: "6px",

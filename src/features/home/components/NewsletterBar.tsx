@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, Alert, Platform } from 'react-native';
 import { Mail, CheckCircle2, Phone } from 'lucide-react-native';
 
 export function NewsletterBar() {
@@ -15,63 +15,77 @@ export function NewsletterBar() {
     setEmail('');
     Alert.alert(
       'Thành công',
-      'Đăng ký nhận bản tin thành công! Mã ưu đãi 10% đã được gửi vào hòm thư của bạn.',
+      'Đăng ký nhận bản tin thành công! Thông tin bộ sưu tập mới sẽ được gửi vào hòm thư của bạn.',
     );
   };
 
+  const fontFamilyDisplay = Platform.OS === 'ios' ? 'Playfair Display' : 'serif';
+
   return (
-    <View className="bg-[#15434e] py-10 px-4 border-t border-[#1b505c]">
-      <View className="flex-row items-center gap-3.5 mb-3">
-        <View className="w-12 h-12 rounded-2xl bg-white/10 items-center justify-center shrink-0 border border-white/15">
-          <Mail size={22} color="#C5A880" />
+    <View className="border-t border-landing-paper/10 bg-landing-obsidian px-lg py-12">
+      <View className="mb-3 flex-row items-center gap-3">
+        <View className="h-10 w-10 items-center justify-center rounded-subtle border border-landing-brass/30 bg-landing-brass/10">
+          <Mail size={18} color="#A67D44" />
         </View>
         <View className="flex-1">
-          <Text className="text-white text-[16px] font-bold uppercase tracking-tight">
-            ĐĂNG KÝ NHẬN BẢN TIN BỘ SƯU TẬP
+          <Text
+            style={{
+              fontFamily: fontFamilyDisplay,
+              fontSize: 18,
+              lineHeight: 22,
+              color: '#EFE9E1',
+              fontWeight: '700',
+            }}
+          >
+            Đăng ký bản tin Atelier
           </Text>
         </View>
       </View>
 
-      <Text className="text-white/80 text-[12.5px] font-light leading-relaxed mb-4">
-        Nhận voucher giảm 10% cho đơn hàng đầu tiên và thông báo sớm nhất khi có bộ sưu tập mới ra mắt.
+      <Text className="mb-4 font-sans text-[12px] leading-relaxed text-landing-paper/70">
+        Nhận thông báo sớm nhất khi có bộ sưu tập mới và các bài viết về phong cách may đo chuẩn dáng.
       </Text>
 
       {isSubscribed ? (
-        <View className="flex-row items-center gap-2 p-3.5 rounded-xl bg-white/10 border border-emerald-400/40 mb-4">
-          <CheckCircle2 size={18} color="#34D399" />
-          <Text className="text-white text-[13px] font-medium flex-1">
+        <View className="mb-4 flex-row items-center gap-2 rounded-subtle border border-landing-sage/40 bg-landing-sage/10 p-3.5">
+          <CheckCircle2 size={16} color="#899481" />
+          <Text className="flex-1 font-sans text-[12px] font-medium text-landing-paper">
             Bạn đã đăng ký nhận tin thành công!
           </Text>
         </View>
       ) : (
-        <View className="flex-row items-center gap-2 mb-4">
+        <View className="mb-5 flex-row items-center gap-2">
           <TextInput
             value={email}
             onChangeText={setEmail}
             placeholder="Nhập email của bạn..."
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
+            placeholderTextColor="rgba(239, 233, 225, 0.45)"
             keyboardType="email-address"
             autoCapitalize="none"
-            className="flex-1 h-11 px-4 rounded-xl bg-white/10 border border-white/20 text-white text-[13px]"
+            className="h-11 flex-1 rounded-subtle border border-landing-paper/20 bg-landing-paper/5 px-3.5 font-sans text-[12px] text-landing-paper"
           />
           <Pressable
             onPress={handleSubmit}
-            className="h-11 px-5 rounded-xl bg-[#C5A880] items-center justify-center active:opacity-90"
+            className="h-11 items-center justify-center rounded-subtle bg-landing-oxblood px-5 active:opacity-90"
           >
-            <Text className="text-[#1A1A24] font-bold text-[12px] uppercase tracking-wider">
-              ĐĂNG KÝ
+            <Text className="font-sans text-[11px] font-semibold uppercase tracking-wider text-landing-paper">
+              Đăng ký
             </Text>
           </Pressable>
         </View>
       )}
 
-      {/* Support Info */}
-      <View className="pt-4 border-t border-white/10 flex-row items-center justify-between">
+      {/* Brand Footer */}
+      <View className="flex-row flex-wrap items-center justify-between gap-2 border-t border-landing-paper/10 pt-4">
         <View className="flex-row items-center gap-2">
-          <Phone size={14} color="#C5A880" />
-          <Text className="text-white/80 text-[12px]">Hotline: 1900 8888 (08:00 - 21:00)</Text>
+          <Phone size={13} color="#A67D44" />
+          <Text className="font-sans text-[11px] text-landing-paper/70">
+            Hotline: 1900 8888 (08:00 - 21:00)
+          </Text>
         </View>
-        <Text className="text-white/50 text-[11px]">© 2026 StAle.</Text>
+        <Text className="font-mono text-[10px] text-landing-paper/40">
+          © 2026 StAie. Atelier Paper
+        </Text>
       </View>
     </View>
   );

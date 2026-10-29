@@ -22,8 +22,8 @@
 - **State Management**: **Zustand** for client state (cart, filters), **TanStack React Query v5** for server state caching & mutations
 - **Validation**: **Zod v4** schemas + **react-hook-form v7** for forms (auth, profile, measurements)
 - **Icons**: **`lucide-react-native`** — used throughout navigation, headers, and feature screens (replaces Ionicons for new code; Ionicons still used in Input.tsx password toggle only)
-- **Theme**: `src/constants/theme.ts` — light colors, spacing scale, font definitions (`FONT_FAMILY` = Be Vietnam Pro, embedded via the `expo-font` plugin in `app.json`; see `design-system.md` › Typography)
-- **Design System**: `design-system.md` — mobile visual direction, burgundy/cream tokens, screen patterns, accessibility, and content rules
+- **Theme**: `src/constants/theme.ts` — light colors, spacing scale, font definitions (`FONT_FAMILY` = Be Vietnam Pro, embedded via the `expo-font` plugin in `app.json`; see `design-system.md` › Typography). Note: Target visual direction is aligned with Atelier Paper per `design-system.md`, with new tokens pending implementation.
+- **Design System**: `design-system.md` — mobile visual direction (aligned with FE's Atelier Paper – Saigon Editorial), tokens, screen patterns, accessibility, and content rules
 - **Hooks**: Feature hooks live in their owning feature; cross-feature hooks stay in `src/hooks/`
 - **Path aliases**: `@/` → `src/*`, `@/assets/*` → `assets/*` (configured in `tsconfig.json`)
 
@@ -63,7 +63,7 @@
 ## Mobile Design System
 
 - Read `design-system.md` before implementing or refactoring mobile UI.
-- The target visual direction is the burgundy/cream mobile system documented in `design-system.md`, based on the provided HTML references for Home, Product Discovery, Product Detail, Photo Try-On, Camera Try-On, AI Stylist, Cart, and Checkout.
+- The target visual direction is aligned with FE's Atelier Paper – Saigon Editorial system documented in `design-system.md` (warm paper/ivory surfaces, oxblood primary actions, brass/taupe/sage accents, square/2px corners, and display serif/mono typography roles). Note that new Atelier Paper tokens and components are documented for future implementation, while current code still references the burgundy/cream tokens in `src/constants/theme.ts`.
 - P11 Shop/Product Detail uses the deployed responsive website as its primary visual reference (see `P11_VISUAL_AUDIT.md`). Catalog color tokens are additive; use the opt-in `catalog` presentation on product cards/skeletons rather than changing their default collection presentation. Keep shared Input overrides optional so Auth and other existing callers retain their styling.
 - P11 Home/Collections uses feature-local `CollectionCover` and `HomeFeaturedProducts` presentation. Keep carousel card width explicit (`w-collection-card`) rather than measuring horizontal list content; preserve slug navigation and existing query hooks. P11 audit/QA reports are local-only and must not be staged or pushed.
 - Implement the design with gluestack components + NativeWind classes over React Native primitives (see *Styling Rules*); do not copy HTML, DOM scripts, CDN fonts, or Material Symbols web-font usage into the Expo app.

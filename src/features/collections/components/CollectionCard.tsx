@@ -1,12 +1,10 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import { ArrowUpRight } from 'lucide-react-native';
-import { COLORS } from '@/constants/theme';
 import type { Collection } from '../types/collection';
 import { CollectionCover } from './CollectionCover';
 
-// Keep an explicit width independent of horizontal FlatList measurement (P5/P9).
-// Mirrors w-collection-card; the deployed mobile card is 280px wide.
+// Explicit width for carousel card (280px).
 const CARD_WIDTH = 280;
 
 interface CollectionCardProps {
@@ -16,14 +14,17 @@ interface CollectionCardProps {
 }
 
 export function CollectionCard({ collection, isSelected, onPress }: CollectionCardProps) {
+  const fontFamilyDisplay = Platform.OS === 'ios' ? 'Playfair Display' : 'serif';
+
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Mở bộ sưu tập ${collection.name}`}
+      accessibilityState={{ selected: isSelected }}
       onPress={() => onPress(collection.slug)}
-      className={`aspect-[3/4] w-collection-card overflow-hidden rounded-catalog-gallery border ${
-        isSelected ? 'border-2 border-[#5D1C34]' : 'border-catalog-line'
-      } bg-editorial-background active:opacity-80`}
+      className={`relative aspect-[3/4] w-collection-card overflow-hidden rounded-subtle border ${
+        isSelected ? 'border-2 border-landing-oxblood' : 'border-landing-line/40'
+      } bg-landing-obsidian active:opacity-90`}
     >
       <CollectionCover
         imageUrl={collection.coverImages[0] ?? null}
@@ -31,45 +32,62 @@ export function CollectionCard({ collection, isSelected, onPress }: CollectionCa
         width={CARD_WIDTH - 2}
         height={(CARD_WIDTH - 2) / 0.75}
       />
-      <View className="flex-1 justify-between p-lg">
-        <View className="flex-row items-center justify-between">
-          <View className="self-start rounded-full border border-surface-lowest/20 bg-surface-lowest/20 px-md py-xs">
-            <Text className="font-sans text-2xs font-bold uppercase tracking-wide text-on-primary">
+
+      <View className="flex-1 justify-between p-5">
+        {/* Top Header: Mono index and Season */}
+        <View className="z-10 flex-row items-start justify-between">
+          <View className="rounded-subtle bg-landing-obsidian/70 px-2 py-0.5">
+            <Text className="font-mono text-[11px] font-semibold tracking-widest text-landing-paper/90">
               MAY ĐO
             </Text>
           </View>
-          {isSelected && (
-            <View className="rounded-full bg-[#C5A880] px-2.5 py-0.5">
-              <Text className="text-[10px] font-bold text-[#1A1A24]">
-                Đang chọn
-              </Text>
-            </View>
-          )}
+          <Text
+            numberOfLines={1}
+            className="max-w-[60%] text-right font-sans text-[10px] font-semibold uppercase tracking-wider text-landing-paper/70"
+          >
+            {collection.season || 'BỘ SƯU TẬP 2026'}
+          </Text>
         </View>
-        <View className="gap-sm">
+
+        {/* Bottom Editorial Content */}
+        <View className="z-10">
+          <View className="mb-3 h-px w-10 bg-landing-brass" />
+
           <Text
             numberOfLines={2}
-            className="font-sans text-headline-md font-bold text-on-primary"
+            style={{
+              fontFamily: fontFamilyDisplay,
+              fontSize: 20,
+              lineHeight: 24,
+              color: '#EFE9E1',
+              fontWeight: '700',
+            }}
           >
             {collection.name}
           </Text>
+
           {collection.description ? (
             <Text
               numberOfLines={2}
-              className="font-sans text-body-sm text-on-primary/80"
+              className="mt-2 font-sans text-[11.5px] leading-relaxed text-landing-paper/70"
             >
               {collection.description}
             </Text>
           ) : null}
-          <View className="mt-sm flex-row items-center justify-between gap-sm border-t border-surface-lowest/20 pt-sm">
-            <Text className="font-sans text-label-md tabular-nums text-on-primary/70">
+
+          <View className="mt-4 flex-row items-center justify-between border-t border-landing-paper/15 pt-3">
+            <Text className="font-mono text-[11px] text-landing-paper/60">
               {collection.productCount.toLocaleString('vi-VN')} thiết kế
             </Text>
-            <View className="min-h-11 flex-row items-center gap-xs rounded-full bg-surface-lowest px-md">
-              <Text className="font-sans text-label-md uppercase tracking-wide text-on-surface-strong">
-                Xem ngay
+            <View className="flex-row items-center gap-1">
+              <Text
+                className={`font-sans text-[10px] font-semibold uppercase tracking-wider ${
+                  isSelected ? 'text-landing-brass' : 'text-landing-paper'
+                }`}
+              >
+                {isSelected ? 'Đang xem' : 'Mở chương'}
               </Text>
-              <ArrowUpRight size={14} color={COLORS.onSurfaceStrong} />
+              <ArrowUpRight size={12} color={isSelected ? '#A67D44' : '#EFE9E1'} />
             </View>
           </View>
         </View>
