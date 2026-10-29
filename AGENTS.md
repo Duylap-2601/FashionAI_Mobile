@@ -22,8 +22,8 @@
 - **State Management**: **Zustand** for client state (cart, filters), **TanStack React Query v5** for server state caching & mutations
 - **Validation**: **Zod v4** schemas + **react-hook-form v7** for forms (auth, profile, measurements)
 - **Icons**: **`lucide-react-native`** — used throughout navigation, headers, and feature screens (replaces Ionicons for new code; Ionicons still used in Input.tsx password toggle only)
-- **Theme**: `src/constants/theme.ts` — light colors, spacing scale, font definitions (`FONT_FAMILY` = Be Vietnam Pro, embedded via the `expo-font` plugin in `app.json`; see `design-system.md` › Typography). Note: Target visual direction is aligned with Atelier Paper per `design-system.md`, with new tokens pending implementation.
-- **Design System**: `design-system.md` — mobile visual direction (aligned with FE's Atelier Paper – Saigon Editorial), tokens, screen patterns, accessibility, and content rules
+- **Theme**: `src/constants/theme.ts` — light colors, spacing scale, font definitions (`FONT_FAMILY` = Be Vietnam Pro, embedded via the `expo-font` plugin in `app.json`; see `design/design-system.md` › Typography). Note: Target visual direction is aligned with Atelier Paper per `design/design-system.md`, with new tokens pending implementation.
+- **Design System**: `design/design-system.md` — mobile visual direction (aligned with FE's Atelier Paper – Saigon Editorial), tokens, screen patterns, accessibility, and content rules
 - **Hooks**: Feature hooks live in their owning feature; cross-feature hooks stay in `src/hooks/`
 - **Path aliases**: `@/` → `src/*`, `@/assets/*` → `assets/*` (configured in `tsconfig.json`)
 
@@ -62,14 +62,14 @@
 
 ## Mobile Design System
 
-- Read `design-system.md` before implementing or refactoring mobile UI.
-- The target visual direction is aligned with FE's Atelier Paper – Saigon Editorial system documented in `design-system.md` (warm paper/ivory surfaces, oxblood primary actions, brass/taupe/sage accents, square/2px corners, and display serif/mono typography roles). Note that new Atelier Paper tokens and components are documented for future implementation, while current code still references the burgundy/cream tokens in `src/constants/theme.ts`.
+- Read `design/design-system.md` before implementing or refactoring mobile UI.
+- The target visual direction is aligned with FE's Atelier Paper – Saigon Editorial system documented in `design/design-system.md` (warm paper/ivory surfaces, oxblood primary actions, brass/taupe/sage accents, square/2px corners, and display serif/mono typography roles). Note that new Atelier Paper tokens and components are documented for future implementation, while current code still references the burgundy/cream tokens in `src/constants/theme.ts`.
 - P11 Shop/Product Detail uses the deployed responsive website as its primary visual reference (see `P11_VISUAL_AUDIT.md`). Catalog color tokens are additive; use the opt-in `catalog` presentation on product cards/skeletons rather than changing their default collection presentation. Keep shared Input overrides optional so Auth and other existing callers retain their styling.
 - P11 Home/Collections uses feature-local `CollectionCover` and `HomeFeaturedProducts` presentation. Keep carousel card width explicit (`w-collection-card`) rather than measuring horizontal list content; preserve slug navigation and existing query hooks. P11 audit/QA reports are local-only and must not be staged or pushed.
 - Implement the design with gluestack components + NativeWind classes over React Native primitives (see *Styling Rules*); do not copy HTML, DOM scripts, CDN fonts, or Material Symbols web-font usage into the Expo app.
 - Keep reusable primitives in `src/components/ui`; gluestack components should also be added there. Keep screen-specific composition in `src/features/<feature>/screens` until it is reused.
 - NativeWind configuration lives in `tailwind.config.js`, `global.css`, `babel.config.js`, `metro.config.js` (`inlineRem: 16`, so `p-4` = 16px on device), and `nativewind-env.d.ts`. `gluestack-ui.config.json` points gluestack CLI/component output to `src/components/ui`.
-- `App.tsx` is wrapped in `GluestackUIProvider` (`src/components/ui/gluestack-ui-provider/`). It turns the `COLORS` in `src/constants/theme.ts` into the CSS variables that `tailwind.config.js` color classes read, so a color is changed in `theme.ts` only. The className ↔ `theme.ts` token map is in `design-system.md` › *NativeWind Tokens*.
+- `App.tsx` is wrapped in `GluestackUIProvider` (`src/components/ui/gluestack-ui-provider/`). It turns the `COLORS` in `src/constants/theme.ts` into the CSS variables that `tailwind.config.js` color classes read, so a color is changed in `theme.ts` only. The className ↔ `theme.ts` token map is in `design/design-system.md` › *NativeWind Tokens*.
 - `src/constants/theme.ts` is the single source for color values (burgundy/cream, already migrated) plus spacing, font sizes, radius, and shadows for the remaining `StyleSheet` code. Add new colors there and expose them in `gluestack-ui-provider/config.ts` + `tailwind.config.js`; never hard-code hex in screens.
 - Use Vietnamese user-facing copy with proper diacritics. Avoid raw backend/technical terms such as `endpoint`, `payload`, `fallback`, `mock`, `Axios error`, or `500 internal server error` in UI.
 - Mobile actions must not depend on hover behavior. Keep important actions visible and reachable with touch targets around `44x44` or larger.
@@ -93,7 +93,7 @@ Rules:
 - **NEVER mix** `className` and a `style={styles.x}` object on the same element. Pick one per element; NativeWind for anything static.
 - **No inline `style={{ ... }}`** for static values — use `className`. Inline `style` is only for computed/animated values.
 - **Tokens, not raw values**: use Tailwind token classes (`bg-primary`, `px-4`, `rounded-xl`, `text-base`) defined in `tailwind.config.js`. Never hard-code hex colors or magic pixel numbers in `className` (no `bg-[#7B1E3A]`, no `mt-[13px]`) — add the token to `tailwind.config.js` / `src/constants/theme.ts` instead.
-- **Exception — navigation config**: `tabBarStyle`, `headerStyle`, and similar React Navigation `screenOptions` only accept plain JS style objects (no `className`). In these configs, read the value from `src/constants/theme.ts` (`COLORS.*`) with a short inline comment referencing `design-system.md`. Do not hard-code bare hex literals that bypass the theme.
+- **Exception — navigation config**: `tabBarStyle`, `headerStyle`, and similar React Navigation `screenOptions` only accept plain JS style objects (no `className`). In these configs, read the value from `src/constants/theme.ts` (`COLORS.*`) with a short inline comment referencing `design/design-system.md`. Do not hard-code bare hex literals that bypass the theme.
 - **Variants** on shared components use `tva` from `@gluestack-ui/nativewind-utils`, not conditional string concatenation.
 - **Dark mode / platform**: express with NativeWind modifiers (`dark:`, `ios:`, `android:`) instead of runtime branching where possible.
 - **Legacy migration**: screens still on `StyleSheet.create` are legacy. When you touch one of those files for a real change, convert the parts you touch to NativeWind/gluestack; do not add new `StyleSheet.create` blocks to them. Do not open drive-by rewrites of untouched screens.

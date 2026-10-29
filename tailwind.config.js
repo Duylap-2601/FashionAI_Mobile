@@ -11,7 +11,7 @@ module.exports = {
   important: "html",
   theme: {
     extend: {
-      // design-system.md › Spacing scale (mirrors SPACING in src/constants/theme.ts).
+      // design/design-system.md › Spacing scale (mirrors SPACING in src/constants/theme.ts).
       // Named so className tokens like `px-xxl`, `mb-md`, `gap-md` resolve to real
       // values instead of silently matching nothing on Tailwind's numeric-only scale.
       spacing: {
@@ -76,7 +76,7 @@ module.exports = {
           black: token("on-surface"),
         },
 
-        // design-system tokens (design-system.md › Color System)
+        // design-system tokens (design/design-system.md › Color System)
         surface: {
           DEFAULT: token("surface"),
           lowest: token("surface-lowest"),
@@ -130,7 +130,8 @@ module.exports = {
         "landing-sage": token("sage"),
         "landing-sage-ink": token("sage-ink"),
         "landing-muted": token("landing-muted"),
-        "landing-line": token("landing-line"),
+        // `line` is an rgba token, so its CSS variable already carries the alpha.
+        "landing-line": "rgb(var(--landing-line))",
       },
       // Be Vietnam Pro is embedded natively (app.json › expo-font); NativeWind uses only
       // the first family on native, the rest is the web fallback.
@@ -143,7 +144,7 @@ module.exports = {
         serif: ["Playfair Display", "serif"],
         mono: ["Courier New", "monospace"],
       },
-      // design-system.md › Typography roles, e.g. `text-headline-sm`, `text-price-lg`
+      // design/design-system.md › Typography roles, e.g. `text-headline-sm`, `text-price-lg`
       fontSize: {
         "product-title": ["32px", { lineHeight: "40px", fontWeight: "700" }],
         "product-price": ["22px", { lineHeight: "28px", fontWeight: "700" }],
@@ -160,7 +161,7 @@ module.exports = {
         "price-lg": ["18px", { lineHeight: "22px", fontWeight: "700" }],
         "price-sm": ["13px", { lineHeight: "16px", fontWeight: "600" }],
       },
-      // design-system.md › Radius scale
+      // design/design-system.md › Radius scale
       borderRadius: {
         none: "0px",
         subtle: "2px",

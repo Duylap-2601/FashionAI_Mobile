@@ -48,7 +48,7 @@ export function ProductCard({
       <View style={{ width: cardWidth }}>
         <Card
           variant="outlined"
-          className="overflow-hidden !rounded-subtle !border-landing-line/40 !p-0 bg-landing-paper"
+          className="overflow-hidden !rounded-subtle !border-landing-line !p-0 bg-landing-paper"
         >
           <Pressable
             accessibilityRole="button"

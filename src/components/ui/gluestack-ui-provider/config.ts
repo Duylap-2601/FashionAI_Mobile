@@ -4,9 +4,21 @@ import { COLORS } from '@/constants/theme';
 type ColorKey = keyof typeof COLORS;
 
 // '#5D1C34' -> '93 28 52' (the "R G B" form tailwind.config.js wraps in rgb(var(--x)/<alpha-value>))
-function toRgbChannels(hex: string): string {
-  const value = hex.replace('#', '');
-  return [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16)).join(' ');
+// 'rgba(166, 125, 68, 0.38)' -> '166 125 68 / 0.38' (used by colors that bake their own alpha)
+function toRgbChannels(color: string): string {
+  if (color.startsWith('#')) {
+    const value = color.replace('#', '');
+    return [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16)).join(' ');
+  }
+
+  const match = color.match(
+    /rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s/]+([\d.]+))?\s*\)/i
+  );
+  if (!match) {
+    throw new Error(`Unsupported color value: ${color}`);
+  }
+  const [, r, g, b, a] = match;
+  return a === undefined ? `${r} ${g} ${b}` : `${r} ${g} ${b} / ${a}`;
 }
 
 // CSS variable -> design-system color in src/constants/theme.ts.
@@ -80,7 +92,7 @@ const tokenMap: Record<string, ColorKey> = {
 };
 
 // The design system defines a light palette only (app.json pins userInterfaceStyle: light).
-// Add a `dark` entry here once design-system.md defines dark tokens.
+// Add a `dark` entry here once design/design-system.md defines dark tokens.
 export const colors = {
   light: Object.fromEntries(
     Object.entries(tokenMap).map(([cssVar, key]) => [cssVar, toRgbChannels(COLORS[key])])

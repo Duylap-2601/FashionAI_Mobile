@@ -200,7 +200,7 @@ export const HomeScreen: React.FC = () => {
           {collectionsQuery.isError && (
             <View
               accessibilityRole="alert"
-              className="m-4 min-h-12 flex-row items-center gap-3 rounded-subtle border border-landing-line/50 bg-landing-ivory p-3"
+              className="m-4 min-h-12 flex-row items-center gap-3 rounded-subtle border border-landing-line bg-landing-ivory p-3"
             >
               <Text className="flex-1 font-sans text-body-sm text-landing-muted">
                 Chưa thể cập nhật danh sách mới nhất.

@@ -4,6 +4,8 @@ This document defines the mobile UI language for `FashionAI_Mobile`. It establis
 
 The app is built on Expo React Native. Implement screens with React Native primitives, NativeWind classes, gluestack-compatible shared components in `src/components/ui`, and tokens from `src/constants/theme.ts` / `tailwind.config.js`. Do not use DOM APIs, Material Symbols web fonts, or HTML patterns directly.
 
+Read `design/DESIGN.md` for the mobile narrative, screen intent, and acceptance criteria. Read this file for tokens, component contracts, states, and code placement. Both are aligned with `FashionAI_FE/DESIGN.md` and `FashionAI_FE/docs/design-system.md`.
+
 ## Product Direction
 
 FashionAI Mobile is a premium Vietnamese office-wear shopping app with AI try-on and styling as its main differentiators.
@@ -31,7 +33,7 @@ Brand personality:
 > The target visual direction documented in this file is aligned with `FashionAI_FE/docs/design-system.md` ("Atelier Paper – Saigon Editorial") and `FashionAI_FE/docs/product-card-design.md`.
 > 
 > - **Unified Visual Language**: Both FE and Mobile share the same palette intent (paper `#EFE9E1`, ivory `#FDF8F6`, obsidian `#11100F`, oxblood `#5D1C34`, brass `#A67D44`, sage `#899481`, hairline border), typography hierarchy (Playfair Display for headlines/product names ≥16px, Be Vietnam Pro for body/forms/lists, Monospace for prices/numbers), and shape language (square or 2px corners, no card drop shadows, underline text tabs instead of pill chips).
-> - **Scope and Status**: This document records the **target design contract**. The existing code in `FashionAI_Mobile` currently runs on the burgundy/cream tokens in `src/constants/theme.ts`. Token additions (`paper`, `ivory`, `obsidian`, `brass`, `brassInk`, `taupe`, `sage`, `sageInk`, `line`) and component styling updates are queued for a dedicated implementation phase.
+> - **Scope and Status**: This document records the target design contract. The Atelier Paper tokens (`paper`, `ivory`, `obsidian`, `brass`, `brassInk`, `taupe`, `sage`, `sageInk`, `muted`, `line`) are implemented in `src/constants/theme.ts` and exposed in `tailwind.config.js` / `gluestack-ui-provider/config.ts`. Home, the Shop catalog `ProductCard`, and `CollectionCard` already adopt them. Remaining work is component-level styling (2px radii, Playfair/mono fonts) and migrating legacy screens that still use the burgundy/cream palette.
 > - **Desktop Table Spec Non-Applicability**: `FashionAI_FE/docs/table-design.md` specifies desktop TanStack data tables for desktop web viewports. Mobile uses focused lists, cards, and bottom sheets; it intentionally does not mirror the desktop table specification.
 
 ## Visual References
@@ -51,11 +53,11 @@ The mobile experience translates the Atelier Paper editorial direction into tact
 
 ## Current Implementation Constraint
 
-P11 Shop and Product Detail follow the deployed mobile viewport audit in `P11_VISUAL_AUDIT.md`. They use white `surfaceLowest` canvases and additive catalog tokens: `catalogMuted` (`#F9F7F5`), `catalogMutedText` (`#8B8880`), `catalogLine` (`#F0EEE9`), and `catalogTailoring` (`#FDFBF7`). NativeWind exposes these as `catalog-muted`, `catalog-muted-text`, `catalog-line`, and `catalog-tailoring`. Catalog cards use 12px radius, detail galleries 16px, and listing gaps 10px (`SPACING.catalogGap` / `gap-catalog-gap`). Detail title and price roles are `text-product-title` (32/40) and `text-product-price` (22/28). Other screens retain the existing palette and roles below.
+P11 Shop and Product Detail follow the deployed mobile viewport audit in `P11_VISUAL_AUDIT.md`. They use white `surfaceLowest` canvases and additive catalog tokens: `catalogMuted` (`#F9F7F5`), `catalogMutedText` (`#8B8880`), `catalogLine` (`#F0EEE9`), and `catalogTailoring` (`#FDFBF7`). NativeWind exposes these as `catalog-muted`, `catalog-muted-text`, `catalog-line`, and `catalog-tailoring`. Listing gaps are 10px (`SPACING.catalogGap` / `gap-catalog-gap`). Detail title and price roles are `text-product-title` (32/40) and `text-product-price` (22/28). Catalog corners are currently mixed: the Atelier `ProductCard` catalog presentation uses 2px (`rounded-subtle`), while catalog skeletons and detail tailoring blocks still use the P11 12px (`rounded-catalog-card`) and 16px (`rounded-catalog-gallery`) radii. Unifying all catalog corners to 2px is part of the pending component pass. Other screens retain the existing palette and roles below.
 
-`src/constants/theme.ts` currently holds the burgundy/cream palette below and is the single source of color values in existing code. `GluestackUIProvider` exposes it to NativeWind as CSS variables; see *NativeWind Tokens* for class names.
+`src/constants/theme.ts` holds both the Atelier Paper tokens and the burgundy/cream palette below, and is the single source of color values. `GluestackUIProvider` exposes it to NativeWind as CSS variables; see *NativeWind Tokens* for class names.
 
-P11 Home/Collections adds `editorialBackground` (`#0E161C`) and `editorialShade` (`#000000`) for the deployed editorial surround and image scrim. Existing defaults remain intact. `h-collection-hero` is 440px; `w-collection-card` is a fixed 280px, with 3:4 cards and 16px gaps/corners. `CollectionCover` uses the existing SVG dependency for the image gradient. Home and Collection Detail opt into the existing catalog cards. Native member/quota and feature access remain below Home's collection/product presentation. No season, sale claim, or collection is fabricated when it is absent from the API.
+P11 Home/Collections adds `editorialBackground` (`#0E161C`) and `editorialShade` (`#000000`) for the deployed editorial surround and image scrim. Existing defaults remain intact. `h-collection-hero` is 440px; `w-collection-card` is a fixed 280px, with 3:4 cards, 2px corners, and 16px gaps. `CollectionCover` uses the existing SVG dependency for the image gradient. Home and Collection Detail opt into the existing catalog cards. Native member/quota and feature access remain below Home's collection/product presentation. No season, sale claim, or collection is fabricated when it is absent from the API.
 
 `theme.ts` also carries legacy aliases (`commerceSurface`, `surfaceMuted`, `textPrimary`, `textSecondary`, `textMuted`, `textInverse`, `border`, `borderDark`) still referenced by older StyleSheet code. New screens must not use these legacy aliases.
 
@@ -69,28 +71,29 @@ Rules:
 
 ## Color System
 
-### 1. Atelier Paper Palette (Target Design Contract)
+### 1. Atelier Paper Palette (Implemented)
 
-This palette mirrors `FashionAI_FE`'s "Atelier Paper – Saigon Editorial" visual system. It uses mobile camelCase token names ready for the upcoming `theme.ts` token expansion.
+This palette mirrors `FashionAI_FE`'s "Atelier Paper – Saigon Editorial" visual system. All tokens below are present in `src/constants/theme.ts`.
 
 | Token | Hex / Value | Status | Target Mobile Role |
 | --- | --- | --- | --- |
-| `colors.paper` | `#EFE9E1` | *Pending `theme.ts`* | Primary screen canvas / paper surface. |
-| `colors.ivory` | `#FDF8F6` | *Pending `theme.ts`* | Raised surface, card backgrounds, product metadata panels. |
-| `colors.obsidian` | `#11100F` | *Pending `theme.ts`* | Primary ink, dark contrast panels, quick-action base, footer. |
-| `colors.oxblood` | `#5D1C34` | **Existing** (`primaryContainer`) | Primary brand action, active states, focus indicator, current price. |
-| `colors.brass` | `#A67D44` | *Pending `theme.ts`* | Decorative lines, rating stars, ornaments, labels on dark surfaces. |
-| `colors.brassInk` | `#7C5722` | *Pending `theme.ts`* | High-contrast brass text on paper surfaces. |
-| `colors.taupe` | `#CDBCAB` | *Pending `theme.ts`* | Secondary dividers, subtle borders, placeholder strokes. |
-| `colors.sage` | `#899481` | *Pending `theme.ts`* | New product badge background (`Mới`), quiet support tint. |
-| `colors.sageInk` | `#59654F` | *Pending `theme.ts`* | Accessible sage text on light surfaces, quiet success. |
-| `colors.muted` | `#6B625A` | *Pending `theme.ts`* | Secondary and caption text on paper/ivory. |
-| `colors.line` / `hairline` | `rgba(166, 125, 68, 0.38)` | *Pending `theme.ts`* | 1px hairline rules, card borders, subtle separators. |
+| `colors.paper` | `#EFE9E1` | **Implemented** | Primary screen canvas / paper surface. |
+| `colors.ivory` | `#FDF8F6` | **Implemented** | Raised surface, card backgrounds, product metadata panels. |
+| `colors.obsidian` | `#11100F` | **Implemented** | Primary ink, dark contrast panels, quick-action base, footer. |
+| `colors.oxblood` | `#5D1C34` | **Implemented** (`oxblood` + `primaryContainer`) | Primary brand action, active states, focus indicator, current price. |
+| `colors.brass` | `#A67D44` | **Implemented** | Decorative lines, rating stars, ornaments, labels on dark surfaces. |
+| `colors.brassInk` | `#7C5722` | **Implemented** | High-contrast brass text on paper surfaces. |
+| `colors.taupe` | `#CDBCAB` | **Implemented** | Secondary dividers, subtle borders, placeholder strokes. |
+| `colors.sage` | `#899481` | **Implemented** | New product badge background (`Mới`), quiet support tint. |
+| `colors.sageInk` | `#59654F` | **Implemented** | Accessible sage text on light surfaces, quiet success. |
+| `colors.muted` | `#6B625A` | **Implemented** | Secondary and caption text on paper/ivory. |
+| `colors.line` / `hairline` | `rgba(166, 125, 68, 0.38)` | **Implemented** | 1px hairline rules, card borders, subtle separators. |
 
 > [!IMPORTANT]
 > **Token Status Note**:
-> `oxblood` (`#5D1C34`) is already present in `src/constants/theme.ts` under the key `primaryContainer` — there is zero value conflict.
-> The tokens `paper`, `ivory`, `obsidian`, `brass`, `brassInk`, `taupe`, `sage`, `sageInk`, `muted`, and `line` represent the agreed target system and will be implemented in `theme.ts` in the token implementation pass.
+> All Atelier Paper tokens are present in `src/constants/theme.ts` and mapped in `gluestack-ui-provider/config.ts` plus `tailwind.config.js`.
+> `oxblood` (`#5D1C34`) also exists as `primaryContainer`, so existing screens keep working with zero value conflict.
+> `colors.line` matches FE's brass-alpha hairline: `rgba(166, 125, 68, 0.38)`. Its CSS variable already carries the alpha, so `border-landing-line` renders the correct hairline without an opacity modifier. Do not add `/40` or similar to this token.
 
 ### 2. Current Mobile Code Palette (In `src/constants/theme.ts`)
 
@@ -163,14 +166,14 @@ gluestack components hard-code shadcn-style names (`primary`, `muted`, `border`,
 | `danger` | `bg-destructive` / `text-danger` | Destructive actions. |
 | `success`, `warning` | `text-success`, `text-warning` | Status colors. |
 
-### Target Atelier Paper Utility Classes (Pending Configuration)
+### Atelier Paper Utility Classes (Implemented)
 
-Once tokens are integrated into `tailwind.config.js` and `GluestackUIProvider`:
+The bare Atelier tokens are available as utilities. `muted` and `line` use the `landing-` aliases because bare `muted` is already taken by gluestack. Both naming styles resolve to the same CSS variables.
 
-| Target Utility | Value / Color | Role |
+| Utility | Value / Color | Role |
 | --- | --- | --- |
-| `bg-paper` | `#EFE9E1` | Main paper background canvas. |
-| `bg-ivory` | `#FDF8F6` | Card backgrounds, raised sections, metadata panels. |
+| `bg-paper` / `bg-landing-paper` | `#EFE9E1` | Main paper background canvas. |
+| `bg-ivory` / `bg-landing-ivory` | `#FDF8F6` | Card backgrounds, raised sections, metadata panels. |
 | `bg-obsidian` / `text-obsidian` | `#11100F` | Dark panels, ink text, add-to-cart base. |
 | `bg-oxblood` / `text-oxblood` | `#5D1C34` | Brand CTA, active indicator, current price. |
 | `text-brass` / `border-brass` | `#A67D44` | Decorative borders, stars, dark-surface labels. |
@@ -178,8 +181,8 @@ Once tokens are integrated into `tailwind.config.js` and `GluestackUIProvider`:
 | `border-taupe` | `#CDBCAB` | Soft dividers, structural lines. |
 | `bg-sage` | `#899481` | New product badge (`Mới`). |
 | `text-sage-ink` | `#59654F` | Accessible quiet success text. |
-| `text-muted` | `#6B625A` | Secondary text on paper. |
-| `border-line` | `rgba(166,125,68,0.38)` | 1px hairline card borders and dividers. |
+| `text-landing-muted` | `#6B625A` | Secondary text on paper. Bare `text-muted` is gluestack `surfaceLow` and must not be used as text. |
+| `border-landing-line` | `rgba(166, 125, 68, 0.38)` | 1px brass hairline for card borders and dividers. The alpha is already baked in; do not append an opacity modifier. |
 
 ## Typography
 
@@ -255,15 +258,15 @@ The spacing scale is built on a 4px base (`inlineRem: 16`):
 
 Depth and separation in Atelier Paper come from contrast and hairlines, not heavy shadows:
 
-- **Hairline Rule**: `1px` solid `rgba(166, 125, 68, 0.38)` (`border-line`) for card outlines, horizontal dividers, and quiet borders.
+- **Hairline Rule**: `1px` solid `rgba(166, 125, 68, 0.38)` (`border-landing-line`) for card outlines, horizontal dividers, and quiet borders.
 - **Dark Hairline**: `1px` solid `rgba(239, 233, 225, 0.15)` for borders on obsidian/dark panels.
 - **Strong Outline**: `1px` solid `#11100F` (`obsidian`) for high-contrast frames.
 - **Selected State Inset Rule**: A `2px` inset brass or oxblood line for selected collections, swatches, or options—**never** a blurry shadow ring.
 
 ### Shadow Policy
 
-- **No decorative drop shadows on product cards or content cards.** Cards stay flat, structured by hairline borders (`border-line`) and surface contrast (paper canvas vs. ivory card).
-- Header and bottom navigation bars may use an imperceptible structural hairline divider (`border-b border-line`) rather than elevation shadows.
+- **No decorative drop shadows on product cards or content cards.** Cards stay flat, structured by hairline borders (`border-landing-line`) and surface contrast (paper canvas vs. ivory card).
+- Header and bottom navigation bars may use an imperceptible structural hairline divider (`border-b border-landing-line`) rather than elevation shadows.
 - Bottom sheets and action modals may use focused backdrop dimming (`rgba(17, 16, 15, 0.5)`) and subtle elevation for modal layering.
 
 ## Screen Shells
@@ -274,7 +277,7 @@ Used for Home, Product Discovery, Try-On, AI Stylist, and Profile tabs:
 
 - **AppHeader** (`src/components/common/AppHeader.tsx`): StAele. wordmark, Search icon, NotificationBell, Cart bag with badge.
 - **Fixed Bottom Tab Bar** (`78px` height + safe area insets):
-  - Background: `paper` (`#EFE9E1`) or `surface` with a 1px top hairline border (`border-t border-line`).
+  - Background: `paper` (`#EFE9E1`) or `surface` with a 1px top hairline border (`border-t border-landing-line`).
   - Active tab: `oxblood` (`#5D1C34`) icon stroke and label with a 4x4 oxblood indicator dot below.
   - Inactive tab: `muted` (`#6B625A`) icon stroke and label.
   - Icons: `lucide-react-native` (`Home`, `Package`, `Sparkles`, `WandSparkles`, `User`).
@@ -300,7 +303,7 @@ Used for Cart, Checkout, Product Detail, Orders, and Modal screens:
 - **Try-On Header (`TryOnHeader`)**: Brand mark plus `Ảnh / Camera / Stylist` segmented mode switch.
 - **Checkout Header**: Back button, centered `Thanh toán`, no distracting actions.
 - **Product Detail Header**: Back button, product title or category, share/bag actions right.
-- Header height: `52-56px` plus safe area. Bottom border: `border-line` hairline.
+- Header height: `52-56px` plus safe area. Bottom border: `border-landing-line` hairline.
 
 > [!NOTE]
 > **Navigation Options Styling Exception:**
@@ -314,7 +317,7 @@ Used for Cart, Checkout, Product Detail, Orders, and Modal screens:
 - **Right**: Search (`<Search>` 22px), NotificationBell, Cart (`<ShoppingBag>` 22px) with numeric count badge.
 - **Cart Badge**: Compact badge with `danger` background and white bold monospace count.
 - **Touch targets**: `44x44px` minimum (`min-h-11 min-w-11`).
-- **Bottom border**: 1px hairline `border-line`.
+- **Bottom border**: 1px hairline `border-landing-line`.
 
 ### CategoryTabs / Filter Tabs (Underline Text Tabs)
 
@@ -323,7 +326,7 @@ Used for Cart, Checkout, Product Detail, Orders, and Modal screens:
 > Replace filled pill chips for category navigation with **Underline Text Tabs**, mirroring FE's `CategoryTabs` pattern:
 > - Layout: Horizontal scrollable row with `gap-6` or `gap-8`.
 > - Active tab: `text-obsidian` (or `text-oxblood`), `font-semibold`, with an active bottom border/underline (`2px` solid oxblood or brass).
-> - Inactive tab: `text-muted` (`#6B625A`), `font-normal`, no underline.
+> - Inactive tab: `text-landing-muted` (`#6B625A`), `font-normal`, no underline.
 > - Accessibility: `accessibilityRole="tab"`, `accessibilityState={{ selected: isActive }}`.
 
 ### SegmentedControl (`src/components/ui/SegmentedControl.tsx`)
@@ -332,15 +335,15 @@ Used for mode switches (`Ảnh / Camera`, `1 Món / Set đồ`, `Ảnh của b�
 
 - Track: `bg-surface-container` or `bg-ivory`, 2px or 4px radius, `p-1`.
 - Active segment: `bg-primary-container` (`oxblood`) with light text, `rounded-[2px]`.
-- Inactive segment: Transparent background with `text-muted`.
+- Inactive segment: Transparent background with `text-landing-muted`.
 - Height: `min-h-11` (44px touch target).
 
 ### Search Bar
 
 - Height: `44px`.
 - Radius: `rounded-[2px]` (Atelier Paper target) or subtle 6px.
-- Background: `ivory` (`#FDF8F6`) or `surfaceLow` with a 1px hairline border (`border-line`).
-- Placeholder text: `text-muted` (`Tim sản phẩm, chất liệu, phong cách...`).
+- Background: `ivory` (`#FDF8F6`) or `surfaceLow` with a 1px hairline border (`border-landing-line`).
+- Placeholder text: `text-landing-muted` (`Tim sản phẩm, chất liệu, phong cách...`).
 - Left icon: `<Search>` 20px in `muted`.
 
 ### Buttons
@@ -354,7 +357,7 @@ Aligned with Atelier Paper square/2px visual treatment:
   - Radius: `rounded-[2px]` (target) / `rounded-md` (legacy).
 - **Secondary / Outline Button**:
   - Background: Transparent or `bg-ivory`.
-  - Border: `1px solid` `border-line` (or `border-outline-variant`).
+  - Border: `1px solid` `border-landing-line` (or `border-outline-variant`).
   - Text: `text-obsidian` / `text-on-surface`.
   - Radius: `rounded-[2px]`.
 - **Ghost Button**:
@@ -419,7 +422,7 @@ Aligned with Atelier Paper square/2px visual treatment:
 - Sticky header with search input.
 - Horizontal category underline tabs.
 - Filter & Sort toolbar showing product count in monospace (`128 sản phẩm`), filter button with active count badge, and sort selector.
-- 2-column product grid: horizontal gap `12px`, vertical gap `20-24px`.
+- 2-column product grid: horizontal gap `10px` (`gap-catalog-gap`), vertical gap `16px` (`h-lg`).
 - Out-of-stock items: Dimmed opacity, badge `Tạm hết hàng`, action `Báo khi có hàng`.
 
 ### Product Detail
@@ -557,12 +560,13 @@ Content restrictions:
 
 ## Implementation Checklist
 
-For the upcoming Atelier Paper mobile implementation pass:
-
-- [ ] Add Atelier Paper tokens (`paper`, `ivory`, `obsidian`, `brass`, `brassInk`, `taupe`, `sage`, `sageInk`, `muted`, `line`) to `src/constants/theme.ts`.
-- [ ] Expose new tokens in `GluestackUIProvider` (`config.ts`) and `tailwind.config.js`.
-- [ ] Update `Button.tsx` and `Input.tsx` default corner radius to `rounded-[2px]`.
-- [ ] Align `ProductCard` with `docs/product-card-design.md`: 3:4 image, square/2px corners, top-left oxblood/sage badges, quick actions, Playfair title, monospace oxblood price.
-- [ ] Replace category pill chips with underline text tabs.
-- [ ] Ensure all product cards remove decorative drop shadows in favor of hairline borders (`border-line`).
+- [x] Add Atelier Paper tokens (`paper`, `ivory`, `obsidian`, `brass`, `brassInk`, `taupe`, `sage`, `sageInk`, `muted`, `line`) to `src/constants/theme.ts`.
+- [x] Expose the tokens in `GluestackUIProvider` (`config.ts`) and `tailwind.config.js`.
+- [ ] Update `Button.tsx`, `Card.tsx`, and `Input.tsx` to the 2px corner language and remove decorative card shadows.
+- [ ] Finish aligning `ProductCard` with `FashionAI_FE/docs/product-card-design.md`: the catalog presentation uses 3:4, 2px corners, oxblood/sage badges, and mono oxblood price; the default presentation and the 14px title still need the Playfair ≥16px treatment and quick actions.
+- [ ] Replace remaining category pill chips with underline text tabs. Home is done; Shop and other filtered lists still use pills or dot indicators.
+- [ ] Ensure all product and content cards use hairline borders (`border-landing-line`) instead of decorative drop shadows.
+- [ ] Embed Playfair Display and JetBrains Mono (or a tabular mono) so display and numeric roles render consistently on iOS and Android.
+- [x] Match `colors.line` to FE's brass alpha `rgba(166, 125, 68, 0.38)` and drop the opacity-modifier workaround.
+- [ ] Unify all catalog corners to 2px.
 - [ ] Verify TypeScript types and lint checks via `npm run typecheck` and `npm run lint`.

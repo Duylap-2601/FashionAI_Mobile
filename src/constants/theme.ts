@@ -32,7 +32,7 @@ export const COLORS = {
   sage: "#899481",
   sageInk: "#59654F",
   muted: "#6B625A",
-  line: "#CDBCAB",
+  line: "rgba(166, 125, 68, 0.38)",
 
   // FashionAI commerce palette. Existing aliases above remain unchanged so
   // feature work can migrate without restyling unrelated screens.

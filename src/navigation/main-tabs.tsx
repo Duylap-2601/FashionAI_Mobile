@@ -15,7 +15,7 @@ import { FloatingChatBubble } from '../features/chat/components/FloatingChatBubb
 
 // React Navigation's screenOptions/tabBarIcon require plain style objects
 // (no className support), so burgundy/cream tokens are inlined as hex here —
-// see design-system.md Color System for the source values.
+// see design/design-system.md Color System for the source values.
 const COLORS = {
   surface: '#FBF9F7',
   surfaceContainer: '#EFEDEC',

@@ -23,7 +23,7 @@ export function CollectionCard({ collection, isSelected, onPress }: CollectionCa
       accessibilityState={{ selected: isSelected }}
       onPress={() => onPress(collection.slug)}
       className={`relative aspect-[3/4] w-collection-card overflow-hidden rounded-subtle border ${
-        isSelected ? 'border-2 border-landing-oxblood' : 'border-landing-line/40'
+        isSelected ? 'border-2 border-landing-oxblood' : 'border-landing-line'
       } bg-landing-obsidian active:opacity-90`}
     >
       <CollectionCover

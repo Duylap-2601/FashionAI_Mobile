@@ -53,7 +53,7 @@ export function AiStylistCapsule({
       />
 
       {/* Board Card */}
-      <View className="mt-8 overflow-hidden rounded-3xl bg-landing-paper p-5 border border-landing-line/50">
+      <View className="mt-8 overflow-hidden rounded-3xl bg-landing-paper p-5 border border-landing-line">
         <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-row items-center gap-1.5">
             <Sparkles size={14} color="#7C5722" />
@@ -72,7 +72,7 @@ export function AiStylistCapsule({
           <Pressable
             accessibilityRole="button"
             onPress={() => onPressProduct(items[0].id)}
-            className="relative aspect-[3/4] flex-1 overflow-hidden rounded-subtle bg-landing-ivory border border-landing-line/40 active:opacity-85"
+            className="relative aspect-[3/4] flex-1 overflow-hidden rounded-subtle bg-landing-ivory border border-landing-line active:opacity-85"
           >
             <Image
               source={{ uri: (items[0] as any).image || getProductMainImage(items[0] as any) }}
@@ -95,7 +95,7 @@ export function AiStylistCapsule({
                 key={item.id}
                 accessibilityRole="button"
                 onPress={() => onPressProduct(item.id)}
-                className="relative aspect-[3/2] flex-1 overflow-hidden rounded-subtle bg-landing-ivory border border-landing-line/40 active:opacity-85"
+                className="relative aspect-[3/2] flex-1 overflow-hidden rounded-subtle bg-landing-ivory border border-landing-line active:opacity-85"
               >
                 <Image
                   source={{ uri: (item as any).image || getProductMainImage(item as any) }}
@@ -115,13 +115,13 @@ export function AiStylistCapsule({
         </View>
 
         {/* Itemized Credits List */}
-        <View className="mt-5 border-t border-landing-line/50 pt-3">
+        <View className="mt-5 border-t border-landing-line pt-3">
           {items.map((item, idx) => (
             <Pressable
               key={item.id}
               accessibilityRole="button"
               onPress={() => onPressProduct(item.id)}
-              className="flex-row items-center justify-between py-2 border-b border-landing-line/30 last:border-b-0 active:opacity-75"
+              className="flex-row items-center justify-between py-2 border-b border-landing-line last:border-b-0 active:opacity-75"
             >
               <View className="flex-row items-center gap-2 flex-1 mr-2">
                 <Text className="font-mono text-[10px] text-landing-brass-ink">

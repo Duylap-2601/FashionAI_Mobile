@@ -98,7 +98,7 @@ export function HomeProductSection({
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerClassName="gap-6 px-lg pb-1"
-          className="mt-8 mb-6 border-b border-landing-line/50"
+          className="mt-8 mb-6 border-b border-landing-line"
         >
           {CATEGORY_TABS.map((tab) => {
             const isActive = tab.key === activeCategoryKey;
@@ -150,7 +150,7 @@ export function HomeProductSection({
           )}
         </View>
       ) : filteredProducts.length === 0 ? (
-        <View className="mx-lg mt-6 items-center justify-center rounded-subtle border border-landing-line/60 bg-landing-paper p-8">
+        <View className="mx-lg mt-6 items-center justify-center rounded-subtle border border-landing-line bg-landing-paper p-8">
           <Text className="text-center font-sans text-body-sm text-landing-muted">
             Không tìm thấy sản phẩm phù hợp trong danh mục này.
           </Text>
