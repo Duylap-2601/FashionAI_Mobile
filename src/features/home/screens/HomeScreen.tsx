@@ -6,6 +6,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   Pressable,
+  Animated,
 } from 'react-native';
 import {
   CompositeNavigationProp,
@@ -16,6 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ArrowUpRight } from 'lucide-react-native';
 import { MainTabParamList, RootStackParamList } from '@/navigation/types';
 import { COLORS } from '@/constants/theme';
+import { homeScrollY } from '@/navigation/home-scroll';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorView } from '@/components/common/ErrorView';
 import { CollectionCarousel } from '@/features/collections/components/CollectionCarousel';
@@ -25,7 +27,6 @@ import { useCollectionProducts } from '@/features/collections/hooks/useCollectio
 import { useProducts } from '@/features/products/hooks/useProducts';
 import { OnboardingModal } from '@/features/auth/components/OnboardingModal';
 
-import { AnnouncementBar } from '../components/AnnouncementBar';
 import { HomeHeroBanner } from '../components/HomeHeroBanner';
 import { LandingSectionHeading } from '../components/LandingSectionHeading';
 import { HomeProductSection } from '../components/HomeProductSection';
@@ -64,6 +65,26 @@ export const HomeScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const collectionsOffset = useRef(0);
+  const lastScrollY = useRef(0);
+
+  const handleScroll = useCallback(
+    (event: { nativeEvent: { contentOffset: { y: number } } }) => {
+      const y = event.nativeEvent.contentOffset.y;
+      const delta = y - lastScrollY.current;
+      lastScrollY.current = y;
+
+      if (y <= 0) {
+        Animated.timing(homeScrollY, { toValue: 0, duration: 150, useNativeDriver: false }).start();
+        return;
+      }
+      if (delta > 1.5) {
+        Animated.timing(homeScrollY, { toValue: 1, duration: 150, useNativeDriver: false }).start();
+      } else if (delta < -1.5) {
+        Animated.timing(homeScrollY, { toValue: 0, duration: 150, useNativeDriver: false }).start();
+      }
+    },
+    [],
+  );
 
   // 1. Collections Query
   const collectionsQuery = usePublishedCollections();
@@ -196,6 +217,8 @@ export const HomeScreen: React.FC = () => {
       className="flex-1 bg-landing-paper"
       contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -205,12 +228,6 @@ export const HomeScreen: React.FC = () => {
         />
       }
     >
-      {/* 1. Announcement Bar */}
-      <AnnouncementBar
-        onPressTryOn={handleTryOnPress}
-        onPressShop={handleShopPress}
-      />
-
       {/* Loading / Error States for Collections */}
       {collectionsQuery.isLoading && collections.length === 0 ? (
         <CollectionSkeleton />
