@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -32,7 +32,7 @@ import { HomeProductSection } from '../components/HomeProductSection';
 import { EditorialLookbook } from '../components/EditorialLookbook';
 import { AiTryOnFeatureBanner } from '../components/AiTryOnFeatureBanner';
 import { AiStylistCapsule } from '../components/AiStylistCapsule';
-import { NewsletterBar } from '../components/NewsletterBar';
+import { LandingFooter } from '../components/LandingFooter';
 import type { IProduct } from '@/features/products/types/product';
 import type { Collection } from '@/features/collections/types/collection';
 
@@ -62,6 +62,8 @@ function getTrendingScore(product: IProduct): number {
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeNavigation>();
   const [refreshing, setRefreshing] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const collectionsOffset = useRef(0);
 
   // 1. Collections Query
   const collectionsQuery = usePublishedCollections();
@@ -159,10 +161,39 @@ export const HomeScreen: React.FC = () => {
     }
   }, [collectionsQuery]);
 
+  const handleScrollToTop = useCallback(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  const handleScrollToCollections = useCallback(() => {
+    scrollRef.current?.scrollTo({
+      y: Math.max(collectionsOffset.current - 8, 0),
+      animated: true,
+    });
+  }, []);
+
+  const handleOrdersPress = useCallback(() => {
+    navigation.navigate('ProfileTab', { screen: 'Orders' });
+  }, [navigation]);
+
+  const handleMeasurementsPress = useCallback(() => {
+    navigation.navigate('ProfileTab', {
+      screen: 'Measurements',
+      params: { tab: 'sizes' },
+    });
+  }, [navigation]);
+
+  const handlePolicyPress = useCallback(
+    (type: 'privacy' | 'terms' | 'return') => {
+      navigation.navigate('Policy', { type });
+    },
+    [navigation],
+  );
+
   return (
     <ScrollView
+      ref={scrollRef}
       className="flex-1 bg-landing-paper"
-      contentContainerClassName="pb-16"
       contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}
       refreshControl={
@@ -226,7 +257,12 @@ export const HomeScreen: React.FC = () => {
           />
 
           {/* 3. Collection Carousel (Chapter 02) */}
-          <View className="bg-landing-paper py-16">
+          <View
+            className="bg-landing-paper py-16"
+            onLayout={(event) => {
+              collectionsOffset.current = event.nativeEvent.layout.y;
+            }}
+          >
             <View className="px-lg">
               <LandingSectionHeading
                 chapter="02"
@@ -300,11 +336,20 @@ export const HomeScreen: React.FC = () => {
             onPressStylist={handleStylistPress}
             onPressProduct={handleProductPress}
           />
-
-          {/* 8. Newsletter Bar & Brand Footer */}
-          <NewsletterBar />
         </>
       )}
+
+      {/* 8. Brand Footer */}
+      <LandingFooter
+        onPressHome={handleScrollToTop}
+        onPressCollections={handleScrollToCollections}
+        onPressShop={handleShopPress}
+        onPressTryOn={handleTryOnPress}
+        onPressStylist={handleStylistPress}
+        onPressOrders={handleOrdersPress}
+        onPressMeasurements={handleMeasurementsPress}
+        onPressPolicy={handlePolicyPress}
+      />
 
       {/* 9. First-time Onboarding Modal */}
       <OnboardingModal />

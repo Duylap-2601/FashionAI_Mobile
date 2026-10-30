@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { ArrowLeft, Shield, FileText, RefreshCw, Mail, Phone, Clock, CheckCircle2 } from 'lucide-react-native';
+import { ArrowLeft, Shield, FileText, RefreshCw, Mail, Phone, CheckCircle2 } from 'lucide-react-native';
+import { COLORS } from '@/constants/theme';
+import { CONTACT } from '@/constants/contact';
 
 type PolicyType = 'privacy' | 'terms' | 'return';
 
@@ -183,7 +185,7 @@ export function PolicyScreen() {
             <View className="bg-surface p-5 rounded-2xl border border-surface-line shadow-sm gap-3">
               <Text className="text-headline-sm font-bold text-on-surface">1. Đổi trả do lỗi kích thước</Text>
               <Text className="text-body-sm text-on-surface-variant leading-relaxed">
-                Nếu sản phẩm may thực tế bị lệch quá 2cm so với số đo đã duyệt hoặc gặp lỗi chỉ may, chất liệu vải, bạn có quyền gửi yêu cầu "Báo sự cố" ngay trên màn hình chi tiết đơn hàng trong vòng 7 ngày kể từ khi nhận hàng.
+                Nếu sản phẩm may thực tế bị lệch quá 2cm so với số đo đã duyệt hoặc gặp lỗi chỉ may, chất liệu vải, bạn có quyền gửi yêu cầu &quot;Báo sự cố&quot; ngay trên màn hình chi tiết đơn hàng trong vòng 7 ngày kể từ khi nhận hàng.
               </Text>
             </View>
 
@@ -201,12 +203,14 @@ export function PolicyScreen() {
           <Text className="text-label-md font-bold text-on-surface mb-2">Liên hệ hỗ trợ khách hàng</Text>
           <View className="gap-2">
             <View className="flex-row items-center gap-2">
-              <Mail size={15} color="#5D1C34" />
-              <Text className="text-body-sm text-on-surface">hotro@fashionai.vn</Text>
+              <Mail size={15} color={COLORS.oxblood} />
+              <Text className="text-body-sm text-on-surface">{CONTACT.email}</Text>
             </View>
             <View className="flex-row items-center gap-2">
-              <Phone size={15} color="#5D1C34" />
-              <Text className="text-body-sm text-on-surface">1900 8888 (08:00 - 21:00 hàng ngày)</Text>
+              <Phone size={15} color={COLORS.oxblood} />
+              <Text className="text-body-sm text-on-surface">
+                {CONTACT.hotline} ({CONTACT.hotlineHours} hàng ngày)
+              </Text>
             </View>
           </View>
         </View>

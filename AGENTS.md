@@ -141,7 +141,7 @@ Rules:
 
 | Tab | Screen | File | Status |
 |---|---|---|---|
-| Home | HomeScreen | `src/features/home/screens/HomeScreen.tsx` | ✅ Done — Editorial layout with collection carousel, featured products, try-on banner |
+| Home | HomeScreen | `src/features/home/screens/HomeScreen.tsx` | ✅ Done — Editorial layout with collection carousel, featured products, try-on banner, newsletter, landing footer |
 | Shop | ShopScreen | `src/features/products/screens/ShopScreen.tsx` | ✅ Done — Product catalog, filters, sort |
 | Try-On | TryOnStack → TryOnScreen | `src/features/try-on/screens/TryOnScreen.tsx` | ✅ Done — Photo try-on with SegmentedControl header |
 | AI Stylist | StylistScreen | `src/features/stylist/screens/StylistScreen.tsx` | ✅ Done — AI Stylist form; result/history in RootStack |
@@ -441,7 +441,7 @@ src/
 │   │   ├── screens/CollectionDetailScreen.tsx
 │   │   └── types/collection.ts
 │   ├── home/
-│   │   ├── components/              # AiTryOnFeatureBanner, AnnouncementBar, EditorialLookbook, HomeFeaturedProducts, HomeHeroBanner, HomeProductSection, NewsletterBar, SaleBannerText
+│   │   ├── components/              # AiTryOnFeatureBanner, AnnouncementBar, EditorialLookbook, HomeFeaturedProducts, HomeHeroBanner, HomeProductSection, LandingFooter, NewsletterBar, SaleBannerText
 │   │   └── screens/HomeScreen.tsx
 │   ├── measurements/
 │   │   ├── api/measurements.api.ts
@@ -537,6 +537,7 @@ src/
 ├── constants/
 │   ├── endpoints.ts
 │   ├── theme.ts
+│   ├── contact.ts
 │   └── ai-actions.ts
 ├── config/
 │   └── env.ts
