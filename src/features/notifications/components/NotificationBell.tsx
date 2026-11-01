@@ -25,7 +25,7 @@ export const NotificationBell: React.FC = () => {
       className="min-h-11 min-w-11 items-center justify-center rounded-full"
     >
       <View>
-        <Bell size={24} color={COLORS.onSurface} />
+        <Bell size={20} color={COLORS.onSurface} />
         {unread > 0 ? (
           <View className="absolute -right-1 -top-1 h-5 min-w-5 items-center justify-center rounded-full bg-primary-container px-xs">
             <Text className="text-label-md text-primary-foreground">

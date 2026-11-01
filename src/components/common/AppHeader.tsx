@@ -21,7 +21,7 @@ export const AppHeader: React.FC<IAppHeaderProps> = ({ onBack, safeAreaTop = tru
 
   return (
     <View style={{ paddingTop: safeAreaTop ? insets.top : 0, backgroundColor: COLORS.paper }}>
-      <View className="z-20 flex-row items-center justify-between border-b border-landing-line bg-landing-paper px-4 pb-4 pt-3">
+      <View className="z-20 flex-row items-center justify-between border-b border-landing-line bg-landing-paper px-4 py-1">
         <View className="flex-row items-center">
           {onBack ? (
             <TouchableOpacity
@@ -29,7 +29,7 @@ export const AppHeader: React.FC<IAppHeaderProps> = ({ onBack, safeAreaTop = tru
               onPress={onBack}
               className="-ml-2 mr-1 h-11 w-11 items-center justify-center rounded-full active:bg-surface-container"
             >
-              <ArrowLeft size={20} color={COLORS.primaryContainer} />
+              <ArrowLeft size={18} color={COLORS.primaryContainer} />
             </TouchableOpacity>
           ) : null}
 
@@ -42,7 +42,7 @@ export const AppHeader: React.FC<IAppHeaderProps> = ({ onBack, safeAreaTop = tru
             onPress={() => navigation.navigate('Search')}
             className="h-11 w-11 items-center justify-center rounded-full active:bg-surface-container"
           >
-            <Search size={20} color={COLORS.onSurface} />
+            <Search size={18} color={COLORS.onSurface} />
           </TouchableOpacity>
 
           <NotificationBell />
@@ -52,7 +52,7 @@ export const AppHeader: React.FC<IAppHeaderProps> = ({ onBack, safeAreaTop = tru
             onPress={() => navigation.navigate('Cart')}
             className="relative h-11 w-11 items-center justify-center rounded-full active:bg-surface-container"
           >
-            <ShoppingBag size={20} color={COLORS.onSurface} />
+            <ShoppingBag size={18} color={COLORS.onSurface} />
             {totalCartItems > 0 ? (
               <View className="absolute right-1 top-1 h-5 min-w-5 items-center justify-center rounded-full border-2 border-on-primary bg-danger px-1">
                 <Text className="text-label-md text-on-primary">

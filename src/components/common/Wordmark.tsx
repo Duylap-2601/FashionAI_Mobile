@@ -4,7 +4,7 @@ import { COLORS } from '@/constants/theme';
 
 const SIZE_MAP = {
   sm: { fontSize: 18, lineHeight: 22 },
-  md: { fontSize: 22, lineHeight: 26 },
+  md: { fontSize: 24, lineHeight: 28 },
   lg: { fontSize: 28, lineHeight: 32 },
 } as const;
 

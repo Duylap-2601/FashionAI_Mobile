@@ -2,9 +2,15 @@ import React from 'react';
 import { Animated, View, Text } from 'react-native';
 import { homeScrollY } from './home-scroll';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import {
+  getFocusedRouteNameFromRoute,
+  useNavigation,
+  useNavigationState,
+  type NavigationProp,
+  type NavigationState,
+} from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { MainTabParamList } from './types';
+import type { MainTabParamList, RootStackParamList } from './types';
 import { Home, Package, Sparkles, MessageCircle, User, type LucideIcon } from 'lucide-react-native';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { TryOnStack } from './try-on-stack';
@@ -13,8 +19,8 @@ import { StylistScreen } from '../features/stylist/screens/StylistScreen';
 import { ProfileStack } from './profile-stack';
 import { AppHeader } from '../components/common/AppHeader';
 import { AnnouncementBar } from '../features/home/components/AnnouncementBar';
+import { COLORS as THEME_COLORS } from '../constants/theme';
 import { FloatingChatBubble } from '../features/chat/components/FloatingChatBubble';
-import { useNavigation, type NavigationProp } from '@react-navigation/native';
 
 // React Navigation's screenOptions/tabBarIcon require plain style objects
 // (no className support), so burgundy/cream tokens are inlined as hex here —
@@ -35,7 +41,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 const ANNOUNCEMENT_BAR_HEIGHT = 40;
 
 const MainAnnouncementBar = () => {
-  const navigation = useNavigation<NavigationProp<MainTabParamList>>();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const height = homeScrollY.interpolate({
     inputRange: [0, 1],
@@ -51,8 +57,8 @@ const MainAnnouncementBar = () => {
   return (
     <Animated.View style={{ height, opacity, overflow: 'hidden' }}>
       <AnnouncementBar
-        onPressTryOn={() => navigation.navigate('TryOnTab')}
-        onPressShop={() => navigation.navigate('ShopTab')}
+        onPressTryOn={() => navigation.navigate('Main', { screen: 'TryOnTab' })}
+        onPressShop={() => navigation.navigate('Main', { screen: 'ShopTab' })}
       />
     </Animated.View>
   );
@@ -105,19 +111,36 @@ const TabLabel = ({ label, focused }: { label: string; focused: boolean }) => (
   </View>
 );
 
+// MainTabs is rendered inside the RootStack, so read the nested tab route
+// from the root navigation state to know which tab (screen) is on top.
+const getFocusedTabName = (state: NavigationState): string | undefined => {
+  const mainRoute = state.routes[state.index];
+  if (mainRoute.name !== 'Main') return undefined;
+  const tabState = mainRoute.state;
+  if (!tabState) return 'HomeTab';
+  return tabState.routes[tabState.index ?? 0]?.name;
+};
+
 export const MainTabs: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const focusedTabName = useNavigationState(getFocusedTabName);
+  const isLandingPage = focusedTabName === 'HomeTab';
 
   return (
     <View style={{ flex: 1 }}>
-    <View style={{ paddingTop: insets.top, backgroundColor: '#11100F' }}>
-      <MainAnnouncementBar />
-    </View>
+    {/* Announcement bar lives only on the landing page (Home tab).
+        The status bar strip uses the header paper color so the top edge
+        stays seamless with the header. */}
+    {isLandingPage ? (
+      <View style={{ paddingTop: insets.top, backgroundColor: THEME_COLORS.paper }}>
+        <MainAnnouncementBar />
+      </View>
+    ) : null}
     <Tab.Navigator
       initialRouteName="HomeTab"
       screenOptions={{
         headerShown: true,
-        header: () => <AppHeader safeAreaTop={false} />,
+        header: () => <AppHeader />,
         tabBarActiveTintColor: COLORS.primaryContainer,
         tabBarInactiveTintColor: COLORS.onSurfaceVariant,
         tabBarStyle: {
@@ -138,6 +161,7 @@ export const MainTabs: React.FC = () => {
         component={HomeScreen}
         options={{
           title: 'FashionAI',
+          header: () => <AppHeader safeAreaTop={false} />,
           tabBarLabel: ({ focused }) => <TabLabel label="Home" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={Home} focused={focused} />,
         }}
