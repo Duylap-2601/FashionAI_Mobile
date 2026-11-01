@@ -1,15 +1,22 @@
 import React, { useMemo } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Platform, Text, TouchableOpacity, View } from 'react-native';
+import type { TextStyle } from 'react-native';
 import { tva } from '@gluestack-ui/nativewind-utils/tva';
+import { COLORS } from '@/constants/theme';
 import type { GarmentCategory, GarmentType, IProduct } from '../types/product';
 import { formatProductPrice } from '../utils/product-display';
 import { ProductDescription } from './ProductDescription';
+import { ProductMeasurementSummary } from './ProductMeasurementSummary';
+import { ProductReviewsSection } from './ProductReviewsSection';
+import { RelatedProducts } from './RelatedProducts';
 
 interface ProductDetailContentProps {
   product: IProduct;
   rackAction?: React.ReactNode;
   selectedColor: string | null;
   unavailable: boolean;
+  onMeasurementsPress: () => void;
+  onProductPress: (productId: string) => void;
   onReviewsPress: () => void;
   onSelectColor: (color: string) => void;
 }
@@ -19,12 +26,20 @@ interface ProductColorOption {
   hex: string | null;
 }
 
+const productNameStyle: TextStyle = {
+  fontFamily: Platform.OS === 'ios' ? 'Playfair Display' : 'serif',
+  fontSize: 32,
+  lineHeight: 40,
+  fontWeight: '600',
+  color: COLORS.obsidian,
+};
+
 const colorOptionStyle = tva({
-  base: 'min-h-11 min-w-11 flex-row items-center justify-center gap-sm rounded-full border bg-surface-lowest px-md',
+  base: 'min-h-11 flex-row items-center justify-center gap-sm rounded-subtle bg-ivory px-md',
   variants: {
     selected: {
-      true: 'border-primary-container',
-      false: 'border-surface-line',
+      true: 'border-2 border-oxblood',
+      false: 'border border-landing-line',
     },
   },
 });
@@ -32,8 +47,8 @@ const colorNameStyle = tva({
   base: 'font-sans text-body-md',
   variants: {
     selected: {
-      true: 'font-semibold text-primary-container',
-      false: 'font-medium text-catalog-muted-text',
+      true: 'font-semibold text-oxblood',
+      false: 'font-medium text-landing-muted',
     },
   },
 });
@@ -63,6 +78,8 @@ export function ProductDetailContent({
   rackAction,
   selectedColor,
   unavailable,
+  onMeasurementsPress,
+  onProductPress,
   onReviewsPress,
   onSelectColor,
 }: ProductDetailContentProps) {
@@ -79,6 +96,12 @@ export function ProductDetailContent({
   }, [product.color, product.colors]);
   const showOriginalPrice =
     product.originalPrice !== null && product.originalPrice > product.price;
+  const discountPercent = showOriginalPrice
+    ? Math.round(
+        ((product.originalPrice! - product.price) / product.originalPrice!) *
+          100,
+      )
+    : 0;
 
   return (
     <View className="gap-xl p-lg">
@@ -86,15 +109,12 @@ export function ProductDetailContent({
         {product.brand ? (
           <Text
             selectable
-            className="font-sans text-label-md uppercase tracking-widest text-catalog-muted-text"
+            className="font-sans text-label-md uppercase tracking-widest text-landing-muted"
           >
             {product.brand}
           </Text>
         ) : null}
-        <Text
-          selectable
-          className="font-sans text-product-title text-primary-container"
-        >
+        <Text selectable style={productNameStyle}>
           {product.name}
         </Text>
 
@@ -107,19 +127,19 @@ export function ProductDetailContent({
         >
           <Text
             accessibilityElementsHidden
-            className="text-body-lg text-tertiary"
+            className="text-body-lg text-brass"
           >
             ★
           </Text>
-          <Text className="font-sans text-body-md font-bold tabular-nums text-on-surface-strong">
+          <Text className="font-mono text-body-md font-bold tabular-nums text-obsidian">
             {product.avgRating.toFixed(1)}
           </Text>
-          <Text className="font-sans text-body-md tabular-nums text-catalog-muted-text underline">
+          <Text className="font-sans text-body-md tabular-nums text-landing-muted underline">
             ({product.reviewCount.toLocaleString('vi-VN')} đánh giá)
           </Text>
           <Text
             accessibilityElementsHidden
-            className="text-headline-md text-catalog-muted-text"
+            className="text-headline-md text-landing-muted"
           >
             ›
           </Text>
@@ -129,7 +149,7 @@ export function ProductDetailContent({
       <View className="flex-row flex-wrap items-center gap-sm">
         <Text
           selectable
-          className="font-sans text-product-price tabular-nums text-primary-container"
+          className="font-mono text-product-price tabular-nums text-oxblood"
         >
           {formatProductPrice(product.price)}
         </Text>
@@ -137,12 +157,12 @@ export function ProductDetailContent({
           <>
             <Text
               selectable
-              className="font-sans text-body-md tabular-nums text-catalog-muted-text line-through"
+              className="font-mono text-body-md tabular-nums text-landing-muted line-through"
             >
               {formatProductPrice(product.originalPrice!)}
             </Text>
-            <Text className="rounded-full bg-catalog-muted px-sm py-xs font-sans text-body-sm font-bold text-primary-container">
-              Giá ưu đãi
+            <Text className="rounded-subtle bg-oxblood px-sm py-xs font-mono text-label-md font-bold text-paper">
+              {discountPercent > 0 ? `-${discountPercent}%` : 'Giá ưu đãi'}
             </Text>
           </>
         ) : null}
@@ -151,30 +171,30 @@ export function ProductDetailContent({
       {unavailable ? (
         <View
           accessibilityRole="alert"
-          className="gap-xs rounded-md border border-surface-line bg-catalog-muted p-md"
+          className="gap-xs rounded-subtle border border-landing-line bg-ivory p-md"
         >
-          <Text className="font-sans text-body-md font-bold text-on-surface-strong">
+          <Text className="font-sans text-body-md font-bold text-obsidian">
             Tạm ngừng nhận đơn
           </Text>
-          <Text className="font-sans text-body-sm leading-relaxed text-catalog-muted-text">
+          <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
             Sản phẩm hiện chưa sẵn sàng để thêm vào giỏ hàng.
           </Text>
         </View>
       ) : (
         <View className="min-h-7 flex-row items-center gap-sm">
-          <View className="h-2 w-2 rounded-full bg-success" />
-          <Text className="font-sans text-body-sm font-medium text-on-surface-strong">
+          <View className="h-2 w-2 rounded-full bg-sage" />
+          <Text className="font-sans text-body-sm font-medium text-sage-ink">
             Đang nhận đơn may đo
           </Text>
         </View>
       )}
 
       {colorOptions.length > 0 ? (
-        <View className="gap-md border-t border-catalog-line pt-xl">
-          <Text className="font-sans text-body-lg font-semibold text-primary-container">
+        <View className="gap-md border-t border-landing-line pt-xl">
+          <Text className="font-sans text-body-lg font-semibold text-obsidian">
             Màu sắc
             {selectedColor ? (
-              <Text className="font-normal text-catalog-muted-text">
+              <Text className="font-normal text-landing-muted">
                 {' '}
                 · {selectedColor}
               </Text>
@@ -195,7 +215,7 @@ export function ProductDetailContent({
                 >
                   {color.hex ? (
                     <View
-                      className="h-5 w-5 rounded-full border border-surface-line"
+                      className="h-5 w-5 rounded-subtle border border-taupe"
                       style={{ backgroundColor: color.hex }}
                     />
                   ) : null}
@@ -209,23 +229,28 @@ export function ProductDetailContent({
         </View>
       ) : null}
 
-      <View className="gap-sm rounded-catalog-card border border-surface-line bg-catalog-tailoring p-lg">
-        <Text className="font-sans text-label-md uppercase tracking-wide text-primary-container">
+      <View className="gap-sm rounded-subtle border border-landing-line bg-ivory p-lg">
+        <Text className="font-sans text-label-md uppercase tracking-wide text-brass-ink">
           MAY ĐO CÁ NHÂN
         </Text>
-        <Text className="font-sans text-headline-sm text-primary-container">
+        <Text className="font-sans text-headline-sm font-semibold text-obsidian">
           Thiết kế dành riêng cho số đo của bạn
         </Text>
-        <Text className="font-sans text-body-md leading-relaxed text-on-surface-variant">
+        <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
           FashionAI không dùng kích cỡ tiêu chuẩn. Số đo cơ thể sẽ được áp dụng
           trong quy trình đặt may để tạo độ vừa vặn phù hợp với riêng bạn.
         </Text>
       </View>
 
+      <ProductMeasurementSummary
+        category={product.category}
+        onPressMeasurements={onMeasurementsPress}
+      />
+
       {rackAction}
 
-      <View className="gap-md border-t border-catalog-line pt-xl">
-        <Text className="font-sans text-body-lg font-semibold text-primary-container">
+      <View className="gap-md border-t border-landing-line pt-xl">
+        <Text className="font-sans text-body-lg font-semibold text-obsidian">
           Thông tin sản phẩm
         </Text>
         <MetadataRow
@@ -244,13 +269,20 @@ export function ProductDetailContent({
       </View>
 
       {product.description?.trim() ? (
-        <View className="gap-md border-t border-catalog-line pt-xl">
-          <Text className="font-sans text-body-lg font-semibold text-primary-container">
+        <View className="gap-md border-t border-landing-line pt-xl">
+          <Text className="font-sans text-body-lg font-semibold text-obsidian">
             Chi tiết
           </Text>
           <ProductDescription key={`${product.id}:${product.description}`} description={product.description} />
         </View>
       ) : null}
+
+      <ProductReviewsSection
+        productId={product.id}
+        onViewAll={onReviewsPress}
+      />
+
+      <RelatedProducts product={product} onPressProduct={onProductPress} />
     </View>
   );
 }
@@ -258,12 +290,12 @@ export function ProductDetailContent({
 function MetadataRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="min-h-9 flex-row items-start justify-between gap-lg">
-      <Text className="flex-1 font-sans text-body-md text-catalog-muted-text">
+      <Text className="flex-1 font-sans text-body-md text-landing-muted">
         {label}
       </Text>
       <Text
         selectable
-        className="flex-1 text-right font-sans text-body-md font-medium text-on-surface-strong"
+        className="flex-1 text-right font-sans text-body-md font-medium text-obsidian"
       >
         {value}
       </Text>

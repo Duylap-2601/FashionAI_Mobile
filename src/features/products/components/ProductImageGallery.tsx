@@ -21,8 +21,8 @@ const dotStyle = tva({
   base: 'h-1.5 rounded-full',
   variants: {
     active: {
-      true: 'w-4 bg-primary-container',
-      false: 'w-1.5 bg-surface-line',
+      true: 'w-4 bg-oxblood',
+      false: 'w-1.5 bg-taupe',
     },
   },
 });
@@ -62,17 +62,17 @@ export function ProductImageGallery({
       className="items-center px-lg pt-lg"
     >
       <View style={{ width: imageWidth }}>
-        <View className="overflow-hidden rounded-catalog-gallery bg-catalog-muted">
+        <View className="overflow-hidden rounded-subtle bg-ivory">
           {imageUrls.length === 0 ? (
             <View style={{ height: imageHeight }}>
               <View
                 accessibilityLabel={`${productName}, chưa có ảnh sản phẩm`}
                 className="flex-1 items-center justify-center gap-sm"
               >
-                <Text className="font-sans text-display text-catalog-muted-text">
+                <Text className="font-sans text-display text-landing-muted">
                   ◇
                 </Text>
-                <Text className="font-sans text-body-md text-catalog-muted-text">
+                <Text className="font-sans text-body-md text-landing-muted">
                   Chưa có ảnh sản phẩm
                 </Text>
               </View>
@@ -92,10 +92,10 @@ export function ProductImageGallery({
                       accessibilityLabel={`Không thể hiển thị ảnh ${index + 1} của ${productName}`}
                       className="flex-1 items-center justify-center gap-sm"
                     >
-                      <Text className="font-sans text-display text-catalog-muted-text">
+                      <Text className="font-sans text-display text-landing-muted">
                         ◇
                       </Text>
-                      <Text className="font-sans text-body-md text-catalog-muted-text">
+                      <Text className="font-sans text-body-md text-landing-muted">
                         Không thể hiển thị ảnh
                       </Text>
                     </View>
@@ -116,9 +116,9 @@ export function ProductImageGallery({
           {imageUrls.length > 1 ? (
             <View
               pointerEvents="none"
-              className="absolute bottom-md right-md rounded-full bg-surface-lowest/90 px-md py-xs"
+              className="absolute bottom-md right-md rounded-subtle border border-landing-line bg-ivory/90 px-md py-xs"
             >
-              <Text className="font-sans text-label-md tabular-nums text-primary-container">
+              <Text className="font-mono text-label-md tabular-nums text-obsidian">
                 {activeIndex + 1} / {imageUrls.length}
               </Text>
             </View>

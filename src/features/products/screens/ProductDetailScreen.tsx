@@ -97,6 +97,20 @@ function ProductDetail({
     navigation.navigate('Reviews', { productId });
   }, [navigation, productId]);
 
+  const handleMeasurementsPress = useCallback(() => {
+    navigation.navigate('Main', {
+      screen: 'ProfileTab',
+      params: { screen: 'Measurements' },
+    });
+  }, [navigation]);
+
+  const handleProductPress = useCallback(
+    (relatedProductId: string) => {
+      navigation.push('ProductDetail', { productId: relatedProductId });
+    },
+    [navigation],
+  );
+
   const handleSelectColor = useCallback(
     (color: string) => {
       if (product) {
@@ -220,7 +234,7 @@ function ProductDetail({
   }
 
   return (
-    <View className="flex-1 bg-surface-lowest">
+    <View className="flex-1 bg-paper">
       <ScrollView
         contentContainerClassName="pb-xxl"
         contentInsetAdjustmentBehavior="automatic"
@@ -237,9 +251,9 @@ function ProductDetail({
         {productQuery.isError ? (
           <View
             accessibilityRole="alert"
-            className="mx-lg mt-lg min-h-12 flex-row items-center gap-md rounded-md bg-catalog-muted p-md"
+            className="mx-lg mt-lg min-h-12 flex-row items-center gap-md rounded-subtle border border-landing-line bg-ivory p-md"
           >
-            <Text className="flex-1 font-sans text-body-sm leading-relaxed text-on-surface-variant">
+            <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-muted">
               Chưa thể cập nhật thông tin mới nhất. Nội dung đã tải vẫn được giữ
               lại.
             </Text>
@@ -249,7 +263,7 @@ function ProductDetail({
               onPress={() => void productQuery.refetch()}
               className="min-h-11 min-w-11 items-center justify-center px-sm active:opacity-70"
             >
-              <Text className="font-sans text-body-sm font-bold text-primary-container">
+              <Text className="font-sans text-body-sm font-bold text-oxblood">
                 Thử lại
               </Text>
             </Pressable>
@@ -269,6 +283,8 @@ function ProductDetail({
           }
           selectedColor={selectedColor}
           unavailable={unavailable}
+          onMeasurementsPress={handleMeasurementsPress}
+          onProductPress={handleProductPress}
           onReviewsPress={handleReviewsPress}
           onSelectColor={handleSelectColor}
         />
