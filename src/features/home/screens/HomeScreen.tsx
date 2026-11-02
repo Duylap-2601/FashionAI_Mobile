@@ -228,6 +228,12 @@ export const HomeScreen: React.FC = () => {
         />
       }
     >
+      {/* 1. Hero Banner (static slides, same media as FE) */}
+      <HomeHeroBanner
+        onPressCollections={handleScrollToCollections}
+        onPressTryOn={handleTryOnPress}
+      />
+
       {/* Loading / Error States for Collections */}
       {collectionsQuery.isLoading && collections.length === 0 ? (
         <CollectionSkeleton />
@@ -266,14 +272,7 @@ export const HomeScreen: React.FC = () => {
             </View>
           )}
 
-          {/* 2. Hero Banner (Collections Slider) */}
-          <HomeHeroBanner
-            collections={collections}
-            onPressCollection={handleCollectionPress}
-            onPressTryOn={handleTryOnPress}
-          />
-
-          {/* 3. Collection Carousel (Chapter 02) */}
+          {/* 2. Collection Carousel (Chapter 02) */}
           <View
             className="bg-landing-paper py-16"
             onLayout={(event) => {
