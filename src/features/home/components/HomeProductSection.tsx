@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, Pressable, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, useWindowDimensions } from 'react-native';
 import { ArrowUpRight } from 'lucide-react-native';
 import { SPACING } from '@/constants/theme';
+import { GarmentTypeTabs } from '@/features/products/components/GarmentTypeTabs';
 import { ProductCard } from '@/features/products/components/ProductCard';
 import { ProductGridSkeleton } from '@/features/products/components/ProductGridSkeleton';
+import { matchesGarmentType } from '@/features/products/utils/product-filters';
 import { LandingSectionHeading } from './LandingSectionHeading';
-import type { IProduct } from '@/features/products/types/product';
+import type { GarmentType, IProduct } from '@/features/products/types/product';
 
 interface HomeProductSectionProps {
   chapter?: string;
@@ -20,14 +22,6 @@ interface HomeProductSectionProps {
   onPressProduct: (productId: string) => void;
   onPressViewAll: () => void;
 }
-
-const CATEGORY_TABS = [
-  { key: 'ALL', label: 'Tất cả' },
-  { key: 'BLAZER', label: 'Áo Blazer & Vest', keywords: ['blazer', 'vest', 'suit'] },
-  { key: 'DRESS', label: 'Váy & Đầm', keywords: ['đầm', 'váy', 'dress', 'skirt'] },
-  { key: 'PANTS', label: 'Quần tây', keywords: ['quần', 'pant', 'trouser'] },
-  { key: 'SHIRT', label: 'Áo sơ mi', keywords: ['sơ mi', 'shirt'] },
-];
 
 export function HomeProductSection({
   chapter = '03',
@@ -50,21 +44,18 @@ export function HomeProductSection({
       : (width - SPACING.lg * 2 - SPACING.catalogGap) / 2,
   );
 
-  const [activeCategoryKey, setActiveCategoryKey] = useState('ALL');
+  const [activeGarmentType, setActiveGarmentType] =
+    useState<GarmentType | null>(null);
 
   const filteredProducts = useMemo(() => {
-    if (!showCategories || activeCategoryKey === 'ALL') {
+    if (!showCategories || !activeGarmentType) {
       return products;
     }
-    const tab = CATEGORY_TABS.find((t) => t.key === activeCategoryKey);
-    if (!tab?.keywords) return products;
 
-    return products.filter((p) => {
-      const name = (p.name || '').toLowerCase();
-      const garment = p.garmentType?.toLowerCase() ?? '';
-      return tab.keywords.some((kw) => name.includes(kw) || garment.includes(kw));
-    });
-  }, [products, activeCategoryKey, showCategories]);
+    return products.filter((product) =>
+      matchesGarmentType(product, activeGarmentType),
+    );
+  }, [products, activeGarmentType, showCategories]);
 
   return (
     <View className="bg-landing-ivory py-16">
@@ -94,37 +85,12 @@ export function HomeProductSection({
 
       {/* Category Tabs: Underline Text Tabs */}
       {showCategories && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-6 px-lg pb-1"
-          className="mt-8 mb-6 border-b border-landing-line"
-        >
-          {CATEGORY_TABS.map((tab) => {
-            const isActive = tab.key === activeCategoryKey;
-            return (
-              <Pressable
-                key={tab.key}
-                onPress={() => setActiveCategoryKey(tab.key)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: isActive }}
-                className={`min-h-11 justify-center pb-2.5 ${
-                  isActive ? 'border-b-2 border-landing-oxblood' : ''
-                }`}
-              >
-                <Text
-                  className={`font-sans text-[11px] uppercase tracking-[0.16em] ${
-                    isActive
-                      ? 'font-bold text-landing-oxblood'
-                      : 'font-normal text-landing-muted'
-                  }`}
-                >
-                  {tab.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        <View className="mb-6 mt-8">
+          <GarmentTypeTabs
+            activeGarmentType={activeGarmentType}
+            onSelect={setActiveGarmentType}
+          />
+        </View>
       )}
 
       {/* Grid Content */}

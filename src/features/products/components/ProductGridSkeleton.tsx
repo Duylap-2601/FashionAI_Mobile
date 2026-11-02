@@ -22,12 +22,13 @@ export function ProductGridSkeleton({
       >
         {PLACEHOLDERS.map((placeholder) => (
           <View key={placeholder} style={{ width: cardWidth }}>
-            <View className="overflow-hidden rounded-catalog-card border border-catalog-line bg-surface-lowest">
-              <View className="aspect-[3/4] w-full bg-catalog-muted" />
-              <View className="gap-sm p-sm">
-                <View className="h-3 w-1/3 rounded-sm bg-catalog-line" />
-                <View className="h-8 w-full rounded-sm bg-catalog-line" />
-                <View className="h-4 w-2/3 rounded-sm bg-catalog-line" />
+            <View className="aspect-[3/4] w-full bg-landing-taupe/45" />
+            <View className="pt-4">
+              <View className="h-3 w-1/3 bg-landing-line" />
+              <View className="mb-3 mt-2 h-10 w-full bg-landing-line" />
+              <View className="flex-row items-center justify-between border-t border-landing-line pt-3">
+                <View className="h-4 w-2/3 bg-landing-line" />
+                <View className="h-3 w-3 bg-landing-line" />
               </View>
             </View>
           </View>

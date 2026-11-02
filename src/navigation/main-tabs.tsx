@@ -177,7 +177,8 @@ export const MainTabs: React.FC = () => {
         component={ShopScreen}
         options={{
           title: 'Khám phá',
-          tabBarLabel: ({ focused }) => <TabLabel label="Sản phẩm" focused={focused} />,
+          header: () => <AppHeader showSearch={false} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Sản Phẩm" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={Package} focused={focused} />,
         }}
       />

@@ -34,12 +34,17 @@ export function RelatedProducts({
 
   return (
     <View className="gap-md border-t border-landing-line pt-xl">
-      <Text
-        accessibilityRole="header"
-        className="font-sans text-headline-sm font-semibold text-obsidian"
-      >
-        Có thể bạn sẽ thích
-      </Text>
+      <View className="gap-xs">
+        <Text className="font-sans text-label-md font-semibold uppercase tracking-widest text-brass-ink">
+          Gợi ý phối đồ
+        </Text>
+        <Text
+          accessibilityRole="header"
+          className="font-display text-headline-sm text-obsidian"
+        >
+          Có thể bạn sẽ thích
+        </Text>
+      </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

@@ -82,6 +82,27 @@ describe('products API', () => {
     expect(result.meta).toMatchObject({ total: 1, totalPages: 1 });
   });
 
+  it('maps products whose optional backend pricing fields are omitted', async () => {
+    const {
+      originalPrice: _originalPrice,
+      stock: _stock,
+      ...productWithoutPricing
+    } = RAW_PRODUCT;
+
+    mock.onGet(ENDPOINTS.PRODUCTS.LIST).reply(200, {
+      success: true,
+      code: 'OK',
+      message: 'Thành công',
+      data: [productWithoutPricing],
+      meta: { page: 1, limit: 10, total: 1, totalPages: 1 },
+    });
+
+    const result = await getProducts();
+
+    expect(result.data[0].originalPrice).toBeNull();
+    expect(result.data[0].stock).toBe(0);
+  });
+
   it('fetches and maps a single product detail', async () => {
     mock.onGet(ENDPOINTS.PRODUCTS.DETAIL('p1')).reply(200, {
       success: true,

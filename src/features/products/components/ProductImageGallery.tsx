@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image } from 'expo-image';
 import {
   FlatList,
@@ -13,6 +13,7 @@ import { SPACING } from '@/constants/theme';
 
 interface ProductImageGalleryProps {
   imageUrls: string[];
+  focusImageUrl?: string | null;
   productName: string;
 }
 
@@ -29,10 +30,16 @@ const dotStyle = tva({
 
 export function ProductImageGallery({
   imageUrls,
+  focusImageUrl,
   productName,
 }: ProductImageGalleryProps) {
   const { width: screenWidth } = useWindowDimensions();
-  const [activeIndex, setActiveIndex] = useState(0);
+  const listRef = useRef<FlatList<string>>(null);
+  const lastFocusedImageRef = useRef<string | null>(null);
+  const focusIndex = focusImageUrl ? imageUrls.indexOf(focusImageUrl) : -1;
+  const initialFocusIndex =
+    focusIndex >= 0 ? Math.min(focusIndex, imageUrls.length - 1) : 0;
+  const [activeIndex, setActiveIndex] = useState(initialFocusIndex);
   const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(
     () => new Set(),
   );
@@ -41,6 +48,27 @@ export function ProductImageGallery({
     Math.min(screenWidth - SPACING.lg * 2, MAX_IMAGE_WIDTH),
   );
   const imageHeight = imageWidth / 0.75;
+
+  useEffect(() => {
+    const targetUrl = focusImageUrl?.trim();
+    if (!targetUrl || targetUrl === lastFocusedImageRef.current) {
+      return;
+    }
+
+    const targetIndex = imageUrls.indexOf(targetUrl);
+    if (targetIndex < 0) {
+      return;
+    }
+
+    lastFocusedImageRef.current = targetUrl;
+    requestAnimationFrame(() => {
+      setActiveIndex(targetIndex);
+      listRef.current?.scrollToOffset({
+        offset: targetIndex * imageWidth,
+        animated: true,
+      });
+    });
+  }, [focusImageUrl, imageUrls, imageWidth]);
 
   const handleMomentumScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -79,11 +107,20 @@ export function ProductImageGallery({
             </View>
           ) : (
             <FlatList
+              ref={listRef}
               data={imageUrls}
               horizontal
               pagingEnabled
               keyExtractor={(imageUrl) => imageUrl}
               showsHorizontalScrollIndicator={false}
+              initialScrollIndex={
+                initialFocusIndex > 0 ? initialFocusIndex : undefined
+              }
+              getItemLayout={(_, index) => ({
+                length: imageWidth,
+                offset: imageWidth * index,
+                index,
+              })}
               onMomentumScrollEnd={handleMomentumScrollEnd}
               renderItem={({ item: imageUrl, index }) => (
                 <View style={{ width: imageWidth, height: imageHeight }}>

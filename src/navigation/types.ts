@@ -47,7 +47,7 @@ export type RootStackParamList = {
 
   ProductDetail: { productId: string };
   CollectionDetail: { slug: string };
-  Reviews: { productId: string };
+  Reviews: { productId: string; startWriting?: boolean };
   MyReviews: undefined;
 
   Stylist: undefined;

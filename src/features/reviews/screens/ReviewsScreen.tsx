@@ -9,6 +9,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button } from '@/components/ui/Button';
 import { ErrorView } from '@/components/common/ErrorView';
+import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { COLORS } from '@/constants/theme';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import type { RootStackParamList } from '@/navigation/types';
@@ -18,6 +19,7 @@ import { ReviewCard } from '../components/ReviewCard';
 import { ReviewForm } from '../components/ReviewForm';
 import { ReviewEmptyState } from '../components/ReviewEmptyState';
 import { ReviewStatsCard } from '../components/ReviewStatsCard';
+import { useCanReviewProduct } from '../hooks/useCanReviewProduct';
 import { useProductReviews, useProductReviewStats } from '../hooks/useProductReviews';
 import {
   useCreateReview,
@@ -39,13 +41,44 @@ export function ReviewsScreen({ navigation, route }: Props) {
   const productId = route.params.productId.trim();
   const { user } = useAuth();
   const [rating, setRating] = useState<ReviewRating>();
-  const [writing, setWriting] = useState(false);
+  const [writing, setWriting] = useState(
+    Boolean(route.params.startWriting),
+  );
   const [editing, setEditing] = useState<IReview | null>(null);
+  const [eligibilityModal, setEligibilityModal] = useState<
+    'already_reviewed' | 'not_purchased' | null
+  >(null);
   const reviewsQuery = useProductReviews(productId, rating);
   const statsQuery = useProductReviewStats(productId);
+  const reviewEligibility = useCanReviewProduct(productId);
   const createMutation = useCreateReview();
   const updateMutation = useUpdateReview();
   const deleteMutation = useDeleteReview();
+
+  const handleToggleWriting = useCallback(() => {
+    createMutation.reset();
+    setEditing(null);
+
+    if (writing) {
+      setWriting(false);
+      return;
+    }
+
+    if (reviewEligibility.isLoading) {
+      return;
+    }
+
+    if (!reviewEligibility.canReview) {
+      setEligibilityModal(
+        reviewEligibility.reason === 'already_reviewed'
+          ? 'already_reviewed'
+          : 'not_purchased',
+      );
+      return;
+    }
+
+    setWriting(true);
+  }, [createMutation, reviewEligibility, writing]);
 
   const reviews = useMemo(
     () => reviewsQuery.data?.pages.flatMap((page) => page.data) ?? [],
@@ -68,14 +101,20 @@ export function ReviewsScreen({ navigation, route }: Props) {
         const comment = values.comment.trim();
         await createMutation.mutateAsync({
           productId,
-          input: { rating: values.rating as ReviewRating, ...(comment ? { comment } : {}) },
+          input: {
+            rating: values.rating as ReviewRating,
+            ...(comment ? { comment } : {}),
+            ...(reviewEligibility.eligibleOrderId
+              ? { orderId: reviewEligibility.eligibleOrderId }
+              : {}),
+          },
         });
         setWriting(false);
       } catch {
         // Mutation state renders the authoritative backend eligibility/permission error.
       }
     },
-    [createMutation, productId],
+    [createMutation, productId, reviewEligibility.eligibleOrderId],
   );
 
   const submitEdit = useCallback(
@@ -146,8 +185,9 @@ export function ReviewsScreen({ navigation, route }: Props) {
   }
 
   return (
-    <FlatList
-      className="flex-1 bg-surface-lowest"
+    <>
+      <FlatList
+        className="flex-1 bg-surface-lowest"
       data={reviews}
       keyExtractor={(item) => item.id}
       contentContainerClassName="gap-xxl pb-xxxl"
@@ -169,11 +209,7 @@ export function ReviewsScreen({ navigation, route }: Props) {
               size="sm"
               className="!rounded-xl"
               textClassName="font-sans !text-on-primary"
-              onPress={() => {
-                createMutation.reset();
-                setEditing(null);
-                setWriting((value) => !value);
-              }}
+              onPress={handleToggleWriting}
             />
             <Button
               title="Đánh giá của tôi"
@@ -249,9 +285,28 @@ export function ReviewsScreen({ navigation, route }: Props) {
           description={rating ? 'Hãy thử chọn mức sao khác hoặc xem tất cả đánh giá.' : 'Nếu bạn đã mua và nhận sản phẩm này, hãy là người đầu tiên chia sẻ cảm nhận nhé!'}
         />
       }
-      ListFooterComponent={reviewsQuery.isFetchingNextPage ? (
-        <ActivityIndicator className="py-lg" color={COLORS.primaryContainer} />
-      ) : null}
-    />
+        ListFooterComponent={reviewsQuery.isFetchingNextPage ? (
+          <ActivityIndicator className="py-lg" color={COLORS.primaryContainer} />
+        ) : null}
+      />
+      <FeedbackModal
+        visible={eligibilityModal !== null}
+        type="info"
+        title={
+          eligibilityModal === 'already_reviewed'
+            ? 'Bạn đã đánh giá sản phẩm này'
+            : 'Chỉ user đã mua và nhận hàng mới được đánh giá'
+        }
+        message={
+          eligibilityModal === 'already_reviewed'
+            ? 'Bạn có thể chỉnh sửa đánh giá đã gửi trong mục Đánh giá của tôi.'
+            : 'Đơn hàng cần ở trạng thái đã hoàn tất trước khi bạn có thể chia sẻ cảm nhận.'
+        }
+        dismissible
+        onClose={() => setEligibilityModal(null)}
+        primaryButtonText="Đã hiểu"
+        onPrimaryPress={() => setEligibilityModal(null)}
+      />
+    </>
   );
 }

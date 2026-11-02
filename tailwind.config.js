@@ -142,7 +142,10 @@ module.exports = {
         heading: ["Be Vietnam Pro", "system-ui", "sans-serif"],
         display: ["Playfair Display", "serif"],
         serif: ["Playfair Display", "serif"],
-        mono: ["Courier New", "monospace"],
+        mono: ["JetBrains Mono", "monospace"],
+      },
+      letterSpacing: {
+        price: "0.02em",
       },
       // design/design-system.md › Typography roles, e.g. `text-headline-sm`, `text-price-lg`
       fontSize: {

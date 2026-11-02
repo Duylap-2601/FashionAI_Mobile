@@ -118,7 +118,9 @@ export const RootNavigator: React.FC = () => {
                 title: "Chi tiết sản phẩm",
                 headerBackTitle: "Sản phẩm",
                 headerTintColor: COLORS.primaryContainer,
-                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                // Header shares the Product Detail paper surface.
+                headerStyle: { backgroundColor: COLORS.paper },
+                headerShadowVisible: false,
                 headerTitleStyle: {
                   color: COLORS.onSurface,
                   fontSize: FONT_SIZE.md,
