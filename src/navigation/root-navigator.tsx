@@ -192,10 +192,12 @@ export const RootNavigator: React.FC = () => {
                 title: "AI Stylist",
                 headerBackTitle: "Trang chủ",
                 headerTintColor: COLORS.primaryContainer,
-                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerStyle: { backgroundColor: COLORS.paper },
+                headerShadowVisible: false,
                 headerTitleStyle: {
-                  color: COLORS.onSurface,
-                  fontSize: FONT_SIZE.md,
+                  color: COLORS.obsidian,
+                  fontFamily: "Playfair Display",
+                  fontSize: FONT_SIZE.xl,
                 },
               }}
             />
@@ -208,10 +210,12 @@ export const RootNavigator: React.FC = () => {
                 title: "Lịch sử AI Stylist",
                 headerBackTitle: "AI Stylist",
                 headerTintColor: COLORS.primaryContainer,
-                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerStyle: { backgroundColor: COLORS.paper },
+                headerShadowVisible: false,
                 headerTitleStyle: {
-                  color: COLORS.onSurface,
-                  fontSize: FONT_SIZE.md,
+                  color: COLORS.obsidian,
+                  fontFamily: "Playfair Display",
+                  fontSize: FONT_SIZE.xl,
                 },
               }}
             />
@@ -224,10 +228,12 @@ export const RootNavigator: React.FC = () => {
                 title: "Kết quả tư vấn",
                 headerBackTitle: "AI Stylist",
                 headerTintColor: COLORS.primaryContainer,
-                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerStyle: { backgroundColor: COLORS.paper },
+                headerShadowVisible: false,
                 headerTitleStyle: {
-                  color: COLORS.onSurface,
-                  fontSize: FONT_SIZE.md,
+                  color: COLORS.obsidian,
+                  fontFamily: "Playfair Display",
+                  fontSize: FONT_SIZE.xl,
                 },
               }}
             />

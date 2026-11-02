@@ -21,6 +21,11 @@ export interface IStylistAnalyzeInput {
   genderPreference?: StylistGenderPreference;
 }
 
+export interface IStylistColorSuggestion {
+  name: string;
+  hex: string | null;
+}
+
 export interface IStylistAnalysis {
   bodyType: string;
   skinTone: string;
@@ -28,7 +33,7 @@ export interface IStylistAnalysis {
   fitRecommendation: string;
   fitAdvice: string | null;
   productCompatibilityScore: number | null;
-  colorSuggestions: string[];
+  colorSuggestions: IStylistColorSuggestion[];
   outfitCombinations: string[];
   stylingTips: string;
   verdict: string;

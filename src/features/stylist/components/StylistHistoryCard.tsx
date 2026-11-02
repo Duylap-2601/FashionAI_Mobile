@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Sparkles } from 'lucide-react-native';
-import { Card } from '@/components/ui/Card';
 import { COLORS } from '@/constants/theme';
 import type { IStylistResult } from '../types/stylist';
 
@@ -31,58 +30,72 @@ export function StylistHistoryCard({
   onDelete,
 }: StylistHistoryCardProps) {
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-  const imageFailed = failedImageUrl === result.humanImageUrl;
+  const imageFailed =
+    !result.humanImageUrl || failedImageUrl === result.humanImageUrl;
 
   return (
-    <Card variant="outlined" className="mx-lg overflow-hidden !rounded-2xl !border-catalog-line !p-0">
+    <View className="mx-lg overflow-hidden rounded-subtle border border-landing-line bg-ivory">
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Mở kết quả tư vấn ${result.occasion || ''}`.trim()}
-        className="min-h-32 flex-row active:opacity-70"
+        className="flex-row active:opacity-80"
         onPress={() => onOpen(result.id)}
       >
-        <View className="h-32 w-24 overflow-hidden rounded-xl bg-catalog-muted">
-        {!imageFailed ? (
-          // expo-image does not consume NativeWind classes; fill the token-sized thumbnail.
-          <Image
-            source={{ uri: result.humanImageUrl }}
-            contentFit="cover"
-            transition={150}
-            style={StyleSheet.absoluteFill}
-            onError={() => setFailedImageUrl(result.humanImageUrl)}
-          />
-        ) : (
-          <View className="flex-1 items-center justify-center">
-            <Sparkles size={24} color={COLORS.catalogMutedText} />
-          </View>
-        )}
+        <View className="h-32 w-24 overflow-hidden border-r border-landing-line bg-landing-paper">
+          {!imageFailed ? (
+            <Image
+              source={{ uri: result.humanImageUrl }}
+              contentFit="cover"
+              transition={150}
+              style={StyleSheet.absoluteFill}
+              onError={() => setFailedImageUrl(result.humanImageUrl)}
+            />
+          ) : (
+            <View className="flex-1 items-center justify-center">
+              <Sparkles size={22} strokeWidth={1.5} color={COLORS.muted} />
+            </View>
+          )}
         </View>
 
-        <View className="flex-1 justify-between p-md">
-          <View>
-            <Text className="font-sans text-body-sm text-catalog-muted-text">{formatDate(result.createdAt)}</Text>
-            <Text className="mt-sm font-sans text-body-md font-semibold text-primary-container" numberOfLines={2}>
+        <View className="flex-1 justify-between gap-2 p-md">
+          <View className="gap-1">
+            <Text className="font-mono text-[10px] uppercase tracking-[0.14em] text-landing-muted">
+              {formatDate(result.createdAt)}
+            </Text>
+            <Text
+              numberOfLines={2}
+              className="font-display text-[17px] leading-snug text-landing-obsidian"
+            >
               {result.occasion || result.garmentDescription || 'Tư vấn phong cách cá nhân'}
             </Text>
-            <Text className="mt-sm font-sans text-body-sm leading-relaxed text-on-surface-variant" numberOfLines={2}>
+            <Text
+              numberOfLines={2}
+              className="font-sans text-body-sm leading-relaxed text-landing-muted"
+            >
               {result.analysis.verdict}
             </Text>
           </View>
-          <Text className="mt-md font-sans text-body-sm font-semibold text-primary-container">Xem kết quả →</Text>
+          <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-oxblood">
+            Xem kết quả →
+          </Text>
         </View>
       </Pressable>
 
-      <View className="items-end border-t border-catalog-line px-md py-sm">
+      <View className="flex-row items-center justify-end border-t border-landing-line px-md">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Xóa kết quả tư vấn"
           disabled={deleting}
-          className="min-h-11 min-w-11 items-center justify-center rounded-xl px-md active:bg-catalog-muted disabled:opacity-50"
+          className="min-h-11 min-w-11 items-center justify-center px-md active:opacity-60 disabled:opacity-50"
           onPress={() => onDelete(result)}
         >
-          <Text className="font-sans text-body-sm font-semibold text-danger">{deleting ? '…' : 'Xóa'}</Text>
+          <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-oxblood">
+            {deleting ? '…' : 'Xóa'}
+          </Text>
         </Pressable>
       </View>
-    </Card>
+    </View>
   );
 }
+
+export default StylistHistoryCard;

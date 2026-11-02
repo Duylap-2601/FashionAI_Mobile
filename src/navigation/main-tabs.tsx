@@ -198,6 +198,7 @@ export const MainTabs: React.FC = () => {
         component={StylistScreen}
         options={{
           title: 'AI Stylist',
+          header: () => <AppHeader />,
           tabBarLabel: ({ focused }) => <TabLabel label="AI Stylist" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={Wand2} focused={focused} />,
         }}

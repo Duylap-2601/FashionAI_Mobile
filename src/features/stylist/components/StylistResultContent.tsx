@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
 import { Image } from 'expo-image';
+import * as Clipboard from 'expo-clipboard';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Sparkles, ArrowRight, Shirt } from 'lucide-react-native';
-import { Card } from '@/components/ui/Card';
-import type { IStylistResult } from '../types/stylist';
+import {
+  AlertCircle,
+  ArrowRight,
+  Check,
+  Copy,
+  Shirt,
+  Sparkles,
+} from 'lucide-react-native';
+import { COLORS } from '@/constants/theme';
+import type { IStylistColorSuggestion, IStylistResult } from '../types/stylist';
 
 interface StylistResultContentProps {
   result: IStylistResult;
@@ -11,20 +19,77 @@ interface StylistResultContentProps {
   onTryOnPress?: (product?: { id: string; name: string; imageUrl?: string }) => void;
 }
 
-function ResultSection({
-  title,
-  children,
-  warm = false,
-}: {
-  title: string;
-  children: React.ReactNode;
-  warm?: boolean;
-}) {
+const sectionLabelClass =
+  'font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink';
+
+function toTips(text: string | undefined): string[] {
+  if (!text) return [];
+  return text
+    .split(/\n+/)
+    .map((line) => line.replace(/^\s*[-•*]\s*/, '').trim())
+    .filter(Boolean);
+}
+
+function scoreTone(score: number) {
+  if (score >= 80) return { bar: 'bg-sage-ink', label: 'Rất hợp' };
+  if (score >= 60) return { bar: 'bg-brass', label: 'Khá hợp' };
+  return { bar: 'bg-danger', label: 'Ít hợp' };
+}
+
+function ColorChip({ color }: { color: IStylistColorSuggestion }) {
+  const [copied, setCopied] = useState(false);
+
+  if (!color.hex) {
+    return (
+      <Text className="rounded-subtle border border-landing-line bg-landing-paper px-2.5 py-1 font-sans text-[12px] text-landing-obsidian/80">
+        {color.name}
+      </Text>
+    );
+  }
+
+  const copyHex = async () => {
+    await Clipboard.setStringAsync(color.hex!);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   return (
-    <Card variant="outlined" className={warm ? 'gap-sm !rounded-2xl !border-catalog-line !bg-catalog-tailoring !p-xxl' : 'gap-sm !rounded-2xl !border-catalog-line !p-xxl'}>
-      <Text accessibilityRole="header" className="mb-md font-sans text-headline-sm font-bold text-primary-container">{title}</Text>
-      {children}
-    </Card>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Sao chép mã màu ${color.hex}`}
+      onPress={() => void copyHex()}
+      className="h-9 flex-row items-center gap-2 rounded-subtle border border-landing-line bg-landing-paper pl-1 pr-2.5 active:border-oxblood"
+    >
+      {/* Màu do AI trả về nên không dùng được token. */}
+      <View
+        style={{ backgroundColor: color.hex }}
+        className="h-7 w-7 border border-landing-obsidian/10"
+      />
+      <Text className="font-sans text-[12px] font-medium text-landing-obsidian">
+        {color.name}
+      </Text>
+      <Text className="font-mono text-[10.5px] uppercase text-landing-muted">
+        {color.hex}
+      </Text>
+      {copied ? (
+        <Check size={12} strokeWidth={2} color={COLORS.sageInk} />
+      ) : (
+        <Copy size={12} strokeWidth={1.75} color={COLORS.muted} />
+      )}
+    </Pressable>
+  );
+}
+
+function ProfileRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View className="gap-1 border-t border-landing-line pt-3">
+      <Text className="font-sans text-[11px] uppercase tracking-[0.16em] text-landing-muted">
+        {label}
+      </Text>
+      <Text selectable className="font-sans text-body-md font-medium text-landing-obsidian">
+        {value}
+      </Text>
+    </View>
   );
 }
 
@@ -34,155 +99,227 @@ export function StylistResultContent({
   onTryOnPress,
 }: StylistResultContentProps) {
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-  const imageFailed = failedImageUrl === result.humanImageUrl;
+  const imageFailed =
+    !result.humanImageUrl || failedImageUrl === result.humanImageUrl;
   const { analysis } = result;
 
+  const outfits = analysis.outfitCombinations ?? [];
+  const colors = analysis.colorSuggestions ?? [];
+  const tips = toTips(analysis.stylingTips);
+  const score = analysis.productCompatibilityScore;
+  const tone = score !== null ? scoreTone(score) : null;
+
   return (
-    <View className="gap-xxl">
-      <Card variant="outlined" className="overflow-hidden !rounded-2xl !border-catalog-line !p-0">
-        <View className="aspect-[3/4] w-full bg-catalog-muted">
-        {!imageFailed ? (
-          // expo-image needs explicit layout; fill the responsive portrait wrapper.
-          <Image
-            source={{ uri: result.humanImageUrl }}
-            contentFit="cover"
-            transition={150}
-            style={StyleSheet.absoluteFill}
-            onError={() => setFailedImageUrl(result.humanImageUrl)}
-          />
-        ) : (
-          <View className="flex-1 items-center justify-center p-lg">
-            <Text className="text-center font-sans text-body-sm text-catalog-muted-text">Không thể hiển thị ảnh phân tích</Text>
-          </View>
-        )}
-        </View>
-        <View className="gap-sm p-xxl">
-          <View className="flex-row flex-wrap items-center justify-between gap-sm">
-            <Text className="font-sans text-headline-sm font-semibold text-primary-container">
-              {result.occasion || 'Tư vấn phong cách cá nhân'}
-            </Text>
-            {result.isCached ? (
-              <Text className="rounded-full border border-catalog-line bg-catalog-muted px-sm py-xs font-sans text-body-sm text-primary-container">
-                Đã phân tích trước đó
+    <View className="gap-8">
+      {/* Ảnh + dịp mặc */}
+      <View className="flex-row gap-lg">
+        <View className="h-28 w-20 shrink-0 overflow-hidden rounded-subtle border border-landing-line bg-ivory">
+          {!imageFailed ? (
+            <Image
+              source={{ uri: result.humanImageUrl }}
+              contentFit="cover"
+              transition={150}
+              style={StyleSheet.absoluteFill}
+              onError={() => setFailedImageUrl(result.humanImageUrl)}
+            />
+          ) : (
+            <View className="flex-1 items-center justify-center p-2">
+              <Text className="text-center font-sans text-[10px] text-landing-muted">
+                Không có ảnh
               </Text>
-            ) : null}
-          </View>
+            </View>
+          )}
+        </View>
+
+        <View className="flex-1 gap-1">
+          <Text className={sectionLabelClass}>Kết quả tư vấn</Text>
+          <Text className="mt-1 font-display text-[22px] leading-tight text-landing-obsidian">
+            {result.occasion || 'Tư vấn phong cách cá nhân'}
+          </Text>
           {result.garmentDescription ? (
-            <Text className="font-sans text-body-sm leading-relaxed text-on-surface-variant">
+            <Text
+              numberOfLines={2}
+              className="font-sans text-body-sm leading-relaxed text-landing-muted"
+            >
               {result.garmentDescription}
             </Text>
           ) : null}
-          {result.product ? (
-            <View className="mt-2 pt-2 border-t border-catalog-line/60 gap-2">
-              <Pressable
-                accessibilityRole="button"
-                className="min-h-11 justify-center self-start"
-                onPress={() => onProductPress?.(result.product!.id)}
+          {result.isCached ? (
+            <Text className="mt-1 self-start rounded-subtle border border-landing-line px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-landing-muted">
+              Đã phân tích trước đó
+            </Text>
+          ) : null}
+        </View>
+      </View>
+
+      {result.product ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => onProductPress?.(result.product!.id)}
+          className="flex-row items-center gap-3 rounded-subtle border border-landing-line bg-ivory p-3 active:opacity-80"
+        >
+          <Shirt size={16} strokeWidth={1.75} color={COLORS.oxblood} />
+          <Text className="flex-1 font-display text-[15px] text-landing-obsidian" numberOfLines={1}>
+            {result.product.name}
+          </Text>
+          <ArrowRight size={14} strokeWidth={1.75} color={COLORS.muted} />
+        </Pressable>
+      ) : null}
+
+      {/* Bộ phối */}
+      <View className="gap-5">
+        <View className="flex-row items-end justify-between gap-3 border-b border-landing-line pb-4">
+          <View>
+            <Text className={sectionLabelClass}>Kết quả</Text>
+            <Text className="mt-2 font-display text-headline-sm text-landing-obsidian">
+              Bộ phối dành cho bạn
+            </Text>
+          </View>
+          <Text className="shrink-0 font-mono text-[11px] uppercase tracking-[0.2em] text-landing-muted">
+            {String(outfits.length).padStart(2, '0')} bộ
+          </Text>
+        </View>
+
+        {outfits.length > 0 ? (
+          <View className="gap-3">
+            {outfits.map((outfit, index) => (
+              <View
+                key={`${outfit}-${index}`}
+                className="gap-2 rounded-subtle border border-landing-line bg-ivory p-4"
               >
-                <Text className="font-sans text-body-sm font-semibold text-primary-container">
-                  Sản phẩm: {result.product.name}
+                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-brass-ink">
+                  Bộ phối {String(index + 1).padStart(2, '0')}
                 </Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                className="min-h-11 flex-row items-center justify-center gap-2 bg-primary px-4 py-3 rounded-xl active:opacity-90"
-                onPress={() =>
-                  onTryOnPress?.({
-                    id: result.product!.id,
-                    name: result.product!.name,
-                    imageUrl: (result.product as any).imageUrl || (result.product as any).image,
-                  })
-                }
-              >
-                <Sparkles size={16} color="#FFFFFF" />
-                <Text className="text-white font-bold text-label-md">Thử đồ AI với sản phẩm này</Text>
-              </Pressable>
+                <Text selectable className="font-sans text-body-md leading-relaxed text-landing-obsidian/85">
+                  {outfit}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View className="items-center gap-2 rounded-subtle border border-landing-line bg-ivory px-6 py-10">
+            <Text className="text-center font-display text-[20px] text-landing-obsidian">
+              Chưa có bộ phối phù hợp trong cửa hàng
+            </Text>
+            <Text className="text-center font-sans text-body-sm text-landing-muted">
+              Thử đổi dịp mặc, phong cách hoặc ngân sách.
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Hồ sơ phong cách + Lời khuyên */}
+      <View className="gap-4">
+        <View className="gap-4 rounded-subtle border border-landing-line bg-ivory p-5">
+          <Text className={sectionLabelClass}>Hồ sơ phong cách</Text>
+
+          <View className="gap-3">
+            {analysis.bodyType ? (
+              <ProfileRow label="Dáng người" value={analysis.bodyType} />
+            ) : null}
+            {analysis.skinTone ? (
+              <ProfileRow label="Tông da" value={analysis.skinTone} />
+            ) : null}
+            {analysis.personalColor ? (
+              <ProfileRow label="Màu cá nhân" value={analysis.personalColor} />
+            ) : null}
+          </View>
+
+          {colors.length > 0 ? (
+            <View className="gap-2">
+              <Text className="font-sans text-[11px] uppercase tracking-[0.16em] text-landing-muted">
+                Màu nên mặc
+                {colors.some((color) => color.hex) ? ' · bấm để sao chép mã' : ''}
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                {colors.map((color, index) => (
+                  <ColorChip key={`${color.name}-${index}`} color={color} />
+                ))}
+              </View>
+            </View>
+          ) : null}
+
+          {score !== null && tone ? (
+            <View className="gap-2">
+              <View className="flex-row items-baseline justify-between">
+                <Text
+                  numberOfLines={1}
+                  className="flex-1 font-sans text-[11px] uppercase tracking-[0.16em] text-landing-muted"
+                >
+                  Độ hợp
+                  {result.product ? ` với ${result.product.name}` : ''}
+                </Text>
+                <Text className="font-mono text-[12px] text-landing-obsidian">
+                  {score}% · {tone.label}
+                </Text>
+              </View>
+              <View className="h-0.5 overflow-hidden bg-landing-line">
+                <View style={{ width: `${score}%` }} className={`h-full ${tone.bar}`} />
+              </View>
             </View>
           ) : null}
         </View>
-      </Card>
 
-      {analysis.productCompatibilityScore !== null ? (
-        <ResultSection title="Độ tương thích sản phẩm">
-          <View className="flex-row items-baseline justify-between">
-            <Text className="font-sans text-body-sm text-catalog-muted-text">Đánh giá từ AI</Text>
-            <Text className="font-sans text-headline-lg font-bold text-primary-container">
-              {analysis.productCompatibilityScore}%
+        <View className="gap-4 rounded-subtle border border-landing-line bg-ivory p-5">
+          <Text className={sectionLabelClass}>Lời khuyên</Text>
+          {analysis.verdict ? (
+            <Text
+              selectable
+              className="font-display text-[17px] leading-relaxed text-landing-obsidian"
+            >
+              {analysis.verdict}
             </Text>
-          </View>
-          <View className="mt-sm h-2.5 overflow-hidden rounded-full bg-surface-high">
-            <View style={{ width: `${analysis.productCompatibilityScore}%` }}>
-              <View className="h-2.5 rounded-full bg-primary-container" />
+          ) : null}
+
+          {tips.length > 0 ? (
+            <View className="gap-2">
+              {tips.map((tip, index) => (
+                <View key={`${tip}-${index}`} className="flex-row gap-3">
+                  <Text className="pt-0.5 font-mono text-[11px] text-brass-ink">
+                    {String(index + 1).padStart(2, '0')}
+                  </Text>
+                  <Text
+                    selectable
+                    className="flex-1 font-sans text-body-sm leading-relaxed text-landing-obsidian/80"
+                  >
+                    {tip}
+                  </Text>
+                </View>
+              ))}
             </View>
-          </View>
-        </ResultSection>
-      ) : null}
+          ) : null}
 
-      <ResultSection title="Phân tích cá nhân">
-        <View className="gap-md">
-          <View className="rounded-xl border border-catalog-line bg-catalog-muted p-lg">
-            <Text className="font-sans text-body-sm uppercase tracking-wide text-catalog-muted-text">Vóc dáng</Text>
-            <Text selectable className="mt-sm font-sans text-body-md font-semibold text-on-surface">{analysis.bodyType}</Text>
-          </View>
-          <View className="rounded-xl border border-catalog-line bg-catalog-muted p-lg">
-            <Text className="font-sans text-body-sm uppercase tracking-wide text-catalog-muted-text">Sắc độ da</Text>
-            <Text selectable className="mt-sm font-sans text-body-md font-semibold text-on-surface">{analysis.skinTone}</Text>
-          </View>
-          <View className="rounded-xl border border-catalog-line bg-catalog-tailoring p-lg">
-            <Text className="font-sans text-body-sm uppercase tracking-wide text-catalog-muted-text">Màu cá nhân</Text>
-            <Text selectable className="mt-sm font-sans text-body-md font-semibold text-primary-container">{analysis.personalColor}</Text>
-          </View>
+          {analysis.fitAdvice ? (
+            <Text
+              selectable
+              className="border-t border-landing-line pt-3 font-sans text-body-sm leading-relaxed text-landing-obsidian/80"
+            >
+              <Text className="font-semibold text-landing-obsidian">Phom dáng: </Text>
+              {analysis.fitAdvice}
+            </Text>
+          ) : analysis.fitRecommendation ? (
+            <Text
+              selectable
+              className="border-t border-landing-line pt-3 font-sans text-body-sm leading-relaxed text-landing-obsidian/80"
+            >
+              <Text className="font-semibold text-landing-obsidian">Phom dáng: </Text>
+              {analysis.fitRecommendation}
+            </Text>
+          ) : null}
         </View>
-      </ResultSection>
+      </View>
 
-      <ResultSection title="Phom dáng và may đo">
-        <Text selectable className="font-sans text-body-md leading-relaxed text-on-surface">
-          {analysis.fitRecommendation}
-        </Text>
-        {analysis.fitAdvice ? (
-          <Text selectable className="mt-sm font-sans text-body-sm leading-relaxed text-on-surface-variant">
-            {analysis.fitAdvice}
-          </Text>
-        ) : null}
-      </ResultSection>
-
-      <ResultSection title="Bảng màu gợi ý">
-        <View className="flex-row flex-wrap gap-sm">
-          {analysis.colorSuggestions.map((color, index) => (
-            <View key={`${color}-${index}`} className="rounded-full border border-catalog-line bg-catalog-muted px-md py-sm">
-              <Text className="font-sans text-body-sm font-semibold text-primary-container">{color}</Text>
-            </View>
-          ))}
-        </View>
-      </ResultSection>
-
-      <ResultSection title="Cách phối trang phục">
-        <View className="gap-sm">
-          {analysis.outfitCombinations.map((outfit, index) => (
-            <View key={`${outfit}-${index}`} className="flex-row gap-md rounded-xl border border-catalog-line bg-catalog-muted p-lg">
-              <Text className="font-sans text-body-md font-bold text-primary-container">{index + 1}.</Text>
-              <Text selectable className="flex-1 font-sans text-body-md leading-relaxed text-on-surface-variant">{outfit}</Text>
-            </View>
-          ))}
-        </View>
-      </ResultSection>
-
-      <ResultSection title="Lời khuyên của AI Stylist" warm>
-        <Text selectable className="font-sans text-body-md leading-relaxed text-on-surface">{analysis.verdict}</Text>
-        <View className="my-md h-px bg-catalog-line" />
-        <Text selectable className="font-sans text-body-sm leading-relaxed text-on-surface-variant">{analysis.stylingTips}</Text>
-      </ResultSection>
-
-      <Card variant="outlined" className="gap-md !rounded-2xl !border-primary/30 !bg-primary/5 !p-xxl">
-        <View className="flex-row items-center gap-2.5">
-          <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">
-            <Shirt size={20} color="#5D1C34" />
+      {/* CTA thử đồ */}
+      <View className="gap-3 rounded-subtle border border-landing-line bg-ivory p-5">
+        <View className="flex-row items-center gap-3">
+          <View className="h-10 w-10 items-center justify-center border border-landing-line">
+            <Shirt size={18} strokeWidth={1.5} color={COLORS.oxblood} />
           </View>
           <View className="flex-1">
-            <Text className="font-sans text-body-md font-bold text-primary">
+            <Text className="font-display text-[17px] text-landing-obsidian">
               Trải nghiệm phòng thử đồ ảo AI
             </Text>
-            <Text className="font-sans text-[12px] text-on-surface-variant">
+            <Text className="font-sans text-body-sm text-landing-muted">
               Ứng dụng gợi ý phối đồ này lên ảnh toàn thân của bạn
             </Text>
           </View>
@@ -190,14 +327,33 @@ export function StylistResultContent({
 
         <Pressable
           accessibilityRole="button"
-          onPress={() => onTryOnPress?.(result.product ? { id: result.product.id, name: result.product.name } : undefined)}
-          className="mt-2 min-h-11 flex-row items-center justify-center gap-2 bg-primary px-4 py-3 rounded-xl active:opacity-90 shadow-sm"
+          onPress={() =>
+            onTryOnPress?.(
+              result.product
+                ? { id: result.product.id, name: result.product.name }
+                : undefined,
+            )
+          }
+          className="h-12 flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood active:opacity-90"
         >
-          <Sparkles size={16} color="#FFFFFF" />
-          <Text className="text-white font-bold text-label-md">Chuyển sang Thử đồ AI</Text>
-          <ArrowRight size={16} color="#FFFFFF" />
+          <Sparkles size={16} strokeWidth={1.75} color={COLORS.paper} />
+          <Text className="font-sans text-[11.5px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+            Chuyển sang Thử đồ AI
+          </Text>
+          <ArrowRight size={15} strokeWidth={1.75} color={COLORS.paper} />
         </Pressable>
-      </Card>
+      </View>
+
+      {analysis.fitRecommendation && analysis.fitAdvice ? (
+        <View className="flex-row items-start gap-2 border-l-2 border-brass bg-ivory px-4 py-3">
+          <AlertCircle size={14} strokeWidth={1.75} color={COLORS.brassInk} />
+          <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-muted">
+            {analysis.fitRecommendation}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }
+
+export default StylistResultContent;
