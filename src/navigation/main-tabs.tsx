@@ -1,7 +1,11 @@
 import React from 'react';
 import { Animated, View, Text } from 'react-native';
 import { homeScrollY } from './home-scroll';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {
+  createBottomTabNavigator,
+  type BottomTabBarButtonProps,
+} from '@react-navigation/bottom-tabs';
+import { PlatformPressable } from '@react-navigation/elements';
 import {
   getFocusedRouteNameFromRoute,
   useNavigation,
@@ -11,7 +15,7 @@ import {
 } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { MainTabParamList, RootStackParamList } from './types';
-import { Home, Package, Sparkles, MessageCircle, User, type LucideIcon } from 'lucide-react-native';
+import { Home, Package, Sparkles, Wand2, User, type LucideIcon } from 'lucide-react-native';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { TryOnStack } from './try-on-stack';
 import { ShopScreen } from '../features/products/screens/ShopScreen';
@@ -23,17 +27,14 @@ import { COLORS as THEME_COLORS } from '../constants/theme';
 import { FloatingChatBubble } from '../features/chat/components/FloatingChatBubble';
 
 // React Navigation's screenOptions/tabBarIcon require plain style objects
-// (no className support), so burgundy/cream tokens are inlined as hex here —
-// see design/design-system.md Color System for the source values.
+// (no className support), so the Atelier Paper tokens are passed in as values.
+// Mirrors FE's BottomTabBar (src/components/layout/BottomTabBar.tsx).
 const COLORS = {
-  surface: '#FBF9F7',
-  surfaceContainer: '#EFEDEC',
-  surfaceLine: '#E5DFD5',
-  primaryContainer: '#5D1C34',
-  primarySoft: 'rgba(93, 28, 52, 0.1)',
-  onPrimary: '#FFFFFF',
-  onSurface: '#1B1C1B',
-  onSurfaceVariant: '#534346',
+  paper: THEME_COLORS.paper,
+  line: THEME_COLORS.line,
+  primaryContainer: THEME_COLORS.primaryContainer,
+  onPrimary: THEME_COLORS.onPrimary,
+  muted: THEME_COLORS.muted,
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -65,51 +66,55 @@ const MainAnnouncementBar = () => {
 };
 
 const TabIcon = ({ Icon, focused }: { Icon: LucideIcon; focused: boolean }) => (
-  <View
-    style={{
-      width: 32,
-      height: 32,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: focused ? COLORS.primarySoft : 'transparent',
-    }}
-  >
-    <Icon
-      size={20}
-      color={focused ? COLORS.primaryContainer : COLORS.onSurfaceVariant}
-      strokeWidth={focused ? 2.2 : 1.8}
-    />
-  </View>
+  <Icon
+    size={20}
+    color={focused ? COLORS.primaryContainer : COLORS.muted}
+    strokeWidth={1.75}
+  />
 );
 
 const TabLabel = ({ label, focused }: { label: string; focused: boolean }) => (
-  <View style={{ alignItems: 'center', marginTop: 3 }}>
-    <Text
-      style={{
-        fontSize: 11,
-        fontWeight: focused ? ('700' as const) : ('600' as const),
-        color: focused ? COLORS.primaryContainer : COLORS.onSurfaceVariant,
-        fontFamily: 'Be Vietnam Pro',
-      }}
+  <Text
+    style={{
+      marginTop: 4,
+      fontSize: 10,
+      lineHeight: 10,
+      fontWeight: '600',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+      color: focused ? COLORS.primaryContainer : COLORS.muted,
+      fontFamily: 'Be Vietnam Pro',
+    }}
+  >
+    {label}
+  </Text>
+);
+
+// 2px × 32px oxblood indicator at the top of the active tab (FE BottomTabBar).
+const TabButton = ({ children, style, accessibilityState, ...rest }: BottomTabBarButtonProps) => {
+  const focused = accessibilityState?.selected ?? false;
+
+  return (
+    <PlatformPressable
+      {...rest}
+      accessibilityState={accessibilityState}
+      style={style}
     >
-      {label}
-    </Text>
-    {focused ? (
       <View
         style={{
-          width: 3,
-          height: 3,
-          borderRadius: 1.5,
-          backgroundColor: COLORS.primaryContainer,
-          marginTop: 2,
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          marginLeft: -16,
+          width: 32,
+          height: 2,
+          backgroundColor: focused ? COLORS.primaryContainer : 'transparent',
         }}
       />
-    ) : (
-      <View style={{ width: 3, height: 3, marginTop: 2 }} />
-    )}
-  </View>
-);
+      {children}
+    </PlatformPressable>
+  );
+};
 
 // MainTabs is rendered inside the RootStack, so read the nested tab route
 // from the root navigation state to know which tab (screen) is on top.
@@ -141,18 +146,19 @@ export const MainTabs: React.FC = () => {
       screenOptions={{
         headerShown: true,
         header: () => <AppHeader />,
+        tabBarButton: (props) => <TabButton {...props} />,
         tabBarActiveTintColor: COLORS.primaryContainer,
-        tabBarInactiveTintColor: COLORS.onSurfaceVariant,
+        tabBarInactiveTintColor: COLORS.muted,
         tabBarStyle: {
-          backgroundColor: COLORS.surface,
-          borderTopColor: COLORS.surfaceLine,
-          height: 64 + insets.bottom,
-          paddingBottom: insets.bottom + 2,
-          paddingTop: 4,
-          paddingHorizontal: 8,
+          backgroundColor: COLORS.paper,
+          borderTopColor: COLORS.line,
+          height: 56 + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: 0,
+          paddingHorizontal: 0,
         },
         tabBarItemStyle: {
-          paddingVertical: 2,
+          paddingVertical: 0,
         },
       }}
     >
@@ -162,7 +168,7 @@ export const MainTabs: React.FC = () => {
         options={{
           title: 'FashionAI',
           header: () => <AppHeader safeAreaTop={false} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="Home" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Trang chủ" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={Home} focused={focused} />,
         }}
       />
@@ -171,7 +177,7 @@ export const MainTabs: React.FC = () => {
         component={ShopScreen}
         options={{
           title: 'Khám phá',
-          tabBarLabel: ({ focused }) => <TabLabel label="Sản Phẩm" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Sản phẩm" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={Package} focused={focused} />,
         }}
       />
@@ -179,9 +185,9 @@ export const MainTabs: React.FC = () => {
         name="TryOnTab"
         component={TryOnStack}
         options={({ route }) => ({
-          title: 'Try-On',
+          title: 'Thử đồ',
           headerShown: (getFocusedRouteNameFromRoute(route) ?? 'TryOnHome') === 'TryOnHome',
-          tabBarLabel: ({ focused }) => <TabLabel label="Try-On" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Thử đồ" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={Sparkles} focused={focused} />,
         })}
       />
@@ -190,8 +196,8 @@ export const MainTabs: React.FC = () => {
         component={StylistScreen}
         options={{
           title: 'AI Stylist',
-          tabBarLabel: ({ focused }) => <TabLabel label="AI Assist" focused={focused} />,
-          tabBarIcon: ({ focused }) => <TabIcon Icon={MessageCircle} focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="AI Stylist" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon Icon={Wand2} focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -201,7 +207,7 @@ export const MainTabs: React.FC = () => {
           title: 'Profile',
           headerShown: false,
           popToTopOnBlur: true,
-          tabBarLabel: ({ focused }) => <TabLabel label="Profile" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Tài khoản" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={User} focused={focused} />,
         }}
       />
