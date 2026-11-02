@@ -187,6 +187,7 @@ export const MainTabs: React.FC = () => {
         component={TryOnStack}
         options={({ route }) => ({
           title: 'Thử đồ',
+          header: () => <AppHeader />,
           headerShown: (getFocusedRouteNameFromRoute(route) ?? 'TryOnHome') === 'TryOnHome',
           tabBarLabel: ({ focused }) => <TabLabel label="Thử đồ" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={Sparkles} focused={focused} />,

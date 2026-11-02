@@ -6,11 +6,13 @@ import {
   Pressable,
   TextInput,
   Modal as RNModal,
+  ActivityIndicator,
   TouchableWithoutFeedback,
   ListRenderItemInfo,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Check, Search, X } from 'lucide-react-native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import {
   getProducts,
@@ -21,15 +23,13 @@ import {
   GarmentCategory,
   IProduct,
 } from '@/features/products/types/product';
-import { Loading } from '@/components/common/Loading';
-import { ErrorView } from '@/components/common/ErrorView';
-import { EmptyState } from '@/components/common/EmptyState';
 import { formatCurrency } from '@/utils/format';
 import { COLORS } from '@/constants/theme';
+import { TRY_ON_LABEL_CLASS } from '@/features/try-on/components/TryOnHeader';
 
 export type PickerCategory = GarmentCategory | 'ALL';
 
-export type TryOnPickerSlot = 'single' | 'upper' | 'lower';
+export type TryOnPickerSlot = 'single' | 'outer' | 'upper' | 'lower';
 
 export const PICKER_CATEGORIES: { value: PickerCategory; label: string }[] = [
   { value: 'ALL', label: 'Tất cả' },
@@ -44,50 +44,60 @@ interface ProductPickerSheetProps {
   visible: boolean;
   onClose: () => void;
   onSelect: (product: IProduct) => void;
-  title?: string;
-  subtitle?: string;
+  selectedProductId?: string | null;
   categories?: { value: PickerCategory; label: string }[];
   initialCategory?: PickerCategory;
 }
 
-const ProductCard: React.FC<{ item: IProduct; onPress: () => void }> = ({
-  item,
-  onPress,
-}) => {
+const ProductCard: React.FC<{
+  item: IProduct;
+  selected: boolean;
+  onPress: () => void;
+}> = ({ item, selected, onPress }) => {
   const imageUrl = mainProductImage(item);
   return (
-    <Pressable className="mb-lg flex-1 px-sm" onPress={onPress}>
-      <View className="overflow-hidden rounded-xl border border-surface-line bg-surface-lowest">
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={item.name}
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      className="flex-1 active:opacity-80"
+    >
+      <View
+        className={`relative w-full overflow-hidden rounded-subtle border bg-ivory ${
+          selected ? 'border-oxblood' : 'border-landing-line'
+        }`}
+        style={{ aspectRatio: 3 / 4 }}
+      >
         {imageUrl ? (
           <Image
             source={{ uri: imageUrl }}
-            style={{ aspectRatio: 3 / 4 }}
-            className="w-full"
-            contentFit="cover"
-            transition={200}
+            style={{ flex: 1 }}
+            contentFit="contain"
+            transition={150}
           />
         ) : (
-          <View
-            style={{ aspectRatio: 3 / 4 }}
-            className="w-full items-center justify-center bg-surface-low"
-          >
-            <Text className="text-body-sm text-on-surface-variant">Không có ảnh</Text>
+          <View className="flex-1 items-center justify-center">
+            <Text className="font-sans text-body-sm text-landing-muted">
+              Không có ảnh
+            </Text>
           </View>
         )}
-        <View className="p-md">
-          {item.brand ? (
-            <Text className="text-label-md text-on-surface-variant" numberOfLines={1}>
-              {item.brand}
-            </Text>
-          ) : null}
-          <Text className="mt-xs text-body-sm font-semibold text-on-surface" numberOfLines={2}>
-            {item.name}
-          </Text>
-          <Text className="mt-xs text-price-sm text-primary-container">
-            {formatCurrency(item.price)}
-          </Text>
-        </View>
+        {selected ? (
+          <View className="absolute right-2 top-2 h-6 w-6 items-center justify-center bg-oxblood">
+            <Check size={14} strokeWidth={2.5} color={COLORS.paper} />
+          </View>
+        ) : null}
       </View>
+      <Text
+        numberOfLines={2}
+        className="mt-2 font-display text-[15px] leading-snug text-landing-obsidian"
+      >
+        {item.name}
+      </Text>
+      <Text className="mt-1 font-mono text-[12px] text-oxblood">
+        {formatCurrency(item.price)}
+      </Text>
     </Pressable>
   );
 };
@@ -96,14 +106,18 @@ export const ProductPickerSheet: React.FC<ProductPickerSheetProps> = ({
   visible,
   onClose,
   onSelect,
-  title = 'Chọn trang phục thử đồ',
-  subtitle = 'Chạm vào món bạn thích để chọn thử.',
+  selectedProductId,
   categories = PICKER_CATEGORIES,
   initialCategory = 'ALL',
 }) => {
+  const insets = useSafeAreaInsets();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<PickerCategory>(initialCategory);
+
+  useEffect(() => {
+    if (visible) setCategory(initialCategory);
+  }, [visible, initialCategory]);
 
   useEffect(() => {
     const timer = setTimeout(() => setSearch(searchInput.trim()), 400);
@@ -138,6 +152,7 @@ export const ProductPickerSheet: React.FC<ProductPickerSheetProps> = ({
   const renderItem = ({ item }: ListRenderItemInfo<IProduct>) => (
     <ProductCard
       item={item}
+      selected={String(item.id) === String(selectedProductId ?? '')}
       onPress={() => {
         onSelect(item);
         onClose();
@@ -154,82 +169,108 @@ export const ProductPickerSheet: React.FC<ProductPickerSheetProps> = ({
       onRequestClose={onClose}
     >
       <TouchableWithoutFeedback onPress={onClose}>
-        <View className="flex-1 justify-end bg-black/50">
+        <View className="flex-1 justify-end bg-landing-obsidian/45">
           <TouchableWithoutFeedback>
-            <View className="h-3/4 rounded-t-xxl bg-surface-lowest">
-              <View className="my-sm h-1.5 w-10 self-center rounded-full bg-surface-highest" />
-              <View className="flex-row items-center justify-between px-xl pb-sm">
+            <View
+              className="h-[88%] flex-col overflow-hidden border-t border-landing-line bg-landing-paper"
+              style={{ paddingBottom: insets.bottom }}
+            >
+              <View className="flex-row items-start justify-between gap-4 border-b border-landing-line px-5 pb-4 pt-5">
                 <View className="flex-1">
-                  <Text className="font-heading text-headline-sm font-bold text-primary-container">
-                    {title}
+                  <Text className={TRY_ON_LABEL_CLASS}>Phòng thử</Text>
+                  <Text className="mt-1.5 font-display text-2xl leading-tight text-landing-obsidian">
+                    Chọn trang phục
                   </Text>
-                  <Text className="mt-xs text-body-sm text-on-surface-variant">
-                    {subtitle}
+                  <Text className="mt-1 font-sans text-body-sm text-landing-muted">
+                    Chỉ gồm sản phẩm đang bán trong cửa hàng.
                   </Text>
                 </View>
                 <Pressable
-                  className="min-h-11 min-w-11 items-center justify-center rounded-full"
+                  accessibilityRole="button"
                   accessibilityLabel="Đóng"
                   onPress={onClose}
+                  className="-mr-2 h-11 w-11 items-center justify-center active:opacity-70"
                 >
-                  <Ionicons name="close" size={24} className="text-on-surface-variant" />
+                  <X size={20} strokeWidth={1.75} color={COLORS.muted} />
                 </Pressable>
               </View>
 
-              <View className="px-xl">
-                <View className="flex-row items-center gap-sm rounded-md border border-surface-line bg-surface-low px-md">
-                  <Ionicons name="search-outline" size={20} className="text-on-surface-variant" />
+              <View className="border-b border-landing-line px-5 pt-3">
+                <View className="h-11 flex-row items-center gap-2 rounded-subtle border border-landing-line bg-ivory/80 px-3">
+                  <Search size={16} strokeWidth={1.75} color={COLORS.muted} />
                   <TextInput
-                    className="min-h-11 flex-1 py-sm text-body-lg text-on-surface"
-                    placeholder="Tìm tên trang phục..."
-                    placeholderTextColor={COLORS.outline}
+                    className="flex-1 font-sans text-body-md text-landing-obsidian"
+                    placeholder="Tìm tên trang phục…"
+                    placeholderTextColor={COLORS.muted}
                     value={searchInput}
                     onChangeText={setSearchInput}
                     returnKeyType="search"
+                    accessibilityLabel="Tìm trang phục"
                   />
                 </View>
-              </View>
 
-              {categories.length > 1 ? (
-                <View className="mt-md flex-row gap-sm px-xl">
-                  {categories.map((option) => {
-                    const selected = category === option.value;
-                    return (
-                      <Pressable
-                        key={option.value}
-                        className={`min-h-11 flex-1 items-center justify-center rounded-full border px-md ${
-                          selected ? 'border-primary-container bg-primary-container' : 'border-outline-variant'
-                        }`}
-                        onPress={() => setCategory(option.value)}
-                      >
-                        <Text
-                          className={`text-label-lg ${
-                            selected ? 'text-primary-foreground' : 'text-on-surface'
+                {categories.length > 1 ? (
+                  <View className="mt-2 flex-row gap-5">
+                    {categories.map((option) => {
+                      const selected = category === option.value;
+                      return (
+                        <Pressable
+                          key={option.value}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected }}
+                          onPress={() => setCategory(option.value)}
+                          className={`h-11 justify-center ${
+                            selected ? 'border-b-2 border-oxblood' : ''
                           }`}
                         >
-                          {option.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              ) : null}
+                          <Text
+                            className={`font-sans text-body-md ${
+                              selected
+                                ? 'font-medium text-oxblood'
+                                : 'text-landing-obsidian/70'
+                            }`}
+                          >
+                            {option.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ) : null}
+              </View>
 
-              <View className="mt-md flex-1 px-md">
+              <View className="min-h-0 flex-1">
                 {query.isLoading ? (
-                  <Loading message="Đang tải sản phẩm..." />
+                  <View className="flex-1 items-center justify-center gap-3">
+                    <ActivityIndicator color={COLORS.oxblood} />
+                    <Text className="font-sans text-body-sm text-landing-muted">
+                      Đang tải trang phục…
+                    </Text>
+                  </View>
                 ) : query.isError ? (
-                  <ErrorView
-                    title="Không tải được sản phẩm"
-                    message="Vui lòng kiểm tra kết nối mạng và thử lại."
-                    onRetry={() => query.refetch()}
-                  />
+                  <View className="flex-1 items-center justify-center gap-3 px-6">
+                    <Text className="text-center font-sans text-body-sm text-landing-muted">
+                      Không tải được trang phục. Vui lòng kiểm tra kết nối và thử lại.
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => query.refetch()}
+                      className="h-10 items-center justify-center rounded-subtle border border-landing-line px-4 active:opacity-70"
+                    >
+                      <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-oxblood">
+                        Thử lại
+                      </Text>
+                    </Pressable>
+                  </View>
                 ) : (
                   <FlatList
                     data={items}
                     keyExtractor={(item) => String(item.id)}
                     numColumns={2}
                     renderItem={renderItem}
+                    columnWrapperClassName="gap-3"
+                    contentContainerClassName="gap-3 px-4 pb-6 pt-4"
+                    showsVerticalScrollIndicator={false}
                     onEndReached={() => {
                       if (query.hasNextPage && !query.isFetchingNextPage) {
                         query.fetchNextPage();
@@ -237,15 +278,15 @@ export const ProductPickerSheet: React.FC<ProductPickerSheetProps> = ({
                     }}
                     onEndReachedThreshold={0.4}
                     ListEmptyComponent={
-                      <EmptyState
-                        icon="🛍️"
-                        title="Không tìm thấy sản phẩm"
-                        description="Thử từ khóa hoặc danh mục khác."
-                      />
+                      <Text className="py-10 text-center font-sans text-body-sm text-landing-muted">
+                        Không có trang phục khớp. Thử từ khóa hoặc loại khác.
+                      </Text>
                     }
                     ListFooterComponent={
                       query.isFetchingNextPage ? (
-                        <Loading message="Đang tải thêm..." />
+                        <View className="py-4">
+                          <ActivityIndicator color={COLORS.oxblood} />
+                        </View>
                       ) : null
                     }
                   />

@@ -26,8 +26,15 @@ export const FloatingChatBubble: React.FC = () => {
   const focusedRouteName = useNavigationState((state) =>
     getLeafRouteName(state.routes[state.index]),
   );
+  const isTryOnRoute =
+    focusedRouteName === 'TryOnHome' || focusedRouteName === 'TryOnLive';
 
   if (focusedRouteName === 'Orders') {
+    return null;
+  }
+
+  // Phòng thử đồ không cần bubble chat.
+  if (isTryOnRoute) {
     return null;
   }
 
