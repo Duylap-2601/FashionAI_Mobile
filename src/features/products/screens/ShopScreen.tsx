@@ -14,7 +14,7 @@ import {
 } from "@react-navigation/native";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { EmptyState } from "@/components/common/EmptyState";
+import { ProductsEmptyState } from "../components/ProductsEmptyState";
 import { ErrorView } from "@/components/common/ErrorView";
 import { Input } from "@/components/ui/Input";
 import { COLORS, SPACING } from "@/constants/theme";
@@ -395,8 +395,7 @@ export const ShopScreen: React.FC = () => {
         numColumns={2}
         ListHeaderComponent={header}
         ListEmptyComponent={
-          <EmptyState
-            icon="⌕"
+          <ProductsEmptyState
             title="Không tìm thấy sản phẩm phù hợp"
             description="Hãy thử thay đổi từ khóa hoặc điều chỉnh bộ lọc của bạn."
             actionTitle={

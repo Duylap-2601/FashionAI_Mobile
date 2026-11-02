@@ -1,24 +1,27 @@
-import React, { useMemo } from 'react';
-import { Platform, Text, TouchableOpacity, View } from 'react-native';
+import React, { useMemo, useRef } from 'react';
+import { Text, TouchableOpacity, View } from 'react-native';
 import type { TextStyle } from 'react-native';
-import { tva } from '@gluestack-ui/nativewind-utils/tva';
 import { COLORS } from '@/constants/theme';
-import type { GarmentCategory, GarmentType, IProduct } from '../types/product';
+import type { IProduct } from '../types/product';
 import { formatProductPrice } from '../utils/product-display';
 import { ProductDescription } from './ProductDescription';
 import { ProductMeasurementSummary } from './ProductMeasurementSummary';
+import { ProductOutfitSuggestions } from './ProductOutfitSuggestions';
 import { ProductReviewsSection } from './ProductReviewsSection';
 import { RelatedProducts } from './RelatedProducts';
 
 interface ProductDetailContentProps {
   product: IProduct;
-  rackAction?: React.ReactNode;
   selectedColor: string | null;
   unavailable: boolean;
   onMeasurementsPress: () => void;
   onProductPress: (productId: string) => void;
   onReviewsPress: () => void;
+  onReviewsSummaryPress: () => void;
+  onWriteReviewPress: () => void;
+  onReviewsSectionLayout: (offsetY: number) => void;
   onSelectColor: (color: string) => void;
+  onAskStylist: () => void;
 }
 
 interface ProductColorOption {
@@ -27,46 +30,11 @@ interface ProductColorOption {
 }
 
 const productNameStyle: TextStyle = {
-  fontFamily: Platform.OS === 'ios' ? 'Playfair Display' : 'serif',
+  fontFamily: 'Playfair Display',
   fontSize: 32,
   lineHeight: 40,
   fontWeight: '600',
   color: COLORS.obsidian,
-};
-
-const colorOptionStyle = tva({
-  base: 'min-h-11 flex-row items-center justify-center gap-sm rounded-subtle bg-ivory px-md',
-  variants: {
-    selected: {
-      true: 'border-2 border-oxblood',
-      false: 'border border-landing-line',
-    },
-  },
-});
-const colorNameStyle = tva({
-  base: 'font-sans text-body-md',
-  variants: {
-    selected: {
-      true: 'font-semibold text-oxblood',
-      false: 'font-medium text-landing-muted',
-    },
-  },
-});
-
-const CATEGORY_LABELS: Record<GarmentCategory, string> = {
-  UPPER: 'Trang phục thân trên',
-  LOWER: 'Trang phục thân dưới',
-  FULL_BODY: 'Trang phục toàn thân',
-};
-
-const GARMENT_TYPE_LABELS: Record<GarmentType, string> = {
-  SHIRT: 'Áo sơ mi',
-  VEST: 'Áo vest',
-  JACKET: 'Áo khoác',
-  PANTS: 'Quần',
-  SKIRT: 'Chân váy',
-  DRESS: 'Đầm',
-  JUMPSUIT: 'Jumpsuit',
 };
 
 function isDisplayableColor(value: string): boolean {
@@ -75,14 +43,24 @@ function isDisplayableColor(value: string): boolean {
 
 export function ProductDetailContent({
   product,
-  rackAction,
   selectedColor,
   unavailable,
   onMeasurementsPress,
   onProductPress,
   onReviewsPress,
+  onReviewsSummaryPress,
+  onWriteReviewPress,
+  onReviewsSectionLayout,
   onSelectColor,
+  onAskStylist,
 }: ProductDetailContentProps) {
+  const contentOffsetY = useRef(0);
+  const reviewsOffsetY = useRef(0);
+
+  const reportReviewsOffset = () => {
+    onReviewsSectionLayout(contentOffsetY.current + reviewsOffsetY.current);
+  };
+
   const colorOptions = useMemo<ProductColorOption[]>(() => {
     if (product.colors?.length) {
       return product.colors.map((color) => ({
@@ -104,7 +82,13 @@ export function ProductDetailContent({
     : 0;
 
   return (
-    <View className="gap-xl p-lg">
+    <View
+      className="gap-xl p-lg"
+      onLayout={(event) => {
+        contentOffsetY.current = event.nativeEvent.layout.y;
+        reportReviewsOffset();
+      }}
+    >
       <View className="gap-sm">
         {product.brand ? (
           <Text
@@ -122,7 +106,7 @@ export function ProductDetailContent({
           accessibilityRole="button"
           accessibilityLabel={`Xem ${product.reviewCount} đánh giá của sản phẩm`}
           activeOpacity={0.68}
-          onPress={onReviewsPress}
+          onPress={onReviewsSummaryPress}
           className="min-h-11 min-w-11 flex-row items-center gap-xs self-start"
         >
           <Text
@@ -161,7 +145,7 @@ export function ProductDetailContent({
             >
               {formatProductPrice(product.originalPrice!)}
             </Text>
-            <Text className="rounded-subtle bg-oxblood px-sm py-xs font-mono text-label-md font-bold text-paper">
+            <Text className="rounded-subtle bg-oxblood px-sm py-xs font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-paper">
               {discountPercent > 0 ? `-${discountPercent}%` : 'Giá ưu đãi'}
             </Text>
           </>
@@ -191,37 +175,44 @@ export function ProductDetailContent({
 
       {colorOptions.length > 0 ? (
         <View className="gap-md border-t border-landing-line pt-xl">
-          <Text className="font-sans text-body-lg font-semibold text-obsidian">
-            Màu sắc
+          <Text className="font-display text-headline-sm text-obsidian">
+            Màu sắc:
             {selectedColor ? (
               <Text className="font-normal text-landing-muted">
                 {' '}
-                · {selectedColor}
+                {selectedColor}
               </Text>
             ) : null}
           </Text>
-          <View className="flex-row flex-wrap gap-sm">
+          <View className="flex-row flex-wrap gap-1.5">
             {colorOptions.map((color) => {
               const selected = color.name === selectedColor;
               return (
                 <TouchableOpacity
                   key={color.name}
                   accessibilityRole="radio"
-                  accessibilityLabel={`Màu ${color.name}`}
+                  accessibilityLabel={`Chọn màu ${color.name}`}
                   accessibilityState={{ selected }}
                   activeOpacity={0.68}
                   onPress={() => onSelectColor(color.name)}
-                  className={colorOptionStyle({ selected })}
+                  className="h-11 w-11 items-center justify-center"
                 >
-                  {color.hex ? (
+                  <View
+                    className={
+                      selected
+                        ? 'h-8 w-8 items-center justify-center rounded-full border-2 border-oxblood'
+                        : 'h-8 w-8 items-center justify-center rounded-full'
+                    }
+                  >
                     <View
-                      className="h-5 w-5 rounded-subtle border border-taupe"
-                      style={{ backgroundColor: color.hex }}
+                      className={
+                        color.hex
+                          ? 'h-6 w-6 rounded-full border border-landing-line'
+                          : 'h-6 w-6 rounded-full border border-taupe'
+                      }
+                      style={color.hex ? { backgroundColor: color.hex } : undefined}
                     />
-                  ) : null}
-                  <Text className={colorNameStyle({ selected })}>
-                    {color.name}
-                  </Text>
+                  </View>
                 </TouchableOpacity>
               );
             })}
@@ -233,7 +224,7 @@ export function ProductDetailContent({
         <Text className="font-sans text-label-md uppercase tracking-wide text-brass-ink">
           MAY ĐO CÁ NHÂN
         </Text>
-        <Text className="font-sans text-headline-sm font-semibold text-obsidian">
+        <Text className="font-display text-headline-sm text-obsidian">
           Thiết kế dành riêng cho số đo của bạn
         </Text>
         <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
@@ -247,55 +238,82 @@ export function ProductDetailContent({
         onPressMeasurements={onMeasurementsPress}
       />
 
-      {rackAction}
-
       <View className="gap-md border-t border-landing-line pt-xl">
-        <Text className="font-sans text-body-lg font-semibold text-obsidian">
+        <Text className="font-display text-headline-sm text-obsidian">
           Thông tin sản phẩm
         </Text>
-        <MetadataRow
-          label="Danh mục"
-          value={CATEGORY_LABELS[product.category]}
-        />
-        {product.garmentType ? (
-          <MetadataRow
-            label="Kiểu trang phục"
-            value={GARMENT_TYPE_LABELS[product.garmentType]}
-          />
-        ) : null}
-        {product.material ? (
-          <MetadataRow label="Chất liệu" value={product.material} />
-        ) : null}
+        <View>
+          {[
+            ['Chất liệu', product.material?.trim() || 'Đang cập nhật'],
+            ['Quy cách may', 'May đo theo số đo cá nhân'],
+            [
+              'Màu sắc',
+              colorOptions.map((color) => color.name).join(', ') ||
+                'Đang cập nhật',
+            ],
+            ['Xuất xứ', 'Thiết kế và may đo tại Việt Nam'],
+            ['Bảo quản', 'Giặt nhẹ hoặc giặt khô, không dùng chất tẩy mạnh'],
+          ].map(([label, value], index, rows) => (
+            <MetadataRow
+              key={label}
+              label={label}
+              value={value}
+              last={index === rows.length - 1}
+            />
+          ))}
+        </View>
       </View>
 
       {product.description?.trim() ? (
         <View className="gap-md border-t border-landing-line pt-xl">
-          <Text className="font-sans text-body-lg font-semibold text-obsidian">
-            Chi tiết
+          <Text className="font-display text-headline-sm text-obsidian">
+            Chi tiết sản phẩm
           </Text>
           <ProductDescription key={`${product.id}:${product.description}`} description={product.description} />
         </View>
       ) : null}
 
-      <ProductReviewsSection
-        productId={product.id}
-        onViewAll={onReviewsPress}
-      />
+      <ProductOutfitSuggestions product={product} onAskStylist={onAskStylist} />
+
+      <View
+        onLayout={(event) => {
+          reviewsOffsetY.current = event.nativeEvent.layout.y;
+          reportReviewsOffset();
+        }}
+      >
+        <ProductReviewsSection
+          productId={product.id}
+          onViewAll={onReviewsPress}
+          onWriteReview={onWriteReviewPress}
+        />
+      </View>
 
       <RelatedProducts product={product} onPressProduct={onProductPress} />
     </View>
   );
 }
 
-function MetadataRow({ label, value }: { label: string; value: string }) {
+function MetadataRow({
+  label,
+  value,
+  last = false,
+}: {
+  label: string;
+  value: string;
+  last?: boolean;
+}) {
   return (
-    <View className="min-h-9 flex-row items-start justify-between gap-lg">
-      <Text className="flex-1 font-sans text-body-md text-landing-muted">
+    <View
+      className={`flex-row items-start gap-md py-3 ${
+        last ? '' : 'border-b border-landing-line'
+      }`}
+    >
+      <Text className="w-[110px] font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brass-ink">
         {label}
       </Text>
       <Text
         selectable
-        className="flex-1 text-right font-sans text-body-md font-medium text-obsidian"
+        className="flex-1 font-sans text-body-md leading-relaxed text-landing-muted"
       >
         {value}
       </Text>

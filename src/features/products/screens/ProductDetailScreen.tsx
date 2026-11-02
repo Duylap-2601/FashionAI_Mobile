@@ -10,14 +10,14 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorView } from '@/components/common/ErrorView';
-import { Button } from '@/components/ui/Button';
 import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { CheckCircle2 } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
 import { ApiError } from '@/types/api';
 import { useCartStore } from '@/features/cart/store/use-cart-store';
-import { usePinProductToRack } from '@/features/rack/hooks/useRack';
+import { NotificationBell } from '@/features/notifications/components/NotificationBell';
+import { useCanReviewProduct } from '@/features/reviews/hooks/useCanReviewProduct';
 import { ProductDetailActionBar } from '../components/ProductDetailActionBar';
 import { ProductDetailContent } from '../components/ProductDetailContent';
 import { ProductDetailSkeleton } from '../components/ProductDetailSkeleton';
@@ -28,6 +28,7 @@ import { ProductCartButton } from '../components/ProductCartButton';
 import {
   getProductImageUrls,
   getProductMainImage,
+  resolveProductImageForColor,
 } from '../utils/product-display';
 
 type ProductDetailScreenProps = NativeStackScreenProps<
@@ -56,7 +57,10 @@ function ProductDetail({
   const addItem = useCartStore((state) => state.addItem);
   const cartReady = useLocalCartReady();
   const cartActionLocked = useRef(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const reviewsOffset = useRef(0);
   const [cartFeedback, setCartFeedback] = useState<{ productId: string; name: string; color: string | null } | null>(null);
+  const [reviewNotice, setReviewNotice] = useState<string | null>(null);
   const closeCartFeedback = useCallback(() => {
     setCartFeedback(null);
     cartActionLocked.current = false;
@@ -66,10 +70,17 @@ function ProductDetail({
     navigation.navigate('Cart');
   }, [closeCartFeedback, navigation]);
   useLayoutEffect(() => {
-    navigation.setOptions({ headerRight: () => <ProductCartButton onPress={openCart} /> });
+    navigation.setOptions({
+      headerRight: () => (
+        <View className="flex-row items-center gap-1">
+          <NotificationBell />
+          <ProductCartButton onPress={openCart} />
+        </View>
+      ),
+    });
   }, [navigation, openCart]);
   const productQuery = useProduct(productId);
-  const pinToRackMutation = usePinProductToRack();
+  const reviewEligibility = useCanReviewProduct(productId);
   const product = productQuery.data;
   const [colorSelection, setColorSelection] = useState<{
     productId: string;
@@ -88,6 +99,13 @@ function ProductDetail({
     () => (product ? getProductMainImage(product) : null),
     [product],
   );
+  const colorImageUrl = useMemo(
+    () =>
+      product && selectedColor
+        ? resolveProductImageForColor(product, selectedColor).url
+        : null,
+    [product, selectedColor],
+  );
   const unavailable = product?.status !== 'ACTIVE';
   const isNotFound =
     productQuery.error instanceof ApiError &&
@@ -96,6 +114,34 @@ function ProductDetail({
   const handleReviewsPress = useCallback(() => {
     navigation.navigate('Reviews', { productId });
   }, [navigation, productId]);
+
+  const handleWriteReviewPress = useCallback(() => {
+    if (reviewEligibility.isLoading) {
+      return;
+    }
+
+    if (!reviewEligibility.canReview) {
+      setReviewNotice(
+        reviewEligibility.reason === 'already_reviewed'
+          ? 'Bạn đã đánh giá sản phẩm này.'
+          : 'Chỉ user đã mua và nhận hàng mới được đánh giá.',
+      );
+      return;
+    }
+
+    navigation.navigate('Reviews', { productId, startWriting: true });
+  }, [navigation, productId, reviewEligibility]);
+
+  const handleReviewsSummaryPress = useCallback(() => {
+    scrollRef.current?.scrollTo({
+      y: Math.max(reviewsOffset.current - 16, 0),
+      animated: true,
+    });
+  }, []);
+
+  const handleReviewsSectionLayout = useCallback((offsetY: number) => {
+    reviewsOffset.current = offsetY;
+  }, []);
 
   const handleMeasurementsPress = useCallback(() => {
     navigation.navigate('Main', {
@@ -162,29 +208,6 @@ function ProductDetail({
     }
   }, [addItem, cartReady, mainImageUrl, product, selectedColor]);
 
-  const handleSaveToRack = useCallback(() => {
-    if (!product) {
-      return;
-    }
-
-    void pinToRackMutation
-      .mutateAsync(product.id)
-      .then(() => {
-        Alert.alert(
-          'Đã lưu vào Tủ đồ',
-          `${product.name} đã có trong Tủ đồ của bạn.`,
-        );
-      })
-      .catch((error: unknown) => {
-        Alert.alert(
-          'Chưa thể lưu vào Tủ đồ',
-          error instanceof ApiError
-            ? error.message
-            : 'Đã xảy ra lỗi. Vui lòng thử lại.',
-        );
-      });
-  }, [pinToRackMutation, product]);
-
   if (!productId) {
     return (
       <ErrorView
@@ -236,6 +259,7 @@ function ProductDetail({
   return (
     <View className="flex-1 bg-paper">
       <ScrollView
+        ref={scrollRef}
         contentContainerClassName="pb-xxl"
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
@@ -270,23 +294,23 @@ function ProductDetail({
           </View>
         ) : null}
 
-        <ProductImageGallery imageUrls={imageUrls} productName={product.name} />
+        <ProductImageGallery
+          imageUrls={imageUrls}
+          focusImageUrl={colorImageUrl}
+          productName={product.name}
+        />
         <ProductDetailContent
           product={product}
-          rackAction={
-            <Button
-              title="Lưu vào Tủ đồ"
-              variant="outline"
-              loading={pinToRackMutation.isPending}
-              onPress={handleSaveToRack}
-            />
-          }
           selectedColor={selectedColor}
           unavailable={unavailable}
           onMeasurementsPress={handleMeasurementsPress}
           onProductPress={handleProductPress}
           onReviewsPress={handleReviewsPress}
+          onReviewsSummaryPress={handleReviewsSummaryPress}
+          onWriteReviewPress={handleWriteReviewPress}
+          onReviewsSectionLayout={handleReviewsSectionLayout}
           onSelectColor={handleSelectColor}
+          onAskStylist={handleAskAI}
         />
       </ScrollView>
 
@@ -318,6 +342,16 @@ function ProductDetail({
           </Text>
         </View>
       </FeedbackModal>
+      <FeedbackModal
+        visible={reviewNotice !== null}
+        title="Chưa thể đánh giá"
+        message={reviewNotice ?? undefined}
+        type="warning"
+        dismissible
+        onClose={() => setReviewNotice(null)}
+        primaryButtonText="Đóng"
+        onPrimaryPress={() => setReviewNotice(null)}
+      />
     </View>
   );
 }
