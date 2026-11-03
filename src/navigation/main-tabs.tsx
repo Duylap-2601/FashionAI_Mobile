@@ -1,103 +1,164 @@
 import React from 'react';
-import { View, Text } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import { Animated, View, Text } from 'react-native';
+import { homeScrollY } from './home-scroll';
+import {
+  createBottomTabNavigator,
+  type BottomTabBarButtonProps,
+} from '@react-navigation/bottom-tabs';
+import { PlatformPressable } from '@react-navigation/elements';
+import {
+  getFocusedRouteNameFromRoute,
+  useNavigation,
+  useNavigationState,
+  type NavigationProp,
+  type NavigationState,
+} from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MainTabParamList } from './types';
-import { Home, Package, Sparkles, WandSparkles, User, type LucideIcon } from 'lucide-react-native';
+import type { MainTabParamList, RootStackParamList } from './types';
+import { Home, Package, Sparkles, Wand2, User, type LucideIcon } from 'lucide-react-native';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { TryOnStack } from './try-on-stack';
 import { ShopScreen } from '../features/products/screens/ShopScreen';
 import { StylistScreen } from '../features/stylist/screens/StylistScreen';
 import { ProfileStack } from './profile-stack';
 import { AppHeader } from '../components/common/AppHeader';
+import { AnnouncementBar } from '../features/home/components/AnnouncementBar';
+import { COLORS as THEME_COLORS } from '../constants/theme';
 import { FloatingChatBubble } from '../features/chat/components/FloatingChatBubble';
 
 // React Navigation's screenOptions/tabBarIcon require plain style objects
-// (no className support), so burgundy/cream tokens are inlined as hex here —
-// see design/design-system.md Color System for the source values.
+// (no className support), so the Atelier Paper tokens are passed in as values.
+// Mirrors FE's BottomTabBar (src/components/layout/BottomTabBar.tsx).
 const COLORS = {
-  surface: '#FBF9F7',
-  surfaceContainer: '#EFEDEC',
-  surfaceLine: '#E5DFD5',
-  primaryContainer: '#5D1C34',
-  primarySoft: '#FFD9E1',
-  onPrimary: '#FFFFFF',
-  onSurface: '#1B1C1B',
-  onSurfaceVariant: '#534346',
+  paper: THEME_COLORS.paper,
+  line: THEME_COLORS.line,
+  primaryContainer: THEME_COLORS.primaryContainer,
+  onPrimary: THEME_COLORS.onPrimary,
+  muted: THEME_COLORS.muted,
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
+const ANNOUNCEMENT_BAR_HEIGHT = 40;
+
+const MainAnnouncementBar = () => {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+
+  const height = homeScrollY.interpolate({
+    inputRange: [0, 1],
+    outputRange: [ANNOUNCEMENT_BAR_HEIGHT, 0],
+    extrapolate: 'clamp',
+  });
+  const opacity = homeScrollY.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  return (
+    <Animated.View style={{ height, opacity, overflow: 'hidden' }}>
+      <AnnouncementBar
+        onPressTryOn={() => navigation.navigate('Main', { screen: 'TryOnTab' })}
+        onPressShop={() => navigation.navigate('Main', { screen: 'ShopTab' })}
+      />
+    </Animated.View>
+  );
+};
+
 const TabIcon = ({ Icon, focused }: { Icon: LucideIcon; focused: boolean }) => (
-  <View
-    style={{
-      width: 38,
-      height: 38,
-      borderRadius: 19,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: focused ? COLORS.primarySoft : 'transparent',
-    }}
-  >
-    <Icon
-      size={25}
-      color={focused ? COLORS.primaryContainer : COLORS.onSurfaceVariant}
-      strokeWidth={focused ? 2.2 : 1.8}
-    />
-  </View>
+  <Icon
+    size={20}
+    color={focused ? COLORS.primaryContainer : COLORS.muted}
+    strokeWidth={1.75}
+  />
 );
 
 const TabLabel = ({ label, focused }: { label: string; focused: boolean }) => (
-  <View style={{ alignItems: 'center', marginTop: 5 }}>
-    <Text
-      style={{
-        fontSize: 12.5,
-        fontWeight: focused ? ('700' as const) : ('600' as const),
-        color: focused ? COLORS.primaryContainer : COLORS.onSurfaceVariant,
-        fontFamily: 'Be Vietnam Pro',
-      }}
+  <Text
+    style={{
+      marginTop: 4,
+      fontSize: 10,
+      lineHeight: 10,
+      fontWeight: '600',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+      color: focused ? COLORS.primaryContainer : COLORS.muted,
+      fontFamily: 'Be Vietnam Pro',
+    }}
+  >
+    {label}
+  </Text>
+);
+
+// 2px × 32px oxblood indicator at the top of the active tab (FE BottomTabBar).
+const TabButton = ({ children, style, accessibilityState, ...rest }: BottomTabBarButtonProps) => {
+  const focused = accessibilityState?.selected ?? false;
+
+  return (
+    <PlatformPressable
+      {...rest}
+      accessibilityState={accessibilityState}
+      style={style}
     >
-      {label}
-    </Text>
-    {focused ? (
       <View
         style={{
-          width: 4,
-          height: 4,
-          borderRadius: 2,
-          backgroundColor: COLORS.primaryContainer,
-          marginTop: 2,
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          marginLeft: -16,
+          width: 32,
+          height: 2,
+          backgroundColor: focused ? COLORS.primaryContainer : 'transparent',
         }}
       />
-    ) : (
-      <View style={{ width: 4, height: 4, marginTop: 2 }} />
-    )}
-  </View>
-);
+      {children}
+    </PlatformPressable>
+  );
+};
+
+// MainTabs is rendered inside the RootStack, so read the nested tab route
+// from the root navigation state to know which tab (screen) is on top.
+const getFocusedTabName = (state: NavigationState): string | undefined => {
+  const mainRoute = state.routes[state.index];
+  if (mainRoute.name !== 'Main') return undefined;
+  const tabState = mainRoute.state;
+  if (!tabState) return 'HomeTab';
+  return tabState.routes[tabState.index ?? 0]?.name;
+};
 
 export const MainTabs: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const focusedTabName = useNavigationState(getFocusedTabName);
+  const isLandingPage = focusedTabName === 'HomeTab';
 
   return (
     <View style={{ flex: 1 }}>
+    {/* Announcement bar lives only on the landing page (Home tab).
+        The status bar strip uses the header paper color so the top edge
+        stays seamless with the header. */}
+    {isLandingPage ? (
+      <View style={{ paddingTop: insets.top, backgroundColor: THEME_COLORS.paper }}>
+        <MainAnnouncementBar />
+      </View>
+    ) : null}
     <Tab.Navigator
       initialRouteName="HomeTab"
       screenOptions={{
         headerShown: true,
         header: () => <AppHeader />,
+        tabBarButton: (props) => <TabButton {...props} />,
         tabBarActiveTintColor: COLORS.primaryContainer,
-        tabBarInactiveTintColor: COLORS.onSurfaceVariant,
+        tabBarInactiveTintColor: COLORS.muted,
         tabBarStyle: {
-          backgroundColor: COLORS.surface,
-          borderTopColor: COLORS.surfaceLine,
-          height: 78 + insets.bottom,
-          paddingBottom: insets.bottom + 4,
-          paddingTop: 6,
-          paddingHorizontal: 8,
+          backgroundColor: COLORS.paper,
+          borderTopColor: COLORS.line,
+          height: 56 + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: 0,
+          paddingHorizontal: 0,
         },
         tabBarItemStyle: {
-          paddingVertical: 4,
+          paddingVertical: 0,
         },
       }}
     >
@@ -106,7 +167,8 @@ export const MainTabs: React.FC = () => {
         component={HomeScreen}
         options={{
           title: 'FashionAI',
-          tabBarLabel: ({ focused }) => <TabLabel label="Home" focused={focused} />,
+          header: () => <AppHeader safeAreaTop={false} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Trang chủ" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={Home} focused={focused} />,
         }}
       />
@@ -115,7 +177,7 @@ export const MainTabs: React.FC = () => {
         component={ShopScreen}
         options={{
           title: 'Khám phá',
-          tabBarLabel: ({ focused }) => <TabLabel label="Sản Phẩm" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Sản phẩm" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={Package} focused={focused} />,
         }}
       />
@@ -123,9 +185,9 @@ export const MainTabs: React.FC = () => {
         name="TryOnTab"
         component={TryOnStack}
         options={({ route }) => ({
-          title: 'Try-On',
+          title: 'Thử đồ',
           headerShown: (getFocusedRouteNameFromRoute(route) ?? 'TryOnHome') === 'TryOnHome',
-          tabBarLabel: ({ focused }) => <TabLabel label="Try-On" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Thử đồ" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={Sparkles} focused={focused} />,
         })}
       />
@@ -135,7 +197,7 @@ export const MainTabs: React.FC = () => {
         options={{
           title: 'AI Stylist',
           tabBarLabel: ({ focused }) => <TabLabel label="AI Stylist" focused={focused} />,
-          tabBarIcon: ({ focused }) => <TabIcon Icon={WandSparkles} focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon Icon={Wand2} focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -145,7 +207,7 @@ export const MainTabs: React.FC = () => {
           title: 'Profile',
           headerShown: false,
           popToTopOnBlur: true,
-          tabBarLabel: ({ focused }) => <TabLabel label="Profile" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Tài khoản" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={User} focused={focused} />,
         }}
       />

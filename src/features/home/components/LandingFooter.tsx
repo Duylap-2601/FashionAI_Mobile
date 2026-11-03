@@ -3,6 +3,7 @@ import { Linking, Pressable, Text, View } from 'react-native';
 import { ChevronRight, Clock, Mail, MapPin, Phone, QrCode, Wallet } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
 import { CONTACT } from '@/constants/contact';
+import { Wordmark } from '@/components/common/Wordmark';
 
 type PolicyType = 'privacy' | 'terms' | 'return';
 
@@ -99,18 +100,7 @@ export function LandingFooter({
     <View className="border-t border-landing-paper/10 bg-landing-obsidian px-lg pb-12 pt-12">
       {/* Brand */}
       <View>
-        <Text
-          style={{
-            fontFamily: 'Playfair Display',
-            fontWeight: '700',
-            fontSize: 28,
-            lineHeight: 32,
-            color: COLORS.paper,
-            letterSpacing: -0.5,
-          }}
-        >
-          StAie.
-        </Text>
+        <Wordmark size="lg" variant="light" />
         <Text
           style={{
             fontFamily: 'Playfair Display',

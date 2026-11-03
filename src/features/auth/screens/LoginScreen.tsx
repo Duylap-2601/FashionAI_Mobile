@@ -17,6 +17,7 @@ import Svg, { Path } from 'react-native-svg';
 import { loginSchema, LoginFormValues } from '@/features/auth/schemas/auth.schema';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Wordmark } from '@/components/common/Wordmark';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -100,7 +101,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     >
       <ScrollView contentContainerClassName="grow justify-center px-xxl py-xxxl">
         <View className="mb-xxxl items-center">
-          <Text className="text-display text-on-surface-strong tracking-tight">FashionAI</Text>
+          <Wordmark size="lg" variant="dark" />
           <Text className="mt-sm text-center text-body-sm text-on-surface-variant">
             Đăng nhập để trải nghiệm AI Virtual Try-On
           </Text>

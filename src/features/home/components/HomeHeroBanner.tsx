@@ -1,161 +1,172 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, useWindowDimensions, Platform } from 'react-native';
+import React, { useState, useEffect, useCallback, useId } from 'react';
+import { View, Text, Pressable, useWindowDimensions } from 'react-native';
+import { Image } from 'expo-image';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react-native';
-import { CollectionCover } from '@/features/collections/components/CollectionCover';
-import { SPACING } from '@/constants/theme';
-import type { Collection } from '@/features/collections/types/collection';
+import { COLORS } from '@/constants/theme';
+import { LANDING_HERO_SLIDES } from '../constants/landing-hero';
 
 interface HomeHeroBannerProps {
-  collections: Collection[];
-  onPressCollection: (slug: string) => void;
+  onPressCollections: () => void;
   onPressTryOn: () => void;
 }
 
 export function HomeHeroBanner({
-  collections,
-  onPressCollection,
+  onPressCollections,
   onPressTryOn,
 }: HomeHeroBannerProps) {
   const { width } = useWindowDimensions();
+  const gradientId = useId().replace(/:/g, '');
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const activeCollection = collections[activeIndex] || collections[0];
+  const activeSlide = LANDING_HERO_SLIDES[activeIndex];
+  const total = LANDING_HERO_SLIDES.length;
 
   const handleNext = useCallback(() => {
-    if (collections.length <= 1) return;
-    setActiveIndex((prev) => (prev + 1) % collections.length);
-  }, [collections.length]);
+    setActiveIndex((prev) => (prev + 1) % total);
+  }, [total]);
 
   const handlePrev = useCallback(() => {
-    if (collections.length <= 1) return;
-    setActiveIndex((prev) => (prev - 1 + collections.length) % collections.length);
-  }, [collections.length]);
+    setActiveIndex((prev) => (prev - 1 + total) % total);
+  }, [total]);
 
   useEffect(() => {
-    if (collections.length <= 1) return;
     const timer = setInterval(handleNext, 6000);
     return () => clearInterval(timer);
-  }, [collections.length, handleNext]);
+  }, [handleNext]);
 
-  if (!activeCollection) return null;
-
-  const heroImage =
-    activeCollection.coverImages[1] || activeCollection.coverImages[0] || null;
-
-  const fontFamilyDisplay = Platform.OS === 'ios' ? 'Playfair Display' : 'serif';
+  // FE: text-[clamp(2.1rem,10.5vw,2.7rem)] leading-[1.1] tracking-[-0.025em].
+  const titleSize = Math.min(Math.max(width * 0.105, 33.6), 43.2);
 
   return (
-    <View className="w-full bg-landing-obsidian px-lg pb-10 pt-6">
-      <View className="relative h-[480px] w-full justify-between overflow-hidden rounded-subtle border border-landing-paper/15 p-6">
-        <CollectionCover
-          imageUrl={heroImage}
-          name={activeCollection.name}
-          width={width - SPACING.lg * 2}
-          height={480}
-          alignTop
-        />
+    <View className="relative w-full overflow-hidden bg-landing-obsidian" style={{ minHeight: 560 }}>
+      <Image
+        key={activeSlide.id}
+        source={activeSlide.image}
+        accessibilityLabel={`${activeSlide.name} - ${activeSlide.season}`}
+        contentFit="cover"
+        contentPosition="top"
+        transition={300}
+        style={{ position: 'absolute', inset: 0 }}
+      />
 
-        {/* Top Tag & Season */}
-        <View className="z-10 flex-row items-center gap-2.5">
-          <View className="h-px w-8 bg-landing-brass" />
-          <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-landing-brass">
-            {activeCollection.season || 'BỘ SƯU TẬP / 2026'}
-          </Text>
-        </View>
+      <View pointerEvents="none" className="absolute inset-0">
+        <Svg width="100%" height="100%" accessibilityElementsHidden>
+          <Defs>
+            <LinearGradient id={`${gradientId}-left`} x1="0" y1="0" x2="1" y2="0">
+              <Stop offset="0" stopColor={COLORS.editorialShade} stopOpacity={0.72} />
+              <Stop offset="0.42" stopColor={COLORS.editorialShade} stopOpacity={0.3} />
+              <Stop offset="0.66" stopColor={COLORS.editorialShade} stopOpacity={0} />
+            </LinearGradient>
+            <LinearGradient id={`${gradientId}-bottom`} x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={COLORS.editorialShade} stopOpacity={0.2} />
+              <Stop offset="0.55" stopColor={COLORS.editorialShade} stopOpacity={0.15} />
+              <Stop offset="1" stopColor={COLORS.editorialShade} stopOpacity={0.85} />
+            </LinearGradient>
+          </Defs>
+          <Rect width="100%" height="100%" fill={`url(#${gradientId}-left)`} />
+          <Rect width="100%" height="100%" fill={`url(#${gradientId}-bottom)`} />
+        </Svg>
+      </View>
 
-        {/* Center / Bottom Editorial Content */}
-        <View className="z-10 gap-4">
-          <View>
-            <Text
-              style={{
-                fontFamily: fontFamilyDisplay,
-                fontSize: 30,
-                lineHeight: 36,
-                color: '#EFE9E1',
-              }}
-            >
-              Mặc đúng <Text style={{ fontStyle: 'italic', color: '#A67D44' }}>dáng</Text>.
-            </Text>
-            <Text
-              style={{
-                fontFamily: fontFamilyDisplay,
-                fontSize: 30,
-                lineHeight: 36,
-                color: '#EFE9E1',
-              }}
-            >
-              Sống đúng <Text style={{ fontStyle: 'italic', color: '#A67D44' }}>chất</Text>.
+      <View className="z-10 flex-1 justify-between px-4 pb-8 pt-14">
+        <View className="max-w-[720px]">
+          <View className="flex-row items-center gap-3">
+            <View className="h-px w-12 bg-landing-brass" />
+            <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-landing-brass">
+              Bộ sưu tập / 2026
             </Text>
           </View>
 
-          <View className="gap-1 border-l-2 border-landing-brass/60 pl-3">
+          <View style={{ marginTop: 24 }}>
             <Text
-              numberOfLines={1}
-              className="font-sans text-label-md font-bold uppercase tracking-wider text-landing-paper"
+              style={{
+                fontFamily: 'Playfair Display',
+                fontSize: titleSize,
+                lineHeight: titleSize * 1.1,
+                letterSpacing: titleSize * -0.025,
+                color: COLORS.paper,
+              }}
             >
-              {activeCollection.name}
+              Mặc đúng{' '}
+              <Text style={{ fontStyle: 'italic', color: COLORS.brass }}>dáng</Text>.
             </Text>
-            {activeCollection.description ? (
-              <Text
-                numberOfLines={2}
-                className="font-sans text-body-sm leading-relaxed text-landing-paper/75"
-              >
-                {activeCollection.description}
-              </Text>
-            ) : null}
+            <Text
+              style={{
+                marginTop: 12,
+                fontFamily: 'Playfair Display',
+                fontSize: titleSize,
+                lineHeight: titleSize * 1.1,
+                letterSpacing: titleSize * -0.025,
+                color: COLORS.paper,
+              }}
+            >
+              Sống đúng{' '}
+              <Text style={{ fontStyle: 'italic', color: COLORS.brass }}>chất</Text>.
+            </Text>
           </View>
 
-          {/* Action CTAs: Square / 2px corners */}
-          <View className="mt-2 flex-row flex-wrap items-center gap-3">
+          <View className="mt-7 flex-col gap-3">
             <Pressable
               accessibilityRole="button"
-              onPress={() => onPressCollection(activeCollection.slug)}
-              className="min-h-11 flex-row items-center justify-center gap-2 rounded-subtle bg-landing-paper px-5 py-2.5 active:bg-landing-brass"
+              onPress={onPressCollections}
+              className="h-12 flex-row items-center justify-center gap-3 rounded-subtle border border-landing-paper bg-landing-paper px-6 active:bg-landing-brass"
             >
-              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
-                Khám phá BST
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-obsidian">
+                Khám phá bộ sưu tập
               </Text>
-              <ArrowUpRight size={14} color="#11100F" />
+              <ArrowUpRight size={14} color={COLORS.obsidian} />
             </Pressable>
 
             <Pressable
               accessibilityRole="button"
               onPress={onPressTryOn}
-              className="min-h-11 items-center justify-center rounded-subtle border border-landing-paper/35 bg-transparent px-5 py-2.5 active:bg-landing-paper/10"
+              className="h-12 items-center justify-center rounded-subtle border border-landing-paper/35 px-6 active:bg-landing-paper/10"
             >
-              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-paper">
                 Thử đồ AI
               </Text>
             </Pressable>
           </View>
-        </View>
 
-        {/* Counter and Navigation Row */}
-        <View className="z-10 flex-row items-center justify-between border-t border-landing-paper/15 pt-3">
-          <Text className="font-mono text-[11px] tracking-[0.18em] text-landing-paper/60">
-            {String(activeIndex + 1).padStart(2, '0')} / {String(collections.length).padStart(2, '0')}
-          </Text>
+          <View className="mt-8 flex-row items-center justify-between gap-4 border-t border-landing-paper/15 pt-4">
+            <Text className="font-mono text-[11px] tracking-[0.18em] text-landing-paper/55">
+              {String(activeIndex + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
+            </Text>
 
-          {collections.length > 1 && (
             <View className="flex-row items-center gap-2">
+              <View className="flex-row items-center gap-1.5">
+                {LANDING_HERO_SLIDES.map((slide, index) => (
+                  <Pressable
+                    key={slide.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Xem ${slide.name}`}
+                    onPress={() => setActiveIndex(index)}
+                    className={`h-1.5 ${
+                      activeIndex === index ? 'w-8 bg-landing-brass' : 'w-3 bg-landing-paper/30'
+                    }`}
+                  />
+                ))}
+              </View>
+
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Bộ sưu tập trước"
                 onPress={handlePrev}
-                className="h-8 w-8 items-center justify-center rounded-subtle border border-landing-paper/20 bg-landing-obsidian/60 active:bg-landing-paper/20"
+                className="h-11 w-11 items-center justify-center border border-landing-paper/25 active:bg-landing-paper"
               >
-                <ChevronLeft size={16} color="#EFE9E1" />
+                <ChevronLeft size={16} color={COLORS.paper} />
               </Pressable>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Bộ sưu tập tiếp theo"
                 onPress={handleNext}
-                className="h-8 w-8 items-center justify-center rounded-subtle border border-landing-paper/20 bg-landing-obsidian/60 active:bg-landing-paper/20"
+                className="h-11 w-11 items-center justify-center border border-landing-paper/25 active:bg-landing-paper"
               >
-                <ChevronRight size={16} color="#EFE9E1" />
+                <ChevronRight size={16} color={COLORS.paper} />
               </Pressable>
             </View>
-          )}
+          </View>
         </View>
       </View>
     </View>
