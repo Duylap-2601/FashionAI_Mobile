@@ -73,6 +73,12 @@ export const ENDPOINTS = {
     ITEM: (id: string | number) => `/rack/${id}`,
     ALL: '/rack/all',
   },
+  CART: {
+    BASE: '/cart',
+    ITEMS: '/cart/items',
+    ITEM: (id: string | number) => `/cart/items/${id}`,
+    MERGE: '/cart/merge',
+  },
   SHIPPING: {
     CAPABILITIES: '/shipping/capabilities',
     ADDRESS_CATALOG_PROVINCES: '/shipping/address-catalog/provinces',

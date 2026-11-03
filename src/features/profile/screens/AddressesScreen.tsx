@@ -235,7 +235,7 @@ export function AddressesScreen() {
         {showForm && (
           <AddressForm
             key={editing?.id ?? 'new'}
-            initial={editing}
+            initial={editing ?? (addresses.length === 0 ? { isDefault: true } : null)}
             mode="book"
             isSaving={isSaving}
             errorMessage={formError}

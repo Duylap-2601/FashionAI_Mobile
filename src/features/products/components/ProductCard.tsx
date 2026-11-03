@@ -11,7 +11,7 @@ import {
 } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
-import { useCartStore } from '@/features/cart/store/use-cart-store';
+import { useCart } from '@/features/cart/hooks/use-cart';
 import { useLocalCartReady } from '../hooks/use-local-cart-ready';
 import { IProduct } from '../types/product';
 import {
@@ -32,7 +32,7 @@ export const ProductCard = React.memo(function ProductCard({
   onPress,
 }: ProductCardProps) {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const addItem = useCartStore((state) => state.addItem);
+  const { addItem } = useCart();
   const cartReady = useLocalCartReady();
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const [justAdded, setJustAdded] = useState(false);

@@ -1,20 +1,12 @@
-import { useSyncExternalStore } from "react";
-import { useCartStore } from "@/features/cart/store/use-cart-store";
-
-function subscribeToHydration(notify: () => void) {
-  const unsubscribeStart = useCartStore.persist.onHydrate(notify);
-  const unsubscribeFinish = useCartStore.persist.onFinishHydration(notify);
-  return () => {
-    unsubscribeStart();
-    unsubscribeFinish();
-  };
-}
+import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useGuestCartHydrated, useServerCart } from "@/features/cart/hooks/use-cart";
 
 /** Prevent actions/counts from racing the existing AsyncStorage hydration. */
 export function useLocalCartReady() {
-  return useSyncExternalStore(
-    subscribeToHydration,
-    useCartStore.persist.hasHydrated,
-    () => false,
-  );
+  const { isAuthenticated } = useAuth();
+  const guestReady = useGuestCartHydrated();
+  const serverCart = useServerCart();
+
+  if (!isAuthenticated) return guestReady;
+  return serverCart.isFetched;
 }

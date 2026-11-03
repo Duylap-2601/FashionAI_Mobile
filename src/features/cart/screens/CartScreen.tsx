@@ -1,87 +1,120 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Minus,
-  Plus,
-  RotateCcw,
-  ShieldCheck,
-  ShoppingBag,
-  Trash2,
-  Truck,
-} from 'lucide-react-native';
+import { Minus, Plus, ShoppingBag, X } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { useNavigation } from '@react-navigation/native';
-import { useCartStore } from '@/features/cart/store/use-cart-store';
+import { useCart } from '@/features/cart/hooks/use-cart';
 import { COLORS } from '@/constants/theme';
 import { formatCurrency } from '@/utils/format';
 
 export function CartScreen() {
   const navigation = useNavigation();
-  const { items, removeItem, updateQuantity, getTotalItems, getTotalPrice, clearCart } =
-    useCartStore();
+  const {
+    items,
+    removeItem,
+    updateQuantity,
+    getTotalItems,
+    getTotalPrice,
+    isLoading,
+    isError,
+    refetch,
+  } = useCart();
 
   const totalItems = getTotalItems();
   const totalPrice = getTotalPrice();
 
-  const handleClearCart = () => {
-    Alert.alert('Xóa tất cả', 'Bạn có chắc chắn muốn xóa tất cả sản phẩm trong giỏ hàng?', [
-      { text: 'Hủy', style: 'cancel' },
-      { text: 'Xóa', style: 'destructive', onPress: clearCart },
-    ]);
-  };
+  const openCheckout = () => (navigation as any).navigate('Checkout');
+  const openOrders = () =>
+    (navigation as any).navigate('Main', {
+      screen: 'ProfileTab',
+      params: { screen: 'Orders' },
+    });
+
+  const renderHeader = () => (
+    <View className="flex-row items-start justify-between gap-4 border-b border-landing-line px-lg pb-4 pt-5">
+      <View className="flex-1">
+        <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink">
+          Giỏ hàng
+        </Text>
+        <Text className="mt-1.5 font-display text-[24px] leading-tight text-landing-obsidian">
+          Túi của bạn{' '}
+          <Text className="font-mono text-sm text-landing-muted">({items.length})</Text>
+        </Text>
+      </View>
+      <Pressable
+        onPress={() => navigation.goBack()}
+        accessibilityRole="button"
+        accessibilityLabel="Đóng giỏ hàng"
+        className="-mr-2 h-11 w-11 items-center justify-center active:opacity-60"
+      >
+        <X size={20} strokeWidth={1.75} color={COLORS.muted} />
+      </Pressable>
+    </View>
+  );
+
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-landing-paper">
+        {renderHeader()}
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="small" color={COLORS.oxblood} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (isError) {
+    return (
+      <SafeAreaView className="flex-1 bg-landing-paper">
+        {renderHeader()}
+        <View className="flex-1 items-center justify-center px-lg">
+          <Text className="text-center font-display text-2xl leading-tight text-landing-obsidian">
+            Không tải được giỏ hàng
+          </Text>
+          <Text className="mt-2 text-center font-sans text-sm text-landing-muted">
+            Kiểm tra kết nối rồi thử lại.
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void refetch()}
+            className="mt-6 h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:bg-ivory"
+          >
+            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+              Thử lại
+            </Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (items.length === 0) {
     return (
       <SafeAreaView className="flex-1 bg-landing-paper">
-        <View className="flex-row items-center border-b border-landing-line px-lg py-3">
-          <Pressable
-            onPress={() => navigation.goBack()}
-            accessibilityRole="button"
-            accessibilityLabel="Quay lại"
-            className="-ml-2 h-11 w-11 items-center justify-center active:opacity-60"
-          >
-            <ArrowLeft size={22} strokeWidth={1.75} color={COLORS.obsidian} />
-          </Pressable>
-          <Text className="flex-1 text-center font-display text-[19px] text-landing-obsidian">
-            Giỏ hàng
-          </Text>
-          <View className="w-9" />
-        </View>
-
+        {renderHeader()}
         <View className="flex-1 items-center justify-center px-lg">
-          <View className="mb-6 h-16 w-16 items-center justify-center border border-landing-line">
-            <ShoppingBag size={26} strokeWidth={1.25} color={COLORS.oxblood} />
-          </View>
-          <Text className="mb-2 text-center font-display text-[24px] leading-tight text-landing-obsidian">
-            Giỏ hàng của bạn đang trống
+          <Text className="text-center font-display text-2xl leading-tight text-landing-obsidian">
+            Giỏ hàng đang trống
           </Text>
-          <Text className="mb-8 max-w-[300px] text-center font-sans text-body-md leading-relaxed text-landing-muted">
-            Hãy khám phá các trang phục công sở cao cấp và thử đồ ảo cùng AI trước khi đặt hàng nhé.
+          <Text className="mt-2 max-w-[260px] text-center font-sans text-sm leading-relaxed text-landing-muted">
+            Chọn một thiết kế, thử trên bạn rồi thêm vào đây.
           </Text>
           <Pressable
-            className="mb-3 h-12 w-full flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood active:bg-landing-obsidian"
+            accessibilityRole="button"
             onPress={() => (navigation as any).navigate('Main', { screen: 'ShopTab' })}
+            className="mt-6 h-11 items-center justify-center rounded-subtle bg-oxblood px-6 active:bg-landing-obsidian"
           >
             <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
-              Khám phá bộ sưu tập
+              Xem sản phẩm
             </Text>
-            <ArrowRight size={16} strokeWidth={1.75} color={COLORS.paper} />
           </Pressable>
           <Pressable
-            className="h-11 w-full items-center justify-center rounded-subtle border border-landing-line active:bg-ivory"
-            onPress={() =>
-              (navigation as any).navigate('Main', {
-                screen: 'ProfileTab',
-                params: { screen: 'Orders' },
-              })
-            }
+            accessibilityRole="button"
+            onPress={openOrders}
+            className="mt-3 min-h-11 justify-center active:opacity-60"
           >
-            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
-              Đơn hàng của tôi
-            </Text>
+            <Text className="font-sans text-xs text-landing-muted">Đơn hàng của tôi</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -90,188 +123,159 @@ export function CartScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-landing-paper">
-      <View className="flex-row items-center border-b border-landing-line px-lg py-3">
-        <Pressable
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Quay lại"
-          className="-ml-2 h-11 w-11 items-center justify-center active:opacity-60"
-        >
-          <ArrowLeft size={22} strokeWidth={1.75} color={COLORS.obsidian} />
-        </Pressable>
-        <View className="flex-1 items-center">
-          <Text className="font-display text-[19px] text-landing-obsidian">
-            Giỏ hàng
-          </Text>
-          <Text className="font-mono text-[10px] uppercase tracking-[0.12em] text-landing-muted">
-            {totalItems} sản phẩm
-          </Text>
-        </View>
-        <Pressable onPress={handleClearCart} className="h-11 justify-center active:opacity-60">
-          <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-oxblood">
-            Xóa hết
-          </Text>
-        </Pressable>
-      </View>
+      {renderHeader()}
 
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 140 }}
-      >
-        <View>
-          {items.map((item, index) => (
-            <View
-              key={`${item.productId}-${item.variantId}-${index}`}
-              className="flex-row gap-3 border-b border-landing-line px-lg py-4"
-            >
-              <View className="h-[116px] w-[92px] overflow-hidden rounded-subtle border border-landing-line bg-ivory">
-                {item.imageUrl ? (
-                  <Image
-                    source={{ uri: item.imageUrl }}
-                    style={{ width: '100%', height: '100%' }}
-                    contentFit="cover"
-                  />
-                ) : (
-                  <View className="h-full w-full items-center justify-center">
-                    <ShoppingBag size={22} strokeWidth={1.25} color={COLORS.muted} />
-                  </View>
-                )}
-              </View>
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <View className="px-lg">
+          {items.map((item, index) => {
+            const lineKey = `${item.productId}-${item.variantId ?? item.id ?? index}`;
+            const unavailable = item.available === false;
+            return (
+              <View
+                key={lineKey}
+                className={`flex-row gap-4 border-b border-landing-line py-4 ${
+                  unavailable ? 'opacity-70' : ''
+                }`}
+              >
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Xem ${item.productName}`}
+                  onPress={() =>
+                    (navigation as any).navigate('ProductDetail', {
+                      productId: String(item.productId),
+                    })
+                  }
+                  className="h-24 w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-subtle bg-ivory active:opacity-80"
+                >
+                  {item.imageUrl ? (
+                    <Image
+                      source={{ uri: item.imageUrl }}
+                      style={{ width: '100%', height: '100%' }}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <ShoppingBag size={20} strokeWidth={1.25} color={COLORS.muted} />
+                  )}
+                </Pressable>
 
-              <View className="flex-1 justify-between">
-                <View className="flex-row items-start justify-between gap-2">
-                  <View className="flex-1">
-                    <Text
-                      numberOfLines={2}
-                      className="font-display text-[16px] leading-snug text-landing-obsidian"
-                    >
-                      {item.productName}
-                    </Text>
-                    <Text className="mt-1 font-sans text-[11px] uppercase tracking-[0.1em] text-landing-muted">
-                      {item.color ? `${item.color} · ` : ''}
-                      Size {item.size || 'Standard'}
-                    </Text>
-                  </View>
-                  <Pressable
-                    onPress={() => removeItem(item.productId, item.variantId)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Xóa sản phẩm"
-                    className="h-9 w-9 items-center justify-center active:opacity-60"
-                  >
-                    <Trash2 size={16} strokeWidth={1.75} color={COLORS.oxblood} />
-                  </Pressable>
-                </View>
-
-                <View className="mt-3 flex-row items-center justify-between">
-                  <View className="flex-row items-center rounded-subtle border border-landing-line">
-                    <Pressable
-                      onPress={() =>
-                        updateQuantity(item.productId, item.quantity - 1, item.variantId)
-                      }
-                      className="h-10 w-10 items-center justify-center active:bg-ivory"
-                    >
-                      <Minus size={14} strokeWidth={1.75} color={COLORS.obsidian} />
-                    </Pressable>
-                    <View className="h-10 w-10 items-center justify-center border-x border-landing-line">
-                      <Text className="font-mono text-[12px] text-landing-obsidian">
-                        {item.quantity}
+                <View className="min-w-0 flex-1">
+                  <View className="flex-row items-start justify-between gap-3">
+                    <View className="min-w-0 flex-1">
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() =>
+                          (navigation as any).navigate('ProductDetail', {
+                            productId: String(item.productId),
+                          })
+                        }
+                        className="active:opacity-70"
+                      >
+                        <Text
+                          numberOfLines={2}
+                          className="font-sans text-body-md text-landing-obsidian"
+                        >
+                          {item.productName}
+                        </Text>
+                      </Pressable>
+                      <Text className="mt-1 font-sans text-xs text-landing-muted">
+                        {item.color
+                          ? `Màu: ${item.color} · Đặt may theo số đo`
+                          : 'Đặt may theo số đo'}
                       </Text>
+                      {unavailable ? (
+                        <Text className="mt-1 font-sans text-xs text-danger">
+                          Đã ngừng bán, không tính vào đơn hàng.
+                        </Text>
+                      ) : null}
                     </View>
                     <Pressable
-                      onPress={() =>
-                        updateQuantity(item.productId, item.quantity + 1, item.variantId)
-                      }
-                      className="h-10 w-10 items-center justify-center active:bg-ivory"
+                      accessibilityRole="button"
+                      accessibilityLabel={`Bỏ ${item.productName} khỏi giỏ`}
+                      onPress={() => removeItem(item.productId, item.variantId ?? item.id)}
+                      className="-mr-2 -mt-1 h-9 w-9 shrink-0 items-center justify-center active:opacity-60"
                     >
-                      <Plus size={14} strokeWidth={1.75} color={COLORS.obsidian} />
+                      <X size={16} strokeWidth={1.75} color={COLORS.muted} />
                     </Pressable>
                   </View>
 
-                  <View className="items-end">
-                    <Text className="font-mono text-[13px] text-oxblood">
-                      {formatCurrency
-                        ? formatCurrency(item.price * item.quantity)
-                        : `${(item.price * item.quantity).toLocaleString('vi-VN')}đ`}
-                    </Text>
-                    {item.quantity > 1 && (
-                      <Text className="mt-0.5 font-mono text-[10px] text-landing-muted">
-                        {formatCurrency
-                          ? formatCurrency(item.price)
-                          : `${item.price.toLocaleString('vi-VN')}đ`}{' '}
-                        / cái
+                  <View className="mt-3 flex-row items-end justify-between gap-3">
+                    <View className="h-9 flex-row items-center border border-landing-line">
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Giảm số lượng"
+                        disabled={unavailable}
+                        onPress={() =>
+                          updateQuantity(
+                            item.productId,
+                            item.quantity - 1,
+                            item.variantId ?? item.id,
+                          )
+                        }
+                        className="h-full w-9 items-center justify-center active:opacity-60"
+                      >
+                        <Minus size={14} strokeWidth={1.75} color={COLORS.obsidian} />
+                      </Pressable>
+                      <View className="h-full min-w-9 items-center justify-center border-x border-landing-line px-2">
+                        <Text className="font-mono text-sm text-landing-obsidian">
+                          {item.quantity}
+                        </Text>
+                      </View>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Tăng số lượng"
+                        disabled={unavailable}
+                        onPress={() =>
+                          updateQuantity(
+                            item.productId,
+                            item.quantity + 1,
+                            item.variantId ?? item.id,
+                          )
+                        }
+                        className="h-full w-9 items-center justify-center active:opacity-60"
+                      >
+                        <Plus size={14} strokeWidth={1.75} color={COLORS.obsidian} />
+                      </Pressable>
+                    </View>
+
+                    <View className="items-end">
+                      <Text className="font-mono text-sm text-oxblood">
+                        {formatCurrency(item.price * item.quantity)}
                       </Text>
-                    )}
+                      {item.quantity > 1 ? (
+                        <Text className="mt-0.5 font-mono text-[11px] text-landing-muted">
+                          {formatCurrency(item.price)} / món
+                        </Text>
+                      ) : null}
+                    </View>
                   </View>
                 </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
-        <View className="mt-2 gap-3 border-b border-landing-line px-lg py-4">
-          {[
-            { Icon: Truck, label: 'Giao hàng toàn quốc 2-4 ngày' },
-            { Icon: RotateCcw, label: 'Đổi size & trả hàng trong 7 ngày' },
-            { Icon: ShieldCheck, label: 'Bảo mật thông tin & thanh toán 100%' },
-          ].map(({ Icon, label }) => (
-            <View key={label} className="flex-row items-center gap-2.5">
-              <Icon size={14} strokeWidth={1.5} color={COLORS.brassInk} />
-              <Text className="font-sans text-body-sm text-landing-muted">{label}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View className="mt-2 gap-3 border-b border-landing-line px-lg py-5">
-          <Text className="font-display text-[20px] text-landing-obsidian">
-            Tóm tắt đơn hàng
-          </Text>
-          <View className="flex-row justify-between">
-            <Text className="font-sans text-body-sm text-landing-muted">
-              Tạm tính ({totalItems} sản phẩm)
-            </Text>
-            <Text className="font-mono text-[12px] text-landing-obsidian">
-              {formatCurrency
-                ? formatCurrency(totalPrice)
-                : `${totalPrice.toLocaleString('vi-VN')}đ`}
-            </Text>
-          </View>
-          <View className="flex-row justify-between border-b border-landing-line pb-3">
-            <Text className="font-sans text-body-sm text-landing-muted">Phí vận chuyển</Text>
-            <Text className="font-sans text-body-sm text-sage-ink">Tính khi đặt hàng</Text>
-          </View>
-          <View className="flex-row items-center justify-between">
-            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
-              Tổng thanh toán
-            </Text>
-            <Text className="font-mono text-[16px] text-oxblood">
-              {formatCurrency
-                ? formatCurrency(totalPrice)
-                : `${totalPrice.toLocaleString('vi-VN')}đ`}
-            </Text>
-          </View>
-        </View>
       </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 flex-row items-center justify-between border-t border-landing-line bg-landing-paper px-lg py-4">
-        <View className="flex-1 pr-4">
-          <Text className="font-sans text-[10px] uppercase tracking-[0.16em] text-landing-muted">
-            Tổng cộng
+      <View className="border-t border-landing-line px-lg pb-6 pt-4">
+        <View className="flex-row items-baseline justify-between gap-4">
+          <Text className="font-sans text-sm text-landing-muted">
+            Tạm tính · <Text className="font-mono">{totalItems}</Text> sản phẩm
           </Text>
-          <Text className="mt-1 font-mono text-[17px] text-oxblood">
-            {formatCurrency
-              ? formatCurrency(totalPrice)
-              : `${totalPrice.toLocaleString('vi-VN')}đ`}
+          <Text className="font-mono text-lg text-oxblood">
+            {formatCurrency(totalPrice)}
           </Text>
         </View>
+        <Text className="mt-1 font-sans text-xs text-landing-muted">
+          Phí giao hàng tính ở bước đặt hàng.
+        </Text>
         <Pressable
-          className="h-12 flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood px-5 active:bg-landing-obsidian"
-          onPress={() => (navigation as any).navigate('Checkout')}
+          accessibilityRole="button"
+          onPress={openCheckout}
+          className="mt-4 h-12 items-center justify-center rounded-subtle bg-oxblood active:bg-landing-obsidian"
         >
-          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-paper">
-            Tiến hành đặt hàng
+          <Text className="font-sans text-[11.5px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+            Đặt hàng
           </Text>
-          <ArrowRight size={16} strokeWidth={1.75} color={COLORS.paper} />
         </Pressable>
       </View>
     </SafeAreaView>

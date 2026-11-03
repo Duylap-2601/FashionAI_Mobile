@@ -30,7 +30,7 @@ import {
   X,
   ExternalLink,
 } from 'lucide-react-native';
-import { useCartStore } from '@/features/cart/store/use-cart-store';
+import { useCart } from '@/features/cart/hooks/use-cart';
 import { AppHeader } from '@/components/common/AppHeader';
 import { BackButton } from '@/components/common/BackButton';
 import { COLORS } from '@/constants/theme';
@@ -296,7 +296,7 @@ function matchStatus(status: string | undefined, filterId: string): boolean {
 // ─── Main Orders Screen ───────────────────────────────────────────────────────
 export function OrdersScreen() {
   const navigation = useNavigation<any>();
-  const addItem = useCartStore((state) => state.addItem);
+  const { addItem } = useCart();
 
   const { orders: fetchedOrders, isLoading, refetch } = useOrders();
   const { cancelOrder, isCancelling } = useCancelOrder();

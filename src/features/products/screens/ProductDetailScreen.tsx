@@ -15,7 +15,7 @@ import { CheckCircle2 } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
 import { ApiError } from '@/types/api';
-import { useCartStore } from '@/features/cart/store/use-cart-store';
+import { useCart } from '@/features/cart/hooks/use-cart';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 import { useCanReviewProduct } from '@/features/reviews/hooks/useCanReviewProduct';
 import { ProductDetailActionBar } from '../components/ProductDetailActionBar';
@@ -54,7 +54,7 @@ function ProductDetail({
   route,
 }: ProductDetailScreenProps) {
   const productId = route.params.productId.trim();
-  const addItem = useCartStore((state) => state.addItem);
+  const { addItem } = useCart();
   const cartReady = useLocalCartReady();
   const cartActionLocked = useRef(false);
   const scrollRef = useRef<ScrollView>(null);

@@ -5,12 +5,12 @@ import {
   Modal,
   Pressable,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Check, ChevronDown, MapPin, RefreshCw, Search, X } from 'lucide-react-native';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { AlertCircle, Check, ChevronDown, MapPin, RefreshCw, Search, X } from 'lucide-react-native';
+import { COLORS } from '@/constants/theme';
 import { ApiError } from '@/types/api';
 import { IAddressCatalogLocation } from '@/features/shipping/api/shipping.api';
 import {
@@ -54,6 +54,20 @@ interface LocationPickerProps {
   onSelect: (item: IAddressCatalogLocation) => void;
   onClose: () => void;
 }
+
+const fieldLabelClass =
+  'font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-brass-ink';
+const inputClass =
+  'h-11 rounded-subtle border border-landing-line bg-landing-paper/60 px-3.5 font-sans text-body-md text-landing-obsidian';
+const primaryActionClass =
+  'h-11 flex-row items-center justify-center rounded-subtle bg-oxblood px-6';
+const secondaryActionClass =
+  'h-11 items-center justify-center rounded-subtle border border-landing-line px-5';
+const actionLabelClass =
+  'font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper';
+const outlineActionLabelClass =
+  'font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian';
+const errorNoticeClass = 'flex-row items-start gap-3 border-l-2 border-danger bg-landing-paper/60 px-4 py-3';
 
 function normalizePhone(value: string) {
   const compact = value.trim().replace(/[\s.-]/g, '');
@@ -102,53 +116,63 @@ function LocationPickerModal({
       onRequestClose={onClose}
       onShow={() => setQuery('')}
     >
-      <SafeAreaView className="flex-1 bg-surface-lowest">
-        <View className="flex-row items-center border-b border-surface-line px-4 py-3">
-          <Text className="flex-1 text-headline-sm font-bold text-on-surface">{title}</Text>
+      <SafeAreaView className="flex-1 bg-landing-paper">
+        <View className="flex-row items-center gap-4 border-b border-landing-line px-5 pb-4 pt-5">
+          <Text
+            accessibilityRole="header"
+            className="flex-1 font-display text-[22px] leading-tight text-landing-obsidian"
+          >
+            {title}
+          </Text>
           <Pressable
             onPress={onClose}
             accessibilityRole="button"
             accessibilityLabel="Đóng"
-            className="min-h-11 min-w-11 items-center justify-center rounded-full active:bg-surface"
+            className="-mr-2 h-11 w-11 items-center justify-center active:opacity-70"
           >
-            <X size={22} className="text-on-surface" />
+            <X size={20} strokeWidth={1.75} color={COLORS.muted} />
           </Pressable>
         </View>
 
-        <View className="px-4 pt-4">
-          <Input
-            value={query}
-            onChangeText={setQuery}
-            placeholder={placeholder}
-            containerClassName="mb-3"
-            fieldContainerClassName="rounded-xl"
-            leftIcon={<Search size={18} className="text-on-surface-variant" />}
-            returnKeyType="search"
-          />
+        <View className="border-b border-landing-line px-5 py-3">
+          <View className="h-11 flex-row items-center gap-2 rounded-subtle border border-landing-line bg-ivory/80 px-3">
+            <Search size={16} strokeWidth={1.75} color={COLORS.muted} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder={placeholder}
+              placeholderTextColor={COLORS.muted}
+              returnKeyType="search"
+              className="flex-1 font-sans text-body-md text-landing-obsidian"
+            />
+          </View>
         </View>
 
         {isLoading ? (
-          <View className="flex-1 items-center justify-center px-6">
-            <ActivityIndicator size="large" color="#5D1C34" />
-            <Text className="mt-3 text-body-md text-on-surface-variant">
+          <View className="flex-1 items-center justify-center gap-3 px-6">
+            <ActivityIndicator color={COLORS.oxblood} />
+            <Text className="font-sans text-body-sm text-landing-muted">
               Đang tải danh sách...
             </Text>
           </View>
         ) : isError ? (
-          <View className="flex-1 items-center justify-center px-8">
-            <MapPin size={36} className="text-danger" />
-            <Text className="mt-3 text-center text-body-md font-semibold text-on-surface">
+          <View className="flex-1 items-center justify-center gap-2 px-8">
+            <Text className="text-center font-display text-[19px] leading-tight text-landing-obsidian">
               Không thể tải danh sách địa chỉ
             </Text>
-            <Text className="mt-1 text-center text-body-sm text-on-surface-variant">
+            <Text className="text-center font-sans text-body-sm leading-relaxed text-landing-muted">
               {errorMessage || 'Vui lòng kiểm tra kết nối và thử lại.'}
             </Text>
             <Pressable
               onPress={onRetry}
-              className="mt-4 min-h-11 flex-row items-center gap-2 rounded-xl border border-surface-line px-4"
+              accessibilityRole="button"
+              accessibilityLabel="Thử lại"
+              className={`${secondaryActionClass} mt-3 flex-row gap-2 active:bg-ivory`}
             >
-              <RefreshCw size={16} className="text-primary" />
-              <Text className="text-label-md font-semibold text-primary">Thử lại</Text>
+              <RefreshCw size={15} strokeWidth={1.75} color={COLORS.oxblood} />
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-oxblood">
+                Thử lại
+              </Text>
             </Pressable>
           </View>
         ) : (
@@ -157,14 +181,12 @@ function LocationPickerModal({
             data={filtered}
             keyExtractor={(item) => item.id}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingBottom: 32 }}
+            contentContainerClassName="pb-8"
             ListEmptyComponent={
-              <View className="items-center justify-center px-8 py-16">
-                <MapPin size={36} className="text-outline" />
-                <Text className="mt-3 text-center text-body-md text-on-surface-variant">
-                  {query
-                    ? 'Không tìm thấy địa chỉ phù hợp.'
-                    : 'Chưa có dữ liệu địa chỉ.'}
+              <View className="items-center justify-center gap-3 px-8 py-16">
+                <MapPin size={28} strokeWidth={1.5} color={COLORS.muted} />
+                <Text className="text-center font-sans text-body-md leading-relaxed text-landing-muted">
+                  {query ? 'Không tìm thấy địa chỉ phù hợp.' : 'Chưa có dữ liệu địa chỉ.'}
                 </Text>
               </View>
             }
@@ -173,10 +195,16 @@ function LocationPickerModal({
               return (
                 <Pressable
                   onPress={() => onSelect(item)}
-                  className="min-h-14 flex-row items-center justify-between border-b border-surface-line px-4 py-3 active:bg-surface"
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  className="min-h-14 flex-row items-center justify-between gap-3 border-b border-landing-line px-4 py-3 active:bg-ivory"
                 >
-                  <Text className="mr-3 flex-1 text-body-lg text-on-surface">{item.name}</Text>
-                  {isSelected && <Check size={20} className="text-primary" />}
+                  <Text className="flex-1 font-sans text-body-md text-landing-obsidian">
+                    {item.name}
+                  </Text>
+                  {isSelected ? (
+                    <Check size={18} strokeWidth={2} color={COLORS.oxblood} />
+                  ) : null}
                 </Pressable>
               );
             }}
@@ -259,7 +287,6 @@ export function AddressForm({
   };
 
   const writesDisabled = capabilities.data?.newAddressWriteEnabled === false;
-  const isDefaultLocked = initial?.isDefault === true;
   const provinceDisabled =
     capabilities.isLoading || provincesQuery.isLoading || !catalogRevision || writesDisabled;
 
@@ -315,180 +342,213 @@ export function AddressForm({
     });
   };
 
+  const submitDisabled = Boolean(catalogError || writesDisabled || isSaving);
+
   return (
-    <View className="rounded-3xl border border-surface-line bg-surface-lowest p-5">
-      <Text className="mb-3 text-headline-sm font-bold text-primary">
+    <View className="gap-4 rounded-subtle border border-landing-line bg-ivory p-5">
+      <Text className="font-display text-[20px] leading-tight text-landing-obsidian">
         {mode === 'book' ? 'Địa chỉ mới' : 'Nhập địa chỉ giao hàng'}
       </Text>
 
       {catalogError && (
-        <View className="mb-4 flex-row items-start justify-between gap-3 rounded-xl border border-danger/30 bg-danger/5 p-3">
-          <View className="flex-1 flex-row items-start gap-2">
-            <MapPin size={18} className="mt-0.5 text-danger" />
-            <View className="flex-1">
-              <Text className="text-label-md font-semibold text-danger">
-                Không thể tải danh mục địa chỉ
-              </Text>
-              <Text className="mt-0.5 text-body-sm text-on-surface-variant">
-                {catalogErrorMessage}
-              </Text>
-            </View>
+        <View className={errorNoticeClass}>
+          <AlertCircle size={16} strokeWidth={1.75} color={COLORS.danger} />
+          <View className="flex-1 gap-1">
+            <Text className="font-sans text-body-sm font-semibold text-landing-obsidian">
+              Không thể tải danh mục địa chỉ
+            </Text>
+            <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
+              {catalogErrorMessage}
+            </Text>
           </View>
           <Pressable
             onPress={retryCatalog}
             accessibilityRole="button"
             accessibilityLabel="Thử lại danh mục địa chỉ"
-            className="min-h-11 min-w-11 items-center justify-center"
+            className="-mr-1 h-11 w-11 shrink-0 items-center justify-center active:opacity-70"
           >
-            <RefreshCw size={16} className="text-danger" />
+            <RefreshCw size={16} strokeWidth={1.75} color={COLORS.danger} />
           </Pressable>
         </View>
       )}
 
-      <Input
-        value={recipientName}
-        onChangeText={setRecipientName}
-        placeholder="Người nhận"
-        autoCapitalize="words"
-        containerClassName="mb-3"
-        fieldContainerClassName="rounded-xl"
-      />
-      <Input
-        value={phone}
-        onChangeText={setPhone}
-        placeholder="Số điện thoại"
-        keyboardType="phone-pad"
-        maxLength={20}
-        containerClassName="mb-3"
-        fieldContainerClassName="rounded-xl"
-      />
-      <Input
-        value={addressLine}
-        onChangeText={setAddressLine}
-        placeholder="Số nhà, tên đường"
-        containerClassName="mb-3"
-        fieldContainerClassName="rounded-xl"
-      />
+      <View className="gap-1.5">
+        <Text className={fieldLabelClass}>Người nhận</Text>
+        <TextInput
+          value={recipientName}
+          onChangeText={setRecipientName}
+          placeholder="Người nhận"
+          placeholderTextColor={COLORS.muted}
+          autoCapitalize="words"
+          accessibilityLabel="Người nhận"
+          className={inputClass}
+        />
+      </View>
 
-      <Pressable
-        onPress={() => setPicker('province')}
-        disabled={provinceDisabled}
-        accessibilityRole="button"
-        accessibilityLabel="Chọn Tỉnh/Thành sau sáp nhập"
-        className={`mb-3 min-h-12 flex-row items-center justify-between rounded-xl border border-surface-line bg-surface-low px-3.5 ${
-          provinceDisabled ? 'opacity-60' : 'active:bg-surface'
-        }`}
-      >
-        <Text
-          className={`flex-1 text-body-lg ${
-            provinceName ? 'text-on-surface' : 'text-on-surface-variant'
-          }`}
-          numberOfLines={1}
-        >
-          {provincesQuery.isLoading
-            ? 'Đang tải Tỉnh/Thành...'
-            : provinceName || 'Tỉnh/Thành sau sáp nhập'}
-        </Text>
-        <ChevronDown size={18} className="text-on-surface-variant" />
-      </Pressable>
+      <View className="gap-1.5">
+        <Text className={fieldLabelClass}>Số điện thoại</Text>
+        <TextInput
+          value={phone}
+          onChangeText={setPhone}
+          placeholder="Số điện thoại"
+          placeholderTextColor={COLORS.muted}
+          keyboardType="phone-pad"
+          maxLength={20}
+          accessibilityLabel="Số điện thoại"
+          className={inputClass}
+        />
+      </View>
 
-      <Pressable
-        onPress={() => setPicker('ward')}
-        disabled={wardDisabled}
-        accessibilityRole="button"
-        accessibilityLabel="Chọn Phường/Xã"
-        className={`mb-3 min-h-12 flex-row items-center justify-between rounded-xl border border-surface-line bg-surface-low px-3.5 ${
-          wardDisabled ? 'opacity-60' : 'active:bg-surface'
-        }`}
-      >
-        <Text
-          className={`flex-1 text-body-lg ${
-            wardName ? 'text-on-surface' : 'text-on-surface-variant'
+      <View className="gap-1.5">
+        <Text className={fieldLabelClass}>Số nhà và tên đường</Text>
+        <TextInput
+          value={addressLine}
+          onChangeText={setAddressLine}
+          placeholder="Số nhà, tên đường"
+          placeholderTextColor={COLORS.muted}
+          accessibilityLabel="Số nhà và tên đường"
+          className={inputClass}
+        />
+      </View>
+
+      <View className="gap-1.5">
+        <Text className={fieldLabelClass}>Tỉnh/Thành</Text>
+        <Pressable
+          onPress={() => setPicker('province')}
+          disabled={provinceDisabled}
+          accessibilityRole="button"
+          accessibilityLabel="Chọn Tỉnh/Thành sau sáp nhập"
+          className={`h-11 flex-row items-center justify-between rounded-subtle border border-landing-line bg-landing-paper/60 px-3.5 ${
+            provinceDisabled ? 'opacity-60' : 'active:bg-ivory'
           }`}
-          numberOfLines={1}
         >
-          {wardsQuery.isLoading
-            ? 'Đang tải Phường/Xã...'
-            : wardName || 'Chọn Tỉnh/Thành trước'}
-        </Text>
-        <ChevronDown size={18} className="text-on-surface-variant" />
-      </Pressable>
+          <Text
+            className={`flex-1 font-sans text-body-md ${
+              provinceName ? 'text-landing-obsidian' : 'text-landing-muted'
+            }`}
+            numberOfLines={1}
+          >
+            {provincesQuery.isLoading
+              ? 'Đang tải Tỉnh/Thành...'
+              : provinceName || 'Tỉnh/Thành sau sáp nhập'}
+          </Text>
+          <ChevronDown size={16} strokeWidth={1.75} color={COLORS.muted} />
+        </Pressable>
+      </View>
+
+      <View className="gap-1.5">
+        <Text className={fieldLabelClass}>Phường/Xã</Text>
+        <Pressable
+          onPress={() => setPicker('ward')}
+          disabled={wardDisabled}
+          accessibilityRole="button"
+          accessibilityLabel="Chọn Phường/Xã"
+          className={`h-11 flex-row items-center justify-between rounded-subtle border border-landing-line bg-landing-paper/60 px-3.5 ${
+            wardDisabled ? 'opacity-60' : 'active:bg-ivory'
+          }`}
+        >
+          <Text
+            className={`flex-1 font-sans text-body-md ${
+              wardName ? 'text-landing-obsidian' : 'text-landing-muted'
+            }`}
+            numberOfLines={1}
+          >
+            {wardsQuery.isLoading
+              ? 'Đang tải Phường/Xã...'
+              : wardName || 'Chọn Tỉnh/Thành trước'}
+          </Text>
+          <ChevronDown size={16} strokeWidth={1.75} color={COLORS.muted} />
+        </Pressable>
+      </View>
 
       {wardsQuery.isError && (
-        <View className="mb-3 flex-row items-center justify-between rounded-xl border border-danger/30 bg-danger/5 px-3 py-2">
-          <Text className="mr-2 flex-1 text-body-sm text-danger">
+        <View className="flex-row items-center gap-3 border-l-2 border-danger bg-landing-paper/60 px-4 py-3">
+          <AlertCircle size={16} strokeWidth={1.75} color={COLORS.danger} />
+          <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-obsidian">
             {getErrorMessage(wardsQuery.error, 'Không thể tải danh sách Phường/Xã.')}
           </Text>
           <Pressable
             onPress={() => wardsQuery.refetch()}
             accessibilityRole="button"
             accessibilityLabel="Thử lại danh sách Phường/Xã"
-            className="min-h-11 min-w-11 items-center justify-center"
+            className="-mr-1 h-11 w-11 shrink-0 items-center justify-center active:opacity-70"
           >
-            <RefreshCw size={16} className="text-danger" />
+            <RefreshCw size={16} strokeWidth={1.75} color={COLORS.danger} />
           </Pressable>
         </View>
       )}
 
-      {mode === 'book' && (
-        <>
-          <Input
-            value={label}
-            onChangeText={setLabel}
-            placeholder="Nhãn: Nhà riêng, Văn phòng"
-            maxLength={50}
-            containerClassName="mb-2"
-            fieldContainerClassName="rounded-xl"
-          />
-          <Pressable
-            onPress={() => setIsDefault((value) => !value)}
-            disabled={isDefaultLocked}
-            className={`mb-2 min-h-11 flex-row items-center gap-2.5 ${
-              isDefaultLocked ? 'opacity-70' : ''
-            }`}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: isDefault, disabled: isDefaultLocked }}
-          >
-            <View
-              className={`h-5 w-5 items-center justify-center rounded border ${
-                isDefault ? 'border-primary bg-primary' : 'border-outline-variant bg-white'
-              }`}
-            >
-              {isDefault && <Check size={14} className="text-primary-foreground" />}
-            </View>
-            <Text className="text-body-md text-on-surface">
-              {isDefaultLocked ? 'Địa chỉ mặc định' : 'Đặt làm mặc định'}
-            </Text>
-          </Pressable>
-        </>
-      )}
+      <View className="gap-1.5">
+        <Text className={fieldLabelClass}>Nhãn</Text>
+        <TextInput
+          value={label}
+          onChangeText={setLabel}
+          placeholder="Nhãn: Nhà riêng, Văn phòng"
+          placeholderTextColor={COLORS.muted}
+          maxLength={50}
+          accessibilityLabel="Nhãn"
+          className={inputClass}
+        />
+      </View>
+      <Pressable
+        onPress={() => setIsDefault((value) => !value)}
+        className="min-h-11 flex-row items-center gap-2.5 active:opacity-70"
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: isDefault }}
+      >
+        <View
+          className={`h-[18px] w-[18px] items-center justify-center rounded-subtle border ${
+            isDefault ? 'border-oxblood bg-oxblood' : 'border-landing-obsidian/40'
+          }`}
+        >
+          {isDefault && <Check size={12} strokeWidth={2.5} color={COLORS.paper} />}
+        </View>
+        <Text className="font-sans text-body-md text-landing-obsidian">
+          Đặt làm mặc định
+        </Text>
+      </Pressable>
 
       {(formError || errorMessage) && (
-        <View className="mb-3 rounded-xl border border-danger/30 bg-danger/5 px-3 py-2">
-          <Text className="text-body-sm text-danger">{formError || errorMessage}</Text>
+        <View className={errorNoticeClass}>
+          <AlertCircle size={16} strokeWidth={1.75} color={COLORS.danger} />
+          <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-obsidian">
+            {formError || errorMessage}
+          </Text>
         </View>
       )}
 
-      <View className="mt-2 flex-row justify-end gap-3">
+      <View className="flex-row items-center justify-end gap-2">
         {onCancel && (
-          <Button
-            title="Hủy"
-            variant="outline"
-            size="md"
+          <Pressable
             onPress={onCancel}
             disabled={isSaving}
-            className="min-w-24 rounded-xl"
-          />
+            accessibilityRole="button"
+            accessibilityLabel="Hủy"
+            className={`${secondaryActionClass} ${
+              isSaving ? 'opacity-50' : 'active:bg-landing-paper'
+            }`}
+          >
+            <Text className={outlineActionLabelClass}>Hủy</Text>
+          </Pressable>
         )}
-        <Button
-          title={mode === 'book' ? 'Lưu địa chỉ' : 'Dùng địa chỉ này'}
-          size="md"
+        <Pressable
           onPress={handleSubmit}
-          loading={isSaving}
-          disabled={catalogError || writesDisabled}
-          className="min-w-32 rounded-xl"
-          textClassName="text-white"
-        />
+          disabled={submitDisabled}
+          accessibilityRole="button"
+          accessibilityLabel={mode === 'book' ? 'Lưu địa chỉ' : 'Dùng địa chỉ này'}
+          accessibilityState={{ disabled: submitDisabled }}
+          className={`${primaryActionClass} ${
+            submitDisabled ? 'opacity-50' : 'active:bg-landing-obsidian'
+          }`}
+        >
+          {isSaving ? (
+            <ActivityIndicator size="small" color={COLORS.paper} />
+          ) : (
+            <Text className={actionLabelClass}>
+              {mode === 'book' ? 'Lưu địa chỉ' : 'Dùng địa chỉ này'}
+            </Text>
+          )}
+        </Pressable>
       </View>
 
       <LocationPickerModal

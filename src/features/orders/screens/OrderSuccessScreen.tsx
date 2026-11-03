@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckCircle2, ShoppingBag, Eye, Copy, Sparkles, Clock, ShieldCheck } from 'lucide-react-native';
@@ -7,7 +7,7 @@ import * as Clipboard from 'expo-clipboard';
 import { RootStackParamList } from '@/navigation/types';
 import { useOrder } from '../hooks/use-orders';
 import { useAuth } from '@/features/auth/hooks/use-auth';
-import { useCartStore } from '@/features/cart/store/use-cart-store';
+import { useCart } from '@/features/cart/hooks/use-cart';
 import { formatCurrency } from '@/utils/format';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderSuccess'>;
@@ -16,13 +16,20 @@ export function OrderSuccessScreen({ route, navigation }: Props) {
   const { orderId, orderCode, totalAmount } = route.params;
   const { order, isLoading } = useOrder(orderId);
   const { user } = useAuth();
-  const clearCart = useCartStore((s) => s.clearCart);
+  const { clearCart, refreshCart, isAuthenticated } = useCart();
   const [copied, setCopied] = React.useState(false);
+  const cartSettled = useRef(false);
 
   // Xoá giỏ hàng khi đặt hàng thành công
   useEffect(() => {
+    if (cartSettled.current) return;
+    cartSettled.current = true;
+    if (isAuthenticated) {
+      void refreshCart();
+      return;
+    }
     clearCart();
-  }, [clearCart]);
+  }, [clearCart, isAuthenticated, refreshCart]);
 
   const displayOrderCode = order?.orderNumber || orderCode || (typeof orderId === 'string' ? orderId.substring(0, 8).toUpperCase() : `#${orderId}`);
   const displayTotal = order?.total ?? totalAmount ?? 0;
