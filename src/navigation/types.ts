@@ -62,7 +62,7 @@ export type RootStackParamList = {
   };
 
   Cart: undefined;
-  SubscriptionPlans: undefined;
+  SubscriptionPlans: { tab?: 'plans' | 'current' | 'history' } | undefined;
   SubscriptionHistory: undefined;
   Search: { query?: string } | undefined;
   Chat: { sessionId?: string; productId?: string } | undefined;

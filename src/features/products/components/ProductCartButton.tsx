@@ -3,13 +3,13 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { ShoppingBag } from "lucide-react-native";
 import { COLORS } from "@/constants/theme";
 import { useAuth } from "@/features/auth/hooks/use-auth";
-import { useCartStore } from "@/features/cart/store/use-cart-store";
+import { useCart } from "@/features/cart/hooks/use-cart";
 import { useLocalCartReady } from "../hooks/use-local-cart-ready";
 
 export function ProductCartButton({ onPress }: { onPress: () => void }) {
   const { isAuthenticated } = useAuth();
   const ready = useLocalCartReady();
-  const total = useCartStore((state) => state.getTotalItems());
+  const total = useCart().getTotalItems();
   const showCount = isAuthenticated && ready && total > 0;
 
   return (

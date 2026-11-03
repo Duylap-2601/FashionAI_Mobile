@@ -75,14 +75,8 @@ export const RootNavigator: React.FC = () => {
               name="Payment"
               component={PaymentScreen}
               options={{
-                headerShown: true,
-                title: "Thanh toán SePay",
-                headerTintColor: COLORS.primaryContainer,
-                headerStyle: { backgroundColor: COLORS.surfaceLowest },
-                headerTitleStyle: {
-                  color: COLORS.onSurface,
-                  fontSize: FONT_SIZE.md,
-                },
+                headerShown: false,
+                presentation: "modal",
               }}
             />
 
@@ -90,15 +84,7 @@ export const RootNavigator: React.FC = () => {
               name="OrderDetail"
               component={OrderDetailScreen}
               options={{
-                headerShown: true,
-                title: "Chi tiết đơn hàng",
-                headerBackTitle: "Đơn hàng",
-                headerTintColor: COLORS.primaryContainer,
-                headerStyle: { backgroundColor: COLORS.surfaceLowest },
-                headerTitleStyle: {
-                  color: COLORS.onSurface,
-                  fontSize: FONT_SIZE.md,
-                },
+                headerShown: false,
               }}
             />
 
@@ -172,15 +158,7 @@ export const RootNavigator: React.FC = () => {
               name="MyReviews"
               component={MyReviewsScreen}
               options={{
-                headerShown: true,
-                title: "Đánh giá của tôi",
-                headerBackTitle: "Đánh giá",
-                headerTintColor: COLORS.primaryContainer,
-                headerStyle: { backgroundColor: COLORS.surfaceLowest },
-                headerTitleStyle: {
-                  color: COLORS.onSurface,
-                  fontSize: FONT_SIZE.md,
-                },
+                headerShown: false,
               }}
             />
 
@@ -206,17 +184,7 @@ export const RootNavigator: React.FC = () => {
               name="StylistHistory"
               component={StylistHistoryScreen}
               options={{
-                headerShown: true,
-                title: "Lịch sử AI Stylist",
-                headerBackTitle: "AI Stylist",
-                headerTintColor: COLORS.primaryContainer,
-                headerStyle: { backgroundColor: COLORS.paper },
-                headerShadowVisible: false,
-                headerTitleStyle: {
-                  color: COLORS.obsidian,
-                  fontFamily: "Playfair Display",
-                  fontSize: FONT_SIZE.xl,
-                },
+                headerShown: false,
               }}
             />
 

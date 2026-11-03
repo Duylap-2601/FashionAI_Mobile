@@ -28,18 +28,19 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
     <Pressable
       accessibilityLabel="Thông báo"
       onPress={() => navigation.navigate('Notifications')}
-      className="h-9 w-9 items-center justify-center rounded-full"
+      className="relative h-9 w-9 items-center justify-center rounded-full active:opacity-70"
     >
-      <View>
-        <Bell size={18} color={COLORS.onSurface} />
-        {unread > 0 ? (
-          <View className="absolute -right-1 -top-1 h-5 min-w-5 items-center justify-center rounded-full border-2 border-landing-paper bg-landing-oxblood px-1">
-            <Text className="font-mono text-[9px] font-semibold text-landing-paper">
-              {unread > 99 ? '99+' : unread}
-            </Text>
-          </View>
-        ) : null}
-      </View>
+      <Bell size={18} color={COLORS.onSurface} />
+      {unread > 0 ? (
+        <View
+          pointerEvents="none"
+          className="absolute -right-0.5 -top-0.5 h-5 min-w-5 items-center justify-center rounded-full border-2 border-landing-paper bg-landing-oxblood px-1"
+        >
+          <Text className="font-mono text-[9px] font-semibold text-landing-paper">
+            {unread > 99 ? '99+' : unread}
+          </Text>
+        </View>
+      ) : null}
     </Pressable>
   );
 };

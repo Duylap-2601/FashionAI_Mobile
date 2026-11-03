@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -7,24 +7,26 @@ import {
   Pressable,
   ScrollView,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  ArrowLeft,
+  ArrowRight,
   Check,
   CheckCircle2,
-  ChevronRight,
   MapPin,
   Plus,
   QrCode,
   RefreshCw,
+  ShoppingBag,
+  Wallet,
   X,
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { useNavigation } from '@react-navigation/native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCartStore } from '@/features/cart/store/use-cart-store';
+import { useCart } from '@/features/cart/hooks/use-cart';
 import { formatCurrency } from '@/utils/format';
 import {
   IOrderShippingInfo,
@@ -36,10 +38,16 @@ import { paymentsApi } from '@/features/payments/api/payments.api';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/use-measurements-completeness';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { ApiError } from '@/types/api';
-import { Button } from '@/components/ui/Button';
 import { IUserAddress } from '@/features/profile/api/users.api';
 import { AddressForm, IAddressDraft } from '@/features/profile/components/AddressForm';
 import { useUserAddresses } from '@/features/profile/hooks/use-address-book';
+import { AppHeader } from '@/components/common/AppHeader';
+import { BackButton } from '@/components/common/BackButton';
+import { COLORS } from '@/constants/theme';
+
+const CHECKOUT_STEPS = ['Giỏ hàng', 'Giao hàng & thanh toán', 'Hoàn tất'];
+const ACTIVE_STEP = 1;
+const NOTE_QUOTE_DELAY_MS = 600;
 
 function formatAddress(address: IUserAddress) {
   return [address.addressLine, address.wardName, address.provinceName]
@@ -65,6 +73,16 @@ function buildShippingInfo(address: IAddressDraft): IOrderShippingInfo {
   };
 }
 
+function isAddressError(error: unknown) {
+  return (
+    error instanceof ApiError &&
+    (error.code === 'ADDRESS_RECONFIRM_REQUIRED' ||
+      error.code === 'SHIPPING_ROUTE_UNAVAILABLE' ||
+      error.code === 'ADDRESS_VERSION_CONFLICT' ||
+      error.code === 'ADDRESS_INVALID')
+  );
+}
+
 function getQuoteErrorMessage(error: unknown) {
   if (!(error instanceof ApiError)) {
     return 'Không thể tính phí vận chuyển. Vui lòng thử lại.';
@@ -84,13 +102,123 @@ function getQuoteErrorMessage(error: unknown) {
   return error.message || 'Không thể tính phí vận chuyển. Vui lòng thử lại.';
 }
 
+function getCouponErrorMessage(error: unknown) {
+  if (error instanceof ApiError && error.message) {
+    return error.message;
+  }
+  return 'Mã giảm giá không dùng được cho đơn này.';
+}
+
+interface ISectionHeadingProps {
+  index: string;
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+}
+
+function SectionHeading({ index, title, description, action }: ISectionHeadingProps) {
+  return (
+    <View className="mb-4 flex-row items-end justify-between gap-3">
+      <View className="flex-1 gap-1.5">
+        <View className="flex-row items-baseline gap-2.5">
+          <Text className="font-mono text-[13px] text-brass-ink">{index}</Text>
+          <Text className="flex-1 font-display text-[20px] leading-tight text-landing-obsidian">
+            {title}
+          </Text>
+        </View>
+        {description ? (
+          <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
+            {description}
+          </Text>
+        ) : null}
+      </View>
+      {action}
+    </View>
+  );
+}
+
+interface IOutlineActionProps {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  compact?: boolean;
+}
+
+function OutlineAction({ label, onPress, disabled, compact }: IOutlineActionProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      disabled={disabled}
+      className={`shrink-0 items-center justify-center rounded-subtle border border-landing-line px-3.5 ${
+        compact ? 'h-9' : 'h-11'
+      } ${disabled ? 'opacity-50' : 'active:bg-ivory'}`}
+    >
+      <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+interface IPaymentCardProps {
+  selected: boolean;
+  title: string;
+  description: string;
+  mark: React.ReactNode;
+  onPress: () => void;
+}
+
+function PaymentCard({ selected, title, description, mark, onPress }: IPaymentCardProps) {
+  return (
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      className={`flex-row items-start gap-3 rounded-subtle border px-4 py-3.5 ${
+        selected ? 'border-oxblood bg-ivory' : 'border-landing-line bg-ivory/50 active:bg-ivory'
+      }`}
+    >
+      <View
+        className={`mt-0.5 h-4 w-4 items-center justify-center rounded-subtle border ${
+          selected ? 'border-oxblood' : 'border-taupe'
+        }`}
+      >
+        {selected ? <View className="h-2 w-2 bg-oxblood" /> : null}
+      </View>
+      <View className="min-w-0 flex-1">
+        <View className="flex-row items-center gap-2">
+          {mark}
+          <Text className="flex-1 font-sans text-body-md font-medium text-landing-obsidian">
+            {title}
+          </Text>
+        </View>
+        <Text className="mt-1 font-sans text-xs leading-relaxed text-landing-muted">
+          {description}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
 export function CheckoutScreen() {
   const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const [paymentMethod, setPaymentMethod] = useState<EPaymentMethod>(EPaymentMethod.SEPAY);
+  const [paymentMethod, setPaymentMethod] = useState<EPaymentMethod>(EPaymentMethod.ZALOPAY);
+  const [shippingNote, setShippingNote] = useState('');
+  const [quoteNote, setQuoteNote] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState('');
+  const [couponAttempt, setCouponAttempt] = useState(0);
 
-  const { items, getTotalItems } = useCartStore();
+  const {
+    items,
+    getTotalItems,
+    isLoading: isCartLoading,
+    isError: isCartError,
+    refetch: refetchCart,
+  } = useCart();
   const totalItems = getTotalItems();
 
   const addressesQuery = useUserAddresses();
@@ -98,8 +226,14 @@ export function CheckoutScreen() {
 
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [manualAddress, setManualAddress] = useState<IAddressDraft | null>(null);
+  const [addressSeed, setAddressSeed] = useState<IUserAddress | null>(null);
   const [showAddressPicker, setShowAddressPicker] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setQuoteNote(shippingNote), NOTE_QUOTE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [shippingNote]);
 
   const selectedAddress = useMemo(() => {
     if (manualAddress) return null;
@@ -132,22 +266,40 @@ export function CheckoutScreen() {
       selectedAddress?.id,
       selectedAddress?.version,
       manualAddress,
+      quoteNote,
+      appliedCoupon,
+      couponAttempt,
     ],
-    queryFn: ({ signal }) => {
+    queryFn: async ({ signal }) => {
       if (!quoteAddress) throw new Error('Chưa có địa chỉ giao hàng.');
-      return ordersApi.quote(
-        {
-          items: items.map((item) => ({
-            productId: item.productId,
-            color: item.color,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-          ...quoteAddress,
-          paymentMethod: 'BANK_TRANSFER',
-        },
-        { signal },
-      );
+      const basePayload = {
+        items: items.map((item) => ({
+          productId: item.productId,
+          color: item.color,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        ...quoteAddress,
+        ...(quoteNote.trim() ? { shippingNote: quoteNote.trim() } : {}),
+        paymentMethod: 'BANK_TRANSFER',
+      };
+
+      if (!appliedCoupon) {
+        const quote = await ordersApi.quote(basePayload, { signal });
+        return { quote, couponError: null as string | null };
+      }
+
+      try {
+        const quote = await ordersApi.quote(
+          { ...basePayload, couponCode: appliedCoupon },
+          { signal },
+        );
+        return { quote, couponError: null as string | null };
+      } catch (error) {
+        if (isAddressError(error)) throw error;
+        const quote = await ordersApi.quote(basePayload, { signal });
+        return { quote, couponError: getCouponErrorMessage(error) };
+      }
     },
     enabled: items.length > 0 && !!quoteAddress,
     staleTime: 4 * 60 * 1000,
@@ -164,21 +316,24 @@ export function CheckoutScreen() {
     },
   });
 
-  const quoteRes = quoteQuery.data;
+  const quoteRes = quoteQuery.data?.quote;
+  const couponError = quoteQuery.data?.couponError ?? null;
+  const isCouponApplied = !!appliedCoupon && !couponError;
   const isQuoting = quoteQuery.isFetching;
   const quoteErrorMessage = quoteQuery.error
     ? getQuoteErrorMessage(quoteQuery.error)
     : null;
   const quoteReady = !!quoteRes && !isQuoting && !quoteErrorMessage;
-  const shippingFee = quoteRes?.shippingFee ?? 0;
+  const shippingFee = quoteRes ? quoteRes.shippingFee : null;
+  const discountAmount = Math.max(0, quoteRes?.discountAmount ?? 0);
 
   const localSubtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
-  const localTotal = localSubtotal + shippingFee;
   const displaySubtotal = quoteRes?.itemsTotal ?? localSubtotal;
-  const displayTotal = quoteRes?.totalAmount ?? localTotal;
+  const displayTotal = quoteRes?.totalAmount ?? localSubtotal;
+  const isNotePending = shippingNote !== quoteNote;
 
   const createOrderMutation = useMutation({
     mutationFn: (payload: OrderCreatePayload) => ordersApi.createOrder(payload),
@@ -192,6 +347,18 @@ export function CheckoutScreen() {
   const { canOrder, completeness, byCategory } = useMeasurementsCompleteness();
 
   const manualInitial = useMemo<Partial<IUserAddress>>(() => {
+    if (addressSeed) {
+      return {
+        recipientName: addressSeed.recipientName,
+        phone: addressSeed.phone,
+        addressLine: addressSeed.addressLine,
+        ghnProvinceV3Id: addressSeed.ghnProvinceV3Id,
+        ghnWardV3Id: addressSeed.ghnWardV3Id,
+        provinceName: addressSeed.provinceName,
+        wardName: addressSeed.wardName,
+        isDefault: addressSeed.isDefault,
+      };
+    }
     if (manualAddress) {
       return {
         recipientName: manualAddress.recipientName,
@@ -201,16 +368,38 @@ export function CheckoutScreen() {
         ghnWardV3Id: manualAddress.ghnWardV3Id,
         provinceName: manualAddress.provinceName,
         wardName: manualAddress.wardName,
+        isDefault: manualAddress.isDefault,
       };
     }
-    return { recipientName: user?.name ?? '' };
-  }, [manualAddress, user?.name]);
+    return {
+      recipientName: user?.name ?? '',
+      isDefault: addresses.length === 0,
+    };
+  }, [addressSeed, addresses.length, manualAddress, user?.name]);
 
   const handleChangeAddress = () => {
     if (addresses.length > 0) {
       setShowAddressPicker(true);
       return;
     }
+    setAddressSeed(null);
+    setShowManualForm(true);
+  };
+
+  const handleToggleAddForm = () => {
+    if (showManualForm) {
+      setShowManualForm(false);
+      setAddressSeed(null);
+      return;
+    }
+    setAddressSeed(null);
+    setShowManualForm(true);
+  };
+
+  const handleEditSelectedAddress = () => {
+    if (!selectedAddress) return;
+    setAddressSeed(selectedAddress);
+    setManualAddress(null);
     setShowManualForm(true);
   };
 
@@ -232,6 +421,7 @@ export function CheckoutScreen() {
   const handleSelectSavedAddress = (address: IUserAddress) => {
     setSelectedAddressId(address.id);
     setManualAddress(null);
+    setAddressSeed(null);
     setShowManualForm(false);
     setShowAddressPicker(false);
   };
@@ -239,13 +429,28 @@ export function CheckoutScreen() {
   const handleAddNewAddress = () => {
     setShowAddressPicker(false);
     setManualAddress(null);
+    setAddressSeed(null);
     setShowManualForm(true);
   };
 
   const handleManualSubmit = (address: IAddressDraft) => {
     setManualAddress(address);
     setSelectedAddressId(null);
+    setAddressSeed(null);
     setShowManualForm(false);
+  };
+
+  const handleApplyCoupon = () => {
+    const code = couponCode.trim().toUpperCase();
+    if (!code) return;
+    setAppliedCoupon(code);
+    setCouponAttempt((value) => value + 1);
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon('');
+    setCouponCode('');
+    setCouponAttempt((value) => value + 1);
   };
 
   const handlePlaceOrder = async () => {
@@ -311,6 +516,8 @@ export function CheckoutScreen() {
         quoteToken: quoteRes.quoteToken,
         totalAmount: quoteRes.totalAmount,
         paymentMethod: 'BANK_TRANSFER',
+        ...(quoteNote.trim() ? { shippingNote: quoteNote.trim() } : {}),
+        ...(isCouponApplied ? { couponCode: appliedCoupon } : {}),
       };
 
       const newOrder = await createOrderMutation.mutateAsync(orderPayload);
@@ -370,424 +577,534 @@ export function CheckoutScreen() {
     }
   };
 
+  const isSubmitting = createOrderMutation.isPending || checkoutPaymentMutation.isPending;
   const canPlaceOrder =
     hasShippingAddress &&
     quoteReady &&
     !isQuoting &&
-    createOrderMutation.isPending === false &&
-    checkoutPaymentMutation.isPending === false;
+    !isNotePending &&
+    !isSubmitting;
 
-  return (
-    <SafeAreaView className="flex-1 bg-surface-lowest">
-      <View className="flex-row items-center border-b border-surface-line bg-surface-lowest px-4 py-3">
-        <Pressable
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Quay lại"
-          className="-ml-2 min-h-11 min-w-11 items-center justify-center rounded-full active:bg-surface-line"
+  const submitLabel = isSubmitting
+    ? 'Đang đặt hàng…'
+    : isQuoting || isNotePending
+      ? 'Đang cập nhật tổng tiền…'
+      : 'Đặt hàng';
+
+  const renderHeader = () => (
+    <>
+      <BackButton onPress={() => navigation.goBack()} label="Quay lại" />
+
+      <View className="mt-4 gap-2 border-b border-landing-line pb-5">
+        <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
+          Đặt hàng
+        </Text>
+        <Text
+          accessibilityRole="header"
+          className="font-display text-headline-lg text-landing-obsidian"
         >
-          <ArrowLeft size={24} color="#1A1A1A" />
-        </Pressable>
-        <Text className="flex-1 pr-8 text-center text-headline-sm font-semibold text-on-surface">
-          Thanh toán
+          Giao hàng và thanh toán
+        </Text>
+        <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
+          Phí giao hàng do GHN báo theo địa chỉ. Tổng tiền được tính lại ở máy chủ trước khi tạo đơn.
         </Text>
       </View>
 
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <View className="flex-row gap-3 border-b border-landing-line pb-4">
+        {CHECKOUT_STEPS.map((step, index) => (
+          <View key={step} className="flex-1 gap-1">
+            <Text
+              className={`font-mono text-[10px] tracking-[0.14em] ${
+                index === ACTIVE_STEP ? 'text-oxblood' : 'text-landing-muted'
+              }`}
+            >
+              {String(index + 1).padStart(2, '0')}
+            </Text>
+            <Text
+              className={`font-sans text-[10px] font-semibold uppercase leading-[14px] tracking-[0.1em] ${
+                index === ACTIVE_STEP ? 'text-oxblood' : 'text-landing-muted'
+              }`}
+            >
+              {step}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </>
+  );
+
+  const measurementsGate = !canOrder && completeness ? (
+    <View className="border-l-2 border-brass bg-ivory px-4 py-3.5">
+      <Text className="font-sans text-body-md font-medium text-landing-obsidian">
+        Cần bổ sung số đo để đặt may
+      </Text>
+      <Text className="mt-1.5 font-sans text-xs leading-relaxed text-landing-muted">
+        Đơn may đo cần đủ số đo trong hồ sơ.
+      </Text>
+      <View className="mt-2.5 gap-1">
+        {byCategory
+          .filter((cat) => !cat.complete)
+          .map((cat, index) => (
+            <Text key={index} className="font-sans text-xs text-landing-muted">
+              <Text className="font-mono text-[11px] text-landing-obsidian">
+                {cat.category === 'UPPER'
+                  ? 'Áo'
+                  : cat.category === 'LOWER'
+                    ? 'Quần/Váy'
+                    : 'Đồ bộ'}
+              </Text>
+              {': '}
+              {cat.missing.map((measurement) => measurement.label).join(' · ')}
+            </Text>
+          ))}
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() =>
+          navigation.navigate('Main', {
+            screen: 'ProfileTab',
+            params: { screen: 'Measurements' },
+          })
+        }
+        className="mt-3 h-9 items-center justify-center self-start rounded-subtle border border-landing-line px-3.5 active:bg-landing-paper"
       >
-        {!canOrder && completeness && (
-          <View className="mx-4 my-2 rounded-xl border border-danger/30 bg-danger/5 p-4">
-            <Text className="mb-2 text-body-md font-bold text-danger">
-              Cần bổ sung số đo cơ thể
+        <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+          Cập nhật số đo
+        </Text>
+      </Pressable>
+    </View>
+  ) : null;
+
+  const addressCard = hasShippingAddress ? (
+    <View className="rounded-subtle border border-landing-line bg-ivory px-4 py-4">
+      <View className="flex-row items-start justify-between gap-3">
+        <View className="min-w-0 flex-1 flex-row flex-wrap items-baseline">
+          <Text className="font-sans text-body-md font-medium text-landing-obsidian">
+            {selectedAddress?.recipientName || manualAddress?.recipientName}
+          </Text>
+          {selectedAddress?.isDefault || manualAddress?.isDefault ? (
+            <Text className="ml-2 font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-brass-ink">
+              Mặc định
             </Text>
-            <Text className="mb-3 text-body-sm text-on-surface-variant">
-              Giỏ hàng của bạn có trang phục may đo. Vui lòng cập nhật đầy đủ các
-              số đo sau:
+          ) : null}
+        </View>
+        <Text className="shrink-0 font-mono text-xs text-landing-muted">
+          {selectedAddress?.phone || manualAddress?.phone}
+        </Text>
+      </View>
+      <Text className="mt-1.5 font-sans text-body-sm leading-relaxed text-landing-muted">
+        {selectedAddress
+          ? formatAddress(selectedAddress)
+          : manualAddress
+            ? formatDraftAddress(manualAddress)
+            : ''}
+      </Text>
+
+      {isQuoting ? (
+        <View className="mt-3 flex-row items-center gap-2">
+          <ActivityIndicator size="small" color={COLORS.oxblood} />
+          <Text className="font-sans text-xs text-landing-muted">
+            Đang tính phí giao hàng…
+          </Text>
+        </View>
+      ) : quoteErrorMessage ? (
+        <View className="mt-3 border-l-2 border-danger pl-3">
+          <Text className="font-sans text-xs leading-relaxed text-danger">
+            {quoteErrorMessage}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={handleRetryQuote}
+            className="mt-2 h-9 flex-row items-center gap-1.5 self-start rounded-subtle border border-landing-line px-3 active:bg-landing-paper"
+          >
+            <RefreshCw size={13} strokeWidth={1.75} color={COLORS.oxblood} />
+            <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+              Thử lại
             </Text>
-            <View className="mb-3 pl-2">
-              {byCategory
-                .filter((cat) => !cat.complete)
-                .map((cat, index) => (
-                  <View key={index} className="mb-2">
-                    <Text className="mb-1 text-label-md font-semibold text-danger">
-                      {cat.category === 'UPPER'
-                        ? 'Áo (Thân trên)'
-                        : cat.category === 'LOWER'
-                          ? 'Quần/Váy (Thân dưới)'
-                          : 'Đồ bộ (Toàn thân)'}
-                      :
-                    </Text>
-                    {cat.missing.map((measurement, measurementIndex) => (
-                      <Text
-                        key={measurementIndex}
-                        className="text-body-sm text-on-surface-variant"
-                      >
-                        • {measurement.label}
-                      </Text>
-                    ))}
-                  </View>
-                ))}
-            </View>
-            <Pressable
-              className="self-start rounded-lg bg-danger px-4 py-2 active:opacity-80"
-              onPress={() =>
-                navigation.navigate('Main', {
-                  screen: 'ProfileTab',
-                  params: { screen: 'Measurements' },
-                })
-              }
-            >
-              <Text className="text-label-md font-bold text-white">
-                Cập nhật số đo
-              </Text>
-            </Pressable>
-          </View>
-        )}
+          </Pressable>
+        </View>
+      ) : quoteReady ? (
+        <View className="mt-3 flex-row items-center gap-1.5">
+          <CheckCircle2 size={14} strokeWidth={1.75} color={COLORS.sageInk} />
+          <Text className="font-sans text-xs text-sage-ink">
+            GHN hỗ trợ giao đến địa chỉ này
+          </Text>
+        </View>
+      ) : null}
 
-        <View className="mb-2 mt-2 border-y border-surface-line bg-surface-lowest p-4">
-          <View className="mb-3 flex-row items-center justify-between">
-            <Text className="text-headline-sm font-bold text-on-surface">Giao đến</Text>
-            <Pressable
-              onPress={handleChangeAddress}
-              disabled={addressesQuery.isLoading}
-              className="min-h-11 flex-row items-center p-1 active:opacity-70"
-            >
-              <Text className="mr-1 text-label-md font-semibold text-primary">
-                {hasShippingAddress ? 'Thay đổi' : 'Chọn địa chỉ'}
-              </Text>
-              <ChevronRight size={16} color="#5D1C34" />
-            </Pressable>
-          </View>
+      <View className="mt-3.5 flex-row items-center gap-2">
+        <OutlineAction label="Đổi địa chỉ" onPress={handleChangeAddress} compact />
+        <OutlineAction label="Sửa" onPress={handleEditSelectedAddress} compact />
+      </View>
 
-          {addressesQuery.isLoading && !manualAddress ? (
-            <View className="flex-row items-center rounded-xl border border-surface-line bg-surface p-3">
-              <ActivityIndicator size="small" color="#5D1C34" />
-              <Text className="ml-3 text-body-sm text-on-surface-variant">
-                Đang tải sổ địa chỉ...
-              </Text>
-            </View>
-          ) : addressesQuery.isError && !manualAddress ? (
-            <View className="rounded-xl border border-danger/30 bg-danger/5 p-3">
-              <Text className="text-body-sm text-danger">
-                {addressesQuery.error instanceof ApiError
-                  ? addressesQuery.error.message
-                  : 'Không thể tải sổ địa chỉ.'}
-              </Text>
-              <Pressable
-                onPress={() => addressesQuery.refetch()}
-                className="mt-2 min-h-11 flex-row items-center gap-2 self-start"
-              >
-                <RefreshCw size={15} className="text-danger" />
-                <Text className="text-label-md font-semibold text-danger">
-                  Thử lại
-                </Text>
-              </Pressable>
-            </View>
-          ) : hasShippingAddress ? (
-            <>
-              <View className="mb-1 flex-row flex-wrap items-center gap-2">
-                <Text className="text-body-md font-bold text-on-surface">
-                  {selectedAddress?.recipientName || manualAddress?.recipientName}
-                </Text>
-                <Text className="text-body-sm text-on-surface-variant">•</Text>
-                <Text className="text-body-sm text-on-surface-variant">
-                  {selectedAddress?.phone || manualAddress?.phone}
-                </Text>
-                {selectedAddress?.isDefault && (
-                  <View className="rounded-full bg-primary/10 px-2 py-0.5">
-                    <Text className="text-2xs font-bold text-primary">Mặc định</Text>
-                  </View>
-                )}
-              </View>
-              <Text className="mb-2 text-body-sm leading-5 text-on-surface-variant">
-                {selectedAddress
-                  ? formatAddress(selectedAddress)
-                  : manualAddress
-                    ? formatDraftAddress(manualAddress)
-                    : ''}
-              </Text>
-
-              {isQuoting ? (
-                <View className="flex-row items-center">
-                  <ActivityIndicator size="small" color="#5D1C34" />
-                  <Text className="ml-2 text-body-sm text-on-surface-variant">
-                    Đang tính phí vận chuyển...
-                  </Text>
-                </View>
-              ) : quoteErrorMessage ? (
-                <View className="rounded-xl border border-danger/30 bg-danger/5 p-3">
-                  <Text className="text-body-sm text-danger">{quoteErrorMessage}</Text>
-                  <Pressable
-                    onPress={handleRetryQuote}
-                    className="mt-2 min-h-11 flex-row items-center gap-2 self-start"
-                  >
-                    <RefreshCw size={15} className="text-danger" />
-                    <Text className="text-label-md font-semibold text-danger">
-                      Thử lại
-                    </Text>
-                  </Pressable>
-                </View>
-              ) : quoteReady ? (
-                <View className="flex-row items-center">
-                  <CheckCircle2 size={16} color="#10B981" />
-                  <Text className="ml-2 text-body-sm font-medium text-success">
-                    GHN hỗ trợ giao đến địa chỉ này
-                  </Text>
-                </View>
-              ) : null}
-            </>
-          ) : (
-            <View className="rounded-xl border border-surface-line bg-surface p-3">
-              <View className="flex-row items-center">
-                <MapPin size={20} color="#6B7280" />
-                <Text className="ml-3 flex-1 text-body-sm text-on-surface-variant">
-                  Vui lòng chọn hoặc thêm địa chỉ giao hàng để tính phí vận chuyển.
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {showManualForm && (
-            <View className="mt-4">
+      {showManualForm ? (
+        <View className="mt-4">
+          <AddressForm
+            key={addressSeed?.id ?? (manualAddress ? 'manual-filled' : 'manual-empty')}
+            initial={manualInitial}
+            mode="checkout"
+            onCancel={() => {
+              setShowManualForm(false);
+              setAddressSeed(null);
+            }}
+            onSubmit={handleManualSubmit}
+          />
+        </View>
+      ) : null}
+    </View>
+  ) : (
+    <View className="gap-3 rounded-subtle border border-landing-line bg-ivory px-5 py-8">
+      {addressesQuery.isLoading ? (
+        <View className="items-center gap-2.5">
+          <ActivityIndicator size="small" color={COLORS.oxblood} />
+          <Text className="font-sans text-body-sm text-landing-muted">
+            Đang tải sổ địa chỉ…
+          </Text>
+        </View>
+      ) : addressesQuery.isError ? (
+        <View className="items-center gap-2">
+          <MapPin size={24} strokeWidth={1.5} color={COLORS.oxblood} />
+          <Text className="text-center font-sans text-body-sm text-danger">
+            {addressesQuery.error instanceof ApiError
+              ? addressesQuery.error.message
+              : 'Không thể tải sổ địa chỉ.'}
+          </Text>
+          <OutlineAction label="Thử lại" onPress={() => addressesQuery.refetch()} compact />
+        </View>
+      ) : (
+        <>
+          <Text className="font-display text-[19px] leading-tight text-landing-obsidian">
+            Bạn chưa có địa chỉ giao hàng.
+          </Text>
+          <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
+            Thêm một địa chỉ để GHN báo phí giao.
+          </Text>
+          {showManualForm ? (
+            <View className="mt-1">
               <AddressForm
-                key={manualAddress ? 'manual-filled' : 'manual-empty'}
+                key="manual-empty"
                 initial={manualInitial}
                 mode="checkout"
-                onCancel={() => setShowManualForm(false)}
+                onCancel={() => {
+                  setShowManualForm(false);
+                  setAddressSeed(null);
+                }}
                 onSubmit={handleManualSubmit}
               />
             </View>
-          )}
-        </View>
+          ) : null}
+        </>
+      )}
+    </View>
+  );
 
-        <View className="mb-2 border-y border-surface-line bg-surface-lowest p-4">
-          <View className="mb-4 flex-row items-center justify-between">
-            <View className="flex-row items-center gap-2">
-              <Text className="text-headline-sm font-bold text-on-surface">Sản phẩm</Text>
-              <Text className="text-body-sm text-on-surface-variant">
-                ({totalItems} món)
-              </Text>
-            </View>
+  if (isCartError) {
+    return (
+      <View className="flex-1 bg-landing-paper">
+        <AppHeader />
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="gap-lg px-lg pb-giant pt-lg"
+          showsVerticalScrollIndicator={false}
+        >
+          {renderHeader()}
+          <View className="items-center justify-center gap-3 rounded-subtle border border-landing-line bg-ivory px-6 py-16">
+            <Text className="text-center font-display text-2xl leading-tight text-landing-obsidian">
+              Không tải được giỏ hàng
+            </Text>
+            <Text className="max-w-[260px] text-center font-sans text-sm leading-relaxed text-landing-muted">
+              Kiểm tra kết nối mạng rồi thử lại.
+            </Text>
             <Pressable
-              onPress={() => navigation.goBack()}
-              className="min-h-11 justify-center"
+              accessibilityRole="button"
+              onPress={() => refetchCart()}
+              className="mt-2 h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:bg-landing-paper"
             >
-              <Text className="text-label-md text-on-surface-variant">Xem lại</Text>
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+                Thử lại
+              </Text>
             </Pressable>
           </View>
-
-          {items.map((item, index) => (
-            <View key={index} className="mb-4 flex-row gap-4">
-              <View className="h-[72px] w-[72px] overflow-hidden rounded-lg border border-surface-line bg-surface-container">
-                {item.imageUrl && (
-                  <Image
-                    source={{ uri: item.imageUrl }}
-                    style={{ width: '100%', height: '100%' }}
-                    contentFit="cover"
-                  />
-                )}
-              </View>
-              <View className="flex-1 justify-center">
-                <Text
-                  className="text-label-md font-semibold text-on-surface"
-                  numberOfLines={1}
-                >
-                  {item.productName}
-                </Text>
-                <Text className="mt-1 text-body-sm text-on-surface-variant">
-                  {item.color ? `Màu ${item.color} • ` : ''}Size{' '}
-                  {item.size || 'Standard'}
-                </Text>
-                <Text className="mt-2 text-label-md font-bold text-on-surface">
-                  {item.quantity} × {formatCurrency(item.price)}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        <View className="mb-2 border-y border-surface-line bg-surface-lowest p-4">
-          <Text className="mb-3 text-headline-sm font-bold text-on-surface">
-            Phương thức giao hàng
-          </Text>
-          <View className="flex-row items-center justify-between rounded-xl border border-surface-line bg-surface p-3">
-            <View>
-              <View className="mb-1 flex-row items-center gap-2">
-                <Text className="text-label-md font-bold text-on-surface">
-                  🚚 GHN Express
-                </Text>
-                {quoteReady && shippingFee === 0 && (
-                  <View className="rounded border border-success/30 bg-success/10 px-2 py-0.5">
-                    <Text className="text-2xs font-bold text-success">Freeship</Text>
-                  </View>
-                )}
-              </View>
-              <Text className="text-body-sm text-on-surface-variant">
-                Thời gian giao hàng tiêu chuẩn
-              </Text>
-            </View>
-            <View className="items-end">
-              {isQuoting ? (
-                <ActivityIndicator size="small" color="#5D1C34" />
-              ) : quoteReady ? (
-                <Text className="text-label-md font-bold text-on-surface">
-                  {shippingFee === 0 ? 'Miễn phí' : formatCurrency(shippingFee)}
-                </Text>
-              ) : (
-                <Text className="text-label-md italic text-on-surface-variant">
-                  Chưa xác định
-                </Text>
-              )}
-            </View>
-          </View>
-        </View>
-
-        <View className="mb-2 border-y border-surface-line bg-surface-lowest p-4">
-          <Text className="mb-3 text-headline-sm font-bold text-on-surface">
-            Phương thức thanh toán
-          </Text>
-
-          <Pressable
-            onPress={() => setPaymentMethod(EPaymentMethod.SEPAY)}
-            className={`mb-3 flex-row items-center rounded-xl border p-4 ${
-              paymentMethod === EPaymentMethod.SEPAY
-                ? 'border-primary bg-primary/5'
-                : 'border-surface-line bg-surface'
-            }`}
-          >
-            <View className="mr-3 h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <QrCode size={20} color="#5D1C34" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-label-md font-bold text-on-surface">
-                Chuyển khoản QR (SePay)
-              </Text>
-              <Text className="mt-1 text-body-sm text-on-surface-variant">
-                Quét mã QR bằng ứng dụng ngân hàng 24/7
-              </Text>
-            </View>
-            <View
-              className={`h-5 w-5 items-center justify-center rounded-full border-2 ${
-                paymentMethod === EPaymentMethod.SEPAY
-                  ? 'border-primary'
-                  : 'border-surface-line'
-              }`}
-            >
-              {paymentMethod === EPaymentMethod.SEPAY && (
-                <View className="h-2.5 w-2.5 rounded-full bg-primary" />
-              )}
-            </View>
-          </Pressable>
-
-          <Pressable
-            onPress={() => setPaymentMethod(EPaymentMethod.ZALOPAY)}
-            className={`mb-4 flex-row items-center rounded-xl border p-4 ${
-              paymentMethod === EPaymentMethod.ZALOPAY
-                ? 'border-primary bg-primary/5'
-                : 'border-surface-line bg-surface'
-            }`}
-          >
-            <View className="mr-3 h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-              <Text className="text-2xs font-bold text-blue-600">ZaloPay</Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-label-md font-bold text-on-surface">
-                Ví ZaloPay
-              </Text>
-              <Text className="mt-1 text-body-sm text-on-surface-variant">
-                Thanh toán qua ví điện tử ZaloPay
-              </Text>
-            </View>
-            <View
-              className={`h-5 w-5 items-center justify-center rounded-full border-2 ${
-                paymentMethod === EPaymentMethod.ZALOPAY
-                  ? 'border-primary'
-                  : 'border-surface-line'
-              }`}
-            >
-              {paymentMethod === EPaymentMethod.ZALOPAY && (
-                <View className="h-2.5 w-2.5 rounded-full bg-primary" />
-              )}
-            </View>
-          </Pressable>
-        </View>
-
-        <View className="border-t border-surface-line bg-surface-lowest p-4 pb-32">
-          <Text className="mb-4 text-headline-sm font-bold text-on-surface">
-            Chi tiết thanh toán
-          </Text>
-          <View className="mb-3 flex-row justify-between">
-            <Text className="text-body-md text-on-surface-variant">Tạm tính</Text>
-            <Text className="text-body-md font-semibold text-on-surface">
-              {formatCurrency(displaySubtotal)}
-            </Text>
-          </View>
-          <View className="mb-5 flex-row justify-between">
-            <Text className="text-body-md text-on-surface-variant">Phí vận chuyển</Text>
-            <Text className="text-body-md font-semibold text-on-surface">
-              {!hasShippingAddress
-                ? 'Chưa tính'
-                : isQuoting
-                  ? 'Đang tính...'
-                  : quoteReady
-                    ? shippingFee === 0
-                      ? 'Miễn phí'
-                      : formatCurrency(shippingFee)
-                    : 'Chưa tính'}
-            </Text>
-          </View>
-          <View className="flex-row items-end justify-between">
-            <View>
-              <Text className="text-body-lg font-bold text-on-surface">
-                Tổng thanh toán
-              </Text>
-              <Text className="mt-0.5 text-body-sm text-on-surface-variant">
-                (Đã bao gồm VAT)
-              </Text>
-            </View>
-            {isQuoting && items.length > 0 && !quoteRes ? (
-              <ActivityIndicator size="small" color="#5D1C34" />
-            ) : (
-              <Text className="text-headline-md font-bold text-on-surface">
-                {formatCurrency(displayTotal)}
-              </Text>
-            )}
-          </View>
-        </View>
-      </ScrollView>
-
-      <View className="absolute bottom-0 left-0 right-0 flex-row items-center justify-between border-t border-surface-line bg-surface-lowest px-4 py-4 pb-8 shadow-hard-4">
-        <View>
-          <Text className="mb-1 text-2xs font-semibold uppercase tracking-wider text-on-surface-variant">
-            Tổng thanh toán
-          </Text>
-          <Text className="text-headline-md font-bold text-on-surface">
-            {formatCurrency(displayTotal)}
-          </Text>
-        </View>
-        <Pressable
-          className={`flex-row items-center justify-center rounded-xl px-8 py-3.5 ${
-            canPlaceOrder ? 'bg-primary active:bg-primary-strong' : 'bg-surface-line'
-          }`}
-          disabled={!canPlaceOrder}
-          onPress={handlePlaceOrder}
-        >
-          {createOrderMutation.isPending || checkoutPaymentMutation.isPending ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text
-              className={`text-label-lg font-bold ${
-                canPlaceOrder ? 'text-on-primary' : 'text-on-surface-variant'
-              }`}
-            >
-              Đặt hàng
-            </Text>
-          )}
-        </Pressable>
+        </ScrollView>
       </View>
+    );
+  }
+
+  if (isCartLoading && items.length === 0) {
+    return (
+      <View className="flex-1 bg-landing-paper">
+        <AppHeader />
+        <View className="flex-1 items-center justify-center gap-3">
+          <ActivityIndicator size="small" color={COLORS.oxblood} />
+          <Text className="font-sans text-body-sm text-landing-muted">
+            Đang tải giỏ hàng…
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View className="flex-1 bg-landing-paper">
+      <AppHeader />
+
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="gap-lg px-lg pb-giant pt-lg"
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {renderHeader()}
+
+        {items.length === 0 ? (
+          <View className="items-center justify-center gap-3 rounded-subtle border border-landing-line bg-ivory px-6 py-16">
+            <Text className="text-center font-display text-2xl leading-tight text-landing-obsidian">
+              Giỏ hàng đang trống
+            </Text>
+            <Text className="max-w-[260px] text-center font-sans text-sm leading-relaxed text-landing-muted">
+              Chọn một thiết kế rồi quay lại đây để đặt may.
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => navigation.goBack()}
+              className="mt-2 h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:bg-landing-paper"
+            >
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+                Quay lại
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
+          <>
+            {measurementsGate}
+
+            <View className="border-t border-landing-line pt-6">
+              <SectionHeading
+                index="01"
+                title="Địa chỉ giao hàng"
+                description="Kiểm tra kỹ: không đổi được địa chỉ sau khi đặt hàng."
+                action={
+                  <OutlineAction
+                    label={showManualForm ? 'Đóng' : 'Thêm địa chỉ'}
+                    onPress={handleToggleAddForm}
+                  />
+                }
+              />
+              {addressCard}
+
+              <View className="mt-5">
+                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-brass-ink">
+                  Ghi chú giao hàng
+                </Text>
+                <TextInput
+                  value={shippingNote}
+                  onChangeText={setShippingNote}
+                  placeholder="Ví dụ: giao giờ hành chính"
+                  placeholderTextColor={COLORS.muted}
+                  multiline
+                  maxLength={500}
+                  textAlignVertical="top"
+                  className="mt-2 min-h-[88px] rounded-subtle border border-landing-line bg-ivory px-3.5 py-3 font-sans text-body-md leading-relaxed text-landing-obsidian"
+                />
+              </View>
+            </View>
+
+            <View className="border-t border-landing-line pt-6">
+              <SectionHeading
+                index="02"
+                title="Phương thức thanh toán"
+                description="Đơn được xác nhận khi cổng thanh toán báo đã nhận tiền."
+              />
+              <View className="gap-2.5" accessibilityRole="radiogroup">
+                <PaymentCard
+                  selected={paymentMethod === EPaymentMethod.ZALOPAY}
+                  onPress={() => setPaymentMethod(EPaymentMethod.ZALOPAY)}
+                  title="ZaloPay"
+                  description="Quét QR hoặc mở ứng dụng ZaloPay. Trạng tự cập nhật khi thanh toán xong."
+                  mark={
+                    <View className="h-7 w-7 items-center justify-center rounded-subtle border border-landing-line bg-landing-paper">
+                      <Wallet size={14} strokeWidth={1.75} color={COLORS.oxblood} />
+                    </View>
+                  }
+                />
+                <PaymentCard
+                  selected={paymentMethod === EPaymentMethod.SEPAY}
+                  onPress={() => setPaymentMethod(EPaymentMethod.SEPAY)}
+                  title="Chuyển khoản ngân hàng"
+                  description="Qua cổng SePay. Ghi đúng nội dung chuyển khoản để đơn được xác nhận tự động."
+                  mark={
+                    <View className="h-7 w-7 items-center justify-center rounded-subtle border border-landing-line bg-landing-paper">
+                      <QrCode size={14} strokeWidth={1.75} color={COLORS.oxblood} />
+                    </View>
+                  }
+                />
+              </View>
+            </View>
+
+            <View className="rounded-subtle border border-landing-line bg-ivory p-5">
+              <View className="flex-row items-baseline justify-between gap-4">
+                <Text className="font-display text-[20px] leading-tight text-landing-obsidian">
+                  Đơn hàng
+                </Text>
+                <Text className="font-sans text-xs text-landing-muted">
+                  <Text className="font-mono text-landing-obsidian">{totalItems}</Text> sản phẩm
+                </Text>
+              </View>
+
+              {items.map((item, index) => (
+                <View key={index} className="mt-3 flex-row items-center gap-3">
+                  <View className="h-16 w-12 shrink-0 items-center justify-center overflow-hidden rounded-subtle bg-ivory">
+                    {item.imageUrl ? (
+                      <Image
+                        source={{ uri: item.imageUrl }}
+                        style={{ width: '100%', height: '100%' }}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <ShoppingBag size={16} strokeWidth={1.25} color={COLORS.muted} />
+                    )}
+                  </View>
+                  <View className="min-w-0 flex-1">
+                    <Text
+                      numberOfLines={1}
+                      className="font-sans text-body-md text-landing-obsidian"
+                    >
+                      {item.productName}
+                    </Text>
+                    <Text className="mt-0.5 font-sans text-xs text-landing-muted">
+                      Màu: {item.color || 'Mặc định'} · SL {item.quantity}
+                    </Text>
+                  </View>
+                  <Text className="shrink-0 font-mono text-sm text-landing-obsidian">
+                    {formatCurrency(item.price * item.quantity)}
+                  </Text>
+                </View>
+              ))}
+
+              <View className="mt-4 border-t border-landing-line pt-4">
+                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-brass-ink">
+                  Mã giảm giá
+                </Text>
+                <View className="mt-2 flex-row items-center gap-2">
+                  <TextInput
+                    value={couponCode}
+                    onChangeText={setCouponCode}
+                    onSubmitEditing={handleApplyCoupon}
+                    editable={!isCouponApplied}
+                    placeholder="Nhập mã"
+                    placeholderTextColor={COLORS.muted}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    className="h-11 flex-1 rounded-subtle border border-landing-line bg-landing-paper px-3 font-mono text-body-md uppercase text-landing-obsidian"
+                  />
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={isCouponApplied ? handleRemoveCoupon : handleApplyCoupon}
+                    disabled={!isCouponApplied && !couponCode.trim()}
+                    className={`h-11 items-center justify-center rounded-subtle border border-landing-line px-4 active:bg-landing-paper ${
+                      !isCouponApplied && !couponCode.trim() ? 'opacity-50' : ''
+                    }`}
+                  >
+                    <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+                      {isCouponApplied ? 'Bỏ mã' : 'Áp dụng'}
+                    </Text>
+                  </Pressable>
+                </View>
+                {appliedCoupon && isQuoting && !couponError ? (
+                  <Text className="mt-2 font-sans text-xs text-landing-muted">
+                    Đang kiểm tra mã…
+                  </Text>
+                ) : null}
+                {isCouponApplied && discountAmount > 0 ? (
+                  <Text className="mt-2 font-sans text-xs text-sage-ink">
+                    Đã giảm{' '}
+                    <Text className="font-mono">{formatCurrency(discountAmount)}</Text>
+                  </Text>
+                ) : null}
+                {couponError && couponCode.trim().toUpperCase() === appliedCoupon ? (
+                  <Text
+                    accessibilityRole="alert"
+                    className="mt-2 border-l-2 border-danger pl-2 font-sans text-xs leading-relaxed text-danger"
+                  >
+                    {couponError}
+                  </Text>
+                ) : null}
+              </View>
+
+              <View className="mt-4 gap-2.5 border-t border-landing-line pt-4">
+                <View className="flex-row items-baseline justify-between gap-4">
+                  <Text className="font-sans text-sm text-landing-muted">Tạm tính</Text>
+                  <Text className="font-mono text-sm text-landing-obsidian">
+                    {formatCurrency(displaySubtotal)}
+                  </Text>
+                </View>
+                <View className="flex-row items-baseline justify-between gap-4">
+                  <Text className="font-sans text-sm text-landing-muted">
+                    Phí giao hàng (GHN)
+                  </Text>
+                  <Text
+                    className={`text-sm ${
+                      shippingFee === null ? 'font-sans text-landing-muted' : 'font-mono text-landing-obsidian'
+                    }`}
+                  >
+                    {shippingFee === null
+                      ? 'Tính theo địa chỉ'
+                      : shippingFee === 0
+                        ? 'Miễn phí'
+                        : formatCurrency(shippingFee)}
+                  </Text>
+                </View>
+                {discountAmount > 0 ? (
+                  <View className="flex-row items-baseline justify-between gap-4">
+                    <Text className="font-sans text-sm text-landing-muted">Giảm giá</Text>
+                    <Text className="font-mono text-sm text-sage-ink">
+                      -{formatCurrency(discountAmount)}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+
+              <View className="mt-4 flex-row items-end justify-between gap-4 border-t border-landing-line pt-4">
+                <Text className="font-sans text-sm text-landing-obsidian">
+                  Tổng cộng
+                  {shippingFee === null ? (
+                    <Text className="font-sans text-xs text-landing-muted">
+                      {'\n'}Chưa gồm phí giao hàng
+                    </Text>
+                  ) : null}
+                </Text>
+                <Text
+                  className={`font-mono text-[22px] text-oxblood ${
+                    isQuoting || isNotePending ? 'opacity-50' : ''
+                  }`}
+                >
+                  {formatCurrency(displayTotal)}
+                </Text>
+              </View>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !canPlaceOrder }}
+                onPress={handlePlaceOrder}
+                disabled={!canPlaceOrder}
+                className={`mt-5 h-12 flex-row items-center justify-center gap-2 rounded-subtle ${
+                  canPlaceOrder ? 'bg-oxblood active:bg-landing-obsidian' : 'bg-oxblood/40'
+                }`}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color={COLORS.paper} />
+                ) : null}
+                <Text className="font-sans text-[11.5px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+                  {submitLabel}
+                </Text>
+                {!isSubmitting ? (
+                  <ArrowRight size={15} strokeWidth={1.75} color={COLORS.paper} />
+                ) : null}
+              </Pressable>
+            </View>
+          </>
+        )}
+      </ScrollView>
 
       <Modal
         visible={showAddressPicker}
@@ -795,18 +1112,18 @@ export function CheckoutScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowAddressPicker(false)}
       >
-        <SafeAreaView className="flex-1 bg-surface-lowest">
-          <View className="flex-row items-center border-b border-surface-line px-4 py-3">
-            <Text className="flex-1 text-headline-sm font-semibold text-on-surface">
+        <SafeAreaView className="flex-1 bg-landing-paper">
+          <View className="flex-row items-center justify-between border-b border-landing-line px-4 py-3">
+            <Text className="flex-1 font-display text-headline-sm text-landing-obsidian">
               Chọn địa chỉ giao hàng
             </Text>
             <Pressable
               onPress={() => setShowAddressPicker(false)}
               accessibilityRole="button"
               accessibilityLabel="Đóng"
-              className="min-h-11 min-w-11 items-center justify-center rounded-full active:bg-surface"
+              className="-mr-2 min-h-11 min-w-11 items-center justify-center active:opacity-60"
             >
-              <X size={22} className="text-on-surface" />
+              <X size={20} strokeWidth={1.75} color={COLORS.muted} />
             </Pressable>
           </View>
 
@@ -817,8 +1134,8 @@ export function CheckoutScreen() {
             contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
             ListEmptyComponent={
               <View className="items-center justify-center py-12">
-                <MapPin size={36} className="text-outline" />
-                <Text className="mt-3 text-center text-body-md text-on-surface-variant">
+                <MapPin size={30} strokeWidth={1.5} color={COLORS.oxblood} />
+                <Text className="mt-3 text-center font-sans text-body-md text-landing-muted">
                   Bạn chưa có địa chỉ giao hàng.
                 </Text>
               </View>
@@ -827,32 +1144,34 @@ export function CheckoutScreen() {
               const isSelected = item.id === selectedAddressId;
               return (
                 <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
                   onPress={() => handleSelectSavedAddress(item)}
-                  className={`mb-3 rounded-2xl border p-4 ${
+                  className={`mb-2.5 rounded-subtle border px-4 py-3.5 ${
                     isSelected
-                      ? 'border-primary bg-primary/5'
-                      : 'border-surface-line bg-surface-lowest'
+                      ? 'border-oxblood bg-ivory'
+                      : 'border-landing-line bg-ivory/50 active:bg-ivory'
                   }`}
                 >
-                  <View className="mb-1 flex-row items-center justify-between gap-3">
-                    <View className="flex-1 flex-row flex-wrap items-center gap-2">
-                      <Text className="text-body-md font-bold text-on-surface">
+                  <View className="flex-row items-center justify-between gap-3">
+                    <View className="flex-1 flex-row flex-wrap items-center gap-x-2.5 gap-y-1">
+                      <Text className="font-sans text-body-md font-medium text-landing-obsidian">
                         {item.recipientName}
                       </Text>
-                      {item.isDefault && (
-                        <View className="rounded-full bg-primary/10 px-2 py-0.5">
-                          <Text className="text-2xs font-bold text-primary">
-                            Mặc định
-                          </Text>
-                        </View>
-                      )}
+                      {item.isDefault ? (
+                        <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-brass-ink">
+                          Mặc định
+                        </Text>
+                      ) : null}
                     </View>
-                    {isSelected && <Check size={18} className="text-primary" />}
+                    {isSelected ? (
+                      <Check size={16} strokeWidth={1.75} color={COLORS.oxblood} />
+                    ) : null}
                   </View>
-                  <Text className="mb-1 text-body-sm text-on-surface-variant">
+                  <Text className="mt-1 font-mono text-xs text-landing-muted">
                     {item.phone}
                   </Text>
-                  <Text className="text-body-sm leading-5 text-on-surface-variant">
+                  <Text className="mt-1 font-sans text-body-sm leading-relaxed text-landing-muted">
                     {formatAddress(item)}
                   </Text>
                 </Pressable>
@@ -860,17 +1179,20 @@ export function CheckoutScreen() {
             }}
           />
 
-          <View className="border-t border-surface-line p-4">
-            <Button
-              title="Thêm địa chỉ mới"
-              variant="outline"
+          <View className="border-t border-landing-line px-4 py-4">
+            <Pressable
+              accessibilityRole="button"
               onPress={handleAddNewAddress}
-              className="w-full rounded-xl"
-              leftIcon={<Plus size={18} color="#5D1C34" />}
-            />
+              className="h-12 flex-row items-center justify-center gap-2 rounded-subtle border border-landing-line active:bg-ivory"
+            >
+              <Plus size={15} strokeWidth={1.75} color={COLORS.oxblood} />
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+                Thêm địa chỉ mới
+              </Text>
+            </Pressable>
           </View>
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }

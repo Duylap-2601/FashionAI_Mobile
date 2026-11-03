@@ -1,46 +1,447 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Copy, CheckCircle2, Clock, Package, Check, Truck, XCircle, MapPin, AlertTriangle } from 'lucide-react-native';
+import {
+  ActivityIndicator,
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { Image } from 'expo-image';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useMutation } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
+import { AlertTriangle, Check, ChevronLeft, Copy, ExternalLink, X } from 'lucide-react-native';
+import { AppHeader } from '@/components/common/AppHeader';
+import { BackButton } from '@/components/common/BackButton';
+import { COLORS } from '@/constants/theme';
 import { formatCurrency } from '@/utils/format';
+import { formatDateTime } from '@/utils/date';
 import { RootStackParamList } from '@/navigation/types';
-import { useOrder, useCancelOrder, useConfirmDelivery } from '../hooks/use-orders';
+import { useCart } from '@/features/cart/hooks/use-cart';
+import { paymentsApi } from '@/features/payments/api/payments.api';
+import { useOrder, useCancelOrder, useConfirmDelivery, useOrderIssues } from '../hooks/use-orders';
 import { ReportIssueModal } from '../components/ReportIssueModal';
 import { OrderIssuesList } from '../components/OrderIssuesList';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderDetail'>;
 
-const STATUS_CONFIG: Record<string, any> = {
-  PENDING: { label: 'Chờ duyệt', color: 'text-amber-600', hex: '#d97706', bg: 'bg-amber-100', icon: Clock, step: 0 },
-  PENDING_PAYMENT: { label: 'Chờ thanh toán', color: 'text-amber-600', hex: '#d97706', bg: 'bg-amber-100', icon: Clock, step: 0 },
-  CONFIRMED: { label: 'Đã xác nhận', color: 'text-blue-600', hex: '#2563eb', bg: 'bg-blue-100', icon: CheckCircle2, step: 1 },
-  PROCESSING: { label: 'Đang chuẩn bị', color: 'text-purple-600', hex: '#9333ea', bg: 'bg-purple-100', icon: Package, step: 1 },
-  SHIPPING: { label: 'Đang giao hàng', color: 'text-blue-600', hex: '#2563eb', bg: 'bg-blue-100', icon: Truck, step: 2 },
-  DELIVERED: { label: 'Đã giao', color: 'text-emerald-600', hex: '#059669', bg: 'bg-emerald-100', icon: Check, step: 3 },
-  COMPLETED: { label: 'Hoàn thành', color: 'text-emerald-600', hex: '#059669', bg: 'bg-emerald-100', icon: CheckCircle2, step: 3 },
-  CANCELLED: { label: 'Đã hủy', color: 'text-red-600', hex: '#dc2626', bg: 'bg-red-100', icon: XCircle, step: -1 },
-  REFUND_PENDING: { label: 'Chờ hoàn tiền', color: 'text-amber-600', hex: '#d97706', bg: 'bg-amber-100', icon: Clock, step: -1 },
-  REFUNDED: { label: 'Đã hoàn tiền', color: 'text-emerald-600', hex: '#059669', bg: 'bg-emerald-100', icon: CheckCircle2, step: -1 }
+type StatusTone = 'attention' | 'active' | 'done' | 'closed' | 'error';
+
+const STATUS_TONE_CLASSES: Record<StatusTone, { dot: string; text: string }> = {
+  attention: { dot: 'bg-brass', text: 'text-brass-ink' },
+  active: { dot: 'bg-oxblood', text: 'text-landing-obsidian' },
+  done: { dot: 'bg-sage', text: 'text-sage-ink' },
+  closed: { dot: 'bg-taupe', text: 'text-landing-muted' },
+  error: { dot: 'bg-danger', text: 'text-danger' },
 };
 
-function getProductImage(item: any) {
-  const fallbackImg = 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=120&h=160&fit=crop&auto=format';
-  if (item.product?.images) {
+const STATUS_CONFIG: Record<
+  string,
+  { label: string; tone: StatusTone; step: number; description: string }
+> = {
+  CREATED: {
+    label: 'Chờ thanh toán',
+    tone: 'attention',
+    step: 0,
+    description: 'Shop bắt đầu may sau khi nhận được tiền.',
+  },
+  PENDING: {
+    label: 'Chờ thanh toán',
+    tone: 'attention',
+    step: 0,
+    description: 'Đơn đã được ghi nhận và đang chờ thanh toán.',
+  },
+  PENDING_PAYMENT: {
+    label: 'Chờ thanh toán',
+    tone: 'attention',
+    step: 0,
+    description: 'Đơn đã được ghi nhận và đang chờ thanh toán.',
+  },
+  PAID: {
+    label: 'Đã thanh toán',
+    tone: 'active',
+    step: 0,
+    description: 'Shop đã nhận tiền và chuẩn bị duyệt số đo.',
+  },
+  CONFIRMED: {
+    label: 'Đã xác nhận',
+    tone: 'active',
+    step: 1,
+    description: 'Shop đã xác nhận đơn và số đo của bạn.',
+  },
+  MEASUREMENT_REVIEW: {
+    label: 'Đang duyệt số đo',
+    tone: 'active',
+    step: 1,
+    description: 'Kỹ thuật viên đang kiểm tra số đo trước khi cắt vải.',
+  },
+  MEASUREMENT_CONFIRMED: {
+    label: 'Đã chốt số đo',
+    tone: 'active',
+    step: 1,
+    description: 'Số đo đã chốt, đơn chuyển sang xưởng may.',
+  },
+  PROCESSING: {
+    label: 'Đang chuẩn bị',
+    tone: 'active',
+    step: 2,
+    description: 'Xưởng đang chuẩn bị vải và đường may cho đơn.',
+  },
+  TAILORING: {
+    label: 'Đang may',
+    tone: 'active',
+    step: 2,
+    description: 'Đơn đang được may theo số đo riêng của bạn.',
+  },
+  QUALITY_CHECK: {
+    label: 'Kiểm tra chất lượng',
+    tone: 'active',
+    step: 2,
+    description: 'Đơn đang được kiểm tra đường may trước khi giao.',
+  },
+  READY_TO_SHIP: {
+    label: 'Chờ giao',
+    tone: 'active',
+    step: 3,
+    description: 'Đơn đã đóng gói và chờ bàn giao vận chuyển.',
+  },
+  SHIPPING: {
+    label: 'Đang giao',
+    tone: 'active',
+    step: 3,
+    description: 'Kiện hàng đang trên đường tới bạn.',
+  },
+  DELIVERED: {
+    label: 'Đã giao',
+    tone: 'done',
+    step: 3,
+    description: 'Kiện hàng đã tới nơi, xác nhận khi bạn đã nhận.',
+  },
+  COMPLETED: {
+    label: 'Hoàn thành',
+    tone: 'done',
+    step: 4,
+    description: 'Đơn may đo của bạn đã hoàn tất.',
+  },
+  CANCELLED: {
+    label: 'Đã hủy',
+    tone: 'closed',
+    step: -1,
+    description: 'Đơn đã hủy và không thể khôi phục.',
+  },
+  EXPIRED: {
+    label: 'Hết hạn thanh toán',
+    tone: 'closed',
+    step: -1,
+    description: 'Quá hạn thanh toán nên đơn đã tự hủy.',
+  },
+  RETURNED: {
+    label: 'Đã hoàn trả',
+    tone: 'closed',
+    step: -1,
+    description: 'Đơn đã được hoàn trả về cửa hàng.',
+  },
+  RETURN_REQUESTED: {
+    label: 'Yêu cầu hoàn trả',
+    tone: 'attention',
+    step: -1,
+    description: 'Shop đang xem xét yêu cầu hoàn trả.',
+  },
+  RETURN_APPROVED: {
+    label: 'Đã duyệt hoàn trả',
+    tone: 'attention',
+    step: -1,
+    description: 'Yêu cầu hoàn trả đã được duyệt.',
+  },
+  RETURNING: {
+    label: 'Đang hoàn trả',
+    tone: 'attention',
+    step: -1,
+    description: 'Hàng đang trên đường gửi về cửa hàng.',
+  },
+  FAILED: {
+    label: 'Thanh toán thất bại',
+    tone: 'error',
+    step: -1,
+    description: 'Thanh toán chưa hoàn tất, vui lòng thử lại.',
+  },
+  REFUND_PENDING: {
+    label: 'Chờ hoàn tiền',
+    tone: 'attention',
+    step: -1,
+    description: 'Shop đang chuyển khoản hoàn tiền cho bạn.',
+  },
+  REFUNDED: {
+    label: 'Đã hoàn tiền',
+    tone: 'done',
+    step: -1,
+    description: 'Tiền đã được hoàn về tài khoản của bạn.',
+  },
+};
+
+const ORDER_STEPS = ['Đã đặt', 'Duyệt số đo', 'Đang may', 'Đang giao', 'Đã nhận'] as const;
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  COD: 'Thanh toán khi nhận hàng',
+  ZALOPAY: 'ZaloPay',
+  BANK_TRANSFER: 'Chuyển khoản',
+  BANK: 'Chuyển khoản',
+  SEPAY: 'Chuyển khoản',
+  MOMO: 'MoMo',
+  WALLET: 'Ví FashionAI',
+};
+
+const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  PENDING: 'Chờ thanh toán',
+  PAID: 'Đã thanh toán',
+  FAILED: 'Thanh toán thất bại',
+  EXPIRED: 'Hết hạn thanh toán',
+  REFUND_REQUIRED: 'Cần hoàn tiền',
+  REFUND_PENDING: 'Đang hoàn tiền',
+  REFUNDED: 'Đã hoàn tiền',
+  PARTIALLY_REFUNDED: 'Đã hoàn một phần',
+  COD_COLLECTED: 'Đã thu khi giao',
+};
+
+const MEASUREMENT_FIELDS: { key: string; label: string }[] = [
+  { key: 'height', label: 'Cao' },
+  { key: 'shoulder', label: 'Vai' },
+  { key: 'chest', label: 'Ngực' },
+  { key: 'waist', label: 'Eo' },
+  { key: 'hip', label: 'Hông' },
+  { key: 'inseam', label: 'Dài quần' },
+];
+
+const LABEL_CLASS = 'font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-brass-ink';
+const ACTION_LABEL_CLASS = 'font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em]';
+
+function pad(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+function formatClockDate(value?: string | Date | null): string {
+  if (!value) return '';
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (isNaN(date.getTime())) return '';
+  return `${pad(date.getHours())}:${pad(date.getMinutes())} ${pad(date.getDate())}/${pad(
+    date.getMonth() + 1,
+  )}/${date.getFullYear()}`;
+}
+
+function getProductImage(item: any): string {
+  const fallback =
+    'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=300&h=400&fit=crop&auto=format';
+  if (item?.productImageSnapshot) return item.productImageSnapshot;
+  if (item?.imageUrl) return item.imageUrl;
+  if (item?.product?.images) {
     try {
-      const parsed = typeof item.product.images === 'string' ? JSON.parse(item.product.images) : item.product.images;
+      const parsed =
+        typeof item.product.images === 'string'
+          ? JSON.parse(item.product.images)
+          : item.product.images;
       if (Array.isArray(parsed) && parsed.length > 0) {
         const first = parsed[0];
         if (typeof first === 'string') return first;
         if (first && typeof first === 'object') {
-          return first.url || first.uri || first.imageUrl || fallbackImg;
+          return first.url || first.uri || first.imageUrl || fallback;
         }
       }
-    } catch {}
+    } catch {
+      return fallback;
+    }
   }
-  return fallbackImg;
+  return fallback;
+}
+
+function getItemName(item: any): string {
+  return item?.productName || item?.product?.name || 'Sản phẩm may đo';
+}
+
+function getMeasurementRows(item: any): { key: string; label: string; value: string }[] {
+  const snapshot = item?.measurementSnapshot ?? item?.measurements;
+  if (!snapshot || typeof snapshot !== 'object') return [];
+
+  const rows: { key: string; label: string; value: string }[] = [];
+  for (const field of MEASUREMENT_FIELDS) {
+    const raw =
+      snapshot[field.key] ?? (field.key === 'hip' ? snapshot.hips : undefined) ?? undefined;
+    if (raw === undefined || raw === null || raw === '') continue;
+    const text = String(raw);
+    rows.push({
+      key: field.key,
+      label: field.label,
+      value: /cm/i.test(text) ? text : `${text} cm`,
+    });
+  }
+  return rows;
+}
+
+function StepProgress({ step }: { step: number }) {
+  return (
+    <View className="flex-row gap-1.5">
+      {ORDER_STEPS.map((label, index) => {
+        const reached = index <= step;
+        const isCurrent = index === step;
+
+        return (
+          <View key={label} className="flex-1 gap-1.5">
+            <View className={`h-[2px] w-full ${reached ? 'bg-oxblood' : 'bg-taupe'}`} />
+            <Text
+              numberOfLines={2}
+              className={`font-sans text-[10px] uppercase leading-snug tracking-[0.08em] ${
+                isCurrent
+                  ? 'font-semibold text-oxblood'
+                  : reached
+                    ? 'text-landing-obsidian'
+                    : 'text-landing-muted'
+              }`}
+            >
+              {label}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function SummaryRow({
+  label,
+  value,
+  strong = false,
+}: {
+  label: string;
+  value: string;
+  strong?: boolean;
+}) {
+  if (strong) {
+    return (
+      <View className="mt-1 flex-row items-baseline justify-between gap-4 border-t border-landing-line pt-2.5">
+        <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
+          {label}
+        </Text>
+        <Text className="shrink-0 text-right font-mono text-[20px] text-oxblood">{value}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View className="flex-row items-baseline justify-between gap-4 py-1">
+      <Text className="font-sans text-[12px] text-landing-muted">{label}</Text>
+      <Text className="shrink-0 text-right font-mono text-[12px] text-landing-obsidian">
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function PaperActionSheet({
+  visible,
+  title,
+  description,
+  confirmLabel,
+  pendingLabel,
+  isPending,
+  tone,
+  onConfirm,
+  onClose,
+}: {
+  visible: boolean;
+  title: string;
+  description: React.ReactNode;
+  confirmLabel: string;
+  pendingLabel: string;
+  isPending: boolean;
+  tone: 'danger' | 'primary';
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Modal
+      animationType="fade"
+      navigationBarTranslucent
+      presentationStyle="overFullScreen"
+      statusBarTranslucent
+      transparent
+      visible={visible}
+      onRequestClose={onClose}
+    >
+      <View className="flex-1 justify-end">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Đóng hộp thoại"
+          onPress={onClose}
+          className="absolute inset-0 bg-landing-obsidian/45"
+        />
+
+        <View
+          className="w-full max-w-[420px] self-center border-t border-landing-line bg-landing-paper px-5 pt-5"
+          style={{ paddingBottom: Math.max(insets.bottom, 20) }}
+        >
+          <View className="flex-row items-start justify-between gap-3">
+            <Text
+              accessibilityRole="header"
+              className="flex-1 font-display text-[24px] leading-tight text-landing-obsidian"
+            >
+              {title}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Đóng"
+              accessibilityState={{ disabled: isPending }}
+              disabled={isPending}
+              onPress={onClose}
+              className="-mr-2 h-11 w-11 items-center justify-center active:opacity-60"
+            >
+              <X size={18} strokeWidth={1.75} color={COLORS.muted} />
+            </Pressable>
+          </View>
+
+          <View className="mt-3">{description}</View>
+
+          <View className="mt-6 gap-3">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={confirmLabel}
+              accessibilityState={{ disabled: isPending }}
+              disabled={isPending}
+              onPress={onConfirm}
+              className={`h-11 items-center justify-center rounded-subtle ${
+                tone === 'danger'
+                  ? 'border border-danger/40 active:opacity-70'
+                  : 'bg-oxblood active:opacity-90'
+              } disabled:opacity-60`}
+            >
+              <Text
+                className={`${ACTION_LABEL_CLASS} ${
+                  tone === 'danger' ? 'text-danger' : 'text-landing-paper'
+                } tracking-[0.16em]`}
+              >
+                {isPending ? pendingLabel : confirmLabel}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Giữ lại"
+              disabled={isPending}
+              onPress={onClose}
+              className="h-11 items-center justify-center rounded-subtle border border-landing-line active:opacity-70"
+            >
+              <Text className={`${ACTION_LABEL_CLASS} tracking-[0.16em] text-landing-obsidian`}>
+                Giữ lại
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 }
 
 export function OrderDetailScreen({ route, navigation }: Props) {
@@ -48,40 +449,133 @@ export function OrderDetailScreen({ route, navigation }: Props) {
   const { order, isLoading, isError, refetch } = useOrder(orderId);
   const { cancelOrder, isCancelling } = useCancelOrder();
   const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
+  const { issues } = useOrderIssues(orderId);
+  const { addItem } = useCart();
+
   const [copied, setCopied] = useState(false);
   const [reportingItem, setReportingItem] = useState<any | null>(null);
+  const [showCancelSheet, setShowCancelSheet] = useState(false);
+  const [showConfirmSheet, setShowConfirmSheet] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  const { mutate: startPayment, isPending: isStartingPayment } = useMutation({
+    mutationFn: (provider: string) => paymentsApi.checkout({ orderId, provider }),
+  });
 
   if (isLoading) {
     return (
-      <SafeAreaView edges={['bottom']} className="flex-1 bg-surface-lowest">
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#5D1C34" />
+      <View className="flex-1 bg-landing-paper">
+        <AppHeader />
+        <View className="flex-1 items-center justify-center gap-3">
+          <ActivityIndicator size="large" color={COLORS.oxblood} />
+          <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-landing-muted">
+            Đang tải đơn hàng
+          </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (isError || !order) {
     return (
-      <SafeAreaView edges={['bottom']} className="flex-1 bg-surface-lowest">
-        <View className="flex-1 justify-center items-center px-6">
-          <Text className="text-body-md text-on-surface mb-4">Không thể tải thông tin đơn hàng</Text>
-          <Pressable className="px-6 py-3 bg-primary rounded-xl" onPress={() => void refetch()}>
-            <Text className="text-white font-bold text-label-md">Thử lại</Text>
+      <View className="flex-1 bg-landing-paper">
+        <AppHeader />
+        <View className="flex-1 items-center justify-center gap-4 px-6">
+          <Text className="text-center font-display text-[22px] leading-tight text-landing-obsidian">
+            Không tải được đơn hàng
+          </Text>
+          <Text className="max-w-[260px] text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+            Đơn này có thể không còn tồn tại. Kiểm tra kết nối rồi thử lại.
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Thử lại"
+            onPress={() => void refetch()}
+            className="h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:opacity-70"
+          >
+            <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+              Thử lại
+            </Text>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
-  const status = order.status || 'PENDING';
+  const status = String(order.status || 'PENDING').toUpperCase();
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
-  const Icon = cfg.icon;
-  const orderCode = `ORD-${order.orderNumber || order.orderCode}`;
-  const totalAmount = order.total || order.totalAmount || 0;
-  const subtotal = order.subtotal || order.subtotalAmount || 0;
-  const shippingFee = order.shippingFee || 0;
-  const items = order.items || [];
+  const tone = STATUS_TONE_CLASSES[cfg.tone];
+  const orderCode = `ORD-${order.orderNumber || order.orderCode || order.id}`;
+  const items: any[] = Array.isArray(order.items) ? order.items : [];
+  const itemCount = items.reduce((sum, item) => sum + (item?.quantity || 1), 0);
+
+  const totalAmount = order.totalVnd ?? order.totalAmount ?? order.total ?? 0;
+  const subtotal = order.itemsSubtotalVnd ?? order.subtotal ?? order.subtotalAmount ?? 0;
+  const shippingFee = order.shippingFeeVnd ?? order.shippingFee ?? 0;
+  const discount = order.discountVnd ?? order.discountAmount ?? order.discount ?? 0;
+  const paidAmount =
+    order.amountPaidVnd ?? order.amountPaid ?? order.paidAmount ?? order.paidAmountVnd ?? 0;
+
+  const isPaid = order.isPaid === true;
+  const isPendingPayment = ['PENDING', 'PENDING_PAYMENT', 'CREATED'].includes(status) && !isPaid;
+  const paymentDueAt = order.paymentDueAt || order.paymentExpiresAt || order.paymentDeadline || '';
+  const isCancellable =
+    order.allowedActions?.cancel === true ||
+    ['PENDING', 'PENDING_PAYMENT', 'CREATED'].includes(status);
+  const canConfirmDelivery =
+    order.allowedActions?.confirmDelivery === true || status === 'DELIVERED';
+  const canReportIssue = status !== 'CANCELLED' && status !== 'PENDING_PAYMENT';
+
+  const paymentMethodLabel =
+    PAYMENT_METHOD_LABELS[String(order.paymentMethod || '')] ||
+    order.paymentMethod ||
+    'Chuyển khoản';
+  const paymentStatusLabel =
+    PAYMENT_STATUS_LABELS[String(order.paymentStatus || '')] ||
+    order.paymentStatus ||
+    (isPaid ? 'Đã thanh toán' : 'Chờ thanh toán');
+
+  const trackingCode =
+    order.trackingCode || order.currentShipment?.providerOrderCode || order.shipment?.trackingCode;
+  const trackingUrl =
+    order.trackingUrl || order.currentShipment?.trackingUrl || order.shipment?.trackingUrl;
+
+  const rawHistory: any[] = Array.isArray(order.history) ? order.history : [];
+  const newestHistory = rawHistory.length > 0 ? rawHistory[rawHistory.length - 1] : null;
+  const latestTimestamp =
+    newestHistory?.occurredAt ||
+    newestHistory?.createdAt ||
+    order.updatedAt ||
+    order.createdAt;
+  const latestMessage =
+    newestHistory?.publicMessage ||
+    newestHistory?.message ||
+    newestHistory?.toStatus ||
+    (status === 'CANCELLED'
+      ? 'Đơn hàng đã bị hủy.'
+      : isPendingPayment
+        ? 'Đơn hàng đã được tạo và đang chờ thanh toán.'
+        : 'Đơn hàng đang được xử lý.');
+
+  const recipientName =
+    order.shippingInfo?.name ||
+    order.shippingAddress?.fullName ||
+    order.shippingAddress?.name ||
+    'Khách hàng';
+  const recipientPhone = order.shippingInfo?.phone || order.shippingAddress?.phone || '';
+  const recipientAddress =
+    order.shippingInfo?.address ||
+    [
+      order.shippingAddress?.address || order.shippingAddress?.addressLine,
+      order.shippingAddress?.wardName,
+      order.shippingAddress?.provinceName,
+    ]
+      .filter(Boolean)
+      .join(', ') ||
+    'Chưa có địa chỉ giao hàng';
+
+  const history = [...rawHistory].reverse();
+  const placedAt = formatClockDate(order.createdAt) || formatDateTime(order.createdAt);
 
   const handleCopyCode = async () => {
     await Clipboard.setStringAsync(orderCode);
@@ -89,198 +583,485 @@ export function OrderDetailScreen({ route, navigation }: Props) {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const handleCancel = () => {
-    Alert.alert('Hủy đơn hàng', `Bạn có chắc chắn muốn hủy đơn hàng ${orderCode}?`, [
-      { text: 'Không', style: 'cancel' },
-      { text: 'Hủy đơn', style: 'destructive', onPress: () => {
-        cancelOrder(order.id, {
-          onSuccess: () => navigation.goBack()
+  const handlePay = () => {
+    setPaymentError(null);
+    const provider =
+      order.paymentProvider === 'SEPAY' || order.paymentMethod === 'SEPAY' ? 'SEPAY' : 'ZALOPAY';
+
+    startPayment(provider, {
+      onSuccess: (result) => {
+        const url = result.checkoutUrl || result.payUrl;
+        if (!url) {
+          setPaymentError('Không lấy được đường dẫn thanh toán. Vui lòng thử lại.');
+          return;
+        }
+        navigation.navigate('Payment', {
+          checkoutUrl: url,
+          provider,
+          qrCode: result.qrCode || url,
+          orderCode: result.orderCode || orderCode,
+          totalAmount,
+          paymentId: result.paymentId,
+          orderId: order.id,
         });
-      }}
-    ]);
+      },
+      onError: () => setPaymentError('Không tạo được thanh toán lúc này. Vui lòng thử lại.'),
+    });
+  };
+
+  const handleCancel = () => {
+    cancelOrder(order.id, {
+      onSuccess: () => {
+        setShowCancelSheet(false);
+        navigation.goBack();
+      },
+    });
   };
 
   const handleConfirmDelivery = () => {
-    Alert.alert('Đã nhận hàng', 'Bạn xác nhận đã nhận được hàng và hàng hóa ở trạng thái tốt?', [
-      { text: 'Hủy', style: 'cancel' },
-      { text: 'Xác nhận', onPress: () => {
-        confirmDelivery({ id: order.id }, {
-          onSuccess: () => void refetch()
-        });
-      }}
-    ]);
+    confirmDelivery(
+      { id: order.id },
+      {
+        onSuccess: () => {
+          setShowConfirmSheet(false);
+          void refetch();
+        },
+      },
+    );
   };
 
-  const handleProductPress = (productId: string | number) => {
+  const handleProductPress = (productId?: string | number) => {
+    if (productId === undefined || productId === null) return;
     navigation.navigate('ProductDetail', { productId: String(productId) });
   };
 
+  const handleReorder = () => {
+    if (items.length === 0) return;
+    items.forEach((item: any) => {
+      addItem({
+        productId: item.productId || item.id,
+        productName: getItemName(item),
+        price: item.price || 0,
+        quantity: item.quantity || 1,
+        color: item.color || undefined,
+        imageUrl: getProductImage(item),
+      });
+    });
+    navigation.navigate('Cart');
+  };
+
+  const handleOpenTracking = () => {
+    if (!trackingUrl) return;
+    void Linking.openURL(String(trackingUrl));
+  };
+
   return (
-    <SafeAreaView edges={['bottom']} className="flex-1 bg-surface-lowest">
-      <ScrollView className="flex-1 bg-surface" contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* Status Banner */}
-        <View className={`px-4 py-4 ${cfg.bg} border-b border-surface-line`}>
-          <View className="flex-row items-center justify-between mb-2">
-            <View className="flex-row items-center gap-2">
-              <Icon size={20} color={cfg.hex} />
-              <Text className={`text-headline-sm font-bold ${cfg.color}`}>{cfg.label}</Text>
-            </View>
-            <View className="flex-row items-center gap-2 bg-white/50 px-2.5 py-1 rounded-full">
-              <Text className="text-body-sm font-semibold text-on-surface">#{orderCode}</Text>
-              <Pressable onPress={handleCopyCode}>
-                {copied ? <CheckCircle2 size={14} color="#10b981" /> : <Copy size={14} color="#666" />}
-              </Pressable>
-            </View>
-          </View>
-          <Text className="text-body-sm text-on-surface/80">
-            Ngày đặt: {new Date(order.createdAt).toLocaleString('vi-VN')}
+    <View className="flex-1 bg-landing-paper">
+      <AppHeader />
+
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 48 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="pt-4">
+          <BackButton onPress={() => navigation.goBack()} label="Đơn hàng" />
+        </View>
+
+        <View className="mt-4 border-b border-landing-line pb-5">
+          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
+            Tài khoản
           </Text>
-        </View>
-
-        {/* Shipping Address */}
-        <View className="bg-white px-4 py-4 mb-2 border-b border-surface-line">
-          <Text className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">
-            Địa chỉ nhận hàng
+          <Text
+            accessibilityRole="header"
+            className="mt-2 font-display text-[30px] leading-tight text-landing-obsidian"
+          >
+            Chi tiết đơn hàng
           </Text>
-          <View className="flex-row gap-3">
-            <MapPin size={20} color="#5D1C34" className="mt-0.5" />
-            <View className="flex-1">
-              <Text className="text-body-md font-semibold text-on-surface mb-1">
-                {order.shippingInfo?.name || order.shippingAddress?.fullName || order.shippingAddress?.name || 'Khách hàng'}
-              </Text>
-              <Text className="text-body-sm text-on-surface-variant mb-1">
-                {order.shippingInfo?.phone || order.shippingAddress?.phone}
-              </Text>
-              <Text className="text-body-sm text-on-surface-variant">
-                {order.shippingInfo?.address || order.shippingAddress?.address}
-              </Text>
-            </View>
-          </View>
-        </View>
 
-        {/* Order Items */}
-        <View className="bg-white px-4 py-4 mb-2 border-y border-surface-line">
-          <Text className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">
-            Sản phẩm đã đặt
-          </Text>
-          <View className="gap-3.5">
-            {items.map((item: any, idx: number) => (
-              <View
-                key={item.id || idx}
-                className="p-3 bg-surface rounded-xl border border-surface-line"
-              >
-                <Pressable
-                  className="flex-row gap-3"
-                  onPress={() => handleProductPress(item.productId || (item.product && item.product.id))}
-                >
-                  <View className="w-16 h-20 rounded-lg bg-surface-line border border-surface-line overflow-hidden shrink-0">
-                    <Image
-                      source={{ uri: getProductImage(item) }}
-                      style={{ width: '100%', height: '100%' }}
-                      contentFit="cover"
-                    />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-body-md font-semibold text-on-surface mb-0.5" numberOfLines={2}>
-                      {item.productName || item.product?.name || 'Sản phẩm'}
-                    </Text>
-                    {item.color && (
-                      <Text className="text-label-sm text-on-surface-variant">
-                        Màu sắc: {item.color}
-                      </Text>
-                    )}
-                    {item.size && (
-                      <Text className="text-label-sm text-on-surface-variant">
-                        Kích cỡ: {item.size}
-                      </Text>
-                    )}
-                    <View className="flex-row items-center justify-between mt-auto">
-                      <Text className="text-body-sm font-bold text-on-surface">
-                        {formatCurrency(item.price)}
-                      </Text>
-                      <Text className="text-label-md font-medium text-on-surface">x{item.quantity}</Text>
-                    </View>
-                  </View>
-                </Pressable>
-
-                {status !== 'CANCELLED' && status !== 'PENDING_PAYMENT' && (
-                  <View className="mt-2.5 pt-2 border-t border-surface-line/60 flex-row justify-end">
-                    <Pressable
-                      onPress={() => setReportingItem(item)}
-                      className="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 flex-row items-center gap-1.5 active:opacity-70"
-                      accessibilityRole="button"
-                      accessibilityLabel="Báo sự cố sản phẩm"
-                    >
-                      <AlertTriangle size={13} color="#D97706" />
-                      <Text className="text-[12px] font-bold text-amber-800">Báo sự cố / Đổi trả</Text>
-                    </Pressable>
-                  </View>
-                )}
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Order Issues List */}
-        <View className="px-4 mb-2">
-          <OrderIssuesList orderId={orderId} />
-        </View>
-
-        {/* Order Summary */}
-        <View className="bg-white px-4 py-4 mb-2 border-y border-surface-line">
-          <Text className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">
-            Thanh toán
-          </Text>
-          <View className="gap-2 mb-3">
-            <View className="flex-row justify-between">
-              <Text className="text-body-sm text-on-surface-variant">Tạm tính</Text>
-              <Text className="text-body-sm font-medium text-on-surface">{formatCurrency(subtotal)}</Text>
-            </View>
-            <View className="flex-row justify-between">
-              <Text className="text-body-sm text-on-surface-variant">Phí vận chuyển</Text>
-              <Text className="text-body-sm font-medium text-on-surface">{formatCurrency(shippingFee)}</Text>
-            </View>
-            {order.discount > 0 && (
-              <View className="flex-row justify-between">
-                <Text className="text-body-sm text-on-surface-variant">Giảm giá</Text>
-                <Text className="text-body-sm font-medium text-emerald-600">-{formatCurrency(order.discount)}</Text>
-              </View>
-            )}
-          </View>
-          <View className="flex-row justify-between pt-3 border-t border-surface-line">
-            <Text className="text-body-md font-bold text-on-surface">Tổng cộng</Text>
-            <Text className="text-headline-sm font-bold text-primary">{formatCurrency(totalAmount)}</Text>
-          </View>
-        </View>
-      </ScrollView>
-
-      {/* Action Bottom Bar */}
-      {((status === 'PENDING' || status === 'PENDING_PAYMENT') || status === 'DELIVERED') && (
-        <View className="bg-white px-4 py-3 border-t border-surface-line flex-row justify-end gap-3 shadow-sm">
-          {(status === 'PENDING' || status === 'PENDING_PAYMENT') && (
-            <Pressable 
-              onPress={handleCancel}
-              disabled={isCancelling}
-              className="flex-1 py-3.5 rounded-xl border border-danger/30 bg-white items-center justify-center"
+          <View className="mt-2 flex-row flex-wrap items-center gap-x-1.5 gap-y-1">
+            <Text className="font-mono text-[13px] tracking-[0.02em] text-landing-obsidian">
+              {orderCode}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={copied ? 'Đã sao chép mã đơn' : 'Sao chép mã đơn hàng'}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              onPress={handleCopyCode}
+              className="h-11 w-11 items-center justify-center active:opacity-60"
             >
-              <Text className="text-label-lg font-bold text-danger">Hủy đơn hàng</Text>
-            </Pressable>
-          )}
-          {status === 'DELIVERED' && (
-            <Pressable 
-              onPress={handleConfirmDelivery}
-              disabled={isConfirmingDelivery}
-              className="flex-1 py-3.5 rounded-xl bg-emerald-600 items-center justify-center shadow-sm"
-            >
-              {isConfirmingDelivery ? (
-                <ActivityIndicator color="white" />
+              {copied ? (
+                <Check size={14} strokeWidth={2} color={COLORS.sageInk} />
               ) : (
-                <Text className="text-label-lg font-bold text-white">Xác nhận đã nhận hàng</Text>
+                <Copy size={14} strokeWidth={1.75} color={COLORS.muted} />
               )}
             </Pressable>
-          )}
+            <Text className="font-sans text-[12px] text-landing-muted">
+              Đặt lúc <Text className="font-mono text-[12px] text-landing-muted">{placedAt}</Text>
+            </Text>
+          </View>
         </View>
-      )}
+
+        <View className="mt-4 flex-row flex-wrap items-center gap-2">
+          {isPendingPayment ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Thanh toán đơn hàng"
+              accessibilityState={{ disabled: isStartingPayment }}
+              disabled={isStartingPayment}
+              onPress={handlePay}
+              className="h-11 items-center justify-center rounded-subtle bg-oxblood px-4 active:opacity-90 disabled:opacity-60"
+            >
+              <Text className={`${ACTION_LABEL_CLASS} text-landing-paper`}>
+                {isStartingPayment ? 'Đang mở…' : 'Thanh toán'}
+              </Text>
+            </Pressable>
+          ) : null}
+
+          {isCancellable ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Hủy đơn hàng"
+              accessibilityState={{ disabled: isCancelling }}
+              disabled={isCancelling}
+              onPress={() => setShowCancelSheet(true)}
+              className="h-11 items-center justify-center rounded-subtle border border-danger/40 px-4 active:opacity-70 disabled:opacity-60"
+            >
+              <Text className={`${ACTION_LABEL_CLASS} text-danger`}>Hủy đơn</Text>
+            </Pressable>
+          ) : null}
+
+          {canConfirmDelivery ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Xác nhận đã nhận hàng"
+              accessibilityState={{ disabled: isConfirmingDelivery }}
+              disabled={isConfirmingDelivery}
+              onPress={() => setShowConfirmSheet(true)}
+              className="h-11 items-center justify-center rounded-subtle bg-oxblood px-4 active:opacity-90 disabled:opacity-60"
+            >
+              <Text className={`${ACTION_LABEL_CLASS} text-landing-paper`}>
+                {isConfirmingDelivery ? 'Đang xác nhận…' : 'Đã nhận hàng'}
+              </Text>
+            </Pressable>
+          ) : null}
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Mua lại đơn hàng"
+            onPress={handleReorder}
+            className="h-11 items-center justify-center rounded-subtle border border-landing-line px-4 active:opacity-70"
+          >
+            <Text className={`${ACTION_LABEL_CLASS} text-landing-obsidian`}>Mua lại</Text>
+          </Pressable>
+        </View>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Về danh sách đơn hàng"
+          onPress={() => navigation.goBack()}
+          className="mt-2 h-11 flex-row items-center gap-1.5 self-start active:opacity-60"
+        >
+          <ChevronLeft size={13} strokeWidth={1.75} color={COLORS.muted} />
+          <Text className="font-sans text-xs uppercase tracking-[0.14em] text-landing-muted">
+            Tất cả đơn hàng
+          </Text>
+        </Pressable>
+
+        {isPendingPayment ? (
+          <View className="mt-2 rounded-subtle border border-landing-line bg-ivory p-4">
+            <Text className="font-display text-[16px] leading-snug text-landing-obsidian">
+              Đơn đang chờ thanh toán
+            </Text>
+            <Text className="mt-2 font-sans text-[12.5px] leading-relaxed text-landing-muted">
+              Shop bắt đầu may sau khi nhận được tiền. Bấm Thanh toán để mở lại QR ZaloPay hoặc cổng
+              chuyển khoản.
+            </Text>
+            {paymentDueAt ? (
+              <Text className="mt-2 font-sans text-[12.5px] leading-relaxed text-landing-muted">
+                Thanh toán trước{' '}
+                <Text className="font-mono text-[12.5px] text-landing-obsidian">
+                  {formatClockDate(paymentDueAt) || formatDateTime(paymentDueAt)}
+                </Text>
+                . Quá hạn đơn sẽ tự hủy.
+              </Text>
+            ) : null}
+            <Text className="mt-2 font-sans text-[12.5px] leading-relaxed text-landing-muted">
+              Nội dung chuyển khoản:{' '}
+              <Text className="font-mono text-[13px] text-oxblood">{orderCode}</Text>
+            </Text>
+            {paymentError ? (
+              <Text className="mt-2 font-sans text-[12px] leading-relaxed text-danger">
+                {paymentError}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+
+        <View className="mt-4 rounded-subtle border border-landing-line bg-ivory">
+          <View className="flex-row flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-landing-line/70 px-4 py-3">
+            <View className="flex-row items-center gap-2">
+              <View className={`h-1.5 w-1.5 shrink-0 ${tone.dot}`} />
+              <Text
+                className={`font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] ${tone.text}`}
+              >
+                {cfg.label}
+              </Text>
+            </View>
+            <Text className="font-sans text-[12px] text-landing-muted">{cfg.description}</Text>
+          </View>
+          <View className="px-4 py-4">
+            {cfg.step >= 0 ? (
+              <StepProgress step={cfg.step} />
+            ) : (
+              <Text className="font-sans text-[12px] leading-relaxed text-landing-muted">
+                Đơn không còn trong tiến trình may. Liên hệ shop nếu bạn cần hỗ trợ thêm.
+              </Text>
+            )}
+          </View>
+        </View>
+
+        <View className="mt-4 rounded-subtle border border-landing-line bg-ivory p-4">
+          <Text className={LABEL_CLASS}>Vận chuyển</Text>
+          {trackingCode ? (
+            <Text className="mt-2 font-mono text-[13px] text-landing-obsidian">{trackingCode}</Text>
+          ) : (
+            <Text className="mt-2 font-sans text-[13px] text-landing-obsidian">Chưa tạo vận đơn</Text>
+          )}
+          {trackingCode && trackingUrl ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Mở trang theo dõi vận đơn"
+              onPress={handleOpenTracking}
+              className="mt-1 h-11 flex-row items-center gap-1.5 self-start active:opacity-60"
+            >
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-oxblood">
+                Theo dõi vận đơn
+              </Text>
+              <ExternalLink size={12} strokeWidth={1.75} color={COLORS.oxblood} />
+            </Pressable>
+          ) : null}
+
+          <View className="mt-3 border-t border-landing-line/70 pt-3">
+            <Text className={LABEL_CLASS}>Cập nhật</Text>
+            <Text className="mt-1.5 font-mono text-[11.5px] text-landing-muted">
+              {formatDateTime(latestTimestamp)}
+            </Text>
+            <Text className="mt-1 font-sans text-[12.5px] leading-relaxed text-landing-obsidian">
+              {latestMessage}
+            </Text>
+          </View>
+        </View>
+
+        <View className="mt-4 rounded-subtle border border-landing-line bg-ivory p-4">
+          <Text className="font-display text-[20px] leading-tight text-landing-obsidian">
+            Sản phẩm
+          </Text>
+          <Text className="mt-1 font-sans text-[12px] text-landing-muted">
+            {itemCount} sản phẩm may đo theo số đo của bạn.
+          </Text>
+
+          <View className="mt-4 gap-4">
+            {items.map((item: any, index: number) => {
+              const measurementRows = getMeasurementRows(item);
+              const lineTotal = (item.price || 0) * (item.quantity || 1);
+
+              return (
+                <View key={item.id || index} className="gap-2">
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Xem sản phẩm ${getItemName(item)}`}
+                    onPress={() =>
+                      handleProductPress(item.productId ?? item.product?.id ?? item.id)
+                    }
+                    className="flex-row items-start gap-3 active:opacity-70"
+                  >
+                    <View className="h-20 w-16 shrink-0 overflow-hidden rounded-subtle border border-landing-line bg-ivory">
+                      <Image
+                        source={{ uri: getProductImage(item) }}
+                        style={{ width: 64, height: 80 }}
+                        contentFit="cover"
+                      />
+                    </View>
+
+                    <View className="min-w-0 flex-1 gap-1">
+                      <Text
+                        numberOfLines={2}
+                        className="font-sans text-[13px] leading-snug text-landing-obsidian"
+                      >
+                        {getItemName(item)}
+                      </Text>
+                      <Text className="font-sans text-[11.5px] text-landing-muted">
+                        Màu: {item.color || 'Mặc định'} · May đo · SL {item.quantity || 1}
+                      </Text>
+                    </View>
+
+                    <Text className="shrink-0 text-right font-mono text-[13px] text-landing-obsidian">
+                      {formatCurrency(lineTotal)}
+                    </Text>
+                  </Pressable>
+
+                  {measurementRows.length > 0 ? (
+                    <View className="rounded-subtle border border-landing-line bg-ivory px-3 py-2.5">
+                      <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brass-ink">
+                        Số đo may riêng
+                      </Text>
+                      <View className="mt-1.5 flex-row flex-wrap gap-x-4 gap-y-1">
+                        {measurementRows.map((row) => (
+                          <View key={row.key} className="flex-row gap-1.5">
+                            <Text className="font-sans text-[11px] text-landing-muted">
+                              {row.label}
+                            </Text>
+                            <Text className="font-mono text-[11px] text-landing-obsidian">
+                              {row.value}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  ) : null}
+
+                  {canReportIssue ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Báo sự cố sản phẩm"
+                      onPress={() => setReportingItem(item)}
+                      className="h-11 flex-row items-center gap-1.5 self-start active:opacity-60"
+                    >
+                      <AlertTriangle size={13} strokeWidth={1.75} color={COLORS.danger} />
+                      <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-danger">
+                        Báo sự cố / Đổi trả
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              );
+            })}
+          </View>
+        </View>
+
+        {issues.length > 0 ? (
+          <View className="mt-4 rounded-subtle border border-landing-line bg-ivory p-4">
+            <Text className={LABEL_CLASS}>Sự cố đã báo</Text>
+            <View className="mt-3">
+              <OrderIssuesList orderId={orderId} />
+            </View>
+          </View>
+        ) : null}
+
+        <View className="mt-4 rounded-subtle border border-landing-line bg-ivory p-4">
+          <Text className="font-display text-[20px] leading-tight text-landing-obsidian">
+            Giao đến
+          </Text>
+          <View className="mt-3 gap-1">
+            <Text className="font-sans text-[13px] font-medium text-landing-obsidian">
+              {recipientName}
+            </Text>
+            {recipientPhone ? (
+              <Text className="font-mono text-[12px] text-landing-obsidian">{recipientPhone}</Text>
+            ) : null}
+            <Text className="font-sans text-[12px] leading-relaxed text-landing-muted">
+              {recipientAddress}
+            </Text>
+          </View>
+        </View>
+
+        <View className="mt-4 rounded-subtle border border-landing-line bg-ivory p-4">
+          <Text className="font-display text-[20px] leading-tight text-landing-obsidian">
+            Thanh toán
+          </Text>
+          <View className="mt-2">
+            <SummaryRow label="Phương thức" value={paymentMethodLabel} />
+            <SummaryRow label="Trạng thái" value={paymentStatusLabel} />
+            <SummaryRow label="Tạm tính" value={formatCurrency(subtotal)} />
+            <SummaryRow label="Phí giao hàng" value={formatCurrency(shippingFee)} />
+            {discount > 0 ? (
+              <SummaryRow label="Giảm giá" value={`-${formatCurrency(discount)}`} />
+            ) : null}
+            <SummaryRow label="Tổng cộng" value={formatCurrency(totalAmount)} strong />
+            <SummaryRow label="Đã thanh toán" value={formatCurrency(paidAmount)} />
+          </View>
+        </View>
+
+        {history.length > 0 ? (
+          <View className="mt-4 rounded-subtle border border-landing-line bg-ivory p-4">
+            <Text className="font-display text-[20px] leading-tight text-landing-obsidian">
+              Lịch sử đơn hàng
+            </Text>
+            <View className="mt-3">
+              {history.map((entry: any, index: number) => {
+                const isLatest = index === 0;
+                const message =
+                  entry?.publicMessage ||
+                  entry?.message ||
+                  entry?.toStatus ||
+                  entry?.type ||
+                  'Cập nhật đơn hàng';
+
+                return (
+                  <View key={entry?.id || index} className="flex-row gap-3">
+                    <View className="items-center pt-1.5">
+                      <View
+                        className={`h-1.5 w-1.5 shrink-0 ${isLatest ? 'bg-oxblood' : 'bg-taupe'}`}
+                      />
+                      {index < history.length - 1 ? (
+                        <View className="mt-1 w-[1px] flex-1 bg-landing-line" />
+                      ) : null}
+                    </View>
+                    <View className="flex-1 pb-3">
+                      <Text
+                        className={`font-sans text-[12.5px] leading-relaxed ${
+                          isLatest ? 'font-medium text-landing-obsidian' : 'text-landing-obsidian'
+                        }`}
+                      >
+                        {message}
+                      </Text>
+                      <Text className="mt-0.5 font-mono text-[11px] text-landing-muted">
+                        {formatDateTime(entry?.occurredAt || entry?.createdAt || order.updatedAt)}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
+      </ScrollView>
+
+      <PaperActionSheet
+        visible={showCancelSheet}
+        title="Hủy đơn hàng?"
+        description={
+          <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
+            Đơn <Text className="font-mono text-landing-obsidian">{orderCode}</Text> sẽ bị hủy và
+            không thể hoàn tác.
+          </Text>
+        }
+        confirmLabel="Hủy đơn"
+        pendingLabel="Đang hủy…"
+        isPending={isCancelling}
+        tone="danger"
+        onConfirm={handleCancel}
+        onClose={() => setShowCancelSheet(false)}
+      />
+
+      <PaperActionSheet
+        visible={showConfirmSheet}
+        title="Đã nhận hàng?"
+        description={
+          <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
+            Bạn xác nhận đã nhận kiện hàng của đơn{' '}
+            <Text className="font-mono text-landing-obsidian">{orderCode}</Text> và hàng hóa đang ở
+            trạng thái tốt.
+          </Text>
+        }
+        confirmLabel="Xác nhận"
+        pendingLabel="Đang xác nhận…"
+        isPending={isConfirmingDelivery}
+        tone="primary"
+        onConfirm={handleConfirmDelivery}
+        onClose={() => setShowConfirmSheet(false)}
+      />
 
       <ReportIssueModal
         visible={!!reportingItem}
@@ -289,6 +1070,6 @@ export function OrderDetailScreen({ route, navigation }: Props) {
         orderItem={reportingItem}
         onSuccess={() => refetch()}
       />
-    </SafeAreaView>
+    </View>
   );
 }

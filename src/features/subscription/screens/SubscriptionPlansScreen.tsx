@@ -8,20 +8,13 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import {
-  Check,
-  Crown,
-  Shield,
-  Clock,
-  RefreshCw,
-  Sparkles,
-  Zap,
-  ArrowRight,
-  MessageCircle,
-} from 'lucide-react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { Check, Clock, RefreshCw, ArrowRight } from 'lucide-react-native';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { AppHeader } from '@/components/common/AppHeader';
+import { BackButton } from '@/components/common/BackButton';
+import { COLORS } from '@/constants/theme';
+import type { RootStackParamList } from '@/navigation/types';
 import {
   useSubscriptionPlans,
   useMySubscription,
@@ -35,11 +28,37 @@ import { QUOTA_COMPARISON, SUBSCRIPTION_FAQS } from '../constants/plans';
 import { SubscriptionTier, PlanCardData } from '../types/subscription';
 import { formatCurrency } from '@/utils/format';
 
+type SubscriptionTab = 'plans' | 'current' | 'history';
+
+const TABS: { id: SubscriptionTab; label: string }[] = [
+  { id: 'plans', label: 'Bảng giá' },
+  { id: 'current', label: 'Gói của tôi' },
+  { id: 'history', label: 'Lịch sử thanh toán' },
+];
+
+const eyebrowClass =
+  'font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink';
+const mutedLabelClass =
+  'font-sans text-[10.5px] uppercase tracking-[0.16em] text-landing-muted';
+const monoValueClass = 'font-mono text-[12px] text-landing-obsidian';
+const cardClass = 'rounded-subtle border border-landing-line bg-ivory';
+const primaryButtonClass =
+  'h-12 flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood px-4 active:opacity-90';
+const outlineButtonClass =
+  'h-11 items-center justify-center rounded-subtle border border-landing-line px-4 active:bg-landing-paper';
+const primaryButtonLabel =
+  'font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper';
+const outlineButtonLabel =
+  'font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian';
+
 export const SubscriptionPlansScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<RootStackParamList, 'SubscriptionPlans'>>();
   const { user, refreshUser } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'plans' | 'current' | 'history'>('plans');
+  const [activeTab, setActiveTab] = useState<SubscriptionTab>(
+    route.params?.tab ?? 'plans',
+  );
   const [refreshing, setRefreshing] = useState(false);
 
   // Queries
@@ -220,281 +239,194 @@ export const SubscriptionPlansScreen: React.FC = () => {
     switch (status) {
       case 'ACTIVE':
         return (
-          <View className="rounded-full bg-emerald-100 px-2.5 py-0.5">
-            <Text className="text-[11px] font-bold text-emerald-800">Đang dùng</Text>
-          </View>
+          <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-sage-ink">
+            Đang dùng
+          </Text>
         );
       case 'SCHEDULED':
         return (
-          <View className="rounded-full bg-blue-100 px-2.5 py-0.5">
-            <Text className="text-[11px] font-bold text-blue-800">Lên lịch</Text>
-          </View>
+          <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brass-ink">
+            Lên lịch
+          </Text>
         );
       case 'EXPIRED':
         return (
-          <View className="rounded-full bg-neutral-100 px-2.5 py-0.5">
-            <Text className="text-[11px] font-bold text-[#6B7280]">Hết hạn</Text>
-          </View>
+          <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-muted">
+            Hết hạn
+          </Text>
         );
       case 'CANCELLED':
         return (
-          <View className="rounded-full bg-red-100 px-2.5 py-0.5">
-            <Text className="text-[11px] font-bold text-red-700">Đã hủy</Text>
-          </View>
+          <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-danger">
+            Đã hủy
+          </Text>
         );
       default:
         return (
-          <View className="rounded-full bg-neutral-100 px-2.5 py-0.5">
-            <Text className="text-[11px] font-bold text-[#6B7280]">{status}</Text>
-          </View>
+          <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-muted">
+            {status}
+          </Text>
         );
     }
   };
 
   return (
-    <View className="flex-1 bg-[#FBF9F7]">
-      <AppHeader onBack={navigation.canGoBack() ? () => navigation.goBack() : undefined} />
+    <View className="flex-1 bg-landing-paper">
+      <AppHeader />
 
-      {/* ── Scrollable Body ── */}
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: 16,
-          paddingBottom: 40,
-        }}
+        contentContainerClassName="gap-4 px-lg pb-giant pt-lg"
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {/* ── Hero Heading & Badge ── */}
-        <View className="items-center mt-2 mb-3">
-          <View className="flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#5D1C34]/10">
-            <Crown size={14} color="#5D1C34" />
-            <Text className="text-[12.5px] font-bold text-[#5D1C34]">
-              Dịch vụ Hội viên FashionAI
-            </Text>
-          </View>
+        <BackButton onPress={() => navigation.goBack()} />
+
+        <View className="gap-2 border-b border-landing-line pb-5">
+          <Text className={eyebrowClass}>Gói thành viên</Text>
+          <Text
+            accessibilityRole="header"
+            className="font-display text-headline-lg text-landing-obsidian"
+          >
+            Gói thành viên
+          </Text>
+          <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
+            So sánh lượt Thử đồ AI, AI Stylist và chat AI của từng gói, rồi chọn gói hợp với bạn.
+          </Text>
         </View>
 
-        <Text className="text-[26px] font-bold text-[#5D1C34] text-center leading-tight px-2">
-          Trải nghiệm thời trang{'\n'}may đo chuẩn xác cùng AI
-        </Text>
-
-        <Text className="text-[13px] text-[#534346] text-center mt-3 px-4 leading-5">
-          Mở khóa tính năng Thử đồ AI ảo độc quyền, tư vấn phối trang phục theo số đo cơ thể và nhận may đo chính xác từng centimet.
-        </Text>
-
-        {/* ── Segmented Control (3 Tabs) ── */}
-        <View className="items-center my-6">
-          <View className="flex-row p-1.5 bg-white rounded-2xl border border-[#ECE8E3] shadow-sm gap-1 w-full max-w-[360px] justify-between">
-            <TouchableOpacity
-              onPress={() => setActiveTab('plans')}
-              className={`flex-1 py-2 px-2.5 rounded-xl flex-row items-center justify-center gap-1.5 ${
-                activeTab === 'plans' ? 'bg-[#5D1C34]' : 'bg-transparent'
-              }`}
-            >
-              <Zap
-                size={14}
-                color={activeTab === 'plans' ? '#FFFFFF' : '#534346'}
-                fill={activeTab === 'plans' ? '#FFFFFF' : 'none'}
-              />
-              <Text
-                className={`text-[12.5px] font-bold text-center leading-4 ${
-                  activeTab === 'plans' ? 'text-white' : 'text-[#534346]'
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="flex-row gap-6"
+        >
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <TouchableOpacity
+                key={tab.id}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isActive }}
+                onPress={() => setActiveTab(tab.id)}
+                className={`min-h-11 shrink-0 justify-center border-b-2 pb-2.5 pt-2 active:opacity-70 ${
+                  isActive ? 'border-oxblood' : 'border-transparent'
                 }`}
               >
-                Bảng giá{'\n'}gói cước
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  className={`font-sans text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                    isActive ? 'text-oxblood' : 'text-landing-muted'
+                  }`}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
 
-            <TouchableOpacity
-              onPress={() => setActiveTab('current')}
-              className={`flex-1 py-2 px-2.5 rounded-xl flex-row items-center justify-center gap-1.5 ${
-                activeTab === 'current' ? 'bg-[#5D1C34]' : 'bg-transparent'
-              }`}
-            >
-              <Crown size={14} color={activeTab === 'current' ? '#FFFFFF' : '#534346'} />
-              <Text
-                className={`text-[12.5px] font-bold text-center leading-4 ${
-                  activeTab === 'current' ? 'text-white' : 'text-[#534346]'
-                }`}
-              >
-                Gói{'\n'}của tôi
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setActiveTab('history')}
-              className={`flex-1 py-2 px-2.5 rounded-xl flex-row items-center justify-center gap-1.5 ${
-                activeTab === 'history' ? 'bg-[#5D1C34]' : 'bg-transparent'
-              }`}
-            >
-              <Clock size={14} color={activeTab === 'history' ? '#FFFFFF' : '#534346'} />
-              <Text
-                className={`text-[12.5px] font-bold text-center leading-4 ${
-                  activeTab === 'history' ? 'text-white' : 'text-[#534346]'
-                }`}
-              >
-                Lịch sử{'\n'}đăng ký
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* ─────────────────── TAB 1: BẢNG GIÁ GÓI ─────────────────── */}
         {activeTab === 'plans' && (
-          <View>
-            {/* Account Status Card */}
-            <View className="bg-white border border-[#ECE8E3] rounded-3xl p-5 mb-6 shadow-sm flex-row items-center gap-4">
-              <View
-                className={`w-14 h-14 rounded-2xl items-center justify-center shrink-0 shadow-xs ${
-                  currentTier === 'VIP'
-                    ? 'bg-[#5D1C34]'
-                    : currentTier === 'MEMBER'
-                    ? 'bg-[#5D1C34]'
-                    : 'bg-[#F7F5F2]'
-                }`}
-              >
-                {currentTier === 'VIP' ? (
-                  <Crown size={26} color="#FFE173" />
-                ) : currentTier === 'MEMBER' ? (
-                  <Sparkles size={26} color="#FFFFFF" />
-                ) : (
-                  <Shield size={26} color="#5D1C34" />
-                )}
-              </View>
-
-              <View className="flex-1">
-                <View className="flex-row items-center gap-2 flex-wrap">
-                  <Text className="text-[16px] font-bold text-[#5D1C34]">
-                    Tài khoản của bạn: Gói {currentTier}
+          <View className="gap-4">
+            <View className="gap-1 border-l-2 border-landing-brass bg-landing-ivory px-4 py-4">
+              <Text className={mutedLabelClass}>Gói của bạn</Text>
+              <Text className="font-display text-[24px] leading-tight text-landing-obsidian">
+                {plans.find((plan) => plan.id === currentTier)?.name ?? currentTier}
+              </Text>
+              {expirationInfo ? (
+                expirationInfo.isExpired ? (
+                  <Text className="font-sans text-body-sm leading-relaxed text-danger">
+                    Đã hết hạn ngày{' '}
+                    <Text className="font-mono">{expirationInfo.formattedDate}</Text>. Gia hạn để
+                    dùng lại Thử đồ AI.
                   </Text>
-                  {expirationInfo && !expirationInfo.isExpired && (
-                    <View
-                      className={`rounded-full px-2 py-0.5 ${
-                        expirationInfo.isExpiringSoon ? 'bg-amber-100' : 'bg-emerald-100'
-                      }`}
-                    >
-                      <Text
-                        className={`text-[11px] font-bold ${
-                          expirationInfo.isExpiringSoon ? 'text-amber-800' : 'text-emerald-800'
-                        }`}
-                      >
-                        {expirationInfo.isExpiringSoon ? 'Sắp hết hạn' : 'Đang hoạt động'}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                {expirationInfo ? (
-                  expirationInfo.isExpired ? (
-                    <Text className="mt-1 text-[12.5px] font-medium text-red-600">
-                      Gói cước đã hết hạn vào ngày {expirationInfo.formattedDate}. Vui lòng gia hạn để tiếp tục dùng Thử đồ AI.
-                    </Text>
-                  ) : (
-                    <Text className="mt-1 text-[12.5px] text-[#6B7280]">
-                      Thời hạn đến: <Text className="font-bold text-[#5D1C34]">{expirationInfo.formattedDate}</Text> • Còn{' '}
-                      <Text className="font-bold text-[#5D1C34]">{expirationInfo.daysRemaining} ngày</Text>
-                    </Text>
-                  )
                 ) : (
-                  <Text className="mt-1 text-[13px] text-[#6B7280] leading-5">
-                    {currentTier === 'FREE'
-                      ? 'Nâng cấp ngay để mở khóa tính năng Thử đồ AI (5-10 lượt/ngày) và ưu tiên may đo.'
-                      : 'Đang sử dụng gói cước hội viên.'}
+                  <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
+                    Hiệu lực đến{' '}
+                    <Text className="font-mono text-landing-obsidian">
+                      {expirationInfo.formattedDate}
+                    </Text>
+                    , còn {expirationInfo.daysRemaining} ngày.
                   </Text>
-                )}
-              </View>
+                )
+              ) : (
+                <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
+                  {currentTier === 'FREE'
+                    ? 'Gói miễn phí, chưa có lượt Thử đồ AI bằng ảnh.'
+                    : 'Đang hoạt động.'}
+                </Text>
+              )}
             </View>
 
-            {/* Pricing Cards */}
             {isLoadingPlans ? (
-              <View className="py-12 items-center justify-center">
-                <ActivityIndicator size="large" color="#5D1C34" />
-                <Text className="mt-3 text-[13px] text-[#6B7280]">Đang tải thông tin gói cước...</Text>
+              <View className="items-center justify-center gap-3 py-12">
+                <ActivityIndicator size="small" color={COLORS.oxblood} />
+                <Text className="font-sans text-body-sm text-landing-muted">
+                  Đang tải thông tin gói cước...
+                </Text>
               </View>
             ) : (
               plans.map((plan: PlanCardData) => {
                 const isCurrent = currentTier === plan.id;
-                const isVip = plan.id === 'VIP';
                 const isMember = plan.id === 'MEMBER';
                 const isDowngradeDisabled =
                   isMember && currentTier === 'VIP' && scheduledSub !== null;
+                const isFeatured = isCurrent || Boolean(plan.isPopular);
 
                 return (
                   <View
                     key={plan.id}
-                    className={`relative rounded-3xl p-6 mb-6 shadow-sm ${
-                      plan.isPopular
-                        ? 'bg-white border-2 border-[#5D1C34] shadow-md shadow-[#5D1C34]/10'
-                        : isVip
-                        ? 'bg-[#FDFBF7] border border-[#A67D44]/50'
-                        : 'bg-white border border-[#ECE8E3]'
+                    className={`rounded-subtle border bg-ivory p-5 ${
+                      isFeatured ? 'border-oxblood' : 'border-landing-line'
                     }`}
                   >
-                    {/* Floating Pill Badge */}
-                    {plan.badge && (
-                      <View
-                        className={`absolute -top-3.5 self-center px-4 py-1 rounded-full shadow-xs ${
-                          plan.isPopular ? 'bg-[#5D1C34]' : 'bg-[#A67D44]'
-                        }`}
-                      >
-                        <Text className="text-[12px] font-bold text-white">
+                    <View className="flex-row items-baseline justify-between gap-3">
+                      <Text className="flex-1 font-display text-[22px] leading-tight text-landing-obsidian">
+                        {plan.name}
+                      </Text>
+                      {isCurrent ? (
+                        <Text className="shrink-0 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-oxblood">
+                          Gói của bạn
+                        </Text>
+                      ) : plan.badge ? (
+                        <Text className="shrink-0 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brass-ink">
                           {plan.badge}
                         </Text>
-                      </View>
-                    )}
+                      ) : null}
+                    </View>
 
-                    {/* Title & Desc */}
-                    <View className="mb-4">
-                      <View className="flex-row items-center gap-2">
-                        <Text className="text-[22px] font-bold text-[#5D1C34]">
-                          {plan.name}
-                        </Text>
-                        {isVip && <Crown size={18} color="#A67D44" />}
-                      </View>
-                      <Text className="text-[13px] text-[#6B7280] mt-1 leading-5">
-                        {plan.description}
+                    <Text className="mt-2 min-h-[40px] font-sans text-body-sm leading-relaxed text-landing-muted">
+                      {plan.description}
+                    </Text>
+
+                    <View className="mt-4 flex-row items-baseline gap-2 border-b border-landing-line pb-4">
+                      <Text className="font-mono text-[26px] leading-none text-oxblood">
+                        {plan.priceText}
+                      </Text>
+                      <Text className="font-sans text-body-sm text-landing-muted">
+                        {plan.periodText}
                       </Text>
                     </View>
 
-                    {/* Price */}
-                    <View className="pb-5 border-b border-[#F3F4F6]">
-                      <View className="flex-row items-baseline gap-1.5">
-                        <Text className="text-[34px] font-bold text-[#5D1C34] tracking-tight">
-                          {plan.priceText}
-                        </Text>
-                        <Text className="text-[14px] text-[#6B7280] font-medium">
-                          {plan.periodText}
-                        </Text>
-                      </View>
-                    </View>
+                    <Text className="mt-4 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brass-ink">
+                      Quyền lợi gói
+                    </Text>
 
-                    {/* Checklist */}
-                    <View className="mt-5 space-y-3 mb-2">
-                      <Text className="text-[11px] font-bold text-[#9CA3AF] tracking-wider uppercase mb-1">
-                        QUYỀN LỢI GÓI CƯỚC:
-                      </Text>
+                    <View className="mt-3 flex-1 gap-2.5">
                       {plan.features.map((feat, idx) => (
-                        <View key={idx} className="flex-row items-center gap-3 py-0.5">
+                        <View key={idx} className="flex-row items-start gap-2.5">
                           <View
-                            className={`w-5 h-5 rounded-full items-center justify-center shrink-0 ${
-                              feat.highlight
-                                ? 'bg-[#5D1C34]'
-                                : 'bg-[#F3F4F6]'
+                            className={`mt-0.5 h-3.5 w-3.5 shrink-0 items-center justify-center border ${
+                              feat.highlight ? 'border-oxblood' : 'border-landing-line'
                             }`}
                           >
                             <Check
-                              size={12}
-                              color={feat.highlight ? '#FFFFFF' : '#6B7280'}
-                              strokeWidth={3}
+                              size={9}
+                              strokeWidth={2.5}
+                              color={feat.highlight ? COLORS.oxblood : COLORS.muted}
                             />
                           </View>
                           <Text
-                            className={`text-[13px] flex-1 ${
-                              feat.highlight
-                                ? 'font-bold text-[#1B1C1B]'
-                                : 'text-[#4B5563]'
+                            className={`flex-1 font-sans text-body-sm leading-relaxed ${
+                              feat.highlight ? 'text-landing-obsidian' : 'text-landing-muted'
                             }`}
                           >
                             {feat.text}
@@ -503,44 +435,36 @@ export const SubscriptionPlansScreen: React.FC = () => {
                       ))}
                     </View>
 
-                    {/* Action Button */}
-                    <View className="mt-6">
+                    <View className="mt-5">
                       {plan.id === 'FREE' ? (
-                        <View className="w-full py-3.5 bg-[#EFECE6] rounded-xl items-center justify-center">
-                          <Text className="text-[14px] font-semibold text-[#6B7280]">
+                        <View className="h-12 items-center justify-center rounded-subtle border border-landing-line bg-landing-paper/60">
+                          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-muted">
                             {isCurrent ? 'Gói hiện tại của bạn' : 'Mặc định khi đăng ký'}
                           </Text>
                         </View>
                       ) : (
                         <TouchableOpacity
+                          accessibilityRole="button"
                           activeOpacity={0.85}
                           disabled={isCheckingOut || isDowngradeDisabled}
                           onPress={() => handleUpgrade(plan.id as 'MEMBER' | 'VIP')}
-                          className={`w-full py-3.5 rounded-xl items-center justify-center flex-row gap-2 shadow-sm ${
-                            isVip
-                              ? 'bg-[#783E2D]'
-                              : 'bg-[#5D1C34]'
-                          } ${isDowngradeDisabled ? 'opacity-50' : 'active:opacity-90'}`}
+                          className={`${primaryButtonClass} ${
+                            isCheckingOut || isDowngradeDisabled ? 'opacity-50' : ''
+                          }`}
                         >
                           {isCheckingOut ? (
-                            <ActivityIndicator size="small" color="#FFFFFF" />
+                            <ActivityIndicator size="small" color={COLORS.paper} />
                           ) : isDowngradeDisabled ? (
-                            <Text className="text-[14px] font-bold text-white">
-                              Đã lên lịch chuyển gói
-                            </Text>
+                            <Text className={primaryButtonLabel}>Đã lên lịch chuyển gói</Text>
                           ) : isCurrent ? (
                             <>
-                              <RefreshCw size={16} color="#FFFFFF" />
-                              <Text className="text-[14px] font-bold text-white">
-                                Gia hạn thêm 30 ngày
-                              </Text>
+                              <RefreshCw size={14} strokeWidth={1.75} color={COLORS.paper} />
+                              <Text className={primaryButtonLabel}>Gia hạn thêm 30 ngày</Text>
                             </>
                           ) : (
                             <>
-                              <Text className="text-[14px] font-bold text-white">
-                                {plan.ctaText}
-                              </Text>
-                              <ArrowRight size={16} color="#FFFFFF" />
+                              <Text className={primaryButtonLabel}>{plan.ctaText}</Text>
+                              <ArrowRight size={14} strokeWidth={1.75} color={COLORS.paper} />
                             </>
                           )}
                         </TouchableOpacity>
@@ -551,159 +475,200 @@ export const SubscriptionPlansScreen: React.FC = () => {
               })
             )}
 
-            {/* ── Feature Comparison Table ── */}
-            <View className="bg-white rounded-3xl p-5 border border-[#ECE8E3] shadow-sm mb-6 mt-2">
-              <Text className="text-[20px] font-bold text-[#5D1C34] mb-4 leading-tight">
-                So sánh chi tiết hạn mức tính năng AI
-              </Text>
-
-              {/* Table Header */}
-              <View className="flex-row border-b border-[#ECE8E3] pb-3 mb-1">
-                <Text className="w-[32%] text-[12px] font-semibold text-[#6B7280]">
-                  Tính năng AI
-                </Text>
-                <Text className="w-[20%] text-[12px] font-semibold text-[#6B7280] text-center">
-                  Gói FREE
-                </Text>
-                <Text className="w-[24%] text-[12px] font-bold text-[#5D1C34] text-center">
-                  Gói MEMBER{'\n'}(34k)
-                </Text>
-                <Text className="w-[24%] text-[12px] font-bold text-[#A67D44] text-center">
-                  Gói VIP{'\n'}(99k)
+            <View className={cardClass}>
+              <View className="gap-1 border-b border-landing-line px-4 py-4">
+                <Text className={eyebrowClass}>So sánh</Text>
+                <Text className="font-display text-[20px] leading-tight text-landing-obsidian">
+                  Hạn mức tính năng AI
                 </Text>
               </View>
 
-              {/* Table Rows */}
+              <View className="flex-row items-end border-b border-landing-line bg-landing-paper/40 px-3 py-2.5">
+                <Text className="w-[34%] pr-2 font-sans text-[9px] font-semibold uppercase tracking-[0.12em] text-brass-ink">
+                  Tính năng
+                </Text>
+                <Text className="w-[22%] text-center font-sans text-[9px] font-semibold uppercase tracking-[0.12em] text-brass-ink">
+                  Miễn phí
+                </Text>
+                <Text className="w-[22%] text-center font-sans text-[9px] font-semibold uppercase tracking-[0.12em] text-brass-ink">
+                  Member
+                </Text>
+                <Text className="w-[22%] text-center font-sans text-[9px] font-semibold uppercase tracking-[0.12em] text-brass-ink">
+                  VIP
+                </Text>
+              </View>
+
               {QUOTA_COMPARISON.map((row, idx) => (
                 <View
                   key={idx}
-                  className="flex-row items-center border-b border-[#F3F4F6] py-3.5"
+                  className={`flex-row items-center px-3 py-3 ${
+                    idx < QUOTA_COMPARISON.length - 1 ? 'border-b border-landing-line' : ''
+                  }`}
                 >
-                  <Text className="w-[32%] text-[12px] font-semibold text-[#1B1C1B] leading-4 pr-1">
+                  <Text className="w-[34%] pr-2 font-sans text-body-sm text-landing-obsidian">
                     {row.featureName}
                   </Text>
-                  <Text className="w-[20%] text-[11.5px] text-[#6B7280] text-center">
+                  <Text className="w-[22%] text-center font-mono text-[10.5px] text-landing-muted">
                     {row.free}
                   </Text>
-                  <Text className="w-[24%] text-[12px] font-bold text-[#5D1C34] text-center">
+                  <Text className="w-[22%] text-center font-mono text-[10.5px] text-landing-obsidian">
                     {row.member}
                   </Text>
-                  <Text className="w-[24%] text-[12px] font-bold text-[#A67D44] text-center">
+                  <Text className="w-[22%] text-center font-mono text-[10.5px] text-landing-obsidian">
                     {row.vip}
                   </Text>
                 </View>
               ))}
             </View>
 
-            {/* ── FAQ Section ── */}
-            <View className="bg-white rounded-3xl p-6 border border-[#ECE8E3] shadow-sm mb-6">
-              <Text className="text-[20px] font-bold text-[#5D1C34] text-center mb-6">
-                Câu hỏi thường gặp về gói cước
+            <View className={`${cardClass} px-4 py-5`}>
+              <Text className={eyebrowClass}>Hỗ trợ</Text>
+              <Text className="mt-1 font-display text-[20px] leading-tight text-landing-obsidian">
+                Câu hỏi thường gặp
               </Text>
 
-              {SUBSCRIPTION_FAQS.map((faq, idx) => (
-                <View key={idx} className={idx < SUBSCRIPTION_FAQS.length - 1 ? 'mb-5' : ''}>
-                  <Text className="text-[14px] font-bold text-[#5D1C34] mb-1.5 leading-snug">
-                    {faq.question}
-                  </Text>
-                  <Text className="text-[13px] text-[#4B5563] leading-5">
-                    {faq.answer}
-                  </Text>
-                </View>
-              ))}
+              <View className="mt-4">
+                {SUBSCRIPTION_FAQS.map((faq, idx) => (
+                  <View
+                    key={idx}
+                    className={
+                      idx < SUBSCRIPTION_FAQS.length - 1
+                        ? 'mb-4 border-b border-landing-line pb-4'
+                        : ''
+                    }
+                  >
+                    <Text className="font-display text-[16px] leading-snug text-landing-obsidian">
+                      {faq.question}
+                    </Text>
+                    <Text className="mt-1.5 font-sans text-body-sm leading-relaxed text-landing-muted">
+                      {faq.answer}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </View>
 
-            {/* ── Footer ── */}
-            <View className="items-center mt-2 mb-6">
-              <Text className="text-[12px] text-[#9CA3AF] mb-2">
+            <View className="items-center gap-2 pb-2">
+              <Text className="font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">
                 © 2026 StAle. All rights reserved.
               </Text>
-              <View className="flex-row gap-5">
+              <View className="flex-row flex-wrap items-center justify-center gap-1">
                 <TouchableOpacity
+                  accessibilityRole="button"
                   onPress={() => (navigation as any).navigate('Policy', { type: 'terms' })}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  className="min-h-11 justify-center px-2"
                 >
-                  <Text className="text-[12px] font-medium text-[#6B7280]">Điều khoản</Text>
+                  <Text className="font-sans text-[11px] uppercase tracking-[0.12em] text-landing-muted">
+                    Điều khoản
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
+                  accessibilityRole="button"
                   onPress={() => (navigation as any).navigate('Policy', { type: 'privacy' })}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  className="min-h-11 justify-center px-2"
                 >
-                  <Text className="text-[12px] font-medium text-[#6B7280]">Bảo mật</Text>
+                  <Text className="font-sans text-[11px] uppercase tracking-[0.12em] text-landing-muted">
+                    Bảo mật
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
+                  accessibilityRole="button"
                   onPress={() => (navigation as any).navigate('Policy', { type: 'return' })}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  className="min-h-11 justify-center px-2"
                 >
-                  <Text className="text-[12px] font-medium text-[#6B7280]">Đổi trả &amp; Hỗ trợ</Text>
+                  <Text className="font-sans text-[11px] uppercase tracking-[0.12em] text-landing-muted">
+                    Đổi trả &amp; Hỗ trợ
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
           </View>
         )}
 
-        {/* ─────────────────── TAB 2: GÓI CỦA TÔI ─────────────────── */}
         {activeTab === 'current' && (
-          <View className="space-y-4">
+          <View className="gap-4">
             {isLoadingSub ? (
-              <View className="py-12 items-center justify-center">
-                <ActivityIndicator size="large" color="#5D1C34" />
-                <Text className="mt-3 text-[13px] text-[#6B7280]">Đang tải thông tin gói của bạn...</Text>
+              <View className="items-center justify-center gap-3 py-12">
+                <ActivityIndicator size="small" color={COLORS.oxblood} />
+                <Text className="font-sans text-body-sm text-landing-muted">
+                  Đang tải thông tin gói của bạn...
+                </Text>
               </View>
             ) : (
-              <View className="bg-white rounded-3xl border border-[#ECE8E3] p-6 shadow-sm">
-                <View className="flex-row items-center justify-between pb-4 border-b border-[#F3F4F6] mb-4">
-                  <View>
-                    <Text className="text-[12px] font-bold text-[#9CA3AF] uppercase tracking-wider">
-                      Gói hiện tại
-                    </Text>
-                    <Text className="text-[22px] font-bold text-[#5D1C34]">
-                      {currentTier}
+              <View className={`${cardClass} px-4 py-5`}>
+                <View className="flex-row items-start justify-between gap-3 border-b border-landing-line pb-4">
+                  <View className="flex-1 gap-1">
+                    <Text className={mutedLabelClass}>Gói hiện tại</Text>
+                    <Text className="font-display text-[28px] leading-none text-oxblood">
+                      {currentTier === 'FREE' ? 'Miễn phí' : currentTier}
                     </Text>
                   </View>
-                  {renderHistoryStatusBadge(currentSub?.status || (currentTier === 'FREE' ? 'FREE' : 'ACTIVE'))}
+                  <View className="min-h-11 justify-center">
+                    {renderHistoryStatusBadge(
+                      currentSub?.status || (currentTier === 'FREE' ? 'FREE' : 'ACTIVE'),
+                    )}
+                  </View>
                 </View>
 
-                {expirationInfo && (
-                  <View className="bg-[#FAF8F5] rounded-2xl p-4 border border-[#ECE8E3] mb-4 space-y-2">
-                    <View className="flex-row justify-between">
-                      <Text className="text-[13px] text-[#6B7280]">Ngày hết hạn:</Text>
-                      <Text className="text-[13px] font-bold text-[#1B1C1B]">
-                        {expirationInfo.formattedDate}
-                      </Text>
-                    </View>
-                    <View className="flex-row justify-between">
-                      <Text className="text-[13px] text-[#6B7280]">Thời gian còn lại:</Text>
-                      <Text className="text-[13px] font-bold text-[#5D1C34]">
-                        {expirationInfo.daysRemaining} ngày
-                      </Text>
-                    </View>
+                <View>
+                  <View className="flex-row items-center justify-between gap-4 border-b border-landing-line py-3.5">
+                    <Text className="font-sans text-body-sm text-landing-muted">
+                      Hiệu lực đến
+                    </Text>
+                    <Text className={monoValueClass}>
+                      {expirationInfo ? expirationInfo.formattedDate : 'Không thời hạn'}
+                    </Text>
                   </View>
-                )}
+                  <View className="flex-row items-center justify-between gap-4 border-b border-landing-line py-3.5">
+                    <Text className="font-sans text-body-sm text-landing-muted">Còn lại</Text>
+                    {expirationInfo ? (
+                      <Text
+                        className={`font-mono text-[12px] ${
+                          expirationInfo.isExpired
+                            ? 'text-danger'
+                            : expirationInfo.isExpiringSoon
+                            ? 'text-brass-ink'
+                            : 'text-landing-obsidian'
+                        }`}
+                      >
+                        {expirationInfo.daysRemaining} ngày
+                        {expirationInfo.isExpiringSoon ? ', sắp hết hạn' : ''}
+                      </Text>
+                    ) : (
+                      <Text className={monoValueClass}>Không thời hạn</Text>
+                    )}
+                  </View>
+                  <View className="flex-row items-center justify-between gap-4 border-b border-landing-line py-3.5">
+                    <Text className="font-sans text-body-sm text-landing-muted">
+                      Nhắc gia hạn
+                    </Text>
+                    <Text className={monoValueClass}>
+                      {currentSub ? (currentSub.autoRenew ? 'Đang bật' : 'Đã tắt') : 'Chưa có'}
+                    </Text>
+                  </View>
+                </View>
 
-                {/* Auto Renew Toggle */}
                 {currentSub && (
-                  <View className="flex-row items-center justify-between py-3 border-t border-[#F3F4F6] mt-2">
-                    <View className="flex-1 pr-4">
-                      <Text className="text-[14px] font-bold text-[#1B1C1B]">
+                  <View className="gap-3 pt-4">
+                    <View>
+                      <Text className="font-sans text-body-md text-landing-obsidian">
                         Tự động gia hạn
                       </Text>
-                      <Text className="text-[12px] text-[#6B7280] mt-0.5">
-                        Tự động gia hạn khi kết thúc chu kỳ 30 ngày
+                      <Text className="mt-0.5 font-sans text-body-sm leading-relaxed text-landing-muted">
+                        Gia hạn khi kết thúc chu kỳ 30 ngày.
                       </Text>
                     </View>
                     <TouchableOpacity
+                      accessibilityRole="button"
                       onPress={handleToggleAutoRenew}
                       disabled={isCancelling || isResuming}
-                      className={`px-3 py-1.5 rounded-lg border ${
-                        currentSub.autoRenew
-                          ? 'border-red-200 bg-red-50'
-                          : 'border-[#5D1C34] bg-[#5D1C34]/10'
-                      }`}
+                      className={`h-11 items-center justify-center rounded-subtle border px-4 active:opacity-80 ${
+                        currentSub.autoRenew ? 'border-danger' : 'border-oxblood'
+                      } ${isCancelling || isResuming ? 'opacity-50' : ''}`}
                     >
                       <Text
-                        className={`text-[12px] font-bold ${
-                          currentSub.autoRenew ? 'text-red-700' : 'text-[#5D1C34]'
+                        className={`font-sans text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                          currentSub.autoRenew ? 'text-danger' : 'text-oxblood'
                         }`}
                       >
                         {currentSub.autoRenew ? 'Tắt gia hạn' : 'Bật gia hạn'}
@@ -711,97 +676,90 @@ export const SubscriptionPlansScreen: React.FC = () => {
                     </TouchableOpacity>
                   </View>
                 )}
-
-                {/* Scheduled Change Notice */}
-                {scheduledSub && (
-                  <View className="mt-4 p-4 rounded-2xl bg-blue-50 border border-blue-200">
-                    <View className="flex-row items-center gap-2 mb-1">
-                      <Clock size={16} color="#1E40AF" />
-                      <Text className="text-[13px] font-bold text-blue-900">
-                        Lịch chuyển gói: {scheduledSub.tier}
-                      </Text>
-                    </View>
-                    <Text className="text-[12px] text-blue-800 leading-4">
-                      Gói {scheduledSub.tier} sẽ tự động kích hoạt sau khi gói hiện tại hết hạn.
-                    </Text>
-                    <TouchableOpacity
-                      onPress={handleCancelScheduled}
-                      disabled={isCancellingScheduled}
-                      className="mt-3 self-start px-3 py-1 rounded-lg border border-red-300 bg-white"
-                    >
-                      <Text className="text-[11px] font-bold text-red-600">
-                        {isCancellingScheduled ? 'Đang hủy...' : 'Hủy lịch chuyển gói'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
               </View>
             )}
+
+            {scheduledSub && (
+              <View className="gap-2 border-l-2 border-landing-brass bg-landing-ivory px-4 py-4">
+                <View className="flex-row items-center gap-2">
+                  <Clock size={13} strokeWidth={1.75} color={COLORS.brassInk} />
+                  <Text className={eyebrowClass}>Lịch chuyển gói</Text>
+                </View>
+                <Text className="font-display text-[18px] leading-tight text-landing-obsidian">
+                  Gói {scheduledSub.tier}
+                </Text>
+                <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
+                  Tự động kích hoạt sau khi gói hiện tại hết hạn.
+                </Text>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={handleCancelScheduled}
+                  disabled={isCancellingScheduled}
+                  className={`mt-1 ${outlineButtonClass} ${
+                    isCancellingScheduled ? 'opacity-50' : ''
+                  }`}
+                >
+                  <Text className={outlineButtonLabel}>
+                    {isCancellingScheduled ? 'Đang hủy...' : 'Hủy lịch chuyển gói'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
+              Mỗi lần mua hoặc gia hạn là một lần thanh toán riêng. FashionAI không tự động trừ
+              tiền.
+            </Text>
           </View>
         )}
 
-        {/* ─────────────────── TAB 3: LỊCH SỬ ĐĂNG KÝ ─────────────────── */}
         {activeTab === 'history' && (
           <View>
             {isLoadingHistory ? (
-              <View className="py-12 items-center justify-center">
-                <ActivityIndicator size="large" color="#5D1C34" />
-                <Text className="mt-3 text-[13px] text-[#6B7280]">Đang tải lịch sử...</Text>
+              <View className="items-center justify-center gap-3 py-12">
+                <ActivityIndicator size="small" color={COLORS.oxblood} />
+                <Text className="font-sans text-body-sm text-landing-muted">
+                  Đang tải lịch sử...
+                </Text>
               </View>
             ) : !history || history.length === 0 ? (
-              <View className="bg-white rounded-3xl p-8 items-center border border-[#ECE8E3] shadow-sm">
-                <Clock size={40} color="#9CA3AF" />
-                <Text className="text-[15px] font-bold text-[#1B1C1B] mt-3">
+              <View className={`${cardClass} items-center gap-3 px-6 py-12`}>
+                <View className="h-16 w-16 items-center justify-center border border-landing-line">
+                  <Clock size={22} strokeWidth={1.5} color={COLORS.muted} />
+                </View>
+                <Text className="text-center font-display text-[20px] text-landing-obsidian">
                   Chưa có lịch sử đăng ký
                 </Text>
-                <Text className="text-[13px] text-[#6B7280] text-center mt-1">
+                <Text className="text-center font-sans text-body-sm leading-relaxed text-landing-muted">
                   Các gói dịch vụ bạn đã thanh toán sẽ được lưu trữ và hiển thị tại đây.
                 </Text>
               </View>
             ) : (
               history.map((item: any) => (
-                <View
-                  key={item.id}
-                  className="bg-white rounded-2xl p-4 border border-[#ECE8E3] mb-3 shadow-xs"
-                >
-                  <View className="flex-row items-center justify-between mb-2">
-                    <View className="flex-row items-center gap-2">
-                      <Text className="text-[15px] font-bold text-[#1B1C1B]">
-                        Gói {item.tier}
-                      </Text>
-                      {renderHistoryStatusBadge(item.status)}
-                    </View>
-                    <Text className="text-[14px] font-bold text-[#5D1C34]">
+                <View key={item.id} className={`${cardClass} mb-3 px-4 py-4`}>
+                  <View className="flex-row items-baseline justify-between gap-3 border-b border-landing-line pb-3">
+                    <Text className="flex-1 font-display text-[18px] leading-tight text-landing-obsidian">
+                      Gói {item.tier}
+                    </Text>
+                    <Text className="shrink-0 font-mono text-[13px] text-oxblood">
                       {formatCurrency(item.amount || (item.tier === 'MEMBER' ? 34000 : 99000))}
                     </Text>
                   </View>
-
-                  <View className="flex-row justify-between text-[12px] text-[#6B7280] pt-2 border-t border-[#F3F4F6]">
-                    <Text className="text-[12px] text-[#6B7280]">
-                      Cổng: {item.provider || 'SEPAY'}
-                    </Text>
-                    <Text className="text-[12px] text-[#6B7280]">
+                  <View className="mt-3 flex-row items-center justify-between gap-3">
+                    {renderHistoryStatusBadge(item.status)}
+                    <Text className="font-mono text-[11px] text-landing-muted">
                       {new Date(item.createdAt).toLocaleDateString('vi-VN')}
                     </Text>
                   </View>
+                  <Text className="mt-2 font-sans text-[10.5px] uppercase tracking-[0.16em] text-landing-muted">
+                    Cổng {item.provider || 'SEPAY'}
+                  </Text>
                 </View>
               ))
             )}
           </View>
         )}
       </ScrollView>
-
-      {/* ── Floating AI Chat Button ── */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => navigation.navigate('Stylist')}
-        className="absolute bottom-6 right-5 w-14 h-14 rounded-full bg-[#5D1C34] shadow-lg shadow-black/30 items-center justify-center z-30"
-      >
-        <MessageCircle size={24} color="#FFFFFF" />
-        <View className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#F59E0B] border-2 border-white items-center justify-center">
-          <Text className="text-[10px] font-bold text-black">1</Text>
-        </View>
-      </TouchableOpacity>
     </View>
   );
 };

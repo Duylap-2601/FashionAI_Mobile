@@ -2,6 +2,8 @@ import React, { useCallback, useMemo } from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
 import { Sparkles } from 'lucide-react-native';
+import { AppHeader } from '@/components/common/AppHeader';
+import { BackButton } from '@/components/common/BackButton';
 import { ErrorView } from '@/components/common/ErrorView';
 import { COLORS } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
@@ -80,8 +82,10 @@ export function StylistHistoryScreen({ navigation }: Props) {
   }
 
   return (
-    <FlatList
-      className="flex-1 bg-landing-paper"
+    <View className="flex-1 bg-landing-paper">
+      <AppHeader />
+      <FlatList
+        className="flex-1"
       data={results}
       keyExtractor={(item) => item.id}
       contentContainerClassName="flex-grow gap-lg pb-xxxl"
@@ -92,7 +96,8 @@ export function StylistHistoryScreen({ navigation }: Props) {
       onEndReachedThreshold={0.35}
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={
-        <View className="gap-3 border-b border-landing-line px-lg pb-5 pt-lg">
+        <View className="gap-4 border-b border-landing-line px-lg pb-5 pt-lg">
+          <BackButton onPress={() => navigation.goBack()} />
           <View className="flex-row items-center gap-2">
             <Sparkles size={14} strokeWidth={1.75} color={COLORS.brassInk} />
             <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
@@ -162,6 +167,7 @@ export function StylistHistoryScreen({ navigation }: Props) {
           </View>
         ) : null
       }
-    />
+      />
+    </View>
   );
 }

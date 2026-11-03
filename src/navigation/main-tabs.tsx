@@ -25,6 +25,7 @@ import { AppHeader } from '../components/common/AppHeader';
 import { AnnouncementBar } from '../features/home/components/AnnouncementBar';
 import { COLORS as THEME_COLORS } from '../constants/theme';
 import { FloatingChatBubble } from '../features/chat/components/FloatingChatBubble';
+import { CartSync } from '../features/cart/components/CartSync';
 
 // React Navigation's screenOptions/tabBarIcon require plain style objects
 // (no className support), so the Atelier Paper tokens are passed in as values.
@@ -216,6 +217,7 @@ export const MainTabs: React.FC = () => {
       />
     </Tab.Navigator>
       <FloatingChatBubble />
+      <CartSync />
     </View>
   );
 };

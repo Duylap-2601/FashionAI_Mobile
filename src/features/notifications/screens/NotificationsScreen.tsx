@@ -8,8 +8,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import {
+  ArrowLeft,
   Bell,
   CreditCard,
   Info,
@@ -56,18 +56,20 @@ const FilterChip: React.FC<{
 }> = ({ label, Icon, selected, onPress }) => (
   <Pressable
     accessibilityLabel={label}
+    accessibilityState={{ selected }}
     onPress={onPress}
-    className={`min-h-11 flex-row items-center gap-xs rounded-full border px-md ${
-      selected ? 'border-primary-container bg-primary-container' : 'border-outline-variant bg-surface-lowest'
+    className={`h-10 flex-row items-center gap-1.5 rounded-subtle border px-3 ${
+      selected ? 'border-oxblood bg-oxblood' : 'border-landing-line bg-ivory'
     }`}
   >
     <Icon
-      size={16}
-      color={selected ? COLORS.onPrimary : COLORS.onSurfaceVariant}
+      size={14}
+      strokeWidth={1.75}
+      color={selected ? COLORS.paper : COLORS.muted}
     />
     <Text
-      className={`text-label-lg ${
-        selected ? 'text-primary-foreground' : 'text-on-surface'
+      className={`font-sans text-[11px] font-semibold uppercase tracking-[0.12em] ${
+        selected ? 'text-landing-paper' : 'text-landing-obsidian'
       }`}
     >
       {label}
@@ -147,7 +149,7 @@ export const NotificationsScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-background">
+    <SafeAreaView edges={['top']} className="flex-1 bg-landing-paper">
       <FlatList
         data={filtered}
         keyExtractor={(item) => String(item.id)}
@@ -155,37 +157,46 @@ export const NotificationsScreen: React.FC = () => {
           <NotificationItem item={item} onPress={handlePressItem} />
         )}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} />
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.oxblood}
+          />
         }
         onEndReached={() => {
           if (hasNextPage && !isFetchingNextPage) fetchNextPage();
         }}
         onEndReachedThreshold={0.4}
-        ItemSeparatorComponent={() => <View className="h-md" />}
+        ItemSeparatorComponent={() => null}
         ListHeaderComponent={
-          <View className="pb-md">
-            <View className="px-xl">
+          <View className="gap-4 pb-4">
+            <View className="gap-2 border-b border-landing-line px-lg pb-5 pt-lg">
               <Pressable
-                className="min-h-11 flex-row items-center gap-xs self-start"
+                className="-ml-1 min-h-11 flex-row items-center gap-1.5 self-start active:opacity-70"
                 accessibilityLabel="Quay lại"
                 onPress={() => navigation.goBack()}
               >
-                <Ionicons name="arrow-back" size={20} className="text-on-surface" />
-                <Text className="text-label-lg text-on-surface">Quay lại</Text>
+                <ArrowLeft size={18} strokeWidth={1.75} color={COLORS.obsidian} />
+                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
+                  Quay lại
+                </Text>
               </Pressable>
-              <Text className="mt-sm font-heading text-headline-lg font-bold text-primary-container">
+              <Text className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
+                Tài khoản
+              </Text>
+              <Text
+                accessibilityRole="header"
+                className="font-display text-headline-lg text-landing-obsidian"
+              >
                 Thông báo
               </Text>
-              <Text className="mt-xs text-body-sm text-on-surface-variant">
+              <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
                 Cập nhật thông tin đơn hàng, thanh toán và các ưu đãi mới nhất
               </Text>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              className="mt-lg"
-            >
-              <View className="flex-row gap-sm px-xl">
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View className="flex-row gap-2 px-lg">
                 {FILTERS.map(({ value, label, Icon }) => (
                   <FilterChip
                     key={value}
@@ -197,14 +208,15 @@ export const NotificationsScreen: React.FC = () => {
                 ))}
               </View>
             </ScrollView>
+
             {hasUnread ? (
-              <View className="mt-md items-end px-xl">
+              <View className="items-end px-lg">
                 <Pressable
-                  className="min-h-11 justify-center px-sm"
+                  className="min-h-11 justify-center active:opacity-70"
                   disabled={isMarkingAll}
                   onPress={() => markAllRead()}
                 >
-                  <Text className="text-label-lg text-primary-container">
+                  <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-oxblood">
                     {isMarkingAll ? 'Đang xử lý...' : 'Đánh dấu đã đọc'}
                   </Text>
                 </Pressable>
@@ -213,22 +225,31 @@ export const NotificationsScreen: React.FC = () => {
           </View>
         }
         ListEmptyComponent={
-          <View className="px-xl">
-            <EmptyState
-              icon="🔔"
-              title={
-                filter === 'ALL'
+          <View className="px-lg">
+            <View className="items-center gap-2 rounded-subtle border border-dashed border-taupe bg-ivory px-6 py-12">
+              <Bell size={24} strokeWidth={1.5} color={COLORS.oxblood} />
+              <Text className="text-center font-display text-[19px] text-landing-obsidian">
+                {filter === 'ALL'
                   ? 'Chưa có thông báo'
-                  : 'Không có thông báo nào trong mục này'
-              }
-              description={
-                hasNextPage
+                  : 'Không có thông báo nào trong mục này'}
+              </Text>
+              <Text className="text-center font-sans text-body-sm text-landing-muted">
+                {hasNextPage
                   ? 'Kéo xuống để tải thêm hoặc thử lại sau.'
-                  : 'Đơn hàng, khuyến mãi và cập nhật mới sẽ hiện ở đây.'
-              }
-              actionTitle={hasNextPage ? 'Tải thêm' : undefined}
-              onAction={hasNextPage ? () => fetchNextPage() : undefined}
-            />
+                  : 'Đơn hàng, khuyến mãi và cập nhật mới sẽ hiện ở đây.'}
+              </Text>
+              {hasNextPage ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => fetchNextPage()}
+                  className="mt-2 h-10 items-center justify-center rounded-subtle border border-landing-line px-4 active:bg-landing-paper"
+                >
+                  <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
+                    Tải thêm
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
           </View>
         }
         ListFooterComponent={
