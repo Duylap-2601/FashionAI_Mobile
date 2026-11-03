@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, Pressable, useWindowDimensions } from "react-native";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react-native";
-import { CollectionCover } from "@/features/collections/components/CollectionCover";
-import { COLORS, SPACING } from "@/constants/theme";
-import type { Collection } from "@/features/collections/types/collection";
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, Pressable, useWindowDimensions, Platform } from 'react-native';
+import { ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react-native';
+import { CollectionCover } from '@/features/collections/components/CollectionCover';
+import { SPACING } from '@/constants/theme';
+import type { Collection } from '@/features/collections/types/collection';
 
 interface HomeHeroBannerProps {
   collections: Collection[];
@@ -18,119 +18,146 @@ export function HomeHeroBanner({
 }: HomeHeroBannerProps) {
   const { width } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
+
   const activeCollection = collections[activeIndex] || collections[0];
+
   const handleNext = useCallback(() => {
     if (collections.length <= 1) return;
     setActiveIndex((prev) => (prev + 1) % collections.length);
   }, [collections.length]);
+
   const handlePrev = useCallback(() => {
     if (collections.length <= 1) return;
-    setActiveIndex(
-      (prev) => (prev - 1 + collections.length) % collections.length,
-    );
+    setActiveIndex((prev) => (prev - 1 + collections.length) % collections.length);
   }, [collections.length]);
+
   useEffect(() => {
     if (collections.length <= 1) return;
     const timer = setInterval(handleNext, 6000);
     return () => clearInterval(timer);
   }, [collections.length, handleNext]);
+
   if (!activeCollection) return null;
+
   const heroImage =
     activeCollection.coverImages[1] || activeCollection.coverImages[0] || null;
 
+  const fontFamilyDisplay = Platform.OS === 'ios' ? 'Playfair Display' : 'serif';
+
   return (
-    <View className="w-full bg-editorial-background px-lg pb-12 pt-xxxl">
-      <View className="relative h-collection-hero w-full justify-end overflow-hidden rounded-catalog-gallery p-xl">
+    <View className="w-full bg-landing-obsidian px-lg pb-10 pt-6">
+      <View className="relative h-[480px] w-full justify-between overflow-hidden rounded-subtle border border-landing-paper/15 p-6">
         <CollectionCover
           imageUrl={heroImage}
           name={activeCollection.name}
           width={width - SPACING.lg * 2}
-          height={440}
+          height={480}
           alignTop
         />
-        <View className="items-center gap-lg">
-          <View className="rounded-full border border-on-primary/60 bg-surface-lowest/90 px-md py-xs">
-            <Text className="font-sans text-label-md font-bold uppercase tracking-widest text-primary-container">
-              {activeCollection.season || "Bộ sưu tập may đo"}
+
+        {/* Top Tag & Season */}
+        <View className="z-10 flex-row items-center gap-2.5">
+          <View className="h-px w-8 bg-landing-brass" />
+          <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-landing-brass">
+            {activeCollection.season || 'BỘ SƯU TẬP / 2026'}
+          </Text>
+        </View>
+
+        {/* Center / Bottom Editorial Content */}
+        <View className="z-10 gap-4">
+          <View>
+            <Text
+              style={{
+                fontFamily: fontFamilyDisplay,
+                fontSize: 30,
+                lineHeight: 36,
+                color: '#EFE9E1',
+              }}
+            >
+              Mặc đúng <Text style={{ fontStyle: 'italic', color: '#A67D44' }}>dáng</Text>.
+            </Text>
+            <Text
+              style={{
+                fontFamily: fontFamilyDisplay,
+                fontSize: 30,
+                lineHeight: 36,
+                color: '#EFE9E1',
+              }}
+            >
+              Sống đúng <Text style={{ fontStyle: 'italic', color: '#A67D44' }}>chất</Text>.
             </Text>
           </View>
-          <Text
-            numberOfLines={2}
-            className="text-center font-sans text-headline-lg font-bold text-on-primary"
-          >
-            {activeCollection.name}
-          </Text>
-          {activeCollection.description ? (
+
+          <View className="gap-1 border-l-2 border-landing-brass/60 pl-3">
             <Text
-              numberOfLines={2}
-              className="text-center font-sans text-body-md italic leading-relaxed text-on-primary/85"
+              numberOfLines={1}
+              className="font-sans text-label-md font-bold uppercase tracking-wider text-landing-paper"
             >
-              “{activeCollection.description}”
+              {activeCollection.name}
             </Text>
-          ) : null}
-          <View className="w-full flex-row flex-wrap items-center justify-center gap-md">
+            {activeCollection.description ? (
+              <Text
+                numberOfLines={2}
+                className="font-sans text-body-sm leading-relaxed text-landing-paper/75"
+              >
+                {activeCollection.description}
+              </Text>
+            ) : null}
+          </View>
+
+          {/* Action CTAs: Square / 2px corners */}
+          <View className="mt-2 flex-row flex-wrap items-center gap-3">
             <Pressable
               accessibilityRole="button"
               onPress={() => onPressCollection(activeCollection.slug)}
-              className="min-h-11 flex-row items-center justify-center gap-sm rounded-full bg-surface-lowest px-xl py-sm active:opacity-80"
+              className="min-h-11 flex-row items-center justify-center gap-2 rounded-subtle bg-landing-paper px-5 py-2.5 active:bg-landing-brass"
             >
-              <Text className="font-sans text-label-lg font-semibold text-on-surface-strong">
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
                 Khám phá BST
               </Text>
-              <ArrowRight size={16} color={COLORS.onSurfaceStrong} />
+              <ArrowUpRight size={14} color="#11100F" />
             </Pressable>
+
             <Pressable
               accessibilityRole="button"
               onPress={onPressTryOn}
-              className="min-h-11 items-center justify-center rounded-full border border-on-primary/10 bg-primary-container px-xl py-sm active:opacity-80"
+              className="min-h-11 items-center justify-center rounded-subtle border border-landing-paper/35 bg-transparent px-5 py-2.5 active:bg-landing-paper/10"
             >
-              <Text className="font-sans text-label-lg font-semibold text-on-primary">
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
                 Thử đồ AI
               </Text>
             </Pressable>
           </View>
         </View>
-      </View>
-      {collections.length > 1 ? (
-        <View className="mt-xxxl flex-row items-center justify-between gap-sm">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Bộ sưu tập trước"
-            onPress={handlePrev}
-            className="min-h-11 min-w-11 items-center justify-center rounded-full bg-surface-lowest/10 active:bg-surface-lowest/20"
-          >
-            <ChevronLeft size={20} color={COLORS.onPrimary} />
-          </Pressable>
-          <View className="flex-1 flex-row flex-wrap justify-center">
-            {collections.map((collection, index) => (
+
+        {/* Counter and Navigation Row */}
+        <View className="z-10 flex-row items-center justify-between border-t border-landing-paper/15 pt-3">
+          <Text className="font-mono text-[11px] tracking-[0.18em] text-landing-paper/60">
+            {String(activeIndex + 1).padStart(2, '0')} / {String(collections.length).padStart(2, '0')}
+          </Text>
+
+          {collections.length > 1 && (
+            <View className="flex-row items-center gap-2">
               <Pressable
-                key={collection.id}
                 accessibilityRole="button"
-                accessibilityLabel={`Hiển thị ${collection.name}`}
-                accessibilityState={{ selected: activeIndex === index }}
-                onPress={() => setActiveIndex(index)}
-                className="min-h-11 min-w-11 items-center justify-center"
+                accessibilityLabel="Bộ sưu tập trước"
+                onPress={handlePrev}
+                className="h-8 w-8 items-center justify-center rounded-subtle border border-landing-paper/20 bg-landing-obsidian/60 active:bg-landing-paper/20"
               >
-                <View
-                  className={
-                    activeIndex === index
-                      ? "h-2.5 w-8 rounded-full bg-tertiary-fixed"
-                      : "h-2.5 w-2.5 rounded-full bg-surface-lowest/30"
-                  }
-                />
+                <ChevronLeft size={16} color="#EFE9E1" />
               </Pressable>
-            ))}
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Bộ sưu tập tiếp theo"
-            onPress={handleNext}
-            className="min-h-11 min-w-11 items-center justify-center rounded-full bg-surface-lowest/10 active:bg-surface-lowest/20"
-          >
-            <ChevronRight size={20} color={COLORS.onPrimary} />
-          </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Bộ sưu tập tiếp theo"
+                onPress={handleNext}
+                className="h-8 w-8 items-center justify-center rounded-subtle border border-landing-paper/20 bg-landing-obsidian/60 active:bg-landing-paper/20"
+              >
+                <ChevronRight size={16} color="#EFE9E1" />
+              </Pressable>
+            </View>
+          )}
         </View>
-      ) : null}
+      </View>
     </View>
   );
 }

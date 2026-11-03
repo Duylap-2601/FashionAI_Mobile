@@ -24,6 +24,7 @@ function mapProductImage(image: BackendProductImage): IProductImage {
     id: image.id,
     productId: image.productId,
     imageUrl: image.imageUrl,
+    colorName: image.colorName ?? null,
     isMain: image.isMain,
     createdAt: image.createdAt,
   };

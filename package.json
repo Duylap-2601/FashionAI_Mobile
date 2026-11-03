@@ -4,6 +4,7 @@
   "main": "index.ts",
   "dependencies": {
     "@expo-google-fonts/be-vietnam-pro": "^0.4.1",
+    "@expo-google-fonts/playfair-display": "^0.4.2",
     "@expo/vector-icons": "^15.0.2",
     "@gluestack-ui/core": "^5.0.15",
     "@gluestack-ui/nativewind-utils": "^1.0.28",
