@@ -14,36 +14,16 @@ import { COLORS } from '@/constants/theme';
 function iconFor(type: NotificationType) {
   switch (type) {
     case 'ORDER_STATUS':
-      return {
-        Icon: Package,
-        color: COLORS.primaryContainer,
-        bgClassName: 'bg-primary-soft',
-      };
+      return { Icon: Package, color: COLORS.oxblood };
     case 'PAYMENT':
-      return {
-        Icon: CreditCard,
-        color: COLORS.success,
-        bgClassName: 'bg-success/15',
-      };
+      return { Icon: CreditCard, color: COLORS.sageInk };
     case 'PROMOTION':
-      return {
-        Icon: Tag,
-        color: COLORS.tertiary,
-        bgClassName: 'bg-tertiary/15',
-      };
+      return { Icon: Tag, color: COLORS.brassInk };
     case 'REVIEW':
-      return {
-        Icon: MessageSquare,
-        color: COLORS.warning,
-        bgClassName: 'bg-warning/15',
-      };
+      return { Icon: MessageSquare, color: COLORS.warning };
     case 'SYSTEM':
     default:
-      return {
-        Icon: Info,
-        color: COLORS.onSurfaceVariant,
-        bgClassName: 'bg-surface-low',
-      };
+      return { Icon: Info, color: COLORS.muted };
   }
 }
 
@@ -56,52 +36,52 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   item,
   onPress,
 }) => {
-  const { Icon, color, bgClassName } = iconFor(item.type);
+  const { Icon, color } = iconFor(item.type);
 
   return (
     <Pressable
       accessibilityLabel={item.title}
       onPress={() => onPress(item)}
-      className={`mx-xl flex-row gap-md rounded-xl border border-surface-line bg-surface-lowest p-md shadow-sm ${
-        item.isRead ? '' : 'border-outline-variant'
+      className={`mx-lg flex-row gap-3 rounded-subtle border bg-ivory py-3 pl-3 pr-4 active:opacity-80 ${
+        item.isRead
+          ? 'border-landing-line'
+          : 'border-l-2 border-landing-line border-l-oxblood'
       }`}
     >
-      <View
-        className={`h-11 w-11 items-center justify-center rounded-full ${bgClassName}`}
-      >
-        <Icon size={20} color={color} />
+      <View className="h-10 w-10 shrink-0 items-center justify-center border border-landing-line">
+        <Icon size={17} strokeWidth={1.5} color={color} />
       </View>
+
       <View className="flex-1">
-        <View className="flex-row items-center justify-between gap-sm">
+        <View className="flex-row items-start justify-between gap-3">
           <Text
-            className={`flex-1 text-body-sm text-on-surface ${
-              item.isRead ? '' : 'font-bold'
-            }`}
             numberOfLines={1}
+            className={`flex-1 font-sans text-body-sm ${
+              item.isRead
+                ? 'text-landing-obsidian/80'
+                : 'font-semibold text-landing-obsidian'
+            }`}
           >
             {item.title}
           </Text>
-          <Text className="text-body-sm text-on-surface-variant">
+          <Text className="shrink-0 font-mono text-[10px] text-landing-muted">
             {formatRelativeTime(item.createdAt)}
           </Text>
         </View>
         <Text
-          className="mt-xs text-body-sm leading-relaxed text-on-surface-variant"
           numberOfLines={2}
+          className="mt-1 font-sans text-body-sm leading-relaxed text-landing-muted"
         >
           {item.message}
         </Text>
         {item.data?.orderCode ? (
-          <View className="mt-xs self-start rounded-md bg-surface-low px-sm py-xs">
-            <Text className="text-body-sm text-on-surface-variant">
-              Mã đơn: #{String(item.data.orderCode)}
-            </Text>
-          </View>
+          <Text className="mt-1.5 self-start border border-landing-line px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-landing-muted">
+            Mã đơn #{String(item.data.orderCode)}
+          </Text>
         ) : null}
       </View>
-      {!item.isRead ? (
-        <View className="mt-sm h-2 w-2 rounded-full bg-primary-container" />
-      ) : null}
+
+      {!item.isRead ? <View className="mt-1.5 h-1.5 w-1.5 bg-oxblood" /> : null}
     </Pressable>
   );
 };

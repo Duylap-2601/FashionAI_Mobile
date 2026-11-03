@@ -33,6 +33,7 @@ import {
 import { useCartStore } from '@/features/cart/store/use-cart-store';
 import { AppHeader } from '@/components/common/AppHeader';
 import { BackButton } from '@/components/common/BackButton';
+import { COLORS } from '@/constants/theme';
 import { useOrders, useCancelOrder, useConfirmDelivery } from '../hooks/use-orders';
 import { formatDate } from '@/utils/date';
 
@@ -65,438 +66,166 @@ const STATUS_CONFIG: Record<
   CREATED: {
     label: 'PENDING',
     icon: Clock,
-    badgeBg: 'bg-[#FEF3C7]',
-    badgeBorder: 'border-[#FDE68A]',
-    badgeText: 'text-[#D97706]',
-    iconColor: '#D97706',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-brass',
+    badgeText: 'text-brass-ink',
+    iconColor: COLORS.brassInk,
     step: 0,
   },
   PENDING: {
     label: 'PENDING',
     icon: Clock,
-    badgeBg: 'bg-[#FEF3C7]',
-    badgeBorder: 'border-[#FDE68A]',
-    badgeText: 'text-[#D97706]',
-    iconColor: '#D97706',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-brass',
+    badgeText: 'text-brass-ink',
+    iconColor: COLORS.brassInk,
     step: 0,
   },
   PENDING_PAYMENT: {
     label: 'PENDING',
     icon: Clock,
-    badgeBg: 'bg-[#FEF3C7]',
-    badgeBorder: 'border-[#FDE68A]',
-    badgeText: 'text-[#D97706]',
-    iconColor: '#D97706',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-brass',
+    badgeText: 'text-brass-ink',
+    iconColor: COLORS.brassInk,
     step: 0,
   },
   PAID: {
     label: 'Đã thanh toán',
     icon: CheckCircle2,
-    badgeBg: 'bg-[#EFF6FF]',
-    badgeBorder: 'border-[#BFDBFE]',
-    badgeText: 'text-[#2563EB]',
-    iconColor: '#2563EB',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-landing-line',
+    badgeText: 'text-sage-ink',
+    iconColor: COLORS.sageInk,
     step: 1,
   },
   CONFIRMED: {
     label: 'Đã xác nhận',
     icon: CheckCircle2,
-    badgeBg: 'bg-[#EFF6FF]',
-    badgeBorder: 'border-[#BFDBFE]',
-    badgeText: 'text-[#2563EB]',
-    iconColor: '#2563EB',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-landing-line',
+    badgeText: 'text-sage-ink',
+    iconColor: COLORS.sageInk,
     step: 1,
   },
   PROCESSING: {
     label: 'Đang xử lý',
     icon: Scissors,
-    badgeBg: 'bg-[#EEF2FF]',
-    badgeBorder: 'border-[#C7D2FE]',
-    badgeText: 'text-[#4F46E5]',
-    iconColor: '#4F46E5',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-landing-line',
+    badgeText: 'text-landing-obsidian',
+    iconColor: COLORS.obsidian,
     step: 1,
   },
   MEASUREMENT_REVIEW: {
     label: 'Cần bổ sung số đo',
     icon: Scissors,
-    badgeBg: 'bg-[#FAF5FF]',
-    badgeBorder: 'border-[#E9D5FF]',
-    badgeText: 'text-[#7E22CE]',
-    iconColor: '#7E22CE',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-brass',
+    badgeText: 'text-brass-ink',
+    iconColor: COLORS.brassInk,
     step: 1,
   },
   MEASUREMENT_CONFIRMED: {
     label: 'Đang xử lý',
     icon: CheckCircle2,
-    badgeBg: 'bg-[#FAF5FF]',
-    badgeBorder: 'border-[#E9D5FF]',
-    badgeText: 'text-[#7E22CE]',
-    iconColor: '#7E22CE',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-brass',
+    badgeText: 'text-brass-ink',
+    iconColor: COLORS.brassInk,
     step: 1,
   },
   TAILORING: {
     label: 'Đang may',
     icon: Scissors,
-    badgeBg: 'bg-[#EEF2FF]',
-    badgeBorder: 'border-[#C7D2FE]',
-    badgeText: 'text-[#4F46E5]',
-    iconColor: '#4F46E5',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-landing-line',
+    badgeText: 'text-landing-obsidian',
+    iconColor: COLORS.obsidian,
     step: 1,
   },
   QUALITY_CHECK: {
     label: 'Đang kiểm tra',
     icon: CheckCircle2,
-    badgeBg: 'bg-[#ECFEFF]',
-    badgeBorder: 'border-[#A5F3FC]',
-    badgeText: 'text-[#0891B2]',
-    iconColor: '#0891B2',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-landing-line',
+    badgeText: 'text-landing-obsidian',
+    iconColor: COLORS.obsidian,
     step: 1,
   },
   READY_TO_SHIP: {
     label: 'Sẵn sàng giao',
     icon: Truck,
-    badgeBg: 'bg-[#F0F9FF]',
-    badgeBorder: 'border-[#BAE6FD]',
-    badgeText: 'text-[#0284C7]',
-    iconColor: '#0284C7',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-brass',
+    badgeText: 'text-brass-ink',
+    iconColor: COLORS.brassInk,
     step: 2,
   },
   SHIPPING: {
     label: 'Đang giao hàng',
     icon: Truck,
-    badgeBg: 'bg-[#5D1C34]/10',
-    badgeBorder: 'border-[#5D1C34]/20',
-    badgeText: 'text-[#5D1C34]',
-    iconColor: '#5D1C34',
+    badgeBg: 'bg-oxblood',
+    badgeBorder: 'border-oxblood',
+    badgeText: 'text-landing-paper',
+    iconColor: COLORS.paper,
     step: 3,
   },
   DELIVERED: {
     label: 'Đã giao',
     icon: CheckCircle2,
-    badgeBg: 'bg-[#ECFDF5]',
-    badgeBorder: 'border-[#A7F3D0]',
-    badgeText: 'text-[#059669]',
-    iconColor: '#059669',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-landing-line',
+    badgeText: 'text-sage-ink',
+    iconColor: COLORS.sageInk,
     step: 3,
   },
   COMPLETED: {
     label: 'Hoàn tất',
     icon: CheckCircle2,
-    badgeBg: 'bg-[#ECFDF5]',
-    badgeBorder: 'border-[#A7F3D0]',
-    badgeText: 'text-[#059669]',
-    iconColor: '#059669',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-landing-line',
+    badgeText: 'text-sage-ink',
+    iconColor: COLORS.sageInk,
     step: 3,
   },
   CANCELLED: {
     label: 'Đơn hàng đã bị hủy.',
     icon: XCircle,
-    badgeBg: 'bg-[#FEE2E2]',
-    badgeBorder: 'border-[#FECACA]',
-    badgeText: 'text-[#DC2626]',
-    iconColor: '#DC2626',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-danger',
+    badgeText: 'text-oxblood',
+    iconColor: COLORS.oxblood,
     step: -1,
   },
   EXPIRED: {
     label: 'Đơn hàng đã hết hạn thanh toán.',
     icon: XCircle,
-    badgeBg: 'bg-[#F3F4F6]',
-    badgeBorder: 'border-[#E5E7EB]',
-    badgeText: 'text-[#6B7280]',
-    iconColor: '#6B7280',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-landing-line',
+    badgeText: 'text-landing-muted',
+    iconColor: COLORS.muted,
     step: -1,
   },
   RETURNED: {
     label: 'Hoàn trả',
     icon: RotateCcw,
-    badgeBg: 'bg-[#F3F4F6]',
-    badgeBorder: 'border-[#E5E7EB]',
-    badgeText: 'text-[#6B7280]',
-    iconColor: '#6B7280',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-landing-line',
+    badgeText: 'text-landing-muted',
+    iconColor: COLORS.muted,
     step: -1,
   },
   FAILED: {
     label: 'Thất bại',
     icon: XCircle,
-    badgeBg: 'bg-[#FEE2E2]',
-    badgeBorder: 'border-[#FECACA]',
-    badgeText: 'text-[#DC2626]',
-    iconColor: '#DC2626',
+    badgeBg: 'bg-landing-paper',
+    badgeBorder: 'border-danger',
+    badgeText: 'text-oxblood',
+    iconColor: COLORS.oxblood,
     step: -1,
   },
 };
-
-// ─── Default Sample Orders (matching User Reference Screenshots) ──────────────
-const SAMPLE_ORDERS: any[] = [
-  {
-    id: '9027452',
-    orderCode: '9027452',
-    orderNumber: '9027452',
-    createdAt: '2026-10-06T10:00:00.000Z',
-    status: 'PENDING',
-    totalVnd: 610500,
-    totalAmount: 610500,
-    shippingFeeVnd: 60500,
-    shippingFee: 60500,
-    discountVnd: 0,
-    paymentStatus: 'PENDING',
-    paymentMethod: 'BANK_TRANSFER',
-    shippingInfo: {
-      address: 'Thị trấn An Phú, Huyện An Phú, An Giang',
-      phone: '0912345678',
-      name: 'Nguyễn Văn A',
-    },
-    items: [
-      {
-        id: 'item-1',
-        productId: 'prod-1',
-        productName: 'Áo Sơ Mi Tay Dài Bồng Họa Ti...',
-        product: { name: 'Áo Sơ Mi Tay Dài Bồng Họa Ti...' },
-        color: 'Trắng',
-        quantity: 1,
-        price: 550000,
-        productImageSnapshot:
-          'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=300&h=400&fit=crop&auto=format',
-      },
-    ],
-    history: [{ publicMessage: 'Đơn hàng đã được tạo và đang chờ thanh toán.' }],
-  },
-  {
-    id: '69290348',
-    orderCode: '69290348',
-    orderNumber: '69290348',
-    createdAt: '2026-10-05T14:30:00.000Z',
-    status: 'CANCELLED',
-    totalVnd: 1367000,
-    totalAmount: 1367000,
-    shippingFeeVnd: 67000,
-    shippingFee: 67000,
-    discountVnd: 0,
-    paymentStatus: 'CANCELLED',
-    paymentMethod: 'BANK_TRANSFER',
-    shippingInfo: {
-      address: 'Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh',
-      phone: '0901234567',
-    },
-    items: [
-      {
-        id: 'item-2',
-        productId: 'prod-2',
-        productName: 'Đầm Không Tay Dáng ...',
-        product: { name: 'Đầm Không Tay Dáng Xòe Công Sở' },
-        color: 'Be',
-        quantity: 1,
-        price: 750000,
-        productImageSnapshot:
-          'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=300&h=400&fit=crop&auto=format',
-      },
-      {
-        id: 'item-3',
-        productId: 'prod-3',
-        productName: 'Áo Sơ Mi Lụa Cổ V',
-        product: { name: 'Áo Sơ Mi Lụa Cổ V' },
-        color: 'Trắng',
-        quantity: 1,
-        price: 550000,
-        productImageSnapshot:
-          'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=300&h=400&fit=crop&auto=format',
-      },
-    ],
-    history: [{ publicMessage: 'Đơn hàng đã bị hủy.' }],
-  },
-  {
-    id: '26152602',
-    orderCode: '26152602',
-    orderNumber: '26152602',
-    createdAt: '2026-10-05T09:15:00.000Z',
-    status: 'EXPIRED',
-    totalVnd: 850000,
-    totalAmount: 850000,
-    shippingFeeVnd: 50000,
-    shippingFee: 50000,
-    discountVnd: 0,
-    paymentStatus: 'EXPIRED',
-    paymentMethod: 'SEPAY',
-    shippingInfo: {
-      address: 'Phường Dịch Vọng Hậu, Cầu Giấy, Hà Nội',
-      phone: '0988776655',
-    },
-    items: [
-      {
-        id: 'item-4',
-        productId: 'prod-4',
-        productName: 'Quần Tây Nữ Dáng Suông',
-        product: { name: 'Quần Tây Nữ Dáng Suông' },
-        color: 'Đen',
-        quantity: 1,
-        price: 800000,
-        productImageSnapshot:
-          'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=300&h=400&fit=crop&auto=format',
-      },
-    ],
-    history: [{ publicMessage: 'Đơn hàng đã hết hạn thanh toán.' }],
-  },
-  {
-    id: '15482910',
-    orderCode: '15482910',
-    orderNumber: '15482910',
-    createdAt: '2026-10-04T16:20:00.000Z',
-    status: 'COMPLETED',
-    totalVnd: 1250000,
-    totalAmount: 1250000,
-    shippingFeeVnd: 45000,
-    shippingFee: 45000,
-    discountVnd: 50000,
-    paymentStatus: 'PAID',
-    paymentMethod: 'SEPAY',
-    shippingInfo: {
-      address: 'Phường Thảo Điền, TP. Thủ Đức, TP. Hồ Chí Minh',
-      phone: '0933445566',
-    },
-    items: [
-      {
-        id: 'item-5',
-        productId: 'prod-5',
-        productName: 'Áo Blazer Công Sở Thiết Kế',
-        product: { name: 'Áo Blazer Công Sở Thiết Kế' },
-        color: 'Navy',
-        quantity: 1,
-        price: 1255000,
-        productImageSnapshot:
-          'https://images.unsplash.com/photo-1584273143981-41c073dfe8f8?w=300&h=400&fit=crop&auto=format',
-      },
-    ],
-    history: [{ publicMessage: 'Đơn hàng đã được giao thành công.' }],
-  },
-  {
-    id: '44829103',
-    orderCode: '44829103',
-    orderNumber: '44829103',
-    createdAt: '2026-10-03T11:00:00.000Z',
-    status: 'SHIPPING',
-    totalVnd: 980000,
-    totalAmount: 980000,
-    shippingFeeVnd: 40000,
-    shippingFee: 40000,
-    discountVnd: 0,
-    paymentStatus: 'PAID',
-    paymentMethod: 'MOMO',
-    shippingInfo: {
-      address: 'Phường Vĩnh Tuy, Quận Hai Bà Trưng, Hà Nội',
-      phone: '0977889900',
-    },
-    items: [
-      {
-        id: 'item-6',
-        productId: 'prod-6',
-        productName: 'Chân Váy Bút Chì Cao Cấp',
-        product: { name: 'Chân Váy Bút Chì Cao Cấp' },
-        color: 'Xám',
-        quantity: 1,
-        price: 940000,
-        productImageSnapshot:
-          'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=300&h=400&fit=crop&auto=format',
-      },
-    ],
-    history: [{ publicMessage: 'Đơn hàng đang trên đường vận chuyển.' }],
-  },
-  {
-    id: '78291024',
-    orderCode: '78291024',
-    orderNumber: '78291024',
-    createdAt: '2026-10-02T15:45:00.000Z',
-    status: 'TAILORING',
-    totalVnd: 1890000,
-    totalAmount: 1890000,
-    shippingFeeVnd: 50000,
-    shippingFee: 50000,
-    discountVnd: 0,
-    paymentStatus: 'PAID',
-    paymentMethod: 'BANK_TRANSFER',
-    shippingInfo: {
-      address: 'Phường 7, Quận 3, TP. Hồ Chí Minh',
-      phone: '0918273645',
-    },
-    items: [
-      {
-        id: 'item-7',
-        productId: 'prod-7',
-        productName: 'Set Vest May Đo Độc Bản',
-        product: { name: 'Set Vest May Đo Độc Bản' },
-        color: 'Đen Charcoal',
-        quantity: 1,
-        price: 1840000,
-        productImageSnapshot:
-          'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=300&h=400&fit=crop&auto=format',
-      },
-    ],
-    history: [{ publicMessage: 'Thợ may đang xử lý theo thông số cơ thể.' }],
-  },
-  {
-    id: '88392011',
-    orderCode: '88392011',
-    orderNumber: '88392011',
-    createdAt: '2026-10-01T08:30:00.000Z',
-    status: 'READY_TO_SHIP',
-    totalVnd: 690000,
-    totalAmount: 690000,
-    shippingFeeVnd: 40000,
-    shippingFee: 40000,
-    discountVnd: 0,
-    paymentStatus: 'PAID',
-    paymentMethod: 'BANK_TRANSFER',
-    shippingInfo: {
-      address: 'Phường Hòa Cường Bắc, Quận Hải Châu, Đà Nẵng',
-      phone: '0905112233',
-    },
-    items: [
-      {
-        id: 'item-8',
-        productId: 'prod-8',
-        productName: 'Áo Kiểu Phối Nơ Lụa',
-        product: { name: 'Áo Kiểu Phối Nơ Lụa' },
-        color: 'Kem',
-        quantity: 1,
-        price: 650000,
-        productImageSnapshot:
-          'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=300&h=400&fit=crop&auto=format',
-      },
-    ],
-    history: [{ publicMessage: 'Đơn hàng đã đóng gói và sẵn sàng bàn giao.' }],
-  },
-  {
-    id: '99201832',
-    orderCode: '99201832',
-    orderNumber: '99201832',
-    createdAt: '2026-09-28T14:10:00.000Z',
-    status: 'COMPLETED',
-    totalVnd: 1100000,
-    totalAmount: 1100000,
-    shippingFeeVnd: 50000,
-    shippingFee: 50000,
-    discountVnd: 0,
-    paymentStatus: 'PAID',
-    paymentMethod: 'SEPAY',
-    shippingInfo: {
-      address: 'Phường Láng Hạ, Đống Đa, Hà Nội',
-      phone: '0944556677',
-    },
-    items: [
-      {
-        id: 'item-9',
-        productId: 'prod-9',
-        productName: 'Đầm Ôm Body Công Sở',
-        product: { name: 'Đầm Ôm Body Công Sở' },
-        color: 'Xanh Navy',
-        quantity: 1,
-        price: 1050000,
-        productImageSnapshot:
-          'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=300&h=400&fit=crop&auto=format',
-      },
-    ],
-    history: [{ publicMessage: 'Đơn hàng đã hoàn tất.' }],
-  },
-];
 
 // Helper: Format price as "610.500đ"
 function fmtPrice(amount?: number | null): string {
@@ -578,13 +307,10 @@ export function OrdersScreen() {
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
   const [expandedOrders, setExpandedOrders] = useState<Set<string | number>>(new Set());
 
-  // Merge real orders if present, or fallback to sample orders to ensure exact match with screenshots
-  const allOrders = useMemo(() => {
-    if (fetchedOrders && Array.isArray(fetchedOrders) && fetchedOrders.length > 0) {
-      return fetchedOrders;
-    }
-    return SAMPLE_ORDERS;
-  }, [fetchedOrders]);
+  const allOrders = useMemo(
+    () => (fetchedOrders && Array.isArray(fetchedOrders) ? fetchedOrders : []),
+    [fetchedOrders],
+  );
 
   // Compute counts for each tab
   const tabCounts = useMemo(() => {
@@ -681,57 +407,76 @@ export function OrdersScreen() {
   };
 
   return (
-    <View className="flex-1 bg-[#FBF9F7]">
+    <View className="flex-1 bg-landing-paper">
       <AppHeader />
 
-      {/* ── Scrollable Body ── */}
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 16,
-          paddingBottom: 90,
+          paddingBottom: 96,
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
             onRefresh={() => refetch()}
-            colors={['#5D1C34']}
-            tintColor="#5D1C34"
+            colors={[COLORS.oxblood]}
+            tintColor={COLORS.oxblood}
           />
         }
       >
-        {/* ── Heading & Subtitle ── */}
         <BackButton onPress={() => navigation.goBack()} />
-        <Text className="mb-1 text-[28px] font-bold text-[#5D1C34]">Đơn hàng</Text>
-        <Text className="mb-4 text-[13.5px] text-[#6B7280]">
-          Theo dõi và quản lý tất cả đơn hàng của bạn
-        </Text>
+
+        <View className="mb-lg gap-3 border-b border-landing-line pb-5">
+          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
+            Tài khoản
+          </Text>
+          <View className="flex-row items-end justify-between gap-3">
+            <Text
+              accessibilityRole="header"
+              className="flex-1 font-display text-headline-lg text-landing-obsidian"
+            >
+              Đơn hàng
+            </Text>
+            <Text className="shrink-0 font-mono text-[11px] uppercase tracking-[0.16em] text-landing-muted">
+              {String(filteredOrders.length).padStart(2, '0')} đơn
+            </Text>
+          </View>
+          <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
+            Theo dõi và quản lý tất cả đơn hàng của bạn
+          </Text>
+        </View>
 
         {/* ── Search Bar ── */}
-        <View className="flex-row items-center bg-white border border-[#E5E7EB] rounded-full px-3.5 py-2.5 mb-4 shadow-2xs">
-          <Search size={16} color="#9CA3AF" />
+        <View className="mb-lg h-11 flex-row items-center border border-landing-line bg-ivory px-3.5">
+          <Search size={15} strokeWidth={1.75} color={COLORS.brassInk} />
           <TextInput
             placeholder="Tìm mã đơn, sản phẩm..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={COLORS.muted}
             value={search}
             onChangeText={setSearch}
-            className="flex-1 ml-2 text-[13.5px] text-[#1B1C1B] p-0"
+            className="ml-2.5 flex-1 p-0 font-sans text-body-md text-landing-obsidian"
           />
           {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <X size={15} color="#9CA3AF" />
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Xóa từ khóa tìm kiếm"
+              onPress={() => setSearch('')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              className="h-8 w-8 items-center justify-center"
+            >
+              <X size={15} strokeWidth={1.75} color={COLORS.muted} />
             </TouchableOpacity>
           )}
         </View>
 
-        {/* ── Horizontal Filter Tabs ── */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          className="-mx-4 px-4 mb-4"
-          contentContainerStyle={{ gap: 8 }}
+          className="-mx-4 mb-lg px-4"
+          contentContainerStyle={{ gap: 20 }}
         >
           {FILTER_TABS.map((tab) => {
             const isSelected = activeFilter === tab.id;
@@ -740,34 +485,27 @@ export function OrdersScreen() {
             return (
               <TouchableOpacity
                 key={tab.id}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
                 onPress={() => setActiveFilter(tab.id)}
-                className={`flex-row items-center gap-2 px-4 py-2 rounded-full ${
-                  isSelected
-                    ? 'bg-[#5D1C34]'
-                    : 'bg-white border border-[#E5E7EB]'
+                className={`h-11 flex-row items-center gap-1.5 border-b-2 ${
+                  isSelected ? 'border-oxblood' : 'border-transparent'
                 }`}
               >
                 <Text
-                  className={`text-[13px] ${
-                    isSelected ? 'font-bold text-white' : 'font-medium text-[#4B5563]'
+                  className={`font-sans text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                    isSelected ? 'text-oxblood' : 'text-landing-muted'
                   }`}
                 >
                   {tab.label}
                 </Text>
-
-                <View
-                  className={`px-2 py-0.5 rounded-full min-w-[20px] items-center justify-center ${
-                    isSelected ? 'bg-[#3E1222]' : 'bg-[#F3F4F6]'
+                <Text
+                  className={`font-mono text-[10.5px] ${
+                    isSelected ? 'text-oxblood' : 'text-landing-muted'
                   }`}
                 >
-                  <Text
-                    className={`text-[11px] font-bold ${
-                      isSelected ? 'text-white' : 'text-[#6B7280]'
-                    }`}
-                  >
-                    {count}
-                  </Text>
-                </View>
+                  {count}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -775,23 +513,28 @@ export function OrdersScreen() {
 
         {/* ── Order List ── */}
         {filteredOrders.length === 0 ? (
-          <View className="bg-white rounded-3xl border border-dashed border-[#D1D5DB] py-14 px-6 items-center justify-center my-3 shadow-2xs">
-            <View className="w-20 h-20 rounded-full bg-[#5D1C34]/5 items-center justify-center mb-4">
-              <Package size={38} color="#9CA3AF" />
+          <View className="my-3 items-center gap-5 border border-dashed border-taupe bg-ivory px-6 py-14">
+            <View className="h-16 w-16 items-center justify-center border border-landing-line">
+              <Package size={24} strokeWidth={1.5} color={COLORS.oxblood} />
             </View>
-            <Text className="text-[18px] font-bold text-[#1B1C1B] mb-1.5 text-center">
-              Chưa có đơn hàng nào
-            </Text>
-            <Text className="text-[13px] text-[#6B7280] text-center mb-6 max-w-[260px] leading-5">
-              {search
-                ? 'Không tìm thấy đơn hàng phù hợp với từ khóa tìm kiếm.'
-                : 'Bạn chưa có đơn hàng nào trong danh mục này.'}
-            </Text>
+            <View className="gap-2">
+              <Text className="text-center font-display text-[20px] text-landing-obsidian">
+                Chưa có đơn hàng nào
+              </Text>
+              <Text className="max-w-[260px] text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+                {search
+                  ? 'Không tìm thấy đơn hàng phù hợp với từ khóa tìm kiếm.'
+                  : 'Bạn chưa có đơn hàng nào trong danh mục này.'}
+              </Text>
+            </View>
             <TouchableOpacity
+              accessibilityRole="button"
               onPress={() => navigation.navigate('Main', { screen: 'ShopTab' })}
-              className="px-7 py-3 bg-[#5D1C34] rounded-full shadow-md"
+              className="h-11 items-center justify-center rounded-subtle bg-oxblood px-5 active:opacity-90"
             >
-              <Text className="text-[14px] font-bold text-white">Khám phá sản phẩm</Text>
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+                Khám phá sản phẩm
+              </Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -848,73 +591,75 @@ export function OrdersScreen() {
             return (
               <View
                 key={String(order.id)}
-                className="bg-white rounded-2xl border border-[#E5E7EB] shadow-xs mb-3.5 overflow-hidden"
+                className="mb-md overflow-hidden rounded-subtle border border-landing-line bg-ivory"
               >
-                {/* ── Top Header Row ── */}
-                <View className="p-4 pb-3 flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-1.5 flex-1 flex-wrap">
-                    <Text className="text-[14px] font-bold text-[#1B1C1B]">
-                      #{orderCode}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => handleCopyCode(orderCode, order.id)}
-                      className="p-1 rounded active:bg-[#F3F4F6]"
-                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                    >
-                      {isCopied ? (
-                        <CheckCircle2 size={13} color="#059669" />
-                      ) : (
-                        <Copy size={13} color="#9CA3AF" />
-                      )}
-                    </TouchableOpacity>
-                    <Text className="text-[12px] text-[#6B7280] ml-1">
+                <View className="flex-row items-start justify-between gap-3 border-b border-landing-line px-md pb-3 pt-3.5">
+                  <View className="flex-1 gap-1">
+                    <View className="flex-row items-center gap-1">
+                      <Text className="font-mono text-[12.5px] tracking-[0.02em] text-landing-obsidian">
+                        #{orderCode}
+                      </Text>
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel="Sao chép mã đơn hàng"
+                        onPress={() => handleCopyCode(orderCode, order.id)}
+                        className="h-8 w-8 items-center justify-center active:opacity-60"
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        {isCopied ? (
+                          <CheckCircle2 size={13} strokeWidth={1.75} color={COLORS.sageInk} />
+                        ) : (
+                          <Copy size={13} strokeWidth={1.75} color={COLORS.muted} />
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                    <Text className="font-mono text-[10px] uppercase tracking-[0.12em] text-landing-muted">
                       {formatDate(order.createdAt)}
                     </Text>
                   </View>
 
-                  {/* Status Badge */}
                   <View
-                    className={`flex-row items-center gap-1.5 px-2.5 py-1 rounded-full border ${cfg.badgeBg} ${cfg.badgeBorder}`}
+                    className={`flex-row items-center gap-1.5 rounded-subtle border px-2 py-1 ${cfg.badgeBg} ${cfg.badgeBorder}`}
                   >
-                    <StatusIcon size={12} color={cfg.iconColor} />
-                    <Text className={`text-[11px] font-bold ${cfg.badgeText}`}>
+                    <StatusIcon size={11} strokeWidth={1.75} color={cfg.iconColor} />
+                    <Text
+                      className={`font-sans text-[9.5px] font-semibold uppercase tracking-[0.14em] ${cfg.badgeText}`}
+                    >
                       {cfg.label}
                     </Text>
                   </View>
                 </View>
 
-                {/* ── Price & Toggle Detail Row ── */}
-                <View className="px-4 pb-3.5 flex-row items-center justify-between">
-                  <Text className="text-[15px] font-bold text-[#5D1C34]">
-                    {fmtPrice(total)}
-                  </Text>
+                <View className="flex-row items-center justify-between px-md py-3">
+                  <Text className="font-mono text-[15px] text-oxblood">{fmtPrice(total)}</Text>
 
                   <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={isExpanded ? 'Thu gọn chi tiết đơn hàng' : 'Xem chi tiết đơn hàng'}
                     onPress={() => toggleExpand(order.id)}
-                    className="flex-row items-center gap-1 active:opacity-70"
+                    className="h-11 flex-row items-center gap-1 active:opacity-70"
                     hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                   >
-                    <Text className="text-[12.5px] font-medium text-[#6B7280]">Chi tiết</Text>
+                    <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-muted">
+                      Chi tiết
+                    </Text>
                     {isExpanded ? (
-                      <ChevronUp size={14} color="#6B7280" />
+                      <ChevronUp size={14} strokeWidth={1.75} color={COLORS.muted} />
                     ) : (
-                      <ChevronDown size={14} color="#6B7280" />
+                      <ChevronDown size={14} strokeWidth={1.75} color={COLORS.muted} />
                     )}
                   </TouchableOpacity>
                 </View>
 
-                {/* Divider Line */}
-                <View className="h-px bg-[#F3F4F6]" />
+                <View className="h-px bg-landing-line" />
 
-                {/* ── Product Preview Row ── */}
-                <View className="p-4 flex-row items-center justify-between gap-3">
-                  <View className="flex-row items-center gap-3 flex-1 min-w-0">
-                    {/* Overlapping Thumbnails */}
-                    <View className="flex-row items-center -space-x-3">
+                <View className="flex-row items-center justify-between gap-3 px-md py-3">
+                  <View className="min-w-0 flex-1 flex-row items-center gap-3">
+                    <View className="flex-row items-center gap-1.5">
                       {items.slice(0, 2).map((it: any, idx: number) => (
                         <View
                           key={it.id || idx}
-                          className="w-12 h-14 rounded-xl bg-[#F3F4F6] border-2 border-white overflow-hidden shadow-2xs"
+                          className="h-14 w-12 overflow-hidden rounded-subtle border border-landing-line bg-landing-paper"
                         >
                           <Image
                             source={{ uri: getProductImage(it) }}
@@ -925,76 +670,75 @@ export function OrdersScreen() {
                       ))}
                     </View>
 
-                    {/* Product Name & Subtext */}
-                    <View className="flex-1 min-w-0">
+                    <View className="min-w-0 flex-1">
                       <Text
-                        className="text-[13px] font-bold text-[#1B1C1B]"
                         numberOfLines={1}
+                        className="font-display text-[15px] leading-snug text-landing-obsidian"
                       >
                         {firstItem?.product?.name ||
                           firstItem?.productName ||
                           'Sản phẩm công sở'}
                       </Text>
                       {remainingCount > 0 && (
-                        <Text className="text-[11.5px] text-[#6B7280] mt-0.5">
+                        <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-landing-muted">
                           và {remainingCount} sản phẩm khác
                         </Text>
                       )}
                     </View>
                   </View>
 
-                  {/* "Mua lại" Action Button */}
                   <TouchableOpacity
-                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    activeOpacity={0.9}
                     onPress={() => handleReorder(order)}
-                    className="flex-row items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#5D1C34] shadow-xs shrink-0"
+                    className="h-11 shrink-0 flex-row items-center gap-1.5 rounded-subtle bg-oxblood px-3.5 active:opacity-90"
                   >
-                    <ShoppingBag size={13} color="#FFFFFF" />
-                    <Text className="text-[12.5px] font-bold text-white">Mua lại</Text>
+                    <ShoppingBag size={13} strokeWidth={1.75} color={COLORS.paper} />
+                    <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-paper">
+                      Mua lại
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
-                {/* ── EXPANDABLE DETAIL ACCORDION (Screenshot 2) ── */}
                 {isExpanded && (
-                  <View className="border-t border-[#F3F4F6] p-4 pt-5 flex-col gap-6 bg-[#FAFAF9]/50">
-                    {/* 1. TRẠNG THÁI VẬN CHUYỂN */}
+                  <View className="gap-xl border-t border-landing-line bg-landing-paper/60 p-md pt-lg">
                     {cfg.step >= 0 && (
                       <View>
-                        <Text className="text-[11px] font-bold text-[#6B7280] tracking-wider uppercase mb-3.5">
-                          TRẠNG THÁI VẬN CHUYỂN
+                        <Text className="mb-3.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.18em] text-brass-ink">
+                          Trạng thái vận chuyển
                         </Text>
-                        <View className="flex-row items-center justify-between w-full px-1">
+                        <View className="w-full flex-row items-center justify-between px-1">
                           {STEPS.map((stepLabel, idx) => {
                             const isDone = idx <= cfg.step;
                             const isActive = idx === cfg.step;
 
                             return (
                               <React.Fragment key={stepLabel}>
-                                <View className="flex-col items-center flex-1">
+                                <View className="flex-1 flex-col items-center">
                                   <View
-                                    className={`w-7 h-7 rounded-full items-center justify-center border-2 mb-1.5 ${
+                                    className={`mb-1.5 h-6 w-6 items-center justify-center rounded-subtle border ${
                                       isDone
-                                        ? 'bg-[#5D1C34] border-[#5D1C34]'
-                                        : 'bg-white border-[#D1D5DB]'
+                                        ? 'border-oxblood bg-oxblood'
+                                        : 'border-landing-line bg-ivory'
                                     }`}
                                   >
                                     {isDone && (
                                       <Check
-                                        size={13}
-                                        color="#FFFFFF"
-                                        strokeWidth={3}
+                                        size={12}
+                                        strokeWidth={2.5}
+                                        color={COLORS.paper}
                                       />
                                     )}
                                   </View>
                                   <Text
-                                    className={`text-[10px] text-center leading-tight ${
-                                      isActive
-                                        ? 'font-bold text-[#5D1C34]'
-                                        : isDone
-                                        ? 'font-medium text-[#4B5563]'
-                                        : 'text-[#9CA3AF]'
-                                    }`}
                                     numberOfLines={1}
+                                    className={`text-center font-sans text-[9.5px] uppercase leading-tight tracking-[0.06em] ${
+                                      isActive
+                                        ? 'font-semibold text-oxblood'
+                                        : isDone
+                                          ? 'text-landing-obsidian/80'
+                                          : 'text-landing-muted'
+                                    }`}
                                   >
                                     {stepLabel}
                                   </Text>
@@ -1002,8 +746,8 @@ export function OrdersScreen() {
 
                                 {idx < STEPS.length - 1 && (
                                   <View
-                                    className={`h-[2px] flex-1 -mt-4 mx-0.5 rounded-full ${
-                                      idx < cfg.step ? 'bg-[#5D1C34]' : 'bg-[#E5E7EB]'
+                                    className={`mx-0.5 -mt-4 h-[2px] flex-1 ${
+                                      idx < cfg.step ? 'bg-oxblood' : 'bg-landing-line'
                                     }`}
                                   />
                                 )}
@@ -1014,44 +758,43 @@ export function OrdersScreen() {
                       </View>
                     )}
 
-                    {/* 2. SẢN PHẨM */}
                     <View>
-                      <Text className="text-[11px] font-bold text-[#6B7280] tracking-wider uppercase mb-3">
-                        SẢN PHẨM
+                      <Text className="mb-3 font-sans text-[10.5px] font-semibold uppercase tracking-[0.18em] text-brass-ink">
+                        Sản phẩm
                       </Text>
-                      <View className="flex-col gap-3">
+                      <View className="gap-2">
                         {items.map((it: any, itemIdx: number) => {
                           const itemTotal = (it.price || 0) * (it.quantity || 1);
 
                           return (
                             <View
                               key={it.id || itemIdx}
-                              className="flex-row items-center gap-3.5 p-2 rounded-xl bg-white border border-[#F3F4F6]"
+                              className="flex-row items-center gap-3 rounded-subtle border border-landing-line bg-ivory p-2"
                             >
-                              <View className="w-14 h-18 rounded-xl bg-[#F3F4F6] overflow-hidden shrink-0">
+                              <View className="h-[72px] w-14 shrink-0 overflow-hidden rounded-subtle border border-landing-line bg-landing-paper">
                                 <Image
                                   source={{ uri: getProductImage(it) }}
                                   style={{ width: 56, height: 72 }}
                                   contentFit="cover"
                                 />
                               </View>
-                              <View className="flex-1 min-w-0">
+                              <View className="min-w-0 flex-1">
                                 <Text
-                                  className="text-[13px] font-bold text-[#1B1C1B]"
                                   numberOfLines={1}
+                                  className="font-display text-[14px] leading-snug text-landing-obsidian"
                                 >
                                   {it.product?.name ||
                                     it.productName ||
                                     'Sản phẩm công sở'}
                                 </Text>
-                                <Text className="text-[12px] text-[#6B7280] mt-0.5">
+                                <Text className="mt-0.5 font-sans text-[11px] text-landing-muted">
                                   Màu: {it.color || 'Trắng'} · May đo
                                 </Text>
-                                <Text className="text-[12px] text-[#6B7280] mt-0.5">
+                                <Text className="mt-0.5 font-mono text-[10.5px] text-landing-muted">
                                   x{it.quantity || 1}
                                 </Text>
                               </View>
-                              <Text className="text-[14px] font-bold text-[#5D1C34] shrink-0">
+                              <Text className="shrink-0 font-mono text-[13px] text-oxblood">
                                 {fmtPrice(itemTotal)}
                               </Text>
                             </View>
@@ -1060,107 +803,123 @@ export function OrdersScreen() {
                       </View>
                     </View>
 
-                    {/* 3. ĐỊA CHỈ NHẬN HÀNG */}
                     <View>
-                      <Text className="text-[11px] font-bold text-[#6B7280] tracking-wider uppercase mb-2.5">
-                        ĐỊA CHỈ NHẬN HÀNG
+                      <Text className="mb-2.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.18em] text-brass-ink">
+                        Địa chỉ nhận hàng
                       </Text>
-                      <View className="flex-col gap-2 p-3 rounded-xl bg-white border border-[#F3F4F6]">
+                      <View className="gap-2 rounded-subtle border border-landing-line bg-ivory p-3">
                         <View className="flex-row items-start gap-2">
-                          <MapPin size={15} color="#9CA3AF" className="mt-0.5 shrink-0" />
-                          <Text className="text-[13px] text-[#374151] flex-1 leading-5">
+                          <MapPin
+                            size={14}
+                            strokeWidth={1.75}
+                            color={COLORS.brassInk}
+                            className="mt-0.5 shrink-0"
+                          />
+                          <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-muted">
                             {address}
                           </Text>
                         </View>
                         <View className="flex-row items-center gap-2">
-                          <Phone size={15} color="#9CA3AF" className="shrink-0" />
-                          <Text className="text-[13px] text-[#374151] font-medium">
+                          <Phone
+                            size={14}
+                            strokeWidth={1.75}
+                            color={COLORS.brassInk}
+                            className="shrink-0"
+                          />
+                          <Text className="font-mono text-[12px] text-landing-obsidian">
                             {phone}
                           </Text>
                         </View>
                       </View>
                     </View>
 
-                    {/* 4. THANH TOÁN */}
                     <View>
-                      <Text className="text-[11px] font-bold text-[#6B7280] tracking-wider uppercase mb-2.5">
-                        THANH TOÁN
+                      <Text className="mb-2.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.18em] text-brass-ink">
+                        Thanh toán
                       </Text>
-                      <View className="p-3.5 rounded-xl bg-white border border-[#F3F4F6] flex-col gap-2">
-                        <View className="flex-row justify-between items-center">
-                          <Text className="text-[13px] text-[#6B7280]">Phí giao hàng</Text>
-                          <Text className="text-[13px] font-semibold text-[#1B1C1B]">
+                      <View className="gap-2 rounded-subtle border border-landing-line bg-ivory p-3.5">
+                        <View className="flex-row items-center justify-between">
+                          <Text className="font-sans text-body-sm text-landing-muted">
+                            Phí giao hàng
+                          </Text>
+                          <Text className="font-mono text-[12px] text-landing-obsidian">
                             {fmtPrice(shippingFee)}
                           </Text>
                         </View>
 
                         {discount > 0 && (
-                          <View className="flex-row justify-between items-center">
-                            <Text className="text-[13px] text-[#6B7280]">Giảm giá</Text>
-                            <Text className="text-[13px] font-semibold text-[#059669]">
+                          <View className="flex-row items-center justify-between">
+                            <Text className="font-sans text-body-sm text-landing-muted">
+                              Giảm giá
+                            </Text>
+                            <Text className="font-mono text-[12px] text-sage-ink">
                               -{fmtPrice(discount)}
                             </Text>
                           </View>
                         )}
 
-                        <View className="flex-row justify-between items-center">
-                          <Text className="text-[13px] text-[#6B7280]">Thanh toán</Text>
-                          <Text className="text-[13px] font-bold text-[#D97706]">
+                        <View className="flex-row items-center justify-between">
+                          <Text className="font-sans text-body-sm text-landing-muted">
+                            Thanh toán
+                          </Text>
+                          <Text className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-brass-ink">
                             {order.paymentStatus || 'PENDING'}
                           </Text>
                         </View>
 
-                        <View className="h-px bg-[#F3F4F6] my-1" />
+                        <View className="my-1 h-px bg-landing-line" />
 
-                        <View className="flex-row justify-between items-center">
-                          <Text className="text-[14px] font-bold text-[#5D1C34]">
+                        <View className="flex-row items-center justify-between">
+                          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
                             Tổng cộng
                           </Text>
-                          <Text className="text-[16px] font-bold text-[#5D1C34]">
+                          <Text className="font-mono text-[16px] text-oxblood">
                             {fmtPrice(total)}
                           </Text>
                         </View>
 
-                        <Text className="text-[12px] text-[#6B7280] mt-1">
+                        <Text className="mt-1 font-mono text-[10.5px] text-landing-muted">
                           Phương thức: {order.paymentMethod || 'BANK_TRANSFER'}
                         </Text>
-                        <Text className="text-[11.5px] text-[#6B7280] leading-4">
+                        <Text className="font-sans text-[11px] leading-relaxed text-landing-muted">
                           Mốc mới nhất: {latestMessage}
                         </Text>
 
-                        {/* Extra Actions if applicable */}
-                        <View className="flex-row items-center gap-2 pt-2 mt-1 border-t border-[#F3F4F6]">
+                        <View className="mt-1 flex-row flex-wrap items-center gap-2 border-t border-landing-line pt-3">
                           <TouchableOpacity
+                            accessibilityRole="button"
                             onPress={() =>
                               navigation.navigate('OrderDetail', { orderId: order.id })
                             }
-                            className="flex-1 py-2 px-3 rounded-lg border border-[#E5E7EB] items-center justify-center flex-row gap-1"
+                            className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-subtle border border-landing-line active:bg-landing-paper"
                           >
-                            <Text className="text-[12px] font-semibold text-[#4B5563]">
+                            <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
                               Xem trang đơn
                             </Text>
-                            <ExternalLink size={12} color="#4B5563" />
+                            <ExternalLink size={12} strokeWidth={1.75} color={COLORS.obsidian} />
                           </TouchableOpacity>
 
                           {order.allowedActions?.confirmDelivery && (
                             <TouchableOpacity
+                              accessibilityRole="button"
                               onPress={() => handleConfirmDelivery(order)}
                               disabled={isConfirmingDelivery}
-                              className="py-2 px-3 rounded-lg bg-[#059669] items-center justify-center"
+                              className="h-11 items-center justify-center rounded-subtle bg-oxblood px-3.5 active:opacity-90 disabled:opacity-60"
                             >
-                              <Text className="text-[12px] font-bold text-white">
-                                {isConfirmingDelivery ? 'Đang xác nhận...' : 'Đã nhận hàng'}
+                              <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-paper">
+                                {isConfirmingDelivery ? 'Đang xác nhận…' : 'Đã nhận hàng'}
                               </Text>
                             </TouchableOpacity>
                           )}
 
                           {(order.allowedActions?.cancel || rawStatus === 'PENDING') && (
                             <TouchableOpacity
+                              accessibilityRole="button"
                               onPress={() => handleCancel(order)}
                               disabled={isCancelling}
-                              className="py-2 px-3 rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] items-center justify-center"
+                              className="h-11 items-center justify-center rounded-subtle border border-danger px-3.5 active:opacity-80 disabled:opacity-60"
                             >
-                              <Text className="text-[12px] font-semibold text-[#DC2626]">
+                              <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-oxblood">
                                 Hủy đơn
                               </Text>
                             </TouchableOpacity>

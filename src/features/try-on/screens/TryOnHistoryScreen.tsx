@@ -1,29 +1,20 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
   ActivityIndicator,
   Alert,
-  RefreshControl,
+  Animated,
+  FlatList,
   ListRenderItemInfo,
+  Pressable,
+  RefreshControl,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useNavigation } from '@react-navigation/native';
-import {
-  Search,
-  Camera,
-  Check,
-  Trash2,
-  Eye,
-  Download,
-  Zap,
-  MessageCircle,
-  X,
-  Sparkles,
-} from 'lucide-react-native';
+import { Check, Download, Eye, Search, Trash2, X, Zap } from 'lucide-react-native';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { AppHeader } from '@/components/common/AppHeader';
 import { BackButton } from '@/components/common/BackButton';
@@ -31,12 +22,58 @@ import { useTryOnHistory } from '@/features/try-on/hooks/use-try-on-history';
 import { useTryOnDelete } from '@/features/try-on/hooks/use-try-on-delete';
 import { tryOnApi } from '@/features/try-on/api/try-on.api';
 import { TryOnResult } from '@/features/try-on/types/try-on';
+import { COLORS } from '@/constants/theme';
 import { formatDate } from '@/utils/date';
 
-const CATEGORIES = ['Tất cả', 'Tops', 'Bottoms', 'One-pieces'] as const;
+type CategoryFilter = 'ALL' | 'UPPER' | 'LOWER' | 'FULL_BODY';
+
+const CATEGORIES: { id: CategoryFilter; label: string }[] = [
+  { id: 'ALL', label: 'Tất cả' },
+  { id: 'UPPER', label: 'Áo' },
+  { id: 'LOWER', label: 'Quần & váy' },
+  { id: 'FULL_BODY', label: 'Đồ liền' },
+];
+
+const EYEBROW_CLASS =
+  'font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink';
+
+const outlineButtonClass =
+  'h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:bg-landing-ivory';
+const outlineButtonTextClass =
+  'font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian';
+
+const SkeletonBlock: React.FC<{ width: number }> = ({ width }) => {
+  const [opacity] = useState(() => new Animated.Value(0.35));
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.35, duration: 700, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+
+  return (
+    <Animated.View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={{
+        width,
+        aspectRatio: 3 / 4,
+        opacity,
+        backgroundColor: COLORS.taupe,
+        borderRadius: 2,
+      }}
+    />
+  );
+};
 
 export const TryOnHistoryScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const { width } = useWindowDimensions();
   const { user } = useAuth();
   const userTier = (user?.tier || 'FREE').toUpperCase();
 
@@ -54,7 +91,7 @@ export const TryOnHistoryScreen: React.FC = () => {
   const { remove, removeMany } = useTryOnDelete();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('Tất cả');
+  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('ALL');
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
@@ -68,17 +105,20 @@ export const TryOnHistoryScreen: React.FC = () => {
       const productName = item.product?.name || (item as any).productId || 'Sản phẩm tự do';
       const matchesSearch = productName.toLowerCase().includes(searchTerm.toLowerCase().trim());
 
-      let matchesCategory = selectedCategory === 'Tất cả';
+      let matchesCategory = selectedCategory === 'ALL';
       if (!matchesCategory) {
         const c = (item.category || '').toUpperCase();
-        if (selectedCategory === 'Tops' && (c === 'UPPER' || c === 'TOPS' || c === 'AO')) {
-          matchesCategory = true;
-        }
-        if (selectedCategory === 'Bottoms' && (c === 'LOWER' || c === 'BOTTOMS' || c === 'QUAN' || c === 'VAY')) {
+        if (selectedCategory === 'UPPER' && (c === 'UPPER' || c === 'TOPS' || c === 'AO')) {
           matchesCategory = true;
         }
         if (
-          selectedCategory === 'One-pieces' &&
+          selectedCategory === 'LOWER' &&
+          (c === 'LOWER' || c === 'BOTTOMS' || c === 'QUAN' || c === 'VAY')
+        ) {
+          matchesCategory = true;
+        }
+        if (
+          selectedCategory === 'FULL_BODY' &&
           (c === 'FULL_BODY' || c === 'ONE_PIECE' || c === 'ONE-PIECES' || c === 'SUIT' || c === 'DO_LIEN')
         ) {
           matchesCategory = true;
@@ -95,6 +135,12 @@ export const TryOnHistoryScreen: React.FC = () => {
     }
     return filteredHistory;
   }, [userTier, filteredHistory]);
+
+  const isFiltered = searchTerm.trim().length > 0 || selectedCategory !== 'ALL';
+  const allVisibleSelected =
+    displayHistory.length > 0 && displayHistory.every((item) => selectedItems.has(item.id));
+
+  const cardWidth = (width - 32 - 16) / 2;
 
   // Bulk actions
   const toggleSelectAll = () => {
@@ -186,6 +232,11 @@ export const TryOnHistoryScreen: React.FC = () => {
     }
   };
 
+  const resetFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('ALL');
+  };
+
   // Render individual history card
   const renderItem = ({ item }: ListRenderItemInfo<TryOnResult>) => {
     const isSelected = selectedItems.has(item.id);
@@ -193,121 +244,132 @@ export const TryOnHistoryScreen: React.FC = () => {
     const isDownloadingThis = downloadingId === item.id;
 
     return (
-      <View
-        className={`flex-1 m-1.5 rounded-2xl bg-white border overflow-hidden shadow-xs ${
-          isSelected ? 'border-[#5D1C34] ring-2 ring-[#5D1C34]/20' : 'border-[#ECE8E3]'
-        }`}
-      >
-        {/* Image Container with 3:4 Aspect Ratio */}
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => navigation.navigate('TryOnDetail', { id: item.id })}
-          className="relative w-full bg-[#F3F4F6]"
+      <View style={{ width: cardWidth }} className="mb-8 min-w-0">
+        <View
+          className={`relative overflow-hidden rounded-subtle border bg-ivory ${
+            isSelected ? 'border-oxblood' : 'border-landing-line'
+          }`}
           style={{ aspectRatio: 3 / 4 }}
         >
-          <Image
-            source={{ uri: item.resultUrl }}
-            style={{ width: '100%', height: '100%' }}
-            contentFit="cover"
-            transition={200}
-          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Xem kết quả ${productName}`}
+            onPress={() => navigation.navigate('TryOnDetail', { id: item.id })}
+            className="h-full w-full active:opacity-90"
+          >
+            <Image
+              source={{ uri: item.resultUrl }}
+              style={{ width: '100%', height: '100%' }}
+              contentFit="cover"
+              transition={200}
+            />
+          </Pressable>
 
-          {/* Checkbox button top-left */}
-          <TouchableOpacity
-            activeOpacity={0.8}
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: isSelected }}
+            accessibilityLabel={`Chọn kết quả ${productName}`}
             onPress={() => toggleSelect(item.id)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            className={`absolute top-2.5 left-2.5 w-6 h-6 rounded-md items-center justify-center z-10 ${
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            className={`absolute left-2 top-2 h-7 w-7 items-center justify-center rounded-subtle border ${
               isSelected
-                ? 'bg-[#5D1C34] border border-[#5D1C34]'
-                : 'bg-white/80 border border-[#D1D5DB]'
+                ? 'border-oxblood bg-oxblood'
+                : 'border-landing-line bg-landing-paper/90'
             }`}
           >
-            {isSelected && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
-          </TouchableOpacity>
+            <Check
+              size={14}
+              strokeWidth={2.5}
+              color={isSelected ? COLORS.ivory : 'transparent'}
+            />
+          </Pressable>
 
-          {/* Cache hit badge top-right */}
-          {item.isCacheHit && (
-            <View className="absolute top-2.5 right-2.5 bg-[#F59E0B] rounded-full p-1 shadow-xs z-10">
-              <Zap size={12} color="#FFFFFF" />
+          {item.isCacheHit ? (
+            <View className="absolute right-2 top-2 h-6 w-6 items-center justify-center rounded-subtle bg-brass">
+              <Zap size={12} strokeWidth={2} color={COLORS.ivory} />
             </View>
-          )}
+          ) : null}
 
-          {/* Downloading spinner overlay */}
-          {isDownloadingThis && (
-            <View className="absolute inset-0 bg-black/40 items-center justify-center z-20">
-              <ActivityIndicator size="small" color="#FFFFFF" />
+          {isDownloadingThis ? (
+            <View className="absolute inset-0 items-center justify-center bg-landing-obsidian/40">
+              <ActivityIndicator size="small" color={COLORS.ivory} />
             </View>
-          )}
-        </TouchableOpacity>
+          ) : null}
+        </View>
 
-        {/* Card Info & Quick Actions */}
-        <View className="p-3">
-          <View className="flex-row items-center justify-between mb-1">
-            <Text className="text-[10px] font-bold text-[#5D1C34] uppercase tracking-wider">
-              {getGarmentsLabel(item)}
-            </Text>
-            <Text className="text-[10px] text-[#9CA3AF]">{formatDate(item.createdAt)}</Text>
-          </View>
-
-          <Text className="text-[13px] font-semibold text-[#1B1C1B] mb-2" numberOfLines={1}>
-            {productName}
+        <View className="mt-3 flex-row items-baseline justify-between gap-3">
+          <Text
+            numberOfLines={1}
+            className="flex-1 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-brass-ink"
+          >
+            {getGarmentsLabel(item)}
           </Text>
+          <Text className="shrink-0 font-mono text-[11px] text-landing-muted">
+            {formatDate(item.createdAt)}
+          </Text>
+        </View>
 
-          {/* Action Row */}
-          <View className="flex-row items-center justify-end gap-2 pt-2 border-t border-[#F3F4F6]">
-            <TouchableOpacity
-              onPress={() => navigation.navigate('TryOnDetail', { id: item.id })}
-              className="w-7 h-7 rounded-full bg-[#F3F4F6] items-center justify-center"
-              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-            >
-              <Eye size={13} color="#5D1C34" />
-            </TouchableOpacity>
+        <Text numberOfLines={1} className="mt-1 line-clamp-1 font-sans text-landing-obsidian">
+          {productName}
+        </Text>
 
-            <TouchableOpacity
-              onPress={() => handleDownload(item)}
-              disabled={isDownloadingThis}
-              className="w-7 h-7 rounded-full bg-[#F3F4F6] items-center justify-center"
-              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-            >
-              <Download size={13} color="#4B5563" />
-            </TouchableOpacity>
+        <View className="mt-3 flex-row gap-2">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Xem kết quả ${productName}`}
+            onPress={() => navigation.navigate('TryOnDetail', { id: item.id })}
+            hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
+            className="h-9 w-9 items-center justify-center rounded-subtle border border-landing-line active:border-oxblood"
+          >
+            <Eye size={14} strokeWidth={1.75} color={COLORS.oxblood} />
+          </Pressable>
 
-            <TouchableOpacity
-              onPress={() => handleDeleteItem(item.id)}
-              className="w-7 h-7 rounded-full bg-[#FEF2F2] items-center justify-center"
-              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-            >
-              <Trash2 size={13} color="#EF4444" />
-            </TouchableOpacity>
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Tải ảnh ${productName}`}
+            onPress={() => handleDownload(item)}
+            disabled={isDownloadingThis}
+            hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
+            className={`h-9 w-9 items-center justify-center rounded-subtle border border-landing-line active:border-oxblood ${
+              isDownloadingThis ? 'opacity-50' : ''
+            }`}
+          >
+            <Download size={14} strokeWidth={1.75} color={COLORS.muted} />
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Xoá kết quả ${productName}`}
+            onPress={() => handleDeleteItem(item.id)}
+            hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
+            className="h-9 w-9 items-center justify-center rounded-subtle border border-danger/40 active:opacity-70"
+          >
+            <Trash2 size={14} strokeWidth={1.75} color={COLORS.danger} />
+          </Pressable>
         </View>
       </View>
     );
   };
 
   return (
-    <View className="flex-1 bg-[#FBF9F7]">
+    <View className="flex-1 bg-landing-paper">
       <AppHeader />
 
-      {/* ── Main List & Content ── */}
       <FlatList
         className="flex-1"
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: 16,
-          paddingBottom: 90,
-        }}
+        contentContainerClassName="px-lg pt-lg pb-giant"
         data={displayHistory}
         keyExtractor={(item) => String(item.id)}
         numColumns={2}
+        columnWrapperClassName="gap-x-4"
         renderItem={renderItem}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={() => refetch()}
-            colors={['#5D1C34']}
-            tintColor="#5D1C34"
+            colors={[COLORS.oxblood]}
+            tintColor={COLORS.oxblood}
           />
         }
         onEndReached={() => {
@@ -315,190 +377,224 @@ export const TryOnHistoryScreen: React.FC = () => {
         }}
         onEndReachedThreshold={0.4}
         ListHeaderComponent={
-          <View className="mb-2">
-            {/* Title & Badge */}
-            <BackButton onPress={handleGoBack} label="Quay lại" />
-            <View className="mb-4 flex-row items-center gap-2.5">
-              <Text className="text-[26px] font-bold text-[#1B1C1B]">Lịch sử Try-On</Text>
-              {!isLoading && (
-                <View className="px-2.5 py-0.5 rounded-full bg-[#E5E7EB]">
-                  <Text className="text-[12px] font-bold text-[#4B5563]">
-                    {displayHistory.length}
-                  </Text>
-                </View>
-              )}
+          <View>
+            <View className="border-b border-landing-line pb-5">
+              <BackButton onPress={handleGoBack} />
+              <Text className={`${EYEBROW_CLASS} mt-1`}>Tài khoản</Text>
+              <Text
+                accessibilityRole="header"
+                className="mt-2 font-display text-headline-lg text-landing-obsidian"
+              >
+                Lịch sử thử đồ
+              </Text>
+              <Text className="mt-2 font-sans text-body-md leading-relaxed text-landing-muted">
+                Ảnh kết quả từ Thử đồ AI bằng ảnh. Ảnh chụp trong phiên thử trực tiếp không được
+                lưu ở đây.
+              </Text>
             </View>
 
-            {/* Search Input Bar */}
-            <View className="flex-row items-center bg-white border border-[#E5E7EB] rounded-full px-3.5 py-2.5 mb-3.5 shadow-2xs">
-              <Search size={16} color="#9CA3AF" />
+            <View className="mt-6 mb-5 h-11 flex-row items-center gap-2 rounded-subtle border border-landing-line bg-landing-paper/60 px-3">
+              <Search size={16} strokeWidth={1.75} color={COLORS.muted} />
               <TextInput
-                placeholder="Tìm theo tên sản phẩm..."
-                placeholderTextColor="#9CA3AF"
+                placeholder="Tìm theo tên sản phẩm…"
+                placeholderTextColor={COLORS.muted}
+                accessibilityLabel="Tìm theo tên sản phẩm"
                 value={searchTerm}
                 onChangeText={setSearchTerm}
-                className="flex-1 ml-2 text-[13.5px] text-[#1B1C1B] p-0"
+                className="flex-1 p-0 font-sans text-body-md text-landing-obsidian"
               />
-              {searchTerm.length > 0 && (
-                <TouchableOpacity
+              {searchTerm.length > 0 ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Xoá từ khoá tìm kiếm"
                   onPress={() => setSearchTerm('')}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+                  className="active:opacity-60"
                 >
-                  <X size={15} color="#9CA3AF" />
-                </TouchableOpacity>
-              )}
+                  <X size={16} strokeWidth={1.75} color={COLORS.muted} />
+                </Pressable>
+              ) : null}
             </View>
 
-            {/* Category Filter Pills */}
-            <View className="flex-row items-center bg-white border border-[#E5E7EB] rounded-full p-1 self-start mb-4 shadow-2xs">
-              {CATEGORIES.map((cat) => {
-                const isSelected = selectedCategory.toLowerCase() === cat.toLowerCase();
+            <View className="mb-6 flex-row gap-6 border-b border-landing-line">
+              {CATEGORIES.map((tab) => {
+                const isActive = selectedCategory === tab.id;
                 return (
-                  <TouchableOpacity
-                    key={cat}
-                    onPress={() => setSelectedCategory(cat)}
-                    className={`px-3.5 py-1.5 rounded-full ${
-                      isSelected ? 'bg-[#ECEAE6]' : 'bg-transparent'
-                    }`}
+                  <Pressable
+                    key={tab.id}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: isActive }}
+                    onPress={() => setSelectedCategory(tab.id)}
+                    className="relative h-11 justify-center active:opacity-70"
                   >
                     <Text
-                      className={`text-[12.5px] ${
-                        isSelected ? 'font-bold text-[#1B1C1B]' : 'font-medium text-[#6B7280]'
+                      className={`font-sans text-sm ${
+                        isActive ? 'font-medium text-oxblood' : 'text-landing-obsidian/70'
                       }`}
                     >
-                      {cat}
+                      {tab.label}
                     </Text>
-                  </TouchableOpacity>
+                    {isActive ? (
+                      <View className="absolute -bottom-px left-0 right-0 h-0.5 bg-oxblood" />
+                    ) : null}
+                  </Pressable>
                 );
               })}
             </View>
 
-            {/* Bulk Actions Sticky Header */}
-            {selectedItems.size > 0 && (
-              <View className="bg-[#5D1C34] px-4 py-2.5 rounded-2xl flex-row items-center justify-between mb-4 shadow-md">
-                <View className="flex-row items-center gap-2.5">
-                  <TouchableOpacity
-                    onPress={toggleSelectAll}
-                    className="w-5 h-5 rounded bg-white items-center justify-center"
-                  >
-                    <Check size={13} color="#5D1C34" strokeWidth={3} />
-                  </TouchableOpacity>
-                  <Text className="text-[13px] font-semibold text-white">
-                    Đã chọn {selectedItems.size} mục
-                  </Text>
-                </View>
-                <View className="flex-row items-center gap-2">
-                  <TouchableOpacity
+            {selectedItems.size > 0 ? (
+              <View
+                accessibilityLiveRegion="polite"
+                className="mb-6 flex-row flex-wrap items-center justify-between gap-3 border-y border-landing-line bg-landing-paper px-4 py-3"
+              >
+                <Text className="font-sans text-body-sm text-landing-obsidian">
+                  Đã chọn <Text className="font-mono">{selectedItems.size}</Text> kết quả
+                </Text>
+                <View className="flex-row gap-2">
+                  <Pressable
+                    accessibilityRole="button"
                     onPress={() => setSelectedItems(new Set())}
-                    className="px-3 py-1.5 rounded-lg active:bg-white/10"
+                    hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
+                    className="h-9 items-center justify-center rounded-subtle border border-landing-line px-4 active:bg-landing-ivory"
                   >
-                    <Text className="text-[12.5px] font-medium text-white/80">Hủy</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
+                    <Text className="font-sans text-xs font-medium text-landing-obsidian">
+                      Bỏ chọn
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
                     onPress={handleBulkDelete}
                     disabled={removeMany.isPending}
-                    className="flex-row items-center gap-1.5 px-3 py-1.5 bg-[#DC2626] rounded-lg shadow-sm"
+                    hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
+                    className={`h-9 items-center justify-center rounded-subtle border border-danger/40 px-4 ${
+                      removeMany.isPending ? 'opacity-50' : 'active:opacity-70'
+                    }`}
                   >
-                    <Trash2 size={13} color="#FFFFFF" />
-                    <Text className="text-[12.5px] font-semibold text-white">
-                      {removeMany.isPending ? 'Đang xóa...' : 'Xóa đã chọn'}
+                    <Text className="font-sans text-xs font-medium text-danger">
+                      {removeMany.isPending ? 'Đang xoá…' : 'Xoá đã chọn'}
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               </View>
-            )}
+            ) : null}
 
-            {/* Free Tier Limit Upgrade Banner */}
-            {userTier === 'FREE' && allItems.length > 10 && (
-              <View className="mb-4 bg-gradient-to-r bg-[#5D1C34]/5 border border-[#5D1C34]/15 rounded-2xl p-4 flex-row items-center justify-between gap-3">
-                <View className="flex-1">
-                  <View className="flex-row items-center gap-1.5 mb-1">
-                    <Sparkles size={14} color="#5D1C34" />
-                    <Text className="text-[13px] font-bold text-[#1B1C1B]">
-                      Bạn đang xem 10 kết quả gần nhất
-                    </Text>
-                  </View>
-                  <Text className="text-[12px] text-[#6B7280] leading-4">
+            {userTier === 'FREE' && allItems.length > 10 ? (
+              <View className="mb-5 flex-row items-center gap-3 border-l-2 border-brass bg-ivory px-4 py-3">
+                <View className="flex-1 gap-1">
+                  <Text className="font-sans text-body-sm font-semibold text-landing-obsidian">
+                    Bạn đang xem 10 kết quả gần nhất
+                  </Text>
+                  <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
                     Nâng lên Member bằng cách hoàn thành 1 đơn hàng để lưu trữ không giới hạn.
                   </Text>
                 </View>
-                <TouchableOpacity
+                <Pressable
+                  accessibilityRole="button"
                   onPress={() => navigation.navigate('Main', { screen: 'ShopTab' })}
-                  className="px-3.5 py-2 bg-[#5D1C34] rounded-xl shadow-xs shrink-0"
+                  hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
+                  className="h-9 shrink-0 items-center justify-center rounded-subtle border border-landing-line px-3 active:bg-landing-paper"
                 >
-                  <Text className="text-[12px] font-bold text-white">Mua hàng ngay</Text>
-                </TouchableOpacity>
+                  <Text className="font-sans text-xs font-medium text-landing-obsidian">
+                    Mua hàng ngay
+                  </Text>
+                </Pressable>
               </View>
-            )}
+            ) : null}
+
+            {displayHistory.length > 0 ? (
+              <View className="mb-4 flex-row items-center justify-between gap-4">
+                <Text className="font-sans text-xs text-landing-muted">
+                  <Text className="font-mono text-landing-obsidian">{displayHistory.length}</Text>{' '}
+                  kết quả
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={toggleSelectAll}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  className="justify-center py-2"
+                >
+                  <Text
+                    className={`font-sans text-xs underline-offset-4 ${
+                      allVisibleSelected ? 'text-oxblood' : 'text-landing-obsidian'
+                    }`}
+                  >
+                    {allVisibleSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
           </View>
         }
         ListEmptyComponent={
           isLoading ? (
-            <View className="py-24 items-center justify-center">
-              <ActivityIndicator size="large" color="#5D1C34" />
-              <Text className="text-[13px] text-[#6B7280] mt-3">Đang tải lịch sử thử đồ...</Text>
+            <View className="flex-row flex-wrap gap-x-4">
+              {[0, 1, 2, 3].map((key) => (
+                <View key={key} style={{ width: cardWidth }} className="mb-8">
+                  <SkeletonBlock width={cardWidth} />
+                </View>
+              ))}
             </View>
           ) : isError ? (
-            <View className="bg-white rounded-3xl border border-[#ECE8E3] py-12 px-6 items-center justify-center my-4">
-              <Text className="text-[16px] font-bold text-[#1B1C1B] mb-1">
+            <View className="items-center gap-2 rounded-subtle border border-landing-line bg-ivory px-6 py-12">
+              <Text className="text-center font-display text-headline-md text-landing-obsidian">
                 Không tải được lịch sử
               </Text>
-              <Text className="text-[13px] text-[#6B7280] text-center mb-4">
-                Vui lòng kiểm tra kết nối mạng và thử lại.
+              <Text className="mb-4 text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+                Kiểm tra kết nối rồi thử lại.
               </Text>
-              <TouchableOpacity
+              <Pressable
+                accessibilityRole="button"
                 onPress={() => refetch()}
-                className="px-6 py-2.5 bg-[#5D1C34] rounded-full"
+                className={outlineButtonClass}
               >
-                <Text className="text-[13px] font-bold text-white">Thử lại</Text>
-              </TouchableOpacity>
+                <Text className={outlineButtonTextClass}>Thử lại</Text>
+              </Pressable>
             </View>
           ) : (
-            /* Empty State matching FE screenshot */
-            <View className="bg-white rounded-3xl border border-dashed border-[#D1D5DB] py-14 px-6 items-center justify-center my-3 shadow-2xs">
-              <View className="w-24 h-24 rounded-full bg-[#5D1C34]/5 items-center justify-center mb-6">
-                <Camera size={44} color="#9CA3AF" strokeWidth={1.5} />
-              </View>
-              <Text className="text-[19px] font-bold text-[#1B1C1B] mb-2 text-center">
-                {searchTerm || selectedCategory !== 'Tất cả'
-                  ? 'Không tìm thấy kết quả'
-                  : 'Chưa có lịch sử thử đồ'}
+            <View className="items-center gap-2 rounded-subtle border border-landing-line bg-ivory px-6 py-14">
+              <Text className="text-center font-display text-2xl text-landing-obsidian">
+                {isFiltered ? 'Không có kết quả khớp' : 'Chưa có lịch sử thử đồ'}
               </Text>
-              <Text className="text-[13.5px] text-[#6B7280] text-center leading-5 mb-7 max-w-[280px]">
-                {searchTerm || selectedCategory !== 'Tất cả'
-                  ? 'Hãy thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn.'
-                  : 'Những bộ trang phục bạn đã thử bằng AI sẽ xuất hiện ở đây. Hãy khám phá và thử đồ ngay!'}
+              <Text className="mb-5 text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+                {isFiltered
+                  ? 'Đổi từ khóa hoặc loại trang phục.'
+                  : 'Kết quả Thử đồ AI bằng ảnh sẽ được lưu ở đây.'}
               </Text>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => navigation.navigate('Main', { screen: 'ShopTab' })}
-                className="px-8 py-3.5 bg-[#5D1C34] rounded-full shadow-md items-center justify-center"
-              >
-                <Text className="text-white font-bold text-[14.5px]">Khám phá sản phẩm</Text>
-              </TouchableOpacity>
+              {isFiltered ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={resetFilters}
+                  className={outlineButtonClass}
+                >
+                  <Text className={outlineButtonTextClass}>Xem tất cả</Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() =>
+                    navigation.navigate('Main', {
+                      screen: 'TryOnTab',
+                      params: { screen: 'TryOnHome' },
+                    })
+                  }
+                  className="h-11 items-center justify-center rounded-subtle bg-oxblood px-5 active:opacity-90"
+                >
+                  <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+                    Mở phòng thử
+                  </Text>
+                </Pressable>
+              )}
             </View>
           )
         }
         ListFooterComponent={
           isFetchingNextPage ? (
             <View className="py-4 items-center justify-center">
-              <ActivityIndicator size="small" color="#5D1C34" />
+              <ActivityIndicator size="small" color={COLORS.oxblood} />
             </View>
           ) : null
         }
       />
-
-      {/* ── Floating AI Chat Button ── */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => navigation.navigate('Stylist')}
-        className="absolute bottom-6 right-5 w-14 h-14 rounded-full bg-[#5D1C34] shadow-lg shadow-black/30 items-center justify-center z-30"
-      >
-        <MessageCircle size={24} color="#FFFFFF" />
-        <View className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#F59E0B] border-2 border-white items-center justify-center">
-          <Text className="text-[10px] font-bold text-black">1</Text>
-        </View>
-      </TouchableOpacity>
     </View>
   );
 };

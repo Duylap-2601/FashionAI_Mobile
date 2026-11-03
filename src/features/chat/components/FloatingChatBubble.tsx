@@ -26,15 +26,18 @@ export const FloatingChatBubble: React.FC = () => {
   const focusedRouteName = useNavigationState((state) =>
     getLeafRouteName(state.routes[state.index]),
   );
+  const activeTabRoute = useNavigationState((state) => {
+    const rootRoute = state.routes[state.index];
+    return rootRoute?.state
+      ? rootRoute.state.routes[rootRoute.state.index ?? 0]
+      : undefined;
+  });
+  const isProfileTab = activeTabRoute?.name === 'ProfileTab';
   const isTryOnRoute =
     focusedRouteName === 'TryOnHome' || focusedRouteName === 'TryOnLive';
 
-  if (focusedRouteName === 'Orders') {
-    return null;
-  }
-
-  // Phòng thử đồ không cần bubble chat.
-  if (isTryOnRoute) {
+  // Các màn tài khoản và phòng thử đồ không cần bubble chat.
+  if (isProfileTab || focusedRouteName === 'Orders' || isTryOnRoute) {
     return null;
   }
 
