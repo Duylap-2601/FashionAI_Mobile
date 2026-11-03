@@ -37,33 +37,35 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   onPress,
 }) => {
   const { Icon, color } = iconFor(item.type);
+  const unread = !item.isRead;
 
   return (
     <Pressable
       accessibilityLabel={item.title}
       onPress={() => onPress(item)}
-      className={`mx-lg flex-row gap-3 rounded-subtle border bg-ivory py-3 pl-3 pr-4 active:opacity-80 ${
-        item.isRead
-          ? 'border-landing-line'
-          : 'border-l-2 border-landing-line border-l-oxblood'
+      className={`flex-row gap-3 border-b border-landing-line px-lg py-3.5 active:opacity-80 ${
+        unread ? 'bg-white' : 'bg-transparent'
       }`}
     >
-      <View className="h-10 w-10 shrink-0 items-center justify-center border border-landing-line">
-        <Icon size={17} strokeWidth={1.5} color={color} />
+      <View className="h-9 w-9 shrink-0 items-center justify-center border border-landing-line bg-landing-paper">
+        <Icon size={16} strokeWidth={1.5} color={color} />
       </View>
 
       <View className="flex-1">
         <View className="flex-row items-start justify-between gap-3">
-          <Text
-            numberOfLines={1}
-            className={`flex-1 font-sans text-body-sm ${
-              item.isRead
-                ? 'text-landing-obsidian/80'
-                : 'font-semibold text-landing-obsidian'
-            }`}
-          >
-            {item.title}
-          </Text>
+          <View className="flex-1 flex-row items-start gap-1.5">
+            {unread ? <View className="mt-1.5 h-1.5 w-1.5 bg-oxblood" /> : null}
+            <Text
+              numberOfLines={2}
+              className={`flex-1 font-sans text-body-sm ${
+                unread
+                  ? 'font-semibold text-landing-obsidian'
+                  : 'text-landing-obsidian/80'
+              }`}
+            >
+              {item.title}
+            </Text>
+          </View>
           <Text className="shrink-0 font-mono text-[10px] text-landing-muted">
             {formatRelativeTime(item.createdAt)}
           </Text>
@@ -75,13 +77,11 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           {item.message}
         </Text>
         {item.data?.orderCode ? (
-          <Text className="mt-1.5 self-start border border-landing-line px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-landing-muted">
+          <Text className="mt-1.5 self-start font-mono text-[11px] text-landing-obsidian/70">
             Mã đơn #{String(item.data.orderCode)}
           </Text>
         ) : null}
       </View>
-
-      {!item.isRead ? <View className="mt-1.5 h-1.5 w-1.5 bg-oxblood" /> : null}
     </Pressable>
   );
 };

@@ -678,7 +678,7 @@ export function CheckoutScreen() {
   const addressCard = hasShippingAddress ? (
     <View className="rounded-subtle border border-landing-line bg-ivory px-4 py-4">
       <View className="flex-row items-start justify-between gap-3">
-        <View className="min-w-0 flex-1 flex-row flex-wrap items-center">
+        <View className="min-w-0 flex-1 flex-row flex-wrap items-baseline">
           <Text className="font-sans text-body-md font-medium text-landing-obsidian">
             {selectedAddress?.recipientName || manualAddress?.recipientName}
           </Text>
@@ -904,7 +904,7 @@ export function CheckoutScreen() {
                   multiline
                   maxLength={500}
                   textAlignVertical="top"
-                  className="mt-2 min-h-[88px] rounded-subtle border border-landing-line bg-landing-paper/60 px-3.5 py-3 font-sans text-body-md leading-relaxed text-landing-obsidian"
+                  className="mt-2 min-h-[88px] rounded-subtle border border-landing-line bg-ivory px-3.5 py-3 font-sans text-body-md leading-relaxed text-landing-obsidian"
                 />
               </View>
             </View>

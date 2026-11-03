@@ -167,7 +167,7 @@ export const NotificationsScreen: React.FC = () => {
           if (hasNextPage && !isFetchingNextPage) fetchNextPage();
         }}
         onEndReachedThreshold={0.4}
-        ItemSeparatorComponent={() => <View className="h-3" />}
+        ItemSeparatorComponent={() => null}
         ListHeaderComponent={
           <View className="gap-4 pb-4">
             <View className="gap-2 border-b border-landing-line px-lg pb-5 pt-lg">

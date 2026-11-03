@@ -72,7 +72,7 @@ function ProductDetail({
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <View className="flex-row items-center gap-1">
+        <View className="flex-row items-center gap-1.5 pr-1">
           <NotificationBell />
           <ProductCartButton onPress={openCart} />
         </View>
