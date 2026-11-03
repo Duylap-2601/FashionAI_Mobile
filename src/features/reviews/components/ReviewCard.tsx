@@ -38,6 +38,8 @@ interface ReviewCardProps {
 export function ReviewCard({ review, owned, onEdit, onDelete }: ReviewCardProps) {
   const displayName = review.user?.name?.trim() || 'Người dùng FashionAI';
   const initial = displayName.charAt(0).toLocaleUpperCase('vi-VN');
+  const avatarUrl = review.user?.avatarUrl ?? null;
+  const [avatarFailed, setAvatarFailed] = useState(false);
 
   return (
     <Card variant="outlined" className="mx-lg !rounded-2xl !border-catalog-line !p-xxl">
@@ -49,9 +51,22 @@ export function ReviewCard({ review, owned, onEdit, onDelete }: ReviewCardProps)
       ) : null}
 
       <View className="flex-row items-start gap-md">
-        <View className="h-10 w-10 items-center justify-center rounded-full bg-catalog-muted">
-          <Text className="font-sans text-body-md font-bold text-primary-container">{initial}</Text>
-        </View>
+        {avatarUrl && !avatarFailed ? (
+          <View className="h-10 w-10 overflow-hidden rounded-full border border-catalog-line bg-catalog-muted">
+            <Image
+              accessibilityLabel={`Ảnh đại diện của ${displayName}`}
+              source={{ uri: avatarUrl }}
+              contentFit="cover"
+              transition={150}
+              style={StyleSheet.absoluteFill}
+              onError={() => setAvatarFailed(true)}
+            />
+          </View>
+        ) : (
+          <View className="h-10 w-10 items-center justify-center rounded-full bg-catalog-muted">
+            <Text className="font-sans text-body-md font-bold text-primary-container">{initial}</Text>
+          </View>
+        )}
         <View className="flex-1">
           <Text className="font-sans text-body-md font-semibold text-primary-container">{displayName}</Text>
           <Text className="mt-xs font-sans text-body-sm text-catalog-muted-text">{formatReviewDate(review.createdAt)}</Text>

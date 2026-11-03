@@ -5,7 +5,6 @@ import {
   LayoutChangeEvent,
   ListRenderItem,
   Pressable,
-  ScrollView,
   Text,
   View,
 } from "react-native";
@@ -15,22 +14,33 @@ import {
 } from "@react-navigation/native";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { EmptyState } from "@/components/common/EmptyState";
+import { ProductsEmptyState } from "../components/ProductsEmptyState";
 import { ErrorView } from "@/components/common/ErrorView";
 import { Input } from "@/components/ui/Input";
 import { COLORS, SPACING } from "@/constants/theme";
-import { Search, SlidersHorizontal } from "lucide-react-native";
+import {
+  ArrowUpDown,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react-native";
 import { MainTabParamList, RootStackParamList } from "@/navigation/types";
+import { GarmentTypeTabs } from "../components/GarmentTypeTabs";
 import { ProductCard } from "../components/ProductCard";
 import {
   ProductFilterModal,
   ProductFilterSelection,
 } from "../components/ProductFilterModal";
 import { ProductGridSkeleton } from "../components/ProductGridSkeleton";
+import { ProductSortSheet } from "../components/ProductSortSheet";
 import { useDebouncedValue } from "../hooks/use-debounced-value";
 import { useProducts } from "../hooks/useProducts";
 import { useFilterStore } from "../store/use-filter-store";
-import { GarmentType, IProduct, IProductListFilters } from "../types/product";
+import {
+  GarmentType,
+  IProduct,
+  IProductListFilters,
+  ProductSort,
+} from "../types/product";
 
 type ShopNavigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, "ShopTab">,
@@ -38,16 +48,6 @@ type ShopNavigation = CompositeNavigationProp<
 >;
 
 const PRODUCT_LIMIT = 20;
-const GARMENT_TABS: { label: string; value: GarmentType | null }[] = [
-  { label: "Tất cả", value: null },
-  { label: "Áo sơ mi", value: "SHIRT" },
-  { label: "Áo vest", value: "VEST" },
-  { label: "Áo khoác", value: "JACKET" },
-  { label: "Quần", value: "PANTS" },
-  { label: "Chân váy", value: "SKIRT" },
-  { label: "Đầm", value: "DRESS" },
-  { label: "Jumpsuit", value: "JUMPSUIT" },
-];
 
 export const ShopScreen: React.FC = () => {
   const navigation = useNavigation<ShopNavigation>();
@@ -55,6 +55,7 @@ export const ShopScreen: React.FC = () => {
   const category = useFilterStore((state) => state.category);
   const garmentType = useFilterStore((state) => state.garmentType);
   const color = useFilterStore((state) => state.color);
+  const subCategory = useFilterStore((state) => state.subCategory);
   const material = useFilterStore((state) => state.material);
   const minPrice = useFilterStore((state) => state.minPrice);
   const maxPrice = useFilterStore((state) => state.maxPrice);
@@ -63,7 +64,9 @@ export const ShopScreen: React.FC = () => {
   const setFilters = useFilterStore((state) => state.setFilters);
 
   const [searchInput, setSearchInput] = useState(search);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(false);
+  const [sortSheetVisible, setSortSheetVisible] = useState(false);
   const [layoutWidth, setLayoutWidth] = useState(0);
   const debouncedSearch = useDebouncedValue(searchInput, 400);
 
@@ -79,12 +82,22 @@ export const ShopScreen: React.FC = () => {
       category,
       garmentType,
       color,
+      subCategory,
       material,
       minPrice,
       maxPrice,
       sort,
     }),
-    [category, color, garmentType, material, maxPrice, minPrice, sort],
+    [
+      category,
+      color,
+      garmentType,
+      material,
+      maxPrice,
+      minPrice,
+      sort,
+      subCategory,
+    ],
   );
 
   const queryFilters = useMemo<IProductListFilters>(
@@ -93,6 +106,7 @@ export const ShopScreen: React.FC = () => {
       ...(category ? { category } : {}),
       ...(garmentType ? { garmentType } : {}),
       ...(color ? { color } : {}),
+      ...(subCategory ? { subCategory } : {}),
       ...(material ? { material } : {}),
       ...(minPrice !== null ? { minPrice } : {}),
       ...(maxPrice !== null ? { maxPrice } : {}),
@@ -110,6 +124,7 @@ export const ShopScreen: React.FC = () => {
       search,
       sort,
       status,
+      subCategory,
     ],
   );
 
@@ -129,13 +144,16 @@ export const ShopScreen: React.FC = () => {
     [data],
   );
   const totalProducts = data?.pages[0]?.meta.total ?? products.length;
-  const activeFilterCount = useMemo(
-    () =>
-      [category, garmentType, color, material, minPrice, maxPrice].filter(
-        (value) => value !== null && value !== "",
-      ).length + (sort === "latest" ? 0 : 1),
-    [category, color, garmentType, material, maxPrice, minPrice, sort],
-  );
+  const activeFilterCount = useMemo(() => {
+    const countValues = (value: string | null) =>
+      value ? value.split(",").filter(Boolean).length : 0;
+
+    return (
+      countValues(color) +
+      countValues(subCategory) +
+      (maxPrice !== null ? 1 : 0)
+    );
+  }, [color, maxPrice, subCategory]);
   const hasActiveFilters = activeFilterCount > 0;
   const productCardWidth = Math.max(
     1,
@@ -163,9 +181,22 @@ export const ShopScreen: React.FC = () => {
       material: null,
       minPrice: null,
       maxPrice: null,
-      sort: "latest",
     });
   }, [setFilters]);
+
+  const handleSelectGarmentType = useCallback(
+    (value: GarmentType | null) => {
+      setFilters({ garmentType: value });
+    },
+    [setFilters],
+  );
+
+  const handleSelectSort = useCallback(
+    (value: ProductSort) => {
+      setFilters({ sort: value });
+    },
+    [setFilters],
+  );
 
   const handleApplyFilters = useCallback(
     (selection: ProductFilterSelection) => {
@@ -201,74 +232,91 @@ export const ShopScreen: React.FC = () => {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const header = (
-    <View className="gap-sm pb-lg pt-lg">
-      <Input
-        accessibilityLabel="Tìm kiếm sản phẩm"
-        autoCapitalize="none"
-        autoCorrect={false}
-        containerClassName="mx-lg !mb-0"
-        fieldContainerClassName="!rounded-full !border-catalog-line !bg-surface-lowest"
-        className="min-h-11 !py-sm font-sans !text-body-sm"
-        leftIcon={<Search size={16} color={COLORS.catalogMutedText} />}
-        placeholder="Tìm sản phẩm, chất liệu, phong cách..."
-        returnKeyType="search"
-        value={searchInput}
-        onChangeText={setSearchInput}
-        rightIcon={
-          searchInput ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Xóa tìm kiếm"
-              onPress={handleClearSearch}
-              className="min-h-11 min-w-11 items-center justify-center active:opacity-70"
-            >
-              <Text className="font-sans text-headline-md text-catalog-muted-text">
-                ×
-              </Text>
-            </Pressable>
-          ) : null
-        }
-      />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerClassName="gap-lg px-lg"
-      >
-        {GARMENT_TABS.map((tab) => (
-          <Pressable
-            key={tab.value ?? "all"}
-            accessibilityRole="button"
-            accessibilityState={{ selected: garmentType === tab.value }}
-            onPress={() => setFilters({ garmentType: tab.value })}
-            className="min-h-11 min-w-11 items-center justify-center gap-xs active:opacity-70"
-          >
-            <Text
-              className={`font-sans text-body-sm font-semibold ${garmentType === tab.value ? "text-primary-container" : "text-catalog-muted-text"}`}
-            >
-              {tab.label}
-            </Text>
-            <View
-              className={`h-1 w-1 rounded-full ${garmentType === tab.value ? "bg-primary-container" : "bg-transparent"}`}
-            />
-          </Pressable>
-        ))}
-      </ScrollView>
-      <View className="flex-row items-center justify-between border-b border-catalog-line px-lg pb-xs">
-        <Text className="font-sans text-body-sm tabular-nums text-catalog-muted-text">
-          {totalProducts.toLocaleString("vi-VN")} sản phẩm
-        </Text>
+    <View className="gap-md pb-lg pt-lg">
+      <View className="flex-row items-center gap-sm px-lg">
+        <Input
+          accessibilityLabel="Tìm kiếm sản phẩm"
+          autoCapitalize="none"
+          autoCorrect={false}
+          containerClassName="flex-1 !mb-0"
+          fieldContainerClassName={`!rounded-subtle !bg-landing-ivory !px-sm ${
+            isSearchFocused
+              ? "!border-2 !border-landing-oxblood"
+              : "!border-landing-line"
+          }`}
+          className="font-sans !text-body-sm"
+          leftIcon={<Search size={16} color={COLORS.catalogMutedText} />}
+          placeholder="Tìm sản phẩm"
+          returnKeyType="search"
+          value={searchInput}
+          onChangeText={setSearchInput}
+          onFocus={() => setIsSearchFocused(true)}
+          onBlur={() => setIsSearchFocused(false)}
+          rightIcon={
+            searchInput ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Xóa tìm kiếm"
+                onPress={handleClearSearch}
+                className="min-h-11 min-w-11 items-center justify-center active:opacity-70"
+              >
+                <Text className="font-sans text-headline-md text-catalog-muted-text">
+                  ×
+                </Text>
+              </Pressable>
+            ) : null
+          }
+        />
+
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Mở bộ lọc${activeFilterCount ? `, ${activeFilterCount} đang áp dụng` : ""}`}
           onPress={() => setFiltersVisible(true)}
-          className="min-h-11 flex-row items-center gap-sm active:opacity-70"
+          className="h-11 flex-row items-center gap-1.5 rounded-subtle border border-landing-obsidian px-3 active:opacity-70"
         >
-          <SlidersHorizontal size={14} color={COLORS.primaryContainer} />
-          <Text className="font-sans text-body-sm font-semibold text-primary-container underline">
-            Sắp xếp / Lọc{activeFilterCount ? ` (${activeFilterCount})` : ""}
+          <SlidersHorizontal size={16} color={COLORS.obsidian} />
+          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+            Lọc
           </Text>
+          {activeFilterCount > 0 ? (
+            <Text className="font-mono text-[11px] tracking-normal text-landing-obsidian">
+              ({activeFilterCount})
+            </Text>
+          ) : null}
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Mở sắp xếp, đang chọn ${
+            sort === "price_asc"
+              ? "giá thấp đến cao"
+              : sort === "price_desc"
+                ? "giá cao đến thấp"
+                : "mới nhất"
+          }`}
+          onPress={() => setSortSheetVisible(true)}
+          className="h-11 w-11 items-center justify-center rounded-subtle border border-landing-obsidian active:opacity-70"
+        >
+          <ArrowUpDown size={16} color={COLORS.obsidian} />
         </Pressable>
       </View>
+
+      <View>
+        <GarmentTypeTabs
+          activeGarmentType={garmentType}
+          onSelect={handleSelectGarmentType}
+        />
+      </View>
+
+      <View className="mx-lg flex-row items-baseline justify-between border-b border-landing-line pb-4">
+        <Text className="font-mono text-[11px] uppercase tracking-[0.2em] text-landing-muted">
+          <Text className="text-landing-obsidian">
+            {totalProducts.toLocaleString("vi-VN")}
+          </Text>{" "}
+          sản phẩm
+        </Text>
+      </View>
+
       {isError && products.length > 0 ? (
         <View className="mx-lg flex-row items-center justify-between rounded-md bg-catalog-muted p-md">
           <Text className="flex-1 font-sans text-body-sm text-danger">
@@ -292,27 +340,38 @@ export const ShopScreen: React.FC = () => {
     <ProductFilterModal
       visible
       values={filterSelection}
+      filteredCount={totalProducts}
       onApply={handleApplyFilters}
       onClose={() => setFiltersVisible(false)}
     />
   ) : null;
 
+  const sortSheet = sortSheetVisible ? (
+    <ProductSortSheet
+      visible
+      sort={sort}
+      onSelect={handleSelectSort}
+      onClose={() => setSortSheetVisible(false)}
+    />
+  ) : null;
+
   if (isLoading) {
     return (
-      <View className="flex-1 bg-surface-lowest" onLayout={handleLayout}>
+      <View className="flex-1 bg-landing-paper" onLayout={handleLayout}>
         {header}
         <ProductGridSkeleton
           presentation="catalog"
           cardWidth={productCardWidth}
         />
         {filterModal}
+        {sortSheet}
       </View>
     );
   }
 
   if (isError && products.length === 0) {
     return (
-      <View className="flex-1 bg-surface-lowest" onLayout={handleLayout}>
+      <View className="flex-1 bg-landing-paper" onLayout={handleLayout}>
         {header}
         <View className="flex-1 items-center justify-center">
           <ErrorView
@@ -322,12 +381,13 @@ export const ShopScreen: React.FC = () => {
           />
         </View>
         {filterModal}
+        {sortSheet}
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-surface-lowest" onLayout={handleLayout}>
+    <View className="flex-1 bg-landing-paper" onLayout={handleLayout}>
       <FlatList
         data={products}
         renderItem={renderProduct}
@@ -335,8 +395,7 @@ export const ShopScreen: React.FC = () => {
         numColumns={2}
         ListHeaderComponent={header}
         ListEmptyComponent={
-          <EmptyState
-            icon="⌕"
+          <ProductsEmptyState
             title="Không tìm thấy sản phẩm phù hợp"
             description="Hãy thử thay đổi từ khóa hoặc điều chỉnh bộ lọc của bạn."
             actionTitle={
@@ -377,9 +436,13 @@ export const ShopScreen: React.FC = () => {
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.35}
         initialNumToRender={6}
+        maxToRenderPerBatch={6}
+        updateCellsBatchingPeriod={50}
+        windowSize={7}
         showsVerticalScrollIndicator={false}
       />
       {filterModal}
+      {sortSheet}
     </View>
   );
 };

@@ -65,17 +65,17 @@ export function mapBackendProduct(product: BackendProduct): IProduct {
     material: product.material,
     price: toFiniteNumber(product.price, 'price'),
     originalPrice:
-      product.originalPrice === null
+      product.originalPrice == null
         ? null
         : toFiniteNumber(product.originalPrice, 'originalPrice'),
-    stock: product.stock,
+    stock: product.stock ?? 0,
     brand: product.brand,
     garmentUrl: product.garmentUrl,
     status: product.status,
     avgRating:
-      product.avgRating === null ? 0 : toFiniteNumber(product.avgRating, 'avgRating'),
-    reviewCount: product.reviewCount,
-    images: product.images.map(mapProductImage),
+      product.avgRating == null ? 0 : toFiniteNumber(product.avgRating, 'avgRating'),
+    reviewCount: product.reviewCount ?? 0,
+    images: (product.images ?? []).map(mapProductImage),
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
   };

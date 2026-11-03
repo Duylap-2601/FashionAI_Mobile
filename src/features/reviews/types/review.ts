@@ -74,6 +74,7 @@ export interface CreateReviewInput {
   rating: ReviewRating;
   comment?: string;
   images?: string[];
+  orderId?: string | number;
 }
 
 export interface UpdateReviewInput {

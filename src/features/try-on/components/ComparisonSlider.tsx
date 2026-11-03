@@ -52,7 +52,7 @@ export function ComparisonSlider({ before, after }: ComparisonSliderProps) {
   // Nếu không có ảnh gốc, hiển thị ảnh kết quả bình thường
   if (!before) {
     return (
-      <View className="overflow-hidden rounded-2xl border border-surface-line bg-surface-lowest shadow-sm">
+      <View className="overflow-hidden rounded-subtle border border-landing-line bg-ivory">
         <Image
           source={{ uri: after }}
           style={{ aspectRatio: 3 / 4 }}
@@ -73,7 +73,7 @@ export function ComparisonSlider({ before, after }: ComparisonSliderProps) {
         ref={containerRef}
         onLayout={handleLayout}
         {...panResponder.panHandlers}
-        className="w-full aspect-[3/4] relative overflow-hidden rounded-2xl border border-surface-line bg-surface-lowest shadow-sm"
+        className="w-full aspect-[3/4] relative overflow-hidden rounded-subtle border border-landing-line bg-ivory"
       >
         {/* Ảnh sau (Kết quả thử đồ) */}
         <Image
@@ -139,23 +139,25 @@ export function ComparisonSlider({ before, after }: ComparisonSliderProps) {
             }}
           >
             <View className="flex-row items-center gap-1">
-              <View className="w-1 h-3.5 rounded-full bg-primary/70" />
-              <View className="w-1 h-3.5 rounded-full bg-primary/70" />
+              <View className="w-1 h-3.5 rounded-full bg-oxblood/70" />
+              <View className="w-1 h-3.5 rounded-full bg-oxblood/70" />
             </View>
           </View>
         </View>
 
         {/* Badges góc trên */}
-        <View className="absolute top-3 left-3 px-2.5 py-1 bg-black/60 rounded-full">
-          <Text className="text-white text-[11px] font-semibold tracking-wide">Ảnh gốc</Text>
+        <View className="absolute left-3 top-3 rounded-subtle bg-landing-obsidian/70 px-2.5 py-1">
+          <Text className="font-sans text-[11px] font-semibold text-landing-paper">Ảnh gốc</Text>
         </View>
-        <View className="absolute top-3 right-3 px-2.5 py-1 bg-primary/80 rounded-full">
-          <Text className="text-white text-[11px] font-semibold tracking-wide">Kết quả AI</Text>
+        <View className="absolute right-3 top-3 rounded-subtle bg-oxblood/80 px-2.5 py-1">
+          <Text className="font-sans text-[11px] font-semibold text-landing-paper">Kết quả AI</Text>
         </View>
 
         {/* Gợi ý kéo ngón tay */}
-        <View className="absolute bottom-3 self-center px-3 py-1 bg-black/45 rounded-full">
-          <Text className="text-white/90 text-[11px] font-medium">Kéo thanh trượt để so sánh</Text>
+        <View className="absolute bottom-3 self-center rounded-subtle bg-landing-obsidian/60 px-3 py-1">
+          <Text className="font-sans text-[11px] font-medium text-landing-paper/90">
+            Kéo thanh trượt để so sánh
+          </Text>
         </View>
       </View>
 
@@ -163,34 +165,34 @@ export function ComparisonSlider({ before, after }: ComparisonSliderProps) {
       <View className="flex-row items-center justify-center gap-2">
         <Pressable
           onPress={() => setPosition(100)}
-          className={`px-3 py-1.5 rounded-xl border active:opacity-75 ${
-            position === 100 ? 'bg-primary border-primary' : 'bg-surface border-surface-line'
+          className={`rounded-subtle border px-3 py-1.5 active:opacity-75 ${
+            position === 100 ? 'border-oxblood bg-oxblood' : 'border-landing-line bg-transparent'
           }`}
         >
-          <Text className={`text-[12px] font-semibold ${position === 100 ? 'text-white' : 'text-on-surface'}`}>
-            Xem ảnh gốc
+          <Text className={`font-sans text-[11px] font-semibold uppercase tracking-[0.12em] ${position === 100 ? 'text-landing-paper' : 'text-landing-obsidian'}`}>
+            Ảnh gốc
           </Text>
         </Pressable>
 
         <Pressable
           onPress={() => setPosition(50)}
-          className={`px-3 py-1.5 rounded-xl border active:opacity-75 ${
-            position === 50 ? 'bg-primary border-primary' : 'bg-surface border-surface-line'
+          className={`rounded-subtle border px-3 py-1.5 active:opacity-75 ${
+            position === 50 ? 'border-oxblood bg-oxblood' : 'border-landing-line bg-transparent'
           }`}
         >
-          <Text className={`text-[12px] font-semibold ${position === 50 ? 'text-white' : 'text-on-surface'}`}>
+          <Text className={`font-sans text-[11px] font-semibold uppercase tracking-[0.12em] ${position === 50 ? 'text-landing-paper' : 'text-landing-obsidian'}`}>
             So sánh 50/50
           </Text>
         </Pressable>
 
         <Pressable
           onPress={() => setPosition(0)}
-          className={`px-3 py-1.5 rounded-xl border active:opacity-75 ${
-            position === 0 ? 'bg-primary border-primary' : 'bg-surface border-surface-line'
+          className={`rounded-subtle border px-3 py-1.5 active:opacity-75 ${
+            position === 0 ? 'border-oxblood bg-oxblood' : 'border-landing-line bg-transparent'
           }`}
         >
-          <Text className={`text-[12px] font-semibold ${position === 0 ? 'text-white' : 'text-on-surface'}`}>
-            Xem kết quả
+          <Text className={`font-sans text-[11px] font-semibold uppercase tracking-[0.12em] ${position === 0 ? 'text-landing-paper' : 'text-landing-obsidian'}`}>
+            Kết quả
           </Text>
         </Pressable>
       </View>

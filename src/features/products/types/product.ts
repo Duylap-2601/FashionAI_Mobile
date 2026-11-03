@@ -75,14 +75,14 @@ export interface BackendProduct {
   colors: unknown;
   material: string | null;
   price: string | number;
-  originalPrice: string | number | null;
-  stock: number;
+  originalPrice?: string | number | null;
+  stock?: number | null;
   brand: string | null;
   garmentUrl: string;
   status: ProductStatus;
-  avgRating: string | number | null;
-  reviewCount: number;
-  images: BackendProductImage[];
+  avgRating?: string | number | null;
+  reviewCount?: number | null;
+  images?: BackendProductImage[] | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -142,12 +142,18 @@ module.exports = {
         heading: ["Be Vietnam Pro", "system-ui", "sans-serif"],
         display: ["Playfair Display", "serif"],
         serif: ["Playfair Display", "serif"],
-        mono: ["Courier New", "monospace"],
+        mono: ["JetBrains Mono", "monospace"],
+      },
+      letterSpacing: {
+        price: "0.02em",
       },
       // design/design-system.md › Typography roles, e.g. `text-headline-sm`, `text-price-lg`
       fontSize: {
         "product-title": ["32px", { lineHeight: "40px", fontWeight: "700" }],
-        "product-price": ["22px", { lineHeight: "28px", fontWeight: "700" }],
+        "product-price": [
+          "24px",
+          { lineHeight: "32px", fontWeight: "500", letterSpacing: "0.02em" },
+        ],
         "2xs": "10px",
         display: ["34px", { lineHeight: "42px", fontWeight: "700" }],
         "headline-lg": ["26px", { lineHeight: "34px", fontWeight: "700" }],

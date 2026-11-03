@@ -5,11 +5,11 @@ export function ProductDetailSkeleton() {
   return (
     <ScrollView
       accessibilityLabel="Đang tải chi tiết sản phẩm"
-      contentContainerClassName="bg-surface-lowest px-lg pb-28 pt-lg"
+      contentContainerClassName="bg-paper px-lg pb-28 pt-lg"
       contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}
     >
-      <View className="aspect-[3/4] w-full rounded-catalog-gallery bg-catalog-muted" />
+      <View className="aspect-[3/4] w-full rounded-subtle bg-ivory" />
       <View className="gap-md pt-lg">
         <View className="rounded-sm bg-catalog-line h-3 w-1/3" />
         <View className="rounded-sm bg-catalog-line h-7 w-full" />
@@ -19,9 +19,9 @@ export function ProductDetailSkeleton() {
         <View className="h-px bg-catalog-line" />
         <View className="rounded-sm bg-catalog-line h-4 w-1/3" />
         <View className="flex-row gap-sm">
-          <View className="h-11 w-20 rounded-full bg-catalog-line" />
-          <View className="h-11 w-20 rounded-full bg-catalog-line" />
-          <View className="h-11 w-20 rounded-full bg-catalog-line" />
+          <View className="h-11 w-20 rounded-subtle bg-catalog-line" />
+          <View className="h-11 w-20 rounded-subtle bg-catalog-line" />
+          <View className="h-11 w-20 rounded-subtle bg-catalog-line" />
         </View>
         <View className="rounded-sm bg-catalog-line h-4 w-full" />
         <View className="rounded-sm bg-catalog-line h-4 w-3/4" />

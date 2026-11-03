@@ -17,12 +17,12 @@ interface ReauthAck {
 //   xem realtime.gateway.ts). Thất bại → reconnect để handshake lại.
 // - `token:expired` → server đã disconnect → reconnect (đọc lại token mới nhất).
 // Mount 1 lần ở nơi luôn hiện khi đã đăng nhập (NotificationBell).
-export function useNotificationSocket() {
+export function useNotificationSocket(enabled = true) {
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !enabled) return;
 
     let active = true;
     let socket: Socket | null = null;
@@ -79,5 +79,5 @@ export function useNotificationSocket() {
       socket?.off('token:expiring', handleExpiring);
       socket?.off('token:expired', handleExpired);
     };
-  }, [isAuthenticated, queryClient]);
+  }, [enabled, isAuthenticated, queryClient]);
 }

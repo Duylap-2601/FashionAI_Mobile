@@ -9,9 +9,9 @@ import {
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Camera, Check, ImageUp, Layers, X } from 'lucide-react-native';
 import {
   RootStackParamList,
   TryOnStackParamList,
@@ -33,15 +33,25 @@ import {
 import { readTryOnError } from '@/features/try-on/utils/try-on-error';
 import { ApiError } from '@/types/api';
 import { IProduct } from '@/features/products/types/product';
-import { Button } from '@/components/ui/Button';
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
-import { GarmentProductCard, GarmentPreview } from '@/features/try-on/components/GarmentProductCard';
+import { COLORS } from '@/constants/theme';
+import { ComparisonSlider } from '@/features/try-on/components/ComparisonSlider';
+import { GarmentSlot } from '@/features/try-on/components/GarmentProductCard';
+import { TryOnSegmented } from '@/features/try-on/components/TryOnHeader';
 import type { SharedGarmentSelection } from './TryOnWorkspace';
 
 interface PhotoTryOnContentProps {
   selection: SharedGarmentSelection;
   onQuotaConsumed: () => void;
+  isBlocked: boolean;
+  onPressUpgrade: () => void;
 }
+
+const primaryClass =
+  'h-12 w-full flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood active:opacity-90';
+const outlineSmallClass =
+  'h-9 flex-row items-center justify-center gap-1.5 rounded-subtle border border-landing-line px-3.5 active:bg-ivory';
+const quietSmallClass = 'min-h-9 justify-center active:opacity-70';
+const smallLabel = 'font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em]';
 
 // Nén ảnh còn tối đa 2048px, JPEG 80% để chắc chắn dưới giới hạn 10MB của BE.
 async function prepareUploadImage(image: UploadableImage): Promise<UploadableImage> {
@@ -76,60 +86,83 @@ async function pickImage(useCamera: boolean): Promise<UploadableImage | null> {
 
 const UploadZone: React.FC<{
   uri?: string | null;
-  emptyTitle: string;
-  emptyHint: string;
+  error?: string | null;
   onPickLibrary: () => void;
   onPickCamera: () => void;
-  selfieLabel?: string;
-}> = ({ uri, emptyTitle, emptyHint, onPickLibrary, onPickCamera, selfieLabel }) => {
+  onClear: () => void;
+}> = ({ uri, error, onPickLibrary, onPickCamera, onClear }) => {
   if (uri) {
     return (
-      <View>
-        <View className="overflow-hidden rounded-xl border border-surface-line">
-          {/* NativeWind không có token aspect 3:4 nên dùng aspectRatio tính toán */}
-          <Image
-            source={{ uri }}
-            style={{ aspectRatio: 3 / 4 }}
-            className="w-full"
-            contentFit="cover"
-            transition={200}
-          />
-        </View>
-        <View className="mt-sm flex-row gap-md">
-          <View className="flex-1">
-            <Button title="Chọn ảnh khác" variant="outline" size="sm" onPress={onPickLibrary} />
-          </View>
-          <View className="flex-1">
-            <Button title="Chụp lại" variant="outline" size="sm" onPress={onPickCamera} />
-          </View>
+      <View
+        className="w-full overflow-hidden border border-landing-line bg-ivory"
+        style={{ aspectRatio: 3 / 4 }}
+      >
+        <Image
+          source={{ uri }}
+          style={{ flex: 1 }}
+          contentFit="contain"
+          transition={200}
+          accessibilityLabel="Ảnh toàn thân đã chọn"
+        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Bỏ ảnh đã chọn"
+          onPress={onClear}
+          className="absolute right-3 top-3 h-10 w-10 items-center justify-center rounded-subtle border border-landing-line bg-landing-paper active:opacity-70"
+        >
+          <X size={16} strokeWidth={1.75} color={COLORS.obsidian} />
+        </Pressable>
+        <View className="absolute bottom-3 left-3 right-3 flex-row items-center gap-2 border border-landing-line bg-landing-paper px-3 py-2">
+          <Check size={14} strokeWidth={2} color={COLORS.sageInk} />
+          <Text className="flex-1 font-sans text-body-sm text-landing-obsidian">
+            Ảnh đã sẵn sàng để thử
+          </Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View className="items-center rounded-xl border border-dashed border-outline-variant bg-surface-lowest p-xxl">
-      <View className="mb-md h-16 w-16 items-center justify-center rounded-full bg-primary-soft">
-        <Ionicons name="cloud-upload-outline" size={30} className="text-primary-container" />
+    <View
+      className={`w-full items-center justify-center border border-dashed px-6 ${
+        error ? 'border-danger/60 bg-ivory/60' : 'border-taupe bg-ivory/60'
+      }`}
+      style={{ aspectRatio: 3 / 4 }}
+    >
+      <View className="h-12 w-12 items-center justify-center border border-landing-line">
+        <ImageUp size={20} strokeWidth={1.5} color={COLORS.oxblood} />
       </View>
-      <Text className="text-center text-body-lg font-bold text-on-surface">{emptyTitle}</Text>
-      <Text className="mt-xs text-center text-body-sm text-on-surface-variant">
-        {emptyHint}
+      <Text className="mt-5 text-center font-display text-[22px] leading-tight text-landing-obsidian">
+        Thả ảnh toàn thân vào đây
       </Text>
-      <View className="mt-md w-full flex-row gap-md">
-        <View className="flex-1">
-          <Button title="Chọn từ thư viện" variant="outline" size="sm" onPress={onPickLibrary} />
-        </View>
-        <View className="flex-1">
-          <Button
-            title={selfieLabel ?? 'Chụp ảnh'}
-            variant="outline"
-            size="sm"
-            onPress={onPickCamera}
-          />
-        </View>
+      <Text className="mt-2 max-w-[260px] text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+        Đứng thẳng, đủ sáng, thấy rõ từ vai tới chân.
+      </Text>
+      <View className="mt-6 flex-row flex-wrap justify-center gap-2">
+        <Pressable
+          accessibilityRole="button"
+          onPress={onPickLibrary}
+          className="h-9 items-center justify-center rounded-subtle bg-oxblood px-3.5 active:opacity-90"
+        >
+          <Text className={`${smallLabel} text-landing-paper`}>Chọn ảnh</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onPickCamera}
+          className={outlineSmallClass}
+        >
+          <Camera size={14} strokeWidth={1.75} color={COLORS.obsidian} />
+          <Text className={`${smallLabel} text-landing-obsidian`}>Chụp ảnh</Text>
+        </Pressable>
       </View>
-      <Text className="mt-md text-body-sm text-on-surface-variant">PNG, JPG tối đa 10MB</Text>
+      <Text className="mt-4 font-mono text-[11px] text-landing-muted">
+        PNG, JPG · tối đa 10MB
+      </Text>
+      {error ? (
+        <Text className="mt-3 max-w-[300px] text-center font-sans text-body-sm text-danger">
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 };
@@ -137,8 +170,11 @@ const UploadZone: React.FC<{
 export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
   selection,
   onQuotaConsumed,
+  isBlocked,
+  onPressUpgrade,
 }) => {
-  const { singleProduct, comboUpper, comboLower, openPicker } = selection;
+  const { singleProduct, comboOuter, comboUpper, comboLower, clearOuter, openPicker } =
+    selection;
   const stackNavigation =
     useNavigation<NativeStackNavigationProp<TryOnStackParamList>>();
   const rootNavigation =
@@ -149,12 +185,10 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
   const [mode, setMode] = useState<'single' | 'combo'>('single');
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<TryOnResult | null>(null);
-  const [showOriginal, setShowOriginal] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [serverAction, setServerAction] = useState<'subscription' | null>(null);
   const [showQuotaModal, setShowQuotaModal] = useState(false);
-  const isBusy = generate.isPending;
 
   const handleHumanPick = async (useCamera: boolean) => {
     const picked = await pickImage(useCamera);
@@ -171,6 +205,10 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
   const canSubmit =
     !!humanImage &&
     (mode === 'single' ? !!singleProduct : !!(comboUpper && comboLower));
+  const selectedCount =
+    mode === 'combo'
+      ? [comboOuter, comboUpper, comboLower].filter(Boolean).length
+      : 1;
 
   const handleGenerate = async () => {
     // Chặn request trùng khi đang processing.
@@ -208,6 +246,9 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
       const garments =
         mode === 'combo'
           ? [
+              ...(comboOuter
+                ? [{ category: 'UPPER' as TryOnCategory, productId: String(comboOuter.id) }]
+                : []),
               { category: 'UPPER' as TryOnCategory, productId: String((comboUpper as IProduct).id) },
               { category: 'LOWER' as TryOnCategory, productId: String((comboLower as IProduct).id) },
             ]
@@ -222,7 +263,6 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
         {
           onSuccess: (data) => {
             setResult(data);
-            setShowOriginal(false);
             onQuotaConsumed();
           },
           onError: onGenerateError,
@@ -272,263 +312,233 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
     }
   };
 
-  const resetWorkspace = () => {
+  const resetResult = () => {
     generate.reset();
     setResult(null);
-    setShowOriginal(false);
     setProgress(0);
     setServerError(null);
     setServerAction(null);
   };
 
+  const changePhoto = () => {
+    resetResult();
+    setHumanImage(null);
+    setFormError(null);
+  };
+
+  const isBusy = generate.isPending;
+
   return (
-    <View className="mt-xl">
+    <View>
       {result && humanImage ? (
-        <View className="mt-xl">
-          <Text className="mb-sm font-heading text-headline-sm font-bold text-on-surface">
-            Ảnh của bạn / Kết quả
-          </Text>
-          <View className="overflow-hidden rounded-xl border border-surface-line bg-surface-lowest shadow-sm">
-            <Image
-              source={{ uri: showOriginal ? humanImage.uri : result.resultUrl }}
-              style={{ aspectRatio: 3 / 4 }}
-              className="w-full"
-              contentFit="cover"
-              transition={300}
+        <View>
+          <View className="mb-4 flex-row items-baseline justify-between gap-4">
+            <Text className="font-display text-[22px] leading-tight text-landing-obsidian">
+              Kết quả
+            </Text>
+            <Text className="font-sans text-[11px] text-landing-muted">
+              Kéo để so sánh trước và sau
+            </Text>
+          </View>
+
+          <ComparisonSlider before={humanImage.uri} after={result.resultUrl} />
+
+          <View className="mt-4 flex-row flex-wrap items-center gap-2">
+            <Pressable
+              accessibilityRole="button"
+              onPress={resetResult}
+              className={outlineSmallClass}
+            >
+              <Text className={`${smallLabel} text-landing-obsidian`}>Thử món khác</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={changePhoto}
+              className={quietSmallClass}
+            >
+              <Text className={`${smallLabel} text-landing-muted`}>Đổi ảnh</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => stackNavigation.navigate('TryOnHistory')}
+              className={`${quietSmallClass} ml-auto`}
+            >
+              <Text className={`${smallLabel} text-landing-muted`}>Lịch sử thử đồ</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : (
+        <View>
+          <View className="mb-4 flex-row items-baseline justify-between gap-4">
+            <Text className="font-display text-[22px] leading-tight text-landing-obsidian">
+              Ảnh của bạn
+            </Text>
+            <Text className="font-sans text-[11px] text-landing-muted">
+              Một người, thấy rõ toàn thân
+            </Text>
+          </View>
+
+          <View className="relative">
+            <UploadZone
+              uri={humanImage?.uri}
+              error={formError}
+              onPickLibrary={() => handleHumanPick(false)}
+              onPickCamera={() => handleHumanPick(true)}
+              onClear={() => {
+                setHumanImage(null);
+                setFormError(null);
+              }}
             />
+
             {isBusy ? (
-              <View className="absolute inset-0 items-center justify-center bg-black/50">
-                <ActivityIndicator size="large" color="#FFFFFF" />
-                <Text className="mt-md text-body-lg font-bold text-inverse-on-surface">
-                  AI đang khớp trang phục...
+              <View className="absolute inset-0 items-center justify-center gap-3 border border-landing-line bg-landing-paper/90 px-6">
+                <ActivityIndicator color={COLORS.oxblood} />
+                <Text className="text-center font-display text-[22px] leading-tight text-landing-obsidian">
+                  Đang thử trang phục
                 </Text>
-                <Text className="mt-xs text-body-sm text-inverse-on-surface">
-                  Vui lòng giữ nguyên màn hình
+                <Text className="max-w-[260px] text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+                  Giữ nguyên ảnh và trang phục cho tới khi có kết quả.
+                  {progress > 0 ? ` ${progress}%` : ''}
                 </Text>
               </View>
             ) : null}
           </View>
 
-          <View className="mt-md flex-row rounded-lg bg-surface-container p-xs">
-            <Pressable
-              className={`min-h-11 flex-1 items-center justify-center rounded-md ${
-                showOriginal ? 'bg-surface-lowest' : ''
-              }`}
-              onPress={() => setShowOriginal(true)}
-            >
-              <Text
-                className={`text-label-lg ${showOriginal ? 'text-on-surface' : 'text-on-surface-variant'}`}
-              >
-                Ảnh gốc
+          {isBusy ? (
+            <View className="mt-4 h-1.5 overflow-hidden bg-ivory">
+              <View
+                style={{ width: `${Math.max(progress, 4)}%` }}
+                className="h-full bg-oxblood"
+              />
+            </View>
+          ) : null}
+
+          <View className="mt-8">
+            <View className="mb-4 flex-row items-baseline justify-between gap-3">
+              <Text className="font-display text-[22px] leading-tight text-landing-obsidian">
+                Trang phục
               </Text>
-            </Pressable>
-            <Pressable
-              className={`min-h-11 flex-1 items-center justify-center rounded-md ${
-                !showOriginal ? 'bg-surface-lowest' : ''
-              }`}
-              onPress={() => setShowOriginal(false)}
-            >
-              <Text
-                className={`text-label-lg ${!showOriginal ? 'text-on-surface' : 'text-on-surface-variant'}`}
-              >
-                Kết quả
+              <Text className="font-mono text-xs text-landing-muted">
+                {String(selectedCount).padStart(2, '0')} món
               </Text>
-            </Pressable>
-          </View>
+            </View>
 
-          <View className="mt-md">
-            <Button title="Thử món khác" variant="outline" onPress={resetWorkspace} />
-            <Button
-              className="mt-md"
-              title="Xem lịch sử"
-              variant="ghost"
-              onPress={() => stackNavigation.navigate('TryOnHistory')}
+            <TryOnSegmented
+              value={mode}
+              onChange={setMode}
+              disabled={isBusy}
+              options={[
+                { value: 'single', label: 'Một món' },
+                {
+                  value: 'combo',
+                  label: 'Phối bộ',
+                  icon: (selected) => (
+                    <Layers
+                      size={14}
+                      strokeWidth={1.75}
+                      color={selected ? COLORS.paper : COLORS.obsidian}
+                    />
+                  ),
+                },
+              ]}
             />
-          </View>
-        </View>
-      ) : (
-        <View className="mt-xl">
-          <Text className="mb-xs font-heading text-headline-sm font-bold text-on-surface">
-            Ảnh của bạn / Kết quả
-          </Text>
-          <Text className="mb-md text-body-sm text-on-surface-variant">
-            Khung ảnh toàn thân, giữ nguyên tỷ lệ để dễ so sánh.
-          </Text>
-          <UploadZone
-            uri={humanImage?.uri}
-            emptyTitle="Tải ảnh toàn thân của bạn"
-            emptyHint="Ảnh rõ nét, đủ sáng, thấy toàn thân từ đầu đến chân."
-            onPickLibrary={() => handleHumanPick(false)}
-            onPickCamera={() => handleHumanPick(true)}
-            selfieLabel="Chụp ảnh selfie"
-          />
 
-          <View className="mt-md flex-row gap-sm rounded-lg bg-primary-soft p-md">
-            <Ionicons
-              name="information-circle-outline"
-              size={20}
-              className="text-primary-container"
-            />
-            <Text className="flex-1 text-body-sm leading-relaxed text-on-surface">
-              Hãy tải ảnh cá nhân PNG/JPG dưới 10MB, toàn thân rõ nét để tạo kết quả
-              thử đồ.
-            </Text>
-          </View>
-
-          <Text className="mb-xs mt-xxl font-heading text-headline-sm font-bold text-on-surface">
-            Trang phục
-          </Text>
-          <Text className="mb-md text-body-sm text-on-surface-variant">
-            Chọn một món hoặc phối áo với quần/váy.
-          </Text>
-          <SegmentedControl
-            options={[
-              { value: 'single', label: 'Một món' },
-              { value: 'combo', label: 'Phối bộ' },
-            ]}
-            value={mode}
-            onChange={(next) => setMode(next as 'single' | 'combo')}
-          />
-
-          {mode === 'single' ? (
-            <View className="mt-md">
-              {singleProduct ? (
-                <>
-                  <GarmentProductCard
-                    product={singleProduct}
-                    onChange={() => openPicker('single')}
-                  />
-                  <GarmentPreview product={singleProduct} label={singleProduct.name} />
-                </>
+            <View className="mt-5">
+              {mode === 'single' ? (
+                <GarmentSlot
+                  label="Trang phục"
+                  product={singleProduct}
+                  emptyLabel="Chưa chọn trang phục"
+                  onChange={() => openPicker('single')}
+                  disabled={isBusy}
+                />
               ) : (
-                <Pressable
-                  className="items-center rounded-xl border border-dashed border-outline-variant bg-surface-lowest p-xxl"
-                  onPress={() => openPicker('single')}
-                >
-                  <View className="mb-md h-16 w-16 items-center justify-center rounded-full bg-primary-soft">
-                    <Ionicons name="shirt-outline" size={30} className="text-primary-container" />
+                <View className="border-y border-landing-line">
+                  <View className="border-b border-landing-line py-4">
+                    <GarmentSlot
+                      label="Lớp ngoài"
+                      hint="Tùy chọn"
+                      product={comboOuter}
+                      emptyLabel="Áo khoác hoặc blazer"
+                      onChange={() => openPicker('outer')}
+                      onClear={comboOuter ? clearOuter : undefined}
+                      disabled={isBusy}
+                    />
                   </View>
-                  <Text className="text-center text-body-lg font-bold text-on-surface">
-                    Chưa chọn trang phục
-                  </Text>
-                  <Text className="mb-md mt-xs text-center text-body-sm text-on-surface-variant">
-                    Chọn từ danh sách sản phẩm của FashionAI.
-                  </Text>
-                  <Button title="Chọn sản phẩm" variant="outline" size="sm" onPress={() => openPicker('single')} />
-                </Pressable>
+                  <View className="border-b border-landing-line py-4">
+                    <GarmentSlot
+                      label="Lớp trong"
+                      product={comboUpper}
+                      emptyLabel="Sơ mi hoặc áo trong"
+                      onChange={() => openPicker('upper')}
+                      disabled={isBusy}
+                    />
+                  </View>
+                  <View className="py-4">
+                    <GarmentSlot
+                      label="Phần dưới"
+                      product={comboLower}
+                      emptyLabel="Quần hoặc chân váy"
+                      onChange={() => openPicker('lower')}
+                      disabled={isBusy}
+                    />
+                  </View>
+                </View>
               )}
             </View>
-          ) : (
-            <View className="mt-md gap-xl">
-              <View>
-                <View className="mb-sm">
-                  <Text className="text-body-sm font-semibold text-on-surface">
-                    Món 1: Áo / Blazer (Upper)
-                  </Text>
-                </View>
-                {comboUpper ? (
-                  <>
-                    <GarmentProductCard
-                      product={comboUpper}
-                      onChange={() => openPicker('upper')}
-                      changeLabel="Đổi áo khác"
-                    />
-                    <GarmentPreview product={comboUpper} label={comboUpper.name} />
-                  </>
-                ) : (
-                  <Pressable
-                    className="items-center rounded-xl border border-dashed border-outline-variant bg-surface-lowest p-xl"
-                    onPress={() => openPicker('upper')}
-                  >
-                    <Text className="text-center text-body-sm font-semibold text-on-surface">
-                      Chưa chọn áo
-                    </Text>
-                    <Text className="mt-xs text-center text-body-sm text-primary-container">
-                      Chọn áo ›
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-              <View>
-                <View className="mb-sm">
-                  <Text className="text-body-sm font-semibold text-on-surface">
-                    Món 2: Quần / Chân váy (Lower)
-                  </Text>
-                </View>
-                {comboLower ? (
-                  <>
-                    <GarmentProductCard
-                      product={comboLower}
-                      onChange={() => openPicker('lower')}
-                      changeLabel="Đổi quần/váy khác"
-                    />
-                    <GarmentPreview product={comboLower} label={comboLower.name} />
-                  </>
-                ) : (
-                  <Pressable
-                    className="items-center rounded-xl border border-dashed border-outline-variant bg-surface-lowest p-xl"
-                    onPress={() => openPicker('lower')}
-                  >
-                    <Text className="text-center text-body-sm font-semibold text-on-surface">
-                      Chưa chọn quần/váy
-                    </Text>
-                    <Text className="mt-xs text-center text-body-sm text-primary-container">
-                      Chọn quần/váy ›
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-            </View>
-          )}
+          </View>
 
           {formError ? (
-            <Text className="mt-md text-center text-body-sm text-danger">{formError}</Text>
+            <Text className="mt-4 font-sans text-body-sm text-danger">{formError}</Text>
           ) : null}
+
           {serverError ? (
-            <View className="mt-md rounded-lg border border-surface-line bg-surface-lowest p-md">
-              <Text className="text-center text-body-sm text-danger">{serverError}</Text>
+            <View className="mt-4 border-l-2 border-danger bg-ivory px-4 py-3">
+              <Text className="font-sans text-body-sm leading-relaxed text-danger">
+                {serverError}
+              </Text>
               {serverAction === 'subscription' ? (
-                <Button
-                  className="mt-md"
-                  title="Xem gói hội viên"
-                  size="sm"
+                <Pressable
+                  accessibilityRole="button"
                   onPress={() => rootNavigation.navigate('SubscriptionPlans')}
-                />
+                  className="mt-3 h-10 items-center justify-center self-start rounded-subtle bg-oxblood px-4 active:opacity-90"
+                >
+                  <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+                    Xem gói hội viên
+                  </Text>
+                </Pressable>
               ) : null}
             </View>
           ) : null}
 
-          {isBusy ? (
-            <View className="mt-xl">
-              <View className="h-2 overflow-hidden rounded-full bg-surface-container">
-                {/* width tính theo tiến độ upload nên dùng style động */}
-                <View style={{ width: `${progress}%` }} className="h-full bg-primary-container" />
-              </View>
-              <View className="mt-md flex-row items-center justify-center gap-sm">
-                <ActivityIndicator size="small" color="#5D1C34" />
-                <Text className="text-body-sm text-on-surface-variant">
-                  AI đang khớp trang phục... {progress > 0 ? `${progress}%` : ''}
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <View className="mt-xl">
-              <Button
-                title="Thử trang phục"
-                onPress={handleGenerate}
-                disabled={!canSubmit}
-                textClassName="text-primary-foreground"
-              />
-              <Text className="mt-md text-center text-body-sm text-on-surface-variant">
-                {mode === 'combo'
-                  ? 'Chi phí: 2 lượt thử (mỗi món 1 lượt). Kết quả được lưu tự động vào lịch sử.'
-                  : 'Chi phí: 1 lượt thử. Kết quả được lưu tự động vào lịch sử.'}
+          <View className="mt-6">
+            <Pressable
+              accessibilityRole="button"
+              disabled={!isBlocked && (!canSubmit || isBusy)}
+              onPress={isBlocked ? onPressUpgrade : handleGenerate}
+              className={`${primaryClass} ${
+                !isBlocked && (!canSubmit || isBusy) ? 'opacity-45' : ''
+              }`}
+            >
+              {isBusy ? (
+                <ActivityIndicator color={COLORS.paper} size="small" />
+              ) : null}
+              <Text className="font-sans text-[11.5px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+                {isBlocked
+                  ? 'Nâng cấp gói để thử'
+                  : isBusy
+                    ? 'Đang thử trang phục'
+                    : 'Thử trang phục'}
               </Text>
-            </View>
-          )}
-          <Text className="mt-lg text-center text-body-sm text-on-surface-variant">
-            Ảnh của bạn chỉ dùng để tạo kết quả thử đồ và được bảo mật.
-          </Text>
+            </Pressable>
+            <Text className="mt-2.5 font-sans text-body-sm leading-relaxed text-landing-muted">
+              Dùng{' '}
+              <Text className="font-mono text-landing-obsidian">
+                {mode === 'combo' ? Math.max(1, selectedCount) : 1}
+              </Text>{' '}
+              lượt (mỗi món 1 lượt). Kết quả tự lưu vào lịch sử thử đồ.
+            </Text>
+          </View>
         </View>
       )}
 

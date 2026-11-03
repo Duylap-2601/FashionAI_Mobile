@@ -12,9 +12,14 @@ import type { RootStackParamList } from '@/navigation/types';
 interface IAppHeaderProps {
   onBack?: () => void;
   safeAreaTop?: boolean;
+  showSearch?: boolean;
 }
 
-export const AppHeader: React.FC<IAppHeaderProps> = ({ onBack, safeAreaTop = true }) => {
+export const AppHeader: React.FC<IAppHeaderProps> = ({
+  onBack,
+  safeAreaTop = true,
+  showSearch = true,
+}) => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const totalCartItems = useCartStore((state) => state.getTotalItems());

@@ -11,12 +11,18 @@ import { useNotificationSocket } from '@/features/notifications/hooks/use-notifi
 // Chuông thông báo cho header dùng chung. Tự giữ badge đồng bộ qua
 // unread-count API + socket push, nên chỉ cần render ở nơi luôn hiện khi
 // đã đăng nhập (HeaderRight trong main-tabs).
-export const NotificationBell: React.FC = () => {
+interface NotificationBellProps {
+  enableSocket?: boolean;
+}
+
+export const NotificationBell: React.FC<NotificationBellProps> = ({
+  enableSocket = true,
+}) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { data } = useUnreadCount();
   const unread = data?.unread ?? 0;
-  useNotificationSocket();
+  useNotificationSocket(enableSocket);
 
   return (
     <Pressable

@@ -1,5 +1,5 @@
 import React, { useId, useState } from 'react';
-import { View, Text, Pressable, Platform } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { ArrowUpRight, Sparkles } from 'lucide-react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -72,7 +72,7 @@ export function AiTryOnFeatureBanner({
   const markImageFailed = (url: string) =>
     setFailedImages((prev) => ({ ...prev, [url]: true }));
 
-  const fontFamilyDisplay = Platform.OS === 'ios' ? 'Playfair Display' : 'serif';
+  const fontFamilyDisplay = 'Playfair Display';
 
   return (
     <View className="bg-landing-paper py-16">

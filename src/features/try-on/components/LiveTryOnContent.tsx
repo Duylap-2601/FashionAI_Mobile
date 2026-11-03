@@ -1,17 +1,37 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useQuery } from '@tanstack/react-query';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  Camera,
+  ChevronDown,
+  ChevronUp,
+  CirclePause,
+  Expand,
+  Image as ImageIcon,
+  Layers,
+  Play,
+  Shirt,
+  Square,
+  Timer,
+} from 'lucide-react-native';
 import { liveTryOnApi } from '@/features/try-on/api/live-try-on.api';
 import { useLiveTryOn } from '@/features/try-on/hooks/use-live-try-on';
-import { Loading } from '@/components/common/Loading';
-import { Button } from '@/components/ui/Button';
 import { FeedbackModal } from '@/components/ui/FeedbackModal';
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
-import { TryOnModeToggle, TryOnSharedIntro } from '@/features/try-on/components/TryOnHeader';
-import { GarmentProductCard, GarmentPreview } from '@/features/try-on/components/GarmentProductCard';
+import { COLORS } from '@/constants/theme';
+import {
+  TryOnPageHeader,
+  TryOnSegmented,
+} from '@/features/try-on/components/TryOnHeader';
+import { GarmentSlot } from '@/features/try-on/components/GarmentProductCard';
 import type { SharedGarmentSelection } from './TryOnWorkspace';
 
 interface LiveTryOnContentProps {
@@ -29,18 +49,24 @@ function formatSeconds(total: number): string {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
+const primaryButtonClass =
+  'h-12 flex-1 flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood active:opacity-90';
+const outlineButtonClass =
+  'h-12 items-center justify-center rounded-subtle border border-landing-line px-4';
+
 export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
   selection,
   photoQuota,
   onSwitchToPhoto,
 }) => {
-  const { singleProduct, comboUpper, comboLower, openPicker } = selection;
+  const { singleProduct, comboOuter, comboUpper, comboLower, clearOuter, openPicker } =
+    selection;
+  const { height } = useWindowDimensions();
   const [permission, requestPermission] = useCameraPermissions();
   const [showEndModal, setShowEndModal] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [quotaOpen, setQuotaOpen] = useState(false);
   const [mode, setMode] = useState<'single' | 'combo'>('single');
-  const insets = useSafeAreaInsets();
   const { phase, remainingSeconds, error, start, pause, resume, end } =
     useLiveTryOn();
 
@@ -49,10 +75,8 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
     queryFn: () => liveTryOnApi.getQuota(),
   });
 
-  // Session BE chỉ nhận 1 productId: chế độ phối bộ dùng áo làm sản phẩm chính,
-  // giống logic primaryProduct của bản web.
-  const sessionProduct =
-    mode === 'single' ? singleProduct : comboUpper;
+  // Session BE chỉ nhận 1 productId: chế độ phối bộ dùng áo làm sản phẩm chính.
+  const sessionProduct = mode === 'single' ? singleProduct : comboUpper;
   const sessionProductId = sessionProduct ? String(sessionProduct.id) : undefined;
 
   const garmentQuery = useQuery({
@@ -71,6 +95,25 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
 
   const quota = quotaQuery.data;
   const garmentSupported = garmentQuery.data ? garmentQuery.data.supported : true;
+
+  const inSession =
+    phase === 'starting' ||
+    phase === 'active' ||
+    phase === 'paused' ||
+    phase === 'ending';
+  const isActive = phase === 'active';
+  const isPaused = phase === 'paused';
+  const isBusy = phase === 'starting' || phase === 'ending';
+  const seconds = inSession
+    ? remainingSeconds
+    : quota?.maxDurationSeconds ?? 0;
+  const lowTime = inSession && seconds > 0 && seconds <= 10;
+  const selectionDisabled = isActive || isBusy;
+  const selectedCount =
+    mode === 'combo'
+      ? [comboOuter, comboUpper, comboLower].filter(Boolean).length
+      : 1;
+  const stageHeight = Math.max(300, Math.min(height * 0.58, 560));
 
   const unavailableReason: string | null =
     quotaQuery.isLoading || garmentQuery.isLoading
@@ -104,408 +147,424 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
     start(sessionProductId);
   };
 
-  const inSession =
-    phase === 'starting' ||
-    phase === 'active' ||
-    phase === 'paused' ||
-    phase === 'ending';
+  const handlePrimaryPress = () => {
+    if (isActive) {
+      pause();
+      return;
+    }
+    if (isPaused) {
+      resume();
+      return;
+    }
+    void handleStart();
+  };
 
-  const phaseLabel =
-    phase === 'starting'
-      ? 'Đang tạo phiên...'
-      : phase === 'active'
-        ? 'Đang trực tiếp'
-        : phase === 'paused'
-          ? 'Đã tạm dừng'
-          : phase === 'ending'
-            ? 'Đang kết thúc...'
-            : '';
+  const primaryLabel = isBusy
+    ? 'Vui lòng chờ'
+    : isActive
+      ? 'Tạm dừng'
+      : isPaused
+        ? 'Tiếp tục thử'
+        : 'Bắt đầu thử đồ';
+  const primaryDisabled =
+    isBusy || (!isActive && !isPaused && (Boolean(unavailableReason) || !sessionProductId));
 
-  const timerBlock = quotaQuery.isLoading ? (
-    <Loading message="" />
-  ) : quota ? (
-    <Text className="font-heading text-headline-md font-bold text-on-surface">
-      {formatSeconds(quota.maxDurationSeconds)}
-    </Text>
-  ) : (
-    <Text className="text-body-sm text-danger">Chưa tải được thời gian sử dụng.</Text>
-  );
+  const statusLabel = isBusy
+    ? phase === 'starting'
+      ? 'Đang chuẩn bị'
+      : 'Đang kết thúc'
+    : isPaused
+      ? 'Đã tạm dừng'
+      : isActive
+        ? 'Đang thử trực tiếp'
+        : phase === 'ended'
+          ? 'Phiên đã kết thúc'
+          : 'Sẵn sàng thử đồ';
 
-  const startButton = (
-    <Button
-      title="Bắt đầu thử đồ"
-      onPress={handleStart}
-      disabled={!!unavailableReason}
-      textClassName="text-primary-foreground"
-      leftIcon={
-        <Ionicons name="play" size={18} className="text-primary-foreground" />
-      }
-    />
-  );
+  const panelStatus = isBusy
+    ? phase === 'starting'
+      ? 'Đang chuẩn bị'
+      : 'Đang kết thúc'
+    : isPaused
+      ? 'Đã tạm dừng'
+      : lowTime
+        ? 'Sắp hết thời gian'
+        : isActive
+          ? 'Đang tính thời gian'
+          : 'Sẵn sàng khi bạn muốn';
 
-  if (inSession) {
-    return (
-      <ScrollView className="flex-1" contentContainerClassName="p-xl">
-        <TryOnSharedIntro quota={photoQuota} />
-        <TryOnModeToggle
-          value="live"
-          onChange={(next) => {
+  const guideText = isPaused
+    ? 'Chọn lại món bạn thích. Nhấn Tiếp tục để mặc trang phục mới.'
+    : isActive
+      ? 'Muốn đổi đồ? Nhấn Tạm dừng trước khi chọn món mới.'
+      : 'Thử cả bộ vẫn dùng chung thời gian của một phiên.';
+
+  return (
+    <View className="flex-1 bg-landing-paper">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="px-lg pb-[220px] pt-lg"
+        showsVerticalScrollIndicator={false}
+      >
+        <TryOnPageHeader
+          mode="live"
+          onModeChange={(next) => {
             if (next === 'photo') onSwitchToPhoto();
           }}
+          modeDisabled={isBusy}
+          photoQuota={photoQuota}
         />
-        <View className="mt-xl overflow-hidden rounded-xl border border-surface-line bg-surface-lowest shadow-sm">
-          <View className="h-80">
-            {/* CameraView là native view của bên thứ ba nên dùng style trực tiếp */}
-            <CameraView style={{ flex: 1 }} facing="front" />
-            {/* Khung căn người tĩnh (không gắn trạng thái detection giả) */}
+
+        {/* Stage */}
+        <View className="overflow-hidden bg-landing-obsidian">
+          <View style={{ height: stageHeight }}>
+            {inSession ? (
+              <CameraView style={StyleSheet.absoluteFill} facing="front" />
+            ) : null}
+
             <View
               pointerEvents="none"
-              className="absolute inset-x-16 inset-y-10 rounded-b-xl rounded-t-full border-2 border-inverse-on-surface/30"
+              className="absolute bottom-[10%] left-[18%] right-[18%] top-[10%] rounded-t-[140px] border border-landing-brass/25"
             />
-            <View className="absolute left-md top-md rounded-full bg-inverse-surface px-md py-xs">
-              <Text className="text-body-sm font-semibold text-inverse-on-surface">
-                {phaseLabel}
+
+            {!inSession ? (
+              <View className="flex-1 items-center justify-center px-8">
+                <View className="h-14 w-14 items-center justify-center border border-landing-paper/20">
+                  {isBusy ? (
+                    <ActivityIndicator color={COLORS.brass} />
+                  ) : isPaused ? (
+                    <CirclePause size={26} strokeWidth={1.3} color={COLORS.brass} />
+                  ) : (
+                    <Shirt size={26} strokeWidth={1.3} color={COLORS.brass} />
+                  )}
+                </View>
+                <Text className="mt-5 text-center font-display text-[28px] leading-tight text-landing-paper">
+                  {isPaused ? 'Đang tạm dừng' : 'Sẵn sàng thử đồ'}
+                </Text>
+                <Text className="mt-3 max-w-[280px] text-center font-sans text-body-sm leading-relaxed text-landing-paper/65">
+                  {isPaused
+                    ? 'Đổi trang phục bên dưới rồi tiếp tục phiên đang có.'
+                    : 'Chọn trang phục, bật camera và xem ngay trên chính bạn.'}
+                </Text>
+              </View>
+            ) : null}
+
+            <View className="absolute left-4 top-4 flex-row items-center gap-2 bg-landing-obsidian/80 px-3 py-2">
+              <View
+                className={`h-1.5 w-1.5 rounded-full ${
+                  isActive ? 'bg-sage' : isPaused ? 'bg-brass' : 'bg-landing-paper/50'
+                }`}
+              />
+              <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-paper">
+                {statusLabel}
               </Text>
             </View>
-            {phase === 'active' && remainingSeconds > 0 ? (
-              <View className="absolute right-md top-md rounded-full bg-inverse-surface px-md py-xs">
-                <Text className="text-body-sm font-semibold text-inverse-on-surface">
+
+            {isActive ? (
+              <View className="absolute right-4 top-4 bg-landing-obsidian/80 px-3 py-2">
+                <Text className="font-mono text-[12px] text-landing-paper">
                   {formatSeconds(remainingSeconds)}
                 </Text>
               </View>
             ) : null}
-            {phase === 'paused' ? (
-              <View className="absolute inset-0 items-center justify-center bg-black/50">
-                <Text className="text-body-lg font-bold text-inverse-on-surface">
+
+            {isPaused ? (
+              <View className="absolute inset-0 items-center justify-center bg-landing-obsidian/55">
+                <Text className="font-display text-[22px] text-landing-paper">
                   Phiên đang tạm dừng
                 </Text>
               </View>
             ) : null}
           </View>
-        </View>
-
-        <View className="mt-xl">
-          {phase === 'active' ? (
-            <View className="flex-row gap-md">
-              <View className="flex-1">
-                <Button title="Tạm dừng" variant="outline" onPress={() => pause()} />
-              </View>
-              <View className="flex-1">
-                <Button
-                  title="Kết thúc"
-                  onPress={() => setShowEndModal(true)}
-                  textClassName="text-primary-foreground"
-                />
-              </View>
-            </View>
-          ) : null}
-          {phase === 'paused' ? (
-            <View className="flex-row gap-md">
-              <View className="flex-1">
-                <Button
-                  title="Tiếp tục"
-                  onPress={() => resume()}
-                  textClassName="text-primary-foreground"
-                />
-              </View>
-              <View className="flex-1">
-                <Button
-                  title="Kết thúc"
-                  variant="outline"
-                  onPress={() => setShowEndModal(true)}
-                />
-              </View>
-            </View>
-          ) : null}
-          <Text className="mt-lg text-center text-body-sm text-on-surface-variant">
-            Hình ảnh camera chỉ dùng để thử đồ trực tiếp và được bảo mật.
-          </Text>
-        </View>
-
-        <FeedbackModal
-          visible={showEndModal}
-          onClose={() => setShowEndModal(false)}
-          type="warning"
-          title="Kết thúc phiên?"
-          message="Phiên thử đồ trực tiếp sẽ dừng lại."
-          primaryButtonText="Kết thúc"
-          primaryButtonVariant="primary"
-          onPrimaryPress={() => {
-            setShowEndModal(false);
-            end('client_end');
-          }}
-          secondaryButtonText="Ở lại"
-        />
-      </ScrollView>
-    );
-  }
-
-  return (
-    <View className="flex-1">
-      <ScrollView className="flex-1" contentContainerClassName="p-xl">
-        <TryOnSharedIntro quota={photoQuota} />
-        <TryOnModeToggle
-          value="live"
-          onChange={(next) => {
-            if (next === 'photo') onSwitchToPhoto();
-          }}
-        />
-
-        <Text className="mt-xl text-label-md uppercase text-on-surface-variant">
-          Live fitting room
-        </Text>
-        <Text className="mt-xs font-heading text-headline-lg font-bold text-on-surface-strong">
-          Phòng thử của bạn
-        </Text>
-        <Text className="mt-xs text-body-sm text-on-surface-variant">
-          Một góc nhìn mới, một bộ đồ thật hợp.
-        </Text>
-
-        {/* Khung camera chờ theo ảnh mẫu: placeholder tối, chưa bật preview
-            cho tới khi user bấm Bắt đầu (đỡ tốn pin + rõ ràng về quyền riêng tư). */}
-        <View className="mt-lg overflow-hidden rounded-2xl bg-inverse-surface">
-          <View className="items-center px-xl pb-xxl pt-xl">
-            <View className="flex-row items-center gap-xs self-start rounded-full bg-black/40 px-md py-xs">
-              <View className="h-1.5 w-1.5 rounded-full bg-success" />
-              <Text className="text-label-md text-inverse-on-surface">
-                Sẵn sàng thử đồ
-              </Text>
-            </View>
-            <View className="mt-xl h-20 w-20 items-center justify-center rounded-full border border-inverse-on-surface/20">
-              <Ionicons name="shirt-outline" size={36} className="text-inverse-on-surface" />
-            </View>
-            <Text className="mt-lg text-center font-heading text-headline-md font-bold text-inverse-on-surface">
-              Sẵn sàng cho diện mạo mới?
+          <View className="flex-row items-center gap-2 border-t border-landing-paper/10 px-lg py-3">
+            <Expand size={14} strokeWidth={1.75} color={COLORS.paper} />
+            <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-paper/70">
+              Đứng nơi đủ sáng, giữ trang phục trong khung hình.
             </Text>
-            <Text className="mt-sm text-center text-body-sm text-inverse-on-surface">
-              Chọn trang phục, bật camera và xem ngay trên chính bạn.
-            </Text>
-            <View className="mt-lg h-24 w-32 rounded-b-xl rounded-t-full border border-inverse-on-surface/20" />
           </View>
         </View>
 
-        <View className="mt-xxl flex-row items-center justify-between">
-          <Text className="font-heading text-headline-sm font-bold text-on-surface">
-            Bạn muốn mặc gì?
-          </Text>
-          <Text className="text-body-sm text-on-surface-variant">
-            {mode === 'single' ? '01 món đồ' : '02 món đồ'}
+        <View className="mt-3 flex-row items-center justify-center gap-2 px-2">
+          <Camera size={13} strokeWidth={1.75} color={COLORS.muted} />
+          <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-muted">
+            Camera chỉ được gửi để xử lý khi bạn bắt đầu hoặc tiếp tục thử.
           </Text>
         </View>
-        <View className="mt-md">
-          <SegmentedControl
+
+        {/* Trang phục */}
+        <View className="mt-8">
+          <View className="mb-4 flex-row items-baseline justify-between gap-3">
+            <Text className="font-display text-[22px] leading-tight text-landing-obsidian">
+              Trang phục
+            </Text>
+            <Text className="font-mono text-xs text-landing-muted">
+              {String(selectedCount).padStart(2, '0')} món
+            </Text>
+          </View>
+
+          <TryOnSegmented
+            value={mode}
+            onChange={setMode}
+            disabled={selectionDisabled}
             options={[
               { value: 'single', label: 'Một món' },
-              { value: 'combo', label: 'Áo + quần' },
+              {
+                value: 'combo',
+                label: 'Phối bộ',
+                icon: (selected) => (
+                  <Layers
+                    size={14}
+                    strokeWidth={1.75}
+                    color={selected ? COLORS.paper : COLORS.obsidian}
+                  />
+                ),
+              },
             ]}
-            value={mode}
-            onChange={(next) => setMode(next as 'single' | 'combo')}
           />
-        </View>
 
-        {mode === 'single' ? (
-          <View className="mt-md">
-            {singleProduct ? (
-              <>
-                <GarmentProductCard
-                  product={singleProduct}
-                  onChange={() => openPicker('single')}
-                  changeLabel="Đổi món"
-                />
-                <GarmentPreview product={singleProduct} label={singleProduct.name} />
-              </>
+          <View className="mt-5">
+            {mode === 'single' ? (
+              <GarmentSlot
+                label="Trang phục"
+                product={singleProduct}
+                emptyLabel="Chưa chọn trang phục"
+                onChange={() => openPicker('single')}
+                disabled={selectionDisabled}
+              />
             ) : (
-              <Pressable
-                className="items-center rounded-xl border border-dashed border-outline-variant bg-surface-lowest p-xl"
-                onPress={() => openPicker('single')}
-              >
-                <Text className="text-center text-body-sm font-semibold text-on-surface">
-                  Chưa chọn trang phục
-                </Text>
-                <Text className="mt-xs text-center text-body-sm text-primary-container">
-                  Chọn sản phẩm ›
-                </Text>
-              </Pressable>
+              <View className="border-y border-landing-line">
+                <View className="border-b border-landing-line py-4">
+                  <GarmentSlot
+                    label="Lớp ngoài"
+                    hint="Tùy chọn"
+                    product={comboOuter}
+                    emptyLabel="Áo khoác hoặc blazer"
+                    onChange={() => openPicker('outer')}
+                    onClear={comboOuter ? clearOuter : undefined}
+                    disabled={selectionDisabled}
+                  />
+                </View>
+                <View className="border-b border-landing-line py-4">
+                  <GarmentSlot
+                    label="Lớp trong"
+                    product={comboUpper}
+                    emptyLabel="Sơ mi hoặc áo trong"
+                    onChange={() => openPicker('upper')}
+                    disabled={selectionDisabled}
+                  />
+                </View>
+                <View className="py-4">
+                  <GarmentSlot
+                    label="Phần dưới"
+                    product={comboLower}
+                    emptyLabel="Quần hoặc chân váy"
+                    onChange={() => openPicker('lower')}
+                    disabled={selectionDisabled}
+                  />
+                </View>
+              </View>
             )}
           </View>
-        ) : (
-          <View className="mt-md gap-xl">
-            <View>
-              <View className="mb-sm">
-                <Text className="text-body-sm font-semibold text-on-surface">
-                  Món 1: Áo / Blazer (Upper)
-                </Text>
-              </View>
-              {comboUpper ? (
-                <>
-                  <GarmentProductCard
-                    product={comboUpper}
-                    onChange={() => openPicker('upper')}
-                    changeLabel="Đổi áo khác"
-                  />
-                  <GarmentPreview product={comboUpper} label={comboUpper.name} />
-                </>
-              ) : (
-                <Pressable
-                  className="items-center rounded-xl border border-dashed border-outline-variant bg-surface-lowest p-xl"
-                  onPress={() => openPicker('upper')}
-                >
-                  <Text className="text-center text-body-sm font-semibold text-on-surface">
-                    Chưa chọn áo
-                  </Text>
-                  <Text className="mt-xs text-center text-body-sm text-primary-container">
-                    Chọn áo ›
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-            <View>
-              <View className="mb-sm">
-                <Text className="text-body-sm font-semibold text-on-surface">
-                  Món 2: Quần / Chân váy (Lower)
-                </Text>
-              </View>
-              {comboLower ? (
-                <>
-                  <GarmentProductCard
-                    product={comboLower}
-                    onChange={() => openPicker('lower')}
-                    changeLabel="Đổi quần/váy khác"
-                  />
-                  <GarmentPreview product={comboLower} label={comboLower.name} />
-                </>
-              ) : (
-                <Pressable
-                  className="items-center rounded-xl border border-dashed border-outline-variant bg-surface-lowest p-xl"
-                  onPress={() => openPicker('lower')}
-                >
-                  <Text className="text-center text-body-sm font-semibold text-on-surface">
-                    Chưa chọn quần/váy
-                  </Text>
-                  <Text className="mt-xs text-center text-body-sm text-primary-container">
-                    Chọn quần/váy ›
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-            <View className="flex-row gap-sm rounded-lg bg-primary-soft p-md">
-              <Ionicons
-                name="information-circle-outline"
-                size={20}
-                className="text-primary-container"
-              />
-              <Text className="flex-1 text-body-sm leading-relaxed text-on-surface">
-                Thử cả bộ vẫn dùng chung thời gian của một phiên.
-              </Text>
-            </View>
-          </View>
-        )}
 
-        {quota && typeof quota.limit === 'number' ? (
-          <View className="mt-xl overflow-hidden rounded-xl border border-surface-line bg-surface-lowest">
-            <Pressable
-              className="min-h-11 flex-row items-center justify-between p-md"
-              onPress={() => setQuotaOpen((prev) => !prev)}
+          <View className="mt-4 flex-row items-start gap-2">
+            <CirclePause
+              size={14}
+              strokeWidth={1.75}
+              color={isPaused ? COLORS.oxblood : COLORS.muted}
+            />
+            <Text
+              className={`flex-1 font-sans text-body-sm leading-relaxed ${
+                isPaused ? 'text-oxblood' : 'text-landing-muted'
+              }`}
             >
-              <Text className="text-body-sm font-semibold text-on-surface">
-                Thời gian Live hôm nay
+              {guideText}
+            </Text>
+          </View>
+        </View>
+
+        {/* Quota chi tiết */}
+        <View className="mt-8 border-y border-landing-line">
+          <Pressable
+            accessibilityRole="button"
+            className="min-h-12 flex-row items-center justify-between gap-3 active:opacity-70"
+            onPress={() => setQuotaOpen((prev) => !prev)}
+          >
+            <Text className="font-sans text-body-sm text-landing-muted">
+              Thời gian thử trực tiếp hôm nay
+            </Text>
+            <View className="flex-row items-center gap-2">
+              <Text className="font-sans text-body-sm text-landing-obsidian">
+                {quotaQuery.isLoading ? (
+                  'Đang tải…'
+                ) : quota ? (
+                  <>
+                    <Text className="font-mono">{formatSeconds(quota.remaining)}</Text> còn dùng được
+                  </>
+                ) : (
+                  'Chưa có dữ liệu'
+                )}
               </Text>
-              <View className="flex-row items-center gap-sm">
-                <Text className="text-body-sm font-semibold text-primary-container">
-                  {formatSeconds(quota.limit)} có thể dùng
-                </Text>
-                <Ionicons
-                  name={quotaOpen ? 'chevron-up' : 'chevron-down'}
-                  size={18}
-                  className="text-on-surface-variant"
-                />
+              {quotaOpen ? (
+                <ChevronUp size={14} strokeWidth={1.75} color={COLORS.obsidian} />
+              ) : (
+                <ChevronDown size={14} strokeWidth={1.75} color={COLORS.obsidian} />
+              )}
+            </View>
+          </Pressable>
+          {quotaOpen && quota ? (
+            <View className="gap-2 border-t border-landing-line py-3">
+              <View className="flex-row justify-between">
+                <Text className="font-sans text-body-sm text-landing-muted">Tổng thời gian mỗi ngày</Text>
+                <Text className="font-mono text-body-sm text-landing-obsidian">{formatSeconds(quota.limit ?? 0)}</Text>
               </View>
-            </Pressable>
-            {quotaOpen ? (
-              <View className="border-t border-surface-line p-md">
-                <View className="flex-row justify-between py-xs">
-                  <Text className="text-body-sm text-on-surface-variant">
-                    Tổng thời gian mỗi ngày
-                  </Text>
-                  <Text className="text-body-sm font-semibold text-on-surface">
-                    {formatSeconds(quota.limit)}
-                  </Text>
-                </View>
-                <View className="flex-row justify-between py-xs">
-                  <Text className="text-body-sm text-on-surface-variant">Đã sử dụng</Text>
-                  <Text className="text-body-sm font-semibold text-on-surface">
-                    {formatSeconds(quota.limit - quota.remaining)}
-                  </Text>
-                </View>
-                <Text className="mt-sm text-body-sm leading-relaxed text-on-surface-variant">
-                  Thời gian còn lại của phiên hiển thị ở bộ đếm. Live không sử dụng
-                  lượt thử bằng ảnh.
+              <View className="flex-row justify-between">
+                <Text className="font-sans text-body-sm text-landing-muted">Đã sử dụng</Text>
+                <Text className="font-mono text-body-sm text-landing-obsidian">
+                  {formatSeconds(quota.allocated ?? 0)}
                 </Text>
               </View>
+              <View className="flex-row justify-between">
+                <Text className="font-sans text-body-sm text-landing-muted">Dành cho phiên đang mở</Text>
+                <Text className="font-mono text-body-sm text-landing-obsidian">
+                  {formatSeconds(quota.reserved ?? 0)}
+                </Text>
+              </View>
+              <Text className="pt-1 font-sans text-body-sm leading-relaxed text-landing-muted">
+                Thời gian còn lại của phiên hiển thị ở bộ đếm. Thử trực tiếp không trừ
+                lượt thử bằng ảnh.
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        <Pressable
+          accessibilityRole="button"
+          disabled={inSession || isBusy}
+          onPress={onSwitchToPhoto}
+          className={`mt-4 min-h-11 flex-row items-center justify-center gap-2 ${inSession || isBusy ? 'opacity-45' : 'active:opacity-70'}`}
+        >
+          <ImageIcon size={14} strokeWidth={1.75} color={COLORS.muted} />
+          <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-muted">
+            Thử bằng ảnh
+          </Text>
+        </Pressable>
+
+        {/* Trạng thái không khả dụng */}
+        {error || (!inSession && unavailableReason) || permissionDenied ? (
+          <View
+            accessibilityRole="alert"
+            className="mt-4 border-l-2 border-brass bg-ivory px-4 py-3"
+          >
+            <Text className="font-sans text-body-sm leading-relaxed text-landing-obsidian">
+              {error || (!inSession ? unavailableReason : null)}
+            </Text>
+            {permissionDenied ? (
+              <Text className="mt-1 font-sans text-body-sm leading-relaxed text-landing-muted">
+                FashionAI cần quyền camera để thử đồ trực tiếp.
+              </Text>
+            ) : null}
+            {permissionDenied ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => requestPermission()}
+                className="mt-3 h-10 items-center justify-center self-start rounded-subtle bg-oxblood px-4 active:opacity-90"
+              >
+                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+                  Cho phép camera
+                </Text>
+              </Pressable>
             ) : null}
           </View>
         ) : null}
+      </ScrollView>
 
-        <Pressable
-          className="mt-xl min-h-11 flex-row items-center justify-center gap-sm"
-          onPress={onSwitchToPhoto}
-        >
-          <Text className="text-label-lg text-primary-container">Thử bằng ảnh</Text>
-          <Ionicons name="arrow-forward" size={16} className="text-primary-container" />
-        </Pressable>
-        <Text className="mt-lg text-center text-body-sm text-on-surface-variant">
-          Hình ảnh camera chỉ dùng để thử đồ trực tiếp và được bảo mật.
-        </Text>
-        </ScrollView>
-
-      {/* Thanh cố định đáy: thẻ timer + CTA, luôn trên tab bar */}
-      <View style={{ paddingBottom: insets.bottom }}>
-        <View className="border-t border-surface-line bg-background px-xl pb-md pt-md">
-          <View className="flex-row items-center gap-md rounded-xl border border-surface-line bg-surface-lowest p-md shadow-sm">
-            <View className="h-10 w-10 items-center justify-center rounded-full bg-primary-soft">
-              <Ionicons name="timer-outline" size={20} className="text-primary-container" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-body-sm text-on-surface-variant">
-                Thời gian cho phiên mới
-              </Text>
-              {timerBlock}
-            </View>
-            {quota?.eligible ? (
-              <View className="items-end">
-                <View className="mb-xs h-2 w-2 rounded-full bg-success" />
-                <Text className="text-body-sm text-on-surface-variant">
-                  Sẵn sàng khi bạn muốn
-                </Text>
-              </View>
-            ) : null}
-          </View>
-          <View className="mt-md">{startButton}</View>
-          {unavailableReason ? (
-            <Text className="mt-sm text-center text-body-sm text-danger" numberOfLines={2}>
-              {unavailableReason}
-            </Text>
-          ) : null}
-          {permissionDenied ? (
-            <View className="mt-md rounded-lg border border-surface-line bg-surface-lowest p-md">
-              <Text className="text-center text-body-sm text-danger">
-                FashionAI cần quyền camera để thử đồ trực tiếp.
-              </Text>
-              <Button
-                className="mt-md"
-                title="Cho phép camera"
-                size="sm"
-                onPress={() => requestPermission()}
+      {/* Thanh phiên cố định phía trên tab bar */}
+      <View className="absolute bottom-0 left-0 right-0 border-t border-landing-line bg-landing-paper px-lg py-md">
+        <View className="mb-3 flex-row items-center justify-between gap-3">
+          <View className="flex-row items-center gap-3">
+            <View
+              className={`h-10 w-10 items-center justify-center border ${
+                lowTime ? 'border-danger/40' : 'border-landing-line'
+              }`}
+            >
+              <Timer
+                size={18}
+                strokeWidth={1.5}
+                color={lowTime ? COLORS.danger : COLORS.brassInk}
               />
             </View>
-          ) : null}
-          {error ? (
-            <Text className="mt-sm text-center text-body-sm text-danger" numberOfLines={2}>
-              {error}
+            <View>
+              <Text className="font-sans text-[11px] text-landing-muted">
+                {inSession ? 'Thời gian phiên còn lại' : 'Thời gian cho phiên mới'}
+              </Text>
+              <Text
+                className={`font-mono text-[28px] leading-8 ${
+                  lowTime ? 'text-danger' : 'text-landing-obsidian'
+                }`}
+              >
+                {quotaQuery.isLoading && !inSession ? '--:--' : formatSeconds(seconds)}
+              </Text>
+            </View>
+          </View>
+          <Text
+            className={`max-w-[130px] text-right font-sans text-[11px] ${
+              isPaused || lowTime ? 'text-brass-ink' : 'text-landing-muted'
+            }`}
+          >
+            {panelStatus}
+          </Text>
+        </View>
+
+        <View className="flex-row gap-2">
+          <Pressable
+            accessibilityRole="button"
+            disabled={primaryDisabled}
+            onPress={handlePrimaryPress}
+            className={`${primaryButtonClass} ${primaryDisabled ? 'opacity-45' : ''}`}
+          >
+            {isBusy ? (
+              <ActivityIndicator color={COLORS.paper} size="small" />
+            ) : isActive ? (
+              <CirclePause size={17} strokeWidth={1.75} color={COLORS.paper} />
+            ) : (
+              <Play size={15} fill={COLORS.paper} color={COLORS.paper} />
+            )}
+            <Text className="font-sans text-[11.5px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+              {primaryLabel}
             </Text>
+          </Pressable>
+          {inSession ? (
+            <Pressable
+              accessibilityRole="button"
+              disabled={isBusy}
+              onPress={() => setShowEndModal(true)}
+              className={`${outlineButtonClass} ${isBusy ? 'opacity-45' : 'active:opacity-70'}`}
+            >
+              <View className="flex-row items-center gap-1.5">
+                <Square size={13} strokeWidth={1.75} color={COLORS.obsidian} />
+                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
+                  Kết thúc
+                </Text>
+              </View>
+            </Pressable>
           ) : null}
         </View>
       </View>
+
+      <FeedbackModal
+        visible={showEndModal}
+        onClose={() => setShowEndModal(false)}
+        type="warning"
+        title="Kết thúc phiên?"
+        message="Phiên thử đồ trực tiếp sẽ dừng lại."
+        primaryButtonText="Kết thúc"
+        primaryButtonVariant="primary"
+        onPrimaryPress={() => {
+          setShowEndModal(false);
+          end('client_end');
+        }}
+        secondaryButtonText="Ở lại"
+      />
     </View>
   );
 };

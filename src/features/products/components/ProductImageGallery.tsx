@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image } from 'expo-image';
 import {
   FlatList,
@@ -13,6 +13,7 @@ import { SPACING } from '@/constants/theme';
 
 interface ProductImageGalleryProps {
   imageUrls: string[];
+  focusImageUrl?: string | null;
   productName: string;
 }
 
@@ -21,18 +22,24 @@ const dotStyle = tva({
   base: 'h-1.5 rounded-full',
   variants: {
     active: {
-      true: 'w-4 bg-primary-container',
-      false: 'w-1.5 bg-surface-line',
+      true: 'w-4 bg-oxblood',
+      false: 'w-1.5 bg-taupe',
     },
   },
 });
 
 export function ProductImageGallery({
   imageUrls,
+  focusImageUrl,
   productName,
 }: ProductImageGalleryProps) {
   const { width: screenWidth } = useWindowDimensions();
-  const [activeIndex, setActiveIndex] = useState(0);
+  const listRef = useRef<FlatList<string>>(null);
+  const lastFocusedImageRef = useRef<string | null>(null);
+  const focusIndex = focusImageUrl ? imageUrls.indexOf(focusImageUrl) : -1;
+  const initialFocusIndex =
+    focusIndex >= 0 ? Math.min(focusIndex, imageUrls.length - 1) : 0;
+  const [activeIndex, setActiveIndex] = useState(initialFocusIndex);
   const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(
     () => new Set(),
   );
@@ -41,6 +48,27 @@ export function ProductImageGallery({
     Math.min(screenWidth - SPACING.lg * 2, MAX_IMAGE_WIDTH),
   );
   const imageHeight = imageWidth / 0.75;
+
+  useEffect(() => {
+    const targetUrl = focusImageUrl?.trim();
+    if (!targetUrl || targetUrl === lastFocusedImageRef.current) {
+      return;
+    }
+
+    const targetIndex = imageUrls.indexOf(targetUrl);
+    if (targetIndex < 0) {
+      return;
+    }
+
+    lastFocusedImageRef.current = targetUrl;
+    requestAnimationFrame(() => {
+      setActiveIndex(targetIndex);
+      listRef.current?.scrollToOffset({
+        offset: targetIndex * imageWidth,
+        animated: true,
+      });
+    });
+  }, [focusImageUrl, imageUrls, imageWidth]);
 
   const handleMomentumScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -62,28 +90,37 @@ export function ProductImageGallery({
       className="items-center px-lg pt-lg"
     >
       <View style={{ width: imageWidth }}>
-        <View className="overflow-hidden rounded-catalog-gallery bg-catalog-muted">
+        <View className="overflow-hidden rounded-subtle bg-ivory">
           {imageUrls.length === 0 ? (
             <View style={{ height: imageHeight }}>
               <View
                 accessibilityLabel={`${productName}, chưa có ảnh sản phẩm`}
                 className="flex-1 items-center justify-center gap-sm"
               >
-                <Text className="font-sans text-display text-catalog-muted-text">
+                <Text className="font-sans text-display text-landing-muted">
                   ◇
                 </Text>
-                <Text className="font-sans text-body-md text-catalog-muted-text">
+                <Text className="font-sans text-body-md text-landing-muted">
                   Chưa có ảnh sản phẩm
                 </Text>
               </View>
             </View>
           ) : (
             <FlatList
+              ref={listRef}
               data={imageUrls}
               horizontal
               pagingEnabled
               keyExtractor={(imageUrl) => imageUrl}
               showsHorizontalScrollIndicator={false}
+              initialScrollIndex={
+                initialFocusIndex > 0 ? initialFocusIndex : undefined
+              }
+              getItemLayout={(_, index) => ({
+                length: imageWidth,
+                offset: imageWidth * index,
+                index,
+              })}
               onMomentumScrollEnd={handleMomentumScrollEnd}
               renderItem={({ item: imageUrl, index }) => (
                 <View style={{ width: imageWidth, height: imageHeight }}>
@@ -92,10 +129,10 @@ export function ProductImageGallery({
                       accessibilityLabel={`Không thể hiển thị ảnh ${index + 1} của ${productName}`}
                       className="flex-1 items-center justify-center gap-sm"
                     >
-                      <Text className="font-sans text-display text-catalog-muted-text">
+                      <Text className="font-sans text-display text-landing-muted">
                         ◇
                       </Text>
-                      <Text className="font-sans text-body-md text-catalog-muted-text">
+                      <Text className="font-sans text-body-md text-landing-muted">
                         Không thể hiển thị ảnh
                       </Text>
                     </View>
@@ -116,9 +153,9 @@ export function ProductImageGallery({
           {imageUrls.length > 1 ? (
             <View
               pointerEvents="none"
-              className="absolute bottom-md right-md rounded-full bg-surface-lowest/90 px-md py-xs"
+              className="absolute bottom-md right-md rounded-subtle border border-landing-line bg-ivory/90 px-md py-xs"
             >
-              <Text className="font-sans text-label-md tabular-nums text-primary-container">
+              <Text className="font-mono text-label-md tabular-nums text-obsidian">
                 {activeIndex + 1} / {imageUrls.length}
               </Text>
             </View>

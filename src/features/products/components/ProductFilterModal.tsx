@@ -1,22 +1,20 @@
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
+  LayoutChangeEvent,
   Modal,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button } from '@/components/ui/Button';
+import { Check, X } from 'lucide-react-native';
+import { COLORS } from '@/constants/theme';
 import {
-  BORDER_RADIUS,
-  COLORS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-  SPACING,
-} from '@/constants/theme';
+  AVAILABLE_COLORS,
+  PRICE_FILTER,
+  SUB_CATEGORIES,
+} from '../constants/product-filters';
 import {
   GarmentCategory,
   GarmentType,
@@ -27,6 +25,7 @@ export interface ProductFilterSelection {
   category: GarmentCategory | null;
   garmentType: GarmentType | null;
   color: string | null;
+  subCategory: string | null;
   material: string | null;
   minPrice: number | null;
   maxPrice: number | null;
@@ -36,133 +35,185 @@ export interface ProductFilterSelection {
 interface ProductFilterModalProps {
   visible: boolean;
   values: ProductFilterSelection;
+  filteredCount: number;
   onApply: (selection: ProductFilterSelection) => void;
   onClose: () => void;
 }
 
-interface Choice<T extends string> {
-  label: string;
-  value: T;
+function toSelectionList(value: string | null): string[] {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
-const CATEGORY_OPTIONS: Choice<GarmentCategory>[] = [
-  { label: 'Áo', value: 'UPPER' },
-  { label: 'Quần & chân váy', value: 'LOWER' },
-  { label: 'Đầm & liền thân', value: 'FULL_BODY' },
-];
-
-const GARMENT_OPTIONS: Choice<GarmentType>[] = [
-  { label: 'Sơ mi', value: 'SHIRT' },
-  { label: 'Ghi-lê', value: 'VEST' },
-  { label: 'Áo khoác', value: 'JACKET' },
-  { label: 'Quần', value: 'PANTS' },
-  { label: 'Chân váy', value: 'SKIRT' },
-  { label: 'Đầm', value: 'DRESS' },
-  { label: 'Jumpsuit', value: 'JUMPSUIT' },
-];
-
-const SORT_OPTIONS: Choice<ProductSort>[] = [
-  { label: 'Mới nhất', value: 'latest' },
-  { label: 'Giá tăng dần', value: 'price_asc' },
-  { label: 'Giá giảm dần', value: 'price_desc' },
-];
-
-function optionalPrice(value: string): number | null {
-  const normalized = value.trim();
-  return normalized ? Number(normalized) : null;
+function formatVnd(value: number) {
+  return `${value.toLocaleString('vi-VN')} ₫`;
 }
 
-function ChoiceChip<T extends string>({
-  choice,
-  selected,
-  onPress,
+function toggleValue(list: string[], value: string) {
+  return list.includes(value)
+    ? list.filter((item) => item !== value)
+    : [...list, value];
+}
+
+function PriceSlider({
+  maxPrice,
+  onChange,
 }: {
-  choice: Choice<T>;
-  selected: boolean;
-  onPress: () => void;
+  maxPrice: number | null;
+  onChange: (value: number | null) => void;
 }) {
+  const [trackWidth, setTrackWidth] = useState(0);
+  const trackWidthRef = useRef(0);
+  const currentValue = maxPrice ?? PRICE_FILTER.max;
+  const ratio =
+    (currentValue - PRICE_FILTER.min) / (PRICE_FILTER.max - PRICE_FILTER.min);
+  const label =
+    maxPrice === null ? 'Mọi mức giá' : `Dưới ${formatVnd(maxPrice)}`;
+
+  const handleLayout = useCallback((event: LayoutChangeEvent) => {
+    const width = event.nativeEvent.layout.width;
+    trackWidthRef.current = width;
+    setTrackWidth(width);
+  }, []);
+
+  const updateFromPosition = useCallback(
+    (x: number) => {
+      const width = trackWidthRef.current;
+      if (!width) return;
+      const clampedRatio = Math.min(1, Math.max(0, x / width));
+      const rawValue =
+        PRICE_FILTER.min +
+        clampedRatio * (PRICE_FILTER.max - PRICE_FILTER.min);
+      const stepped =
+        Math.round(rawValue / PRICE_FILTER.step) * PRICE_FILTER.step;
+      const nextValue = Math.min(
+        PRICE_FILTER.max,
+        Math.max(PRICE_FILTER.min, stepped),
+      );
+      onChange(nextValue >= PRICE_FILTER.max ? null : nextValue);
+    },
+    [onChange],
+  );
+
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={({ pressed }) => [styles.chipPressable, pressed && styles.pressed]}
-    >
-      <View style={[styles.chip, selected && styles.chipSelected]}>
-        <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-          {choice.label}
+    <View>
+      <Text className="mb-3 font-mono text-[13px] text-landing-obsidian">
+        {label}
+      </Text>
+
+      <View
+        accessible
+        accessibilityRole="adjustable"
+        accessibilityLabel="Giá tối đa"
+        accessibilityValue={{ text: label }}
+        onLayout={handleLayout}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={(event) =>
+          updateFromPosition(event.nativeEvent.locationX)
+        }
+        onResponderMove={(event) =>
+          updateFromPosition(event.nativeEvent.locationX)
+        }
+        className="h-11 justify-center"
+      >
+        <View className="h-1 w-full rounded-full bg-landing-line" />
+        <View
+          className="absolute left-0 top-5 h-1 rounded-full bg-landing-oxblood"
+          style={{ width: trackWidth * ratio }}
+        />
+        <View
+          className="absolute top-3.5 h-4 w-4 rounded-full bg-landing-oxblood"
+          style={{ left: Math.max(0, trackWidth * ratio - 8) }}
+        />
+      </View>
+
+      <View className="mt-1 flex-row justify-between">
+        <Text className="font-mono text-[10px] uppercase tracking-[0.12em] text-landing-muted">
+          {formatVnd(PRICE_FILTER.min)}
+        </Text>
+        <Text className="font-mono text-[10px] uppercase tracking-[0.12em] text-landing-muted">
+          {formatVnd(PRICE_FILTER.max)}
         </Text>
       </View>
-    </Pressable>
+    </View>
+  );
+}
+
+function FilterGroup({
+  title,
+  isFirst = false,
+  children,
+}: {
+  title: string;
+  isFirst?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <View
+      className={
+        isFirst
+          ? 'pb-6'
+          : 'border-t border-landing-line/70 py-6'
+      }
+    >
+      <Text className="mb-4 font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-landing-brass-ink">
+        {title}
+      </Text>
+      {children}
+    </View>
   );
 }
 
 export function ProductFilterModal({
   visible,
   values,
+  filteredCount,
   onApply,
   onClose,
 }: ProductFilterModalProps) {
   const insets = useSafeAreaInsets();
-  const [category, setCategory] = useState<GarmentCategory | null>(
-    values.category,
+  const [subCategories, setSubCategories] = useState<string[]>(() =>
+    toSelectionList(values.subCategory),
   );
-  const [garmentType, setGarmentType] = useState<GarmentType | null>(
-    values.garmentType,
+  const [colors, setColors] = useState<string[]>(() =>
+    toSelectionList(values.color),
   );
-  const [color, setColor] = useState(values.color ?? '');
-  const [material, setMaterial] = useState(values.material ?? '');
-  const [minPrice, setMinPrice] = useState(
-    values.minPrice?.toString() ?? '',
-  );
-  const [maxPrice, setMaxPrice] = useState(
-    values.maxPrice?.toString() ?? '',
-  );
-  const [sort, setSort] = useState<ProductSort>(values.sort);
-  const [priceError, setPriceError] = useState<string | null>(null);
+  const [maxPrice, setMaxPrice] = useState<number | null>(values.maxPrice);
 
-  const handleReset = () => {
-    setCategory(null);
-    setGarmentType(null);
-    setColor('');
-    setMaterial('');
-    setMinPrice('');
-    setMaxPrice('');
-    setSort('latest');
-    setPriceError(null);
-  };
+  const hasDraftFilters =
+    subCategories.length > 0 || colors.length > 0 || maxPrice !== null;
 
-  const handleApply = () => {
-    const parsedMinPrice = optionalPrice(minPrice);
-    const parsedMaxPrice = optionalPrice(maxPrice);
-    const hasInvalidPrice =
-      (parsedMinPrice !== null && (!Number.isFinite(parsedMinPrice) || parsedMinPrice < 0)) ||
-      (parsedMaxPrice !== null && (!Number.isFinite(parsedMaxPrice) || parsedMaxPrice < 0));
+  const handleToggleSubCategory = useCallback((name: string) => {
+    setSubCategories((current) => toggleValue(current, name));
+  }, []);
 
-    if (hasInvalidPrice) {
-      setPriceError('Vui lòng nhập mức giá hợp lệ.');
-      return;
-    }
+  const handleToggleColor = useCallback((name: string) => {
+    setColors((current) => toggleValue(current, name));
+  }, []);
 
-    if (
-      parsedMinPrice !== null &&
-      parsedMaxPrice !== null &&
-      parsedMinPrice > parsedMaxPrice
-    ) {
-      setPriceError('Giá tối thiểu không thể lớn hơn giá tối đa.');
-      return;
-    }
+  const handleClearAll = useCallback(() => {
+    setSubCategories([]);
+    setColors([]);
+    setMaxPrice(null);
+  }, []);
 
+  const handleApply = useCallback(() => {
     onApply({
-      category,
-      garmentType,
-      color: color.trim() || null,
-      material: material.trim() || null,
-      minPrice: parsedMinPrice,
-      maxPrice: parsedMaxPrice,
-      sort,
+      category: values.category,
+      garmentType: values.garmentType,
+      color: colors.length > 0 ? colors.join(',') : null,
+      subCategory:
+        subCategories.length > 0 ? subCategories.join(',') : null,
+      material: values.material,
+      minPrice: null,
+      maxPrice,
+      sort: values.sort,
     });
-  };
+  }, [colors, maxPrice, onApply, subCategories, values]);
 
   return (
     <Modal
@@ -174,303 +225,170 @@ export function ProductFilterModal({
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={styles.modalRoot}>
+      <View className="flex-1 justify-end">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Đóng bộ lọc"
           onPress={onClose}
-          style={styles.backdrop}
+          className="absolute inset-0 bg-landing-obsidian/45"
         />
 
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <View style={styles.header}>
+        <View className="max-h-[85%] border-t border-landing-line bg-landing-paper">
+          <View className="flex-row items-start justify-between gap-4 border-b border-landing-line/70 px-4 pb-4 pt-5">
             <View>
-              <Text style={styles.title}>Bộ lọc tìm kiếm</Text>
-              <Text style={styles.subtitle}>Tinh chỉnh danh sách sản phẩm</Text>
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-landing-brass-ink">
+                Tinh chỉnh
+              </Text>
+              <Text className="mt-1.5 font-display text-2xl font-normal leading-tight text-landing-obsidian">
+                Bộ lọc
+              </Text>
             </View>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Đóng"
               onPress={onClose}
-              style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
+              className="h-11 w-11 items-center justify-center active:opacity-70"
             >
-              <Text style={styles.closeText}>Đóng</Text>
+              <X size={20} color={COLORS.oxblood} strokeWidth={1.75} />
             </Pressable>
           </View>
 
           <ScrollView
-            contentContainerStyle={styles.content}
+            className="shrink"
+            contentContainerClassName="px-4 py-6"
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Danh mục</Text>
-              <View style={styles.chipGroup}>
-                {CATEGORY_OPTIONS.map((choice) => (
-                  <ChoiceChip
-                    key={choice.value}
-                    choice={choice}
-                    selected={category === choice.value}
-                    onPress={() =>
-                      setCategory(category === choice.value ? null : choice.value)
-                    }
-                  />
-                ))}
+            <FilterGroup title="Danh mục" isFirst>
+              <View>
+                {SUB_CATEGORIES.map((name) => {
+                  const isChecked = subCategories.includes(name);
+                  return (
+                    <Pressable
+                      key={name}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isChecked }}
+                      onPress={() => handleToggleSubCategory(name)}
+                      className="min-h-11 flex-row items-center gap-3 active:opacity-70"
+                    >
+                      <View
+                        className={`h-4 w-4 shrink-0 items-center justify-center rounded-subtle border ${
+                          isChecked
+                            ? 'border-landing-oxblood bg-landing-oxblood'
+                            : 'border-landing-obsidian/40'
+                        }`}
+                      >
+                        {isChecked ? (
+                          <Check
+                            size={12}
+                            color={COLORS.paper}
+                            strokeWidth={2.5}
+                          />
+                        ) : null}
+                      </View>
+                      <Text
+                        className={`flex-1 font-sans text-sm ${
+                          isChecked
+                            ? 'font-medium text-landing-obsidian'
+                            : 'text-landing-obsidian/80'
+                        }`}
+                      >
+                        {name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
-            </View>
+            </FilterGroup>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Kiểu trang phục</Text>
-              <View style={styles.chipGroup}>
-                {GARMENT_OPTIONS.map((choice) => (
-                  <ChoiceChip
-                    key={choice.value}
-                    choice={choice}
-                    selected={garmentType === choice.value}
-                    onPress={() =>
-                      setGarmentType(
-                        garmentType === choice.value ? null : choice.value,
-                      )
-                    }
-                  />
-                ))}
+            <FilterGroup title="Màu sắc">
+              <View className="flex-row flex-wrap">
+                {AVAILABLE_COLORS.map((swatch) => {
+                  const isSelected = colors.includes(swatch.name);
+                  const isLight = Boolean(swatch.light);
+                  return (
+                    <Pressable
+                      key={swatch.name}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      accessibilityLabel={`Màu ${swatch.name}`}
+                      onPress={() => handleToggleColor(swatch.name)}
+                      className="min-h-11 w-1/3 items-center gap-2 py-1 active:opacity-70"
+                    >
+                      <View
+                        className={`h-9 w-9 items-center justify-center rounded-full border p-1 ${
+                          isSelected
+                            ? 'border-landing-oxblood'
+                            : 'border-transparent'
+                        }`}
+                      >
+                        <View
+                          className={`h-7 w-7 items-center justify-center rounded-full ${
+                            isLight ? 'border border-landing-taupe' : ''
+                          }`}
+                          style={{ backgroundColor: swatch.color }}
+                        >
+                          {isSelected ? (
+                            <Check
+                              size={14}
+                              color={isLight ? COLORS.obsidian : COLORS.paper}
+                              strokeWidth={2.25}
+                            />
+                          ) : null}
+                        </View>
+                      </View>
+                      <Text
+                        className={`font-sans text-[11px] ${
+                          isSelected
+                            ? 'font-semibold text-landing-obsidian'
+                            : 'text-landing-muted'
+                        }`}
+                      >
+                        {swatch.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
-            </View>
+            </FilterGroup>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Màu sắc & chất liệu</Text>
-              <TextInput
-                accessibilityLabel="Màu sắc"
-                placeholder="Ví dụ: đen, kem, xanh navy"
-                placeholderTextColor={COLORS.outline}
-                value={color}
-                onChangeText={setColor}
-                style={styles.input}
-              />
-              <TextInput
-                accessibilityLabel="Chất liệu"
-                placeholder="Ví dụ: cotton, linen, lụa"
-                placeholderTextColor={COLORS.outline}
-                value={material}
-                onChangeText={setMaterial}
-                style={styles.input}
-              />
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Khoảng giá</Text>
-              <View style={styles.priceRow}>
-                <TextInput
-                  accessibilityLabel="Giá tối thiểu"
-                  keyboardType="number-pad"
-                  placeholder="Từ"
-                  placeholderTextColor={COLORS.outline}
-                  value={minPrice}
-                  onChangeText={(value) => {
-                    setMinPrice(value);
-                    setPriceError(null);
-                  }}
-                  style={[styles.input, styles.priceInput]}
-                />
-                <Text style={styles.priceSeparator}>–</Text>
-                <TextInput
-                  accessibilityLabel="Giá tối đa"
-                  keyboardType="number-pad"
-                  placeholder="Đến"
-                  placeholderTextColor={COLORS.outline}
-                  value={maxPrice}
-                  onChangeText={(value) => {
-                    setMaxPrice(value);
-                    setPriceError(null);
-                  }}
-                  style={[styles.input, styles.priceInput]}
-                />
-              </View>
-              {priceError ? <Text style={styles.errorText}>{priceError}</Text> : null}
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Sắp xếp</Text>
-              <View style={styles.chipGroup}>
-                {SORT_OPTIONS.map((choice) => (
-                  <ChoiceChip
-                    key={choice.value}
-                    choice={choice}
-                    selected={sort === choice.value}
-                    onPress={() => setSort(choice.value)}
-                  />
-                ))}
-              </View>
-            </View>
+            <FilterGroup title="Khoảng giá">
+              <PriceSlider maxPrice={maxPrice} onChange={setMaxPrice} />
+            </FilterGroup>
           </ScrollView>
 
           <View
-            style={[
-              styles.footer,
-              { paddingBottom: Math.max(insets.bottom, SPACING.xl) },
-            ]}
+            className="flex-row gap-2 border-t border-landing-line/70 px-4 pt-3"
+            style={{ paddingBottom: Math.max(insets.bottom, 12) }}
           >
-            <Button
-              title="Xóa bộ lọc"
-              onPress={handleReset}
-              variant="outline"
-              style={styles.footerButton}
-            />
-            <Button
-              title="Áp dụng"
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Xóa tất cả bộ lọc"
+              accessibilityState={{ disabled: !hasDraftFilters }}
+              disabled={!hasDraftFilters}
+              onPress={handleClearAll}
+              className={`h-12 flex-1 items-center justify-center rounded-subtle border border-landing-obsidian/70 active:opacity-70 ${
+                hasDraftFilters ? '' : 'opacity-50'
+              }`}
+            >
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+                Xóa tất cả
+              </Text>
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Xem ${filteredCount} sản phẩm`}
               onPress={handleApply}
-              style={[styles.footerButton, styles.applyButton]}
-            />
+              className="h-12 flex-[1.4] items-center justify-center rounded-subtle bg-landing-obsidian active:opacity-80"
+            >
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+                Xem {filteredCount} sản phẩm
+              </Text>
+            </Pressable>
           </View>
         </View>
       </View>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  modalRoot: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(27, 28, 27, 0.48)',
-  },
-  sheet: {
-    maxHeight: '86%',
-    borderTopLeftRadius: BORDER_RADIUS.xxl,
-    borderTopRightRadius: BORDER_RADIUS.xxl,
-    backgroundColor: COLORS.commerceSurface,
-    overflow: 'hidden',
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 5,
-    marginTop: SPACING.sm,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.outlineVariant,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.surfaceLine,
-  },
-  title: {
-    fontSize: FONT_SIZE.lg,
-    lineHeight: 24,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.onSurface,
-  },
-  subtitle: {
-    fontSize: FONT_SIZE.xs,
-    lineHeight: 16,
-    color: COLORS.onSurfaceVariant,
-  },
-  closeButton: {
-    minWidth: 44,
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primaryContainer,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  content: {
-    padding: SPACING.lg,
-    gap: SPACING.xxl,
-  },
-  section: {
-    gap: SPACING.md,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZE.sm,
-    lineHeight: 20,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.onSurface,
-  },
-  chipGroup: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-  },
-  chipPressable: {
-    borderRadius: BORDER_RADIUS.full,
-  },
-  chip: {
-    minHeight: 40,
-    justifyContent: 'center',
-    paddingHorizontal: SPACING.md,
-    borderRadius: BORDER_RADIUS.full,
-    borderWidth: 1,
-    borderColor: COLORS.outlineVariant,
-    backgroundColor: COLORS.surfaceLowest,
-  },
-  chipSelected: {
-    borderColor: COLORS.primaryContainer,
-    backgroundColor: COLORS.primaryContainer,
-  },
-  chipText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.onSurfaceVariant,
-  },
-  chipTextSelected: {
-    color: COLORS.onPrimary,
-  },
-  input: {
-    minHeight: 48,
-    paddingHorizontal: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceLine,
-    backgroundColor: COLORS.surfaceLowest,
-    color: COLORS.onSurface,
-    fontSize: FONT_SIZE.sm,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  priceInput: {
-    flex: 1,
-  },
-  priceSeparator: {
-    color: COLORS.onSurfaceVariant,
-    fontSize: FONT_SIZE.md,
-  },
-  errorText: {
-    color: COLORS.danger,
-    fontSize: FONT_SIZE.xs,
-    lineHeight: 16,
-  },
-  footer: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
-    paddingBottom: SPACING.xl,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.surfaceLine,
-    backgroundColor: COLORS.surfaceLowest,
-  },
-  footerButton: {
-    flex: 1,
-    minHeight: 48,
-  },
-  applyButton: {
-    backgroundColor: COLORS.primaryContainer,
-  },
-});
