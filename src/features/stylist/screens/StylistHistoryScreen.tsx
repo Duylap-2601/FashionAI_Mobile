@@ -1,9 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ActivityIndicator, Alert, FlatList, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
 import { Sparkles } from 'lucide-react-native';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { ErrorView } from '@/components/common/ErrorView';
 import { COLORS } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
@@ -61,9 +59,11 @@ export function StylistHistoryScreen({ navigation }: Props) {
 
   if (historyQuery.isLoading && results.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center bg-catalog-muted">
-        <ActivityIndicator size="large" color={COLORS.primaryContainer} />
-        <Text className="mt-md font-sans text-body-sm text-catalog-muted-text">Đang tải lịch sử tư vấn...</Text>
+      <View className="flex-1 items-center justify-center gap-3 bg-landing-paper">
+        <ActivityIndicator color={COLORS.oxblood} />
+        <Text className="font-sans text-body-sm text-landing-muted">
+          Đang tải lịch sử tư vấn…
+        </Text>
       </View>
     );
   }
@@ -81,7 +81,7 @@ export function StylistHistoryScreen({ navigation }: Props) {
 
   return (
     <FlatList
-      className="flex-1 bg-catalog-muted"
+      className="flex-1 bg-landing-paper"
       data={results}
       keyExtractor={(item) => item.id}
       contentContainerClassName="flex-grow gap-lg pb-xxxl"
@@ -92,18 +92,34 @@ export function StylistHistoryScreen({ navigation }: Props) {
       onEndReachedThreshold={0.35}
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={
-        <View className="gap-lg px-lg pt-xxl pb-sm">
-          <View className="flex-row flex-wrap items-center gap-sm">
-            <Text accessibilityRole="header" className="font-sans text-headline-lg font-bold text-on-surface-strong">Lịch sử AI Stylist</Text>
-            <Text className="rounded-full bg-surface-high px-md py-xs font-sans text-body-sm text-on-surface-variant">
-              {historyQuery.data?.pages[0]?.meta.total ?? results.length}
+        <View className="gap-3 border-b border-landing-line px-lg pb-5 pt-lg">
+          <View className="flex-row items-center gap-2">
+            <Sparkles size={14} strokeWidth={1.75} color={COLORS.brassInk} />
+            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
+              AI Stylist
             </Text>
           </View>
-          <Text className="font-sans text-body-sm leading-relaxed text-catalog-muted-text">Xem lại những lần tư vấn phong cách đã thực hiện với AI.</Text>
-          {historyQuery.isError ? (
-          <Text accessibilityRole="alert" className="rounded-xl border border-catalog-line bg-surface-lowest p-lg font-sans text-body-sm text-danger">
-            Chưa thể cập nhật lịch sử mới nhất. Nội dung đã tải vẫn được giữ lại.
+          <View className="flex-row items-end justify-between gap-3">
+            <Text
+              accessibilityRole="header"
+              className="flex-1 font-display text-headline-lg text-landing-obsidian"
+            >
+              Lịch sử tư vấn
+            </Text>
+            <Text className="shrink-0 font-mono text-[11px] uppercase tracking-[0.16em] text-landing-muted">
+              {String(historyQuery.data?.pages[0]?.meta.total ?? results.length).padStart(2, '0')} kết quả
+            </Text>
+          </View>
+          <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
+            Xem lại những lần tư vấn phong cách đã thực hiện với AI.
           </Text>
+          {historyQuery.isError ? (
+            <Text
+              accessibilityRole="alert"
+              className="border-l-2 border-brass bg-ivory px-4 py-3 font-sans text-body-sm text-landing-muted"
+            >
+              Chưa thể cập nhật lịch sử mới nhất. Nội dung đã tải vẫn được giữ lại.
+            </Text>
           ) : null}
         </View>
       }
@@ -116,20 +132,34 @@ export function StylistHistoryScreen({ navigation }: Props) {
         />
       )}
       ListEmptyComponent={
-        <Card variant="outlined" className="mx-lg items-center gap-xl !rounded-2xl border-dashed !border-catalog-line !px-xxl !py-12">
-          <View className="h-24 w-24 items-center justify-center rounded-full bg-primary-container/5">
-            <Sparkles size={32} color={COLORS.primaryContainer} />
+        <View className="mx-lg items-center gap-5 border border-dashed border-taupe bg-ivory px-6 py-14">
+          <View className="h-16 w-16 items-center justify-center border border-landing-line">
+            <Sparkles size={24} strokeWidth={1.5} color={COLORS.oxblood} />
           </View>
-          <View className="gap-md">
-            <Text className="text-center font-sans text-headline-md font-semibold text-on-surface-strong">Chưa có lịch sử tư vấn</Text>
-            <Text className="text-center font-sans text-body-md leading-relaxed text-catalog-muted-text">Kết quả AI Stylist của bạn sẽ được lưu tại đây để xem lại bất cứ lúc nào.</Text>
+          <View className="gap-2">
+            <Text className="text-center font-display text-[20px] text-landing-obsidian">
+              Chưa có lịch sử tư vấn
+            </Text>
+            <Text className="text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+              Kết quả AI Stylist của bạn sẽ được lưu tại đây để xem lại bất cứ lúc nào.
+            </Text>
           </View>
-          <Button title="Tạo tư vấn mới" className="!rounded-xl" textClassName="font-sans !text-body-sm !text-on-primary" onPress={() => navigation.navigate('Stylist')} />
-        </Card>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('Stylist')}
+            className="h-11 items-center justify-center rounded-subtle bg-oxblood px-5 active:opacity-90"
+          >
+            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+              Tạo tư vấn mới
+            </Text>
+          </Pressable>
+        </View>
       }
       ListFooterComponent={
         historyQuery.isFetchingNextPage ? (
-          <ActivityIndicator className="py-lg" color={COLORS.primaryContainer} />
+          <View className="py-lg">
+            <ActivityIndicator color={COLORS.oxblood} />
+          </View>
         ) : null
       }
     />

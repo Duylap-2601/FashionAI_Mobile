@@ -59,49 +59,63 @@ export function StylistProductPickerModal({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="slide"
+      statusBarTranslucent
       onRequestClose={close}
     >
-      <View className="flex-1 justify-end bg-black/40">
+      <View className="flex-1 justify-end bg-landing-obsidian/45">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Đóng danh sách sản phẩm"
           className="flex-1"
           onPress={close}
         />
-        <View className="h-4/5 rounded-t-3xl bg-surface-lowest px-lg pt-lg">
-          <View className="flex-row items-center justify-between">
-            <Text accessibilityRole="header" className="font-sans text-headline-sm text-on-surface-strong">
-              Chọn sản phẩm
-            </Text>
+        <View className="h-[88%] flex-col overflow-hidden border-t border-landing-line bg-landing-paper">
+          <View className="flex-row items-start justify-between gap-4 border-b border-landing-line px-5 pb-4 pt-5">
+            <View className="flex-1">
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink">
+                AI Stylist
+              </Text>
+              <Text
+                accessibilityRole="header"
+                className="mt-1.5 font-display text-2xl leading-tight text-landing-obsidian"
+              >
+                Chọn sản phẩm
+              </Text>
+              <Text className="mt-1 font-sans text-body-sm text-landing-muted">
+                Chỉ gồm sản phẩm đang bán trong cửa hàng.
+              </Text>
+            </View>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Đóng"
-              className="min-h-11 min-w-11 items-center justify-center rounded-full active:bg-catalog-muted"
+              className="-mr-2 h-11 w-11 items-center justify-center active:opacity-70"
               onPress={close}
             >
-              <X size={20} color={COLORS.catalogMutedText} />
+              <X size={20} strokeWidth={1.75} color={COLORS.muted} />
             </Pressable>
           </View>
 
-          <View className="mt-sm flex-row items-center gap-sm rounded-full border border-catalog-line bg-catalog-muted px-md">
-            <Search size={16} color={COLORS.catalogMutedText} />
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Tìm sản phẩm..."
-              placeholderTextColor={COLORS.catalogMutedText}
-              className="min-h-11 flex-1 font-sans text-body-md text-on-surface"
-              accessibilityLabel="Tìm sản phẩm"
-              returnKeyType="search"
-            />
+          <View className="border-b border-landing-line px-5 py-3">
+            <View className="h-11 flex-row items-center gap-2 rounded-subtle border border-landing-line bg-ivory/80 px-3">
+              <Search size={16} strokeWidth={1.75} color={COLORS.muted} />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Tìm tên sản phẩm…"
+                placeholderTextColor={COLORS.muted}
+                className="flex-1 font-sans text-body-md text-landing-obsidian"
+                accessibilityLabel="Tìm sản phẩm"
+                returnKeyType="search"
+              />
+            </View>
           </View>
 
           <FlatList
             className="flex-1"
             data={products}
             keyExtractor={(item) => item.id}
-            contentContainerClassName="gap-sm pb-xxxl pt-md"
+            contentContainerClassName="gap-2 px-4 pb-6 pt-3"
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             onEndReached={() => {
@@ -114,13 +128,13 @@ export function StylistProductPickerModal({
               currentProductId && onClear ? (
                 <Pressable
                   accessibilityRole="button"
-                  className="min-h-11 flex-row items-center justify-center rounded-xl border border-dashed border-outline-variant active:bg-catalog-muted"
+                  className="h-11 flex-row items-center justify-center rounded-subtle border border-dashed border-taupe active:bg-ivory"
                   onPress={() => {
                     onClear();
                     close();
                   }}
                 >
-                  <Text className="font-sans text-label-lg text-on-surface-variant">
+                  <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
                     Bỏ chọn sản phẩm
                   </Text>
                 </Pressable>
@@ -128,17 +142,17 @@ export function StylistProductPickerModal({
             }
             ListEmptyComponent={
               productsQuery.isLoading ? (
-                <View className="items-center py-giant">
-                  <ActivityIndicator color={COLORS.primaryContainer} />
+                <View className="items-center py-16">
+                  <ActivityIndicator color={COLORS.oxblood} />
                 </View>
               ) : (
-                <View className="items-center gap-1 py-giant">
-                  <Text className="font-sans text-body-md text-on-surface-variant">
+                <View className="items-center gap-1 py-16">
+                  <Text className="font-sans text-body-md text-landing-obsidian">
                     {debouncedSearch
                       ? 'Không tìm thấy sản phẩm phù hợp.'
                       : 'Chưa có sản phẩm nào.'}
                   </Text>
-                  <Text className="font-sans text-body-sm text-catalog-muted-text">
+                  <Text className="font-sans text-body-sm text-landing-muted">
                     Thử từ khóa khác hoặc quay lại sau.
                   </Text>
                 </View>
@@ -146,8 +160,8 @@ export function StylistProductPickerModal({
             }
             ListFooterComponent={
               productsQuery.isFetchingNextPage ? (
-                <View className="py-lg">
-                  <ActivityIndicator color={COLORS.primaryContainer} />
+                <View className="py-4">
+                  <ActivityIndicator color={COLORS.oxblood} />
                 </View>
               ) : null
             }
@@ -158,38 +172,39 @@ export function StylistProductPickerModal({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityState={{ selected: isSelected }}
-                  className="min-h-20 flex-row items-center gap-md rounded-xl px-1 py-2 active:bg-catalog-muted"
+                  className={`flex-row items-center gap-3 rounded-subtle border p-2.5 active:opacity-80 ${
+                    isSelected
+                      ? 'border-oxblood bg-ivory'
+                      : 'border-landing-line bg-ivory/60'
+                  }`}
                   onPress={() => handleSelect(item)}
                 >
-                  <View className="h-16 w-12 overflow-hidden rounded-lg border border-catalog-line bg-catalog-muted">
+                  <View className="h-16 w-12 shrink-0 items-center justify-center overflow-hidden rounded-subtle border border-landing-line bg-landing-paper">
                     {image ? (
-                      // expo-image does not consume NativeWind classes; fill the token-sized thumbnail.
                       <Image
                         source={{ uri: image }}
-                        contentFit="cover"
+                        contentFit="contain"
                         transition={150}
                         style={StyleSheet.absoluteFill}
                       />
                     ) : (
-                      <View className="flex-1 items-center justify-center">
-                        <Shirt size={20} color={COLORS.catalogMutedText} />
-                      </View>
+                      <Shirt size={18} strokeWidth={1.5} color={COLORS.muted} />
                     )}
                   </View>
                   <View className="flex-1">
                     <Text
                       numberOfLines={2}
-                      className="font-sans text-body-md font-semibold text-on-surface"
+                      className="font-display text-[15px] leading-snug text-landing-obsidian"
                     >
                       {item.name}
                     </Text>
-                    <Text className="mt-1 font-sans text-price-sm text-primary-container">
+                    <Text className="mt-1 font-mono text-[12px] text-oxblood">
                       {formatCurrency(item.price)}
                     </Text>
                   </View>
                   {isSelected ? (
-                    <View className="h-6 w-6 items-center justify-center rounded-full bg-primary-container">
-                      <Check size={14} color={COLORS.onPrimary} />
+                    <View className="h-6 w-6 items-center justify-center bg-oxblood">
+                      <Check size={14} strokeWidth={2.5} color={COLORS.paper} />
                     </View>
                   ) : null}
                 </Pressable>
@@ -201,3 +216,5 @@ export function StylistProductPickerModal({
     </Modal>
   );
 }
+
+export default StylistProductPickerModal;

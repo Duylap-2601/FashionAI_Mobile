@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, Modal, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Clock, ArrowRight, X } from 'lucide-react-native';
+import { COLORS } from '@/constants/theme';
 
 export interface QuotaExhaustedModalProps {
   visible: boolean;
@@ -54,57 +55,55 @@ export function QuotaExhaustedModal({
 
   return (
     <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
-      <View className="flex-1 bg-black/60 items-center justify-center p-5">
-        <View className="bg-surface rounded-3xl p-6 w-full max-w-[360px] items-center border border-surface-line shadow-2xl relative">
-          {/* Close button */}
+      <View className="flex-1 items-center justify-center bg-landing-obsidian/60 p-5">
+        <View className="relative w-full max-w-[360px] items-center rounded-subtle border border-landing-line bg-landing-paper p-6">
           <Pressable
             onPress={onClose}
-            className="absolute top-4 right-4 w-9 h-9 rounded-full items-center justify-center active:bg-surface-line"
+            className="absolute right-4 top-4 h-9 w-9 items-center justify-center active:opacity-70"
             accessibilityRole="button"
             accessibilityLabel="Đóng modal"
           >
-            <X size={18} color="#737373" />
+            <X size={18} strokeWidth={1.75} color={COLORS.muted} />
           </Pressable>
 
-          {/* Clock Icon */}
-          <View className="w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 items-center justify-center mb-4 mt-2">
-            <Clock size={32} color="#D97706" />
+          <View className="mb-4 mt-2 h-16 w-16 items-center justify-center border border-landing-line">
+            <Clock size={28} strokeWidth={1.5} color={COLORS.brassInk} />
           </View>
 
-          {/* Title */}
-          <Text className="text-xl font-bold text-on-surface text-center mb-2 px-2">
+          <Text className="mb-2 px-2 text-center font-display text-[22px] leading-tight text-landing-obsidian">
             {hasDeficit ? 'Không đủ lượt trong ngày' : `Hết lượt ${actionName} hôm nay`}
           </Text>
 
-          {/* Description */}
-          <Text className="text-body-sm text-on-surface-variant text-center leading-relaxed mb-6 px-1">
+          <Text className="mb-6 px-1 text-center font-sans text-body-sm leading-relaxed text-landing-muted">
             {hasDeficit
               ? `Yêu cầu này cần ${requested} lượt nhưng bạn chỉ còn ${remaining} lượt trong ngày. Quota sẽ được đặt lại lúc ${formattedResetTime}.`
               : `Bạn đã sử dụng hết lượt ${actionName} trong ngày. Quota sẽ được tự động làm mới lúc ${formattedResetTime}.`}
           </Text>
 
-          {/* Action CTAs */}
-          <View className="w-full gap-2.5 mb-3">
+          <View className="mb-3 w-full gap-2.5">
             <Pressable
               onPress={handleUpgradePress}
-              className="w-full min-h-[48px] rounded-xl bg-primary flex-row items-center justify-center gap-2 active:opacity-90 shadow-sm"
+              className="h-12 w-full flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood active:opacity-90"
               accessibilityRole="button"
             >
-              <Text className="text-white font-bold text-label-lg">Nâng cấp gói tài khoản</Text>
-              <ArrowRight size={16} color="#FFFFFF" />
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+                Nâng cấp gói tài khoản
+              </Text>
+              <ArrowRight size={15} strokeWidth={1.75} color={COLORS.paper} />
             </Pressable>
 
             <Pressable
               onPress={onClose}
-              className="w-full min-h-[44px] rounded-xl border border-surface-line items-center justify-center active:bg-surface-line/50"
+              className="h-11 w-full items-center justify-center rounded-subtle border border-landing-line active:bg-ivory"
               accessibilityRole="button"
             >
-              <Text className="text-on-surface font-semibold text-label-md">Để sau</Text>
+              <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
+                Để sau
+              </Text>
             </Pressable>
           </View>
 
-          {/* Footnote */}
-          <Text className="text-[11px] text-on-surface-variant/70 text-center">
+          <Text className="text-center font-mono text-[10px] uppercase tracking-[0.12em] text-landing-muted">
             Lượt dùng được tự động làm mới vào 00:00 (UTC+7) mỗi ngày.
           </Text>
         </View>

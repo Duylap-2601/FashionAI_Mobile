@@ -2,8 +2,6 @@ import React from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Sparkles } from 'lucide-react-native';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { ErrorView } from '@/components/common/ErrorView';
 import { COLORS } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
@@ -36,24 +34,36 @@ export function StylistResultScreen({ navigation, route }: Props) {
 
   if (resultQuery.isLoading && !result) {
     return (
-      <View className="flex-1 items-center justify-center gap-md bg-catalog-muted">
-        <ActivityIndicator color={COLORS.primaryContainer} />
-        <Text className="font-sans text-body-sm text-catalog-muted-text">Đang tải kết quả tư vấn...</Text>
+      <View className="flex-1 items-center justify-center gap-3 bg-landing-paper">
+        <ActivityIndicator color={COLORS.oxblood} />
+        <Text className="font-sans text-body-sm text-landing-muted">
+          Đang tải kết quả tư vấn…
+        </Text>
       </View>
     );
   }
 
   if (resultQuery.error instanceof ApiError && resultQuery.error.statusCode === 404) {
     return (
-      <View className="flex-1 justify-center bg-catalog-muted p-lg">
-        <Card variant="outlined" className="items-center gap-xl !rounded-2xl !border-catalog-line !p-xxxl">
-          <View className="h-20 w-20 items-center justify-center rounded-full bg-catalog-muted">
-            <Sparkles size={28} color={COLORS.primaryContainer} />
+      <View className="flex-1 justify-center bg-landing-paper p-lg">
+        <View className="items-center gap-5 rounded-subtle border border-landing-line bg-ivory px-6 py-12">
+          <View className="h-16 w-16 items-center justify-center border border-landing-line">
+            <Sparkles size={24} strokeWidth={1.5} color={COLORS.oxblood} />
           </View>
-          <Text className="text-center font-sans text-headline-md font-semibold text-primary-container">Không tìm thấy kết quả</Text>
-          <Text className="text-center font-sans text-body-sm leading-relaxed text-catalog-muted-text">Kết quả tư vấn có thể đã được xóa.</Text>
-          <Button title="Xem lịch sử" className="!rounded-xl" textClassName="font-sans !text-body-sm !text-on-primary" onPress={() => navigation.replace('StylistHistory')} />
-        </Card>
+          <Text className="text-center font-display text-[20px] text-landing-obsidian">
+            Không tìm thấy kết quả
+          </Text>
+          <Text className="text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+            Kết quả tư vấn có thể đã được xóa.
+          </Text>
+          <Text
+            accessibilityRole="button"
+            className="h-10 px-4 font-sans text-[11px] font-semibold uppercase leading-10 tracking-[0.16em] text-oxblood"
+            onPress={() => navigation.replace('StylistHistory')}
+          >
+            Xem lịch sử
+          </Text>
+        </View>
       </View>
     );
   }
@@ -70,35 +80,51 @@ export function StylistResultScreen({ navigation, route }: Props) {
   }
 
   if (!result) {
-    return (
-      <ErrorView fullscreen message="Kết quả tư vấn chưa sẵn sàng." />
-    );
+    return <ErrorView fullscreen message="Kết quả tư vấn chưa sẵn sàng." />;
   }
 
   return (
     <ScrollView
-      className="flex-1 bg-catalog-muted"
-      contentContainerClassName="gap-xxl px-lg pb-xxxl pt-xxl"
+      className="flex-1 bg-landing-paper"
+      contentContainerClassName="gap-xl px-lg pb-xxxl pt-lg"
       contentInsetAdjustmentBehavior="automatic"
       refreshControl={
         <RefreshControl
           refreshing={resultQuery.isRefetching}
-          colors={[COLORS.primaryContainer]}
-          tintColor={COLORS.primaryContainer}
+          colors={[COLORS.oxblood]}
+          tintColor={COLORS.oxblood}
           onRefresh={() => void resultQuery.refetch()}
         />
       }
       showsVerticalScrollIndicator={false}
     >
       {resultQuery.isError ? (
-        <Text accessibilityRole="alert" className="rounded-xl border border-catalog-line bg-surface-lowest p-lg font-sans text-body-sm text-danger">
+        <Text
+          accessibilityRole="alert"
+          className="border-l-2 border-brass bg-ivory px-4 py-3 font-sans text-body-sm text-landing-muted"
+        >
           Chưa thể cập nhật kết quả mới nhất. Nội dung đã tải vẫn được giữ lại.
         </Text>
       ) : null}
-      <View className="gap-sm">
-        <Text accessibilityRole="header" className="font-sans text-headline-lg font-bold text-primary-container">Kết quả tư vấn</Text>
-        <Text className="font-sans text-body-sm leading-relaxed text-catalog-muted-text">Phân tích màu sắc, vóc dáng và gợi ý phối đồ của bạn.</Text>
+
+      <View className="gap-2 border-b border-landing-line pb-5">
+        <View className="flex-row items-center gap-2">
+          <Sparkles size={14} strokeWidth={1.75} color={COLORS.brassInk} />
+          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
+            AI Stylist
+          </Text>
+        </View>
+        <Text
+          accessibilityRole="header"
+          className="font-display text-headline-lg text-landing-obsidian"
+        >
+          Kết quả tư vấn
+        </Text>
+        <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
+          Phân tích màu sắc, vóc dáng và gợi ý phối đồ của bạn.
+        </Text>
       </View>
+
       <StylistResultContent
         result={result}
         onProductPress={(productId) => navigation.navigate('ProductDetail', { productId })}

@@ -18,23 +18,17 @@ import {
 } from 'react-native';
 import {
   AlertCircle,
-  Briefcase,
   Camera,
   Check,
   History,
-  Palette,
   Plus,
   ScanFace,
   ShieldCheck,
   Shirt,
   Sparkles,
   UploadCloud,
-  UserRound,
-  Wallet,
   X,
 } from 'lucide-react-native';
-import type { LucideIcon } from 'lucide-react-native';
-import { tva } from '@gluestack-ui/nativewind-utils/tva';
 import { QuotaExhaustedModal } from '@/components/ui/QuotaExhaustedModal';
 import { COLORS } from '@/constants/theme';
 import { usersApi, type UserQuotaResponse } from '@/features/profile/api/users.api';
@@ -61,25 +55,12 @@ import type {
 } from '../types/stylist';
 import { toStylistImageFile } from '../utils/stylist-image';
 
-const chipStyle = tva({
-  base: 'min-h-11 items-center justify-center rounded-full border px-md',
-  variants: {
-    selected: {
-      true: 'border-primary-container bg-primary-container',
-      false: 'border-catalog-line bg-surface-lowest',
-    },
-  },
-});
-
-const chipTextStyle = tva({
-  base: 'font-sans text-body-sm font-medium',
-  variants: {
-    selected: {
-      true: 'text-on-primary',
-      false: 'text-on-surface-variant',
-    },
-  },
-});
+const labelClass =
+  'font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink';
+const outlineButtonClass =
+  'h-10 flex-row items-center justify-center gap-1.5 rounded-subtle border border-landing-line px-3.5 active:bg-ivory';
+const outlineButtonTextClass =
+  'font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian';
 
 function OptionChip({
   label,
@@ -94,30 +75,40 @@ function OptionChip({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      className={chipStyle({ selected })}
       onPress={onPress}
+      className={`h-10 items-center justify-center rounded-subtle border px-3.5 ${
+        selected
+          ? 'border-oxblood bg-oxblood'
+          : 'border-landing-line bg-landing-paper/60'
+      }`}
     >
-      <Text className={chipTextStyle({ selected })}>{label}</Text>
+      <Text
+        className={`font-sans text-body-md ${
+          selected ? 'text-landing-paper' : 'text-landing-obsidian/80'
+        }`}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
 
 function OptionGroup({
-  icon: Icon,
+  index,
   label,
   children,
 }: {
-  icon: LucideIcon;
+  index: string;
   label: string;
   children: React.ReactNode;
 }) {
   return (
     <View className="gap-sm">
-      <View className="flex-row items-center gap-1.5">
-        <Icon size={14} color={COLORS.catalogMutedText} />
-        <Text className="font-sans text-body-sm font-semibold text-catalog-muted-text">
-          {label}
+      <View className="flex-row items-baseline gap-3">
+        <Text className="font-mono text-[11px] tracking-[0.12em] text-landing-muted">
+          {index}
         </Text>
+        <Text className={labelClass}>{label}</Text>
       </View>
       {children}
     </View>
@@ -321,77 +312,84 @@ export function StylistScreen() {
   };
 
   const isPending = analyzeMutation.isPending;
+  const consentInvalid = showConsentError && !imageConsent;
 
   return (
     <>
       <ScrollView
-        className="flex-1 bg-catalog-muted"
-        contentContainerClassName="gap-lg px-lg pb-giant pt-lg"
+        className="flex-1 bg-landing-paper"
+        contentContainerClassName="gap-xl px-lg pb-giant pt-lg"
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
       >
-        <View className="gap-1">
-          <View className="flex-row items-center gap-1.5">
-            <Sparkles size={14} color={COLORS.primaryContainer} />
-            <Text className="font-sans text-body-sm font-semibold text-primary-container">
-              AI Stylist
-            </Text>
+        {/* Header */}
+        <View className="mb-2 gap-3 border-b border-landing-line pb-6">
+          <View className="flex-row items-center gap-2">
+            <Sparkles size={14} strokeWidth={1.75} color={COLORS.brassInk} />
+            <Text className={labelClass}>AI Stylist</Text>
           </View>
           <Text
             accessibilityRole="header"
-            className="mt-1 font-sans text-headline-lg text-on-surface-strong"
+            className="font-display text-headline-lg text-landing-obsidian"
           >
             Phối đồ cùng AI
           </Text>
-          <Text className="font-sans text-body-md leading-relaxed text-catalog-muted-text">
+          <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
             Chọn dịp mặc, nhận bộ phối từ sản phẩm của cửa hàng.
           </Text>
 
-          <View className="mt-2 flex-row flex-wrap items-center gap-sm">
-            <View className="h-9 flex-row items-center gap-1.5 rounded-full border border-catalog-line bg-surface-lowest px-md">
+          <View className="mt-2 flex-row flex-wrap items-center gap-2">
+            <View
+              className={`h-10 flex-row items-center gap-2 rounded-subtle border px-3 ${
+                hasQuota ? 'border-landing-line' : 'border-danger/40'
+              }`}
+            >
               <View
-                className={`h-1.5 w-1.5 rounded-full ${hasQuota ? 'bg-success' : 'bg-danger'}`}
+                className={`h-1.5 w-1.5 rounded-full ${
+                  hasQuota ? 'bg-sage-ink' : 'bg-danger'
+                }`}
               />
               <Text
-                className={`font-sans text-body-sm font-medium ${
-                  hasQuota ? 'text-on-surface-variant' : 'text-danger'
+                className={`font-mono text-[11px] uppercase tracking-[0.12em] ${
+                  hasQuota ? 'text-landing-obsidian/80' : 'text-danger'
                 }`}
               >
                 {quotaLabel}
               </Text>
             </View>
+
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Xem lịch sử tư vấn"
-              hitSlop={8}
-              className="h-9 flex-row items-center gap-1.5 rounded-full border border-catalog-line bg-surface-lowest px-md active:bg-catalog-muted"
               onPress={() => navigation.navigate('StylistHistory')}
+              className="h-10 flex-row items-center gap-2 rounded-subtle border border-landing-obsidian/70 px-3 active:bg-ivory"
             >
-              <History size={13} color={COLORS.onSurfaceVariant} />
-              <Text className="font-sans text-body-sm font-medium text-on-surface-variant">
+              <History size={14} strokeWidth={1.75} color={COLORS.obsidian} />
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
                 Lịch sử
               </Text>
-              <Text className="font-sans text-body-sm font-medium text-catalog-muted-text">
+              <Text className="font-mono text-[11px] text-landing-muted">
                 {historyTotal}
               </Text>
             </Pressable>
           </View>
         </View>
 
-        <View className="gap-xl rounded-2xl border border-catalog-line bg-surface-lowest p-xl">
-          <View className="flex-row items-start gap-md">
+        {/* Form panel */}
+        <View className="gap-xl rounded-subtle border border-landing-line bg-ivory p-lg">
+          {/* Ảnh */}
+          <View className="flex-row items-start gap-lg">
             <View
-              className={`h-28 w-20 overflow-hidden rounded-xl bg-catalog-muted ${
+              className={`h-28 w-20 shrink-0 overflow-hidden rounded-subtle ${
                 humanImage
-                  ? 'border border-catalog-line'
-                  : 'border border-dashed border-outline-variant'
+                  ? 'border border-landing-line'
+                  : 'border border-dashed border-brass/70 bg-landing-paper'
               }`}
             >
               {humanImage ? (
                 <>
-                  {/* expo-image does not consume NativeWind classes; fill the token-sized frame. */}
                   <Image
                     source={{ uri: humanImage.uri }}
                     contentFit="cover"
@@ -402,62 +400,58 @@ export function StylistScreen() {
                     accessibilityLabel="Xóa ảnh"
                     disabled={isPending}
                     hitSlop={6}
-                    className="absolute right-1 top-1 h-7 w-7 items-center justify-center rounded-full bg-black/50 active:bg-black/70"
+                    className="absolute right-1.5 top-1.5 h-8 w-8 items-center justify-center rounded-subtle bg-landing-obsidian/70 active:bg-landing-obsidian"
                     onPress={removeImage}
                   >
-                    <X size={14} color={COLORS.onPrimary} />
+                    <X size={14} strokeWidth={1.75} color={COLORS.paper} />
                   </Pressable>
                 </>
               ) : (
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Tải ảnh lên"
-                  className="flex-1 items-center justify-center gap-1 active:opacity-70"
+                  className="flex-1 items-center justify-center active:opacity-70"
                   onPress={() => void pickFromLibrary()}
                 >
-                  <ScanFace size={26} color={COLORS.primaryContainer} />
+                  <ScanFace size={28} strokeWidth={1.25} color={COLORS.oxblood} />
                 </Pressable>
               )}
             </View>
 
             <View className="flex-1 gap-1">
-              <Text className="font-sans text-body-md font-semibold text-on-surface">
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-obsidian">
                 Ảnh của bạn
               </Text>
-              <Text className="font-sans text-body-sm leading-relaxed text-catalog-muted-text">
+              <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
                 Tùy chọn, giúp AI đọc dáng và màu da
               </Text>
 
               {!humanImage ? (
-                <View className="mt-1 flex-row flex-wrap gap-sm">
+                <View className="mt-2 flex-row flex-wrap gap-2">
                   <Pressable
                     accessibilityRole="button"
                     disabled={isPending}
-                    className="min-h-11 flex-row items-center gap-1.5 rounded-full border border-catalog-line bg-surface-lowest px-md active:bg-catalog-muted"
+                    className={outlineButtonClass}
                     onPress={() => void pickFromLibrary()}
                   >
-                    <UploadCloud size={14} color={COLORS.onSurfaceVariant} />
-                    <Text className="font-sans text-label-lg text-on-surface-variant">
-                      Tải lên
-                    </Text>
+                    <UploadCloud size={14} strokeWidth={1.75} color={COLORS.obsidian} />
+                    <Text className={outlineButtonTextClass}>Tải lên</Text>
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
                     disabled={isPending}
-                    className="min-h-11 flex-row items-center gap-1.5 rounded-full border border-catalog-line bg-surface-lowest px-md active:bg-catalog-muted"
+                    className={outlineButtonClass}
                     onPress={() => void takePhoto()}
                   >
-                    <Camera size={14} color={COLORS.onSurfaceVariant} />
-                    <Text className="font-sans text-label-lg text-on-surface-variant">
-                      Chụp
-                    </Text>
+                    <Camera size={14} strokeWidth={1.75} color={COLORS.obsidian} />
+                    <Text className={outlineButtonTextClass}>Chụp</Text>
                   </Pressable>
                 </View>
               ) : null}
 
-              <View className="mt-1 flex-row items-center gap-1">
-                <ShieldCheck size={12} color={COLORS.success} />
-                <Text className="font-sans text-label-md text-catalog-muted-text">
+              <View className="mt-2 flex-row items-center gap-1.5">
+                <ShieldCheck size={13} strokeWidth={1.75} color={COLORS.sageInk} />
+                <Text className="font-sans text-[11px] text-landing-muted">
                   Không lưu ảnh
                 </Text>
               </View>
@@ -475,30 +469,30 @@ export function StylistScreen() {
               <Pressable
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: imageConsent }}
-                className={`flex-row items-start gap-sm rounded-xl border px-md py-sm ${
-                  showConsentError && !imageConsent
-                    ? 'border-danger bg-danger/5'
-                    : 'border-catalog-line bg-catalog-muted'
-                }`}
                 onPress={() => {
                   setImageConsent((current) => !current);
                   setShowConsentError(false);
                 }}
+                className={`flex-row items-start gap-3 border-l-2 bg-landing-paper/60 px-4 py-3 ${
+                  consentInvalid ? 'border-danger' : 'border-brass'
+                }`}
               >
                 <View
-                  className={`mt-0.5 h-5 w-5 items-center justify-center rounded border ${
+                  className={`mt-0.5 h-4 w-4 items-center justify-center rounded-subtle border ${
                     imageConsent
-                      ? 'border-primary-container bg-primary-container'
-                      : 'border-outline-variant bg-surface-lowest'
+                      ? 'border-oxblood bg-oxblood'
+                      : 'border-landing-obsidian/40'
                   }`}
                 >
-                  {imageConsent ? <Check size={13} color={COLORS.onPrimary} /> : null}
+                  {imageConsent ? (
+                    <Check size={11} strokeWidth={2.5} color={COLORS.paper} />
+                  ) : null}
                 </View>
-                <Text className="flex-1 font-sans text-body-sm leading-relaxed text-on-surface-variant">
+                <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-obsidian/80">
                   {STYLIST_IMAGE_CONSENT_TEXT}
                 </Text>
               </Pressable>
-              {showConsentError && !imageConsent ? (
+              {consentInvalid ? (
                 <Text className="font-sans text-body-sm text-danger">
                   Vui lòng đồng ý để AI dùng ảnh phân tích.
                 </Text>
@@ -506,8 +500,8 @@ export function StylistScreen() {
             </View>
           ) : null}
 
-          <OptionGroup icon={Briefcase} label="Dịp mặc">
-            <View className="flex-row flex-wrap gap-sm">
+          <OptionGroup index="01" label="Dịp mặc">
+            <View className="flex-row flex-wrap gap-2">
               {STYLIST_OCCASIONS.map((value) => (
                 <OptionChip
                   key={value}
@@ -539,8 +533,8 @@ export function StylistScreen() {
                     autoFocus
                     editable={!isPending}
                     placeholder="VD: Hẹn hò, Du lịch biển, Tiệc sinh nhật"
-                    placeholderTextColor={COLORS.catalogMutedText}
-                    className="min-h-11 rounded-xl border border-catalog-line bg-catalog-muted px-md font-sans text-body-md text-on-surface"
+                    placeholderTextColor={COLORS.muted}
+                    className="mt-2 h-11 rounded-subtle border border-landing-line bg-landing-paper/60 px-3.5 font-sans text-body-md text-landing-obsidian"
                   />
                 )}
               />
@@ -552,8 +546,8 @@ export function StylistScreen() {
             ) : null}
           </OptionGroup>
 
-          <OptionGroup icon={Palette} label="Phong cách">
-            <View className="flex-row flex-wrap gap-sm">
+          <OptionGroup index="02" label="Phong cách">
+            <View className="flex-row flex-wrap gap-2">
               {STYLIST_STYLES.map((value) => (
                 <OptionChip
                   key={value}
@@ -561,7 +555,9 @@ export function StylistScreen() {
                   selected={!isCustomStyle && stylePreference === value}
                   onPress={() => {
                     setIsCustomStyle(false);
-                    setValue('stylePreference', value, { shouldValidate: true });
+                    setValue('stylePreference', stylePreference === value ? '' : value, {
+                      shouldValidate: true,
+                    });
                   }}
                 />
               ))}
@@ -582,8 +578,8 @@ export function StylistScreen() {
                     autoFocus
                     editable={!isPending}
                     placeholder="VD: Vintage, Cổ điển, Nữ tính"
-                    placeholderTextColor={COLORS.catalogMutedText}
-                    className="min-h-11 rounded-xl border border-catalog-line bg-catalog-muted px-md font-sans text-body-md text-on-surface"
+                    placeholderTextColor={COLORS.muted}
+                    className="mt-2 h-11 rounded-subtle border border-landing-line bg-landing-paper/60 px-3.5 font-sans text-body-md text-landing-obsidian"
                   />
                 )}
               />
@@ -595,8 +591,8 @@ export function StylistScreen() {
             ) : null}
           </OptionGroup>
 
-          <OptionGroup icon={Wallet} label="Ngân sách mỗi bộ">
-            <View className="flex-row flex-wrap gap-sm">
+          <OptionGroup index="03" label="Ngân sách mỗi bộ">
+            <View className="flex-row flex-wrap gap-2">
               {STYLIST_BUDGETS.map((value) => (
                 <OptionChip
                   key={value}
@@ -612,8 +608,8 @@ export function StylistScreen() {
             </View>
           </OptionGroup>
 
-          <OptionGroup icon={UserRound} label="Giới tính">
-            <View className="flex-row flex-wrap gap-sm">
+          <OptionGroup index="04" label="Giới tính">
+            <View className="flex-row flex-wrap gap-2">
               {STYLIST_GENDERS.map((option) => (
                 <OptionChip
                   key={option.value}
@@ -633,81 +629,89 @@ export function StylistScreen() {
             </View>
           </OptionGroup>
 
-          <OptionGroup icon={Shirt} label="Món muốn phối cùng">
+          <OptionGroup index="05" label="Món muốn phối cùng">
             {selectedProduct ? (
-              <View className="flex-row items-center gap-sm self-start rounded-2xl border border-primary-container/30 bg-primary-container/5 py-1 pl-1.5 pr-sm">
-                <View className="h-11 w-9 overflow-hidden rounded-lg bg-catalog-muted">
+              <View className="flex-row items-center gap-3 self-start rounded-subtle border border-oxblood/40 bg-landing-paper/60 py-1.5 pl-1.5 pr-3">
+                <View className="h-12 w-10 overflow-hidden rounded-subtle bg-landing-paper">
                   {selectedProduct.imageUrl ? (
                     <Image
                       source={{ uri: selectedProduct.imageUrl }}
-                      contentFit="cover"
+                      contentFit="contain"
                       style={StyleSheet.absoluteFill}
                     />
                   ) : (
                     <View className="flex-1 items-center justify-center">
-                      <Shirt size={18} color={COLORS.catalogMutedText} />
+                      <Shirt size={18} strokeWidth={1.5} color={COLORS.muted} />
                     </View>
                   )}
                 </View>
                 <Text
                   numberOfLines={1}
-                  className="max-w-40 font-sans text-body-sm font-semibold text-on-surface"
+                  className="max-w-40 font-display text-[15px] text-landing-obsidian"
                 >
                   {selectedProduct.name}
                 </Text>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Đổi sản phẩm"
-                  className="min-h-11 justify-center px-sm"
+                  className="min-h-11 justify-center px-2 active:opacity-70"
                   onPress={() => setShowProductPicker(true)}
                 >
-                  <Text className="font-sans text-label-lg font-semibold text-primary-container">
+                  <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-oxblood">
                     Đổi
                   </Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Bỏ chọn sản phẩm"
+                  className="h-11 w-11 items-center justify-center active:opacity-60"
+                  onPress={() => setSelectedProduct(null)}
+                >
+                  <X size={14} strokeWidth={1.75} color={COLORS.muted} />
                 </Pressable>
               </View>
             ) : (
               <Pressable
                 accessibilityRole="button"
-                className="min-h-11 flex-row items-center gap-1.5 self-start rounded-full border border-dashed border-outline-variant px-md active:bg-catalog-muted"
+                className="h-10 flex-row items-center justify-center gap-1.5 self-start rounded-subtle border border-dashed border-brass/70 px-3.5 active:bg-landing-paper"
                 onPress={() => setShowProductPicker(true)}
               >
-                <Plus size={16} color={COLORS.onSurfaceVariant} />
-                <Text className="font-sans text-label-lg text-on-surface-variant">
+                <Plus size={16} strokeWidth={1.75} color={COLORS.obsidian} />
+                <Text className="font-sans text-body-md text-landing-obsidian/80">
                   Chọn từ cửa hàng
                 </Text>
               </Pressable>
             )}
           </OptionGroup>
 
-          <View className="h-px bg-catalog-line" />
+          <View className="h-px bg-landing-line" />
 
           {formError ? (
-            <View className="flex-row items-start gap-sm rounded-xl border border-danger/30 bg-danger/5 p-md">
-              <AlertCircle size={16} color={COLORS.danger} />
-              <Text className="flex-1 font-sans text-body-sm leading-relaxed text-danger">
+            <View className="flex-row items-start gap-3 border-l-2 border-danger bg-landing-paper/60 px-4 py-3">
+              <AlertCircle size={16} strokeWidth={1.75} color={COLORS.danger} />
+              <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-obsidian">
                 {formError}
               </Text>
             </View>
           ) : null}
 
           {isPending ? (
-            <View className="gap-1 rounded-xl border border-catalog-line bg-catalog-muted p-md">
-              <Text className="font-sans text-body-sm font-semibold text-primary-container">
+            <View className="gap-1 border-l-2 border-brass bg-landing-paper/60 px-4 py-3">
+              <Text className="font-sans text-body-sm font-semibold text-oxblood">
                 {analyzeMutation.uploadProgress > 0 &&
                 analyzeMutation.uploadProgress < 100
                   ? `Đang tải ảnh lên ${analyzeMutation.uploadProgress}%`
                   : 'AI đang phân tích phong cách của bạn…'}
               </Text>
-              <Text className="font-sans text-body-sm leading-relaxed text-catalog-muted-text">
+              <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
                 Phân tích có thể mất đến 90 giây. Vui lòng giữ ứng dụng mở.
               </Text>
               <Pressable
                 accessibilityRole="button"
-                className="min-h-11 self-start justify-center"
+                className="min-h-11 self-start justify-center active:opacity-70"
                 onPress={analyzeMutation.cancel}
               >
-                <Text className="font-sans text-label-lg font-semibold text-primary-container">
+                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-oxblood">
                   Hủy chờ
                 </Text>
               </Pressable>
@@ -715,9 +719,9 @@ export function StylistScreen() {
           ) : null}
 
           {analyzeMutation.error ? (
-            <View className="flex-row items-start gap-sm rounded-xl border border-danger/30 bg-danger/5 p-md">
-              <AlertCircle size={16} color={COLORS.danger} />
-              <Text className="flex-1 font-sans text-body-sm leading-relaxed text-danger">
+            <View className="flex-row items-start gap-3 border-l-2 border-danger bg-landing-paper/60 px-4 py-3">
+              <AlertCircle size={16} strokeWidth={1.75} color={COLORS.danger} />
+              <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-obsidian">
                 {getErrorMessage(analyzeMutation.error)}
               </Text>
             </View>
@@ -726,26 +730,19 @@ export function StylistScreen() {
           <Pressable
             accessibilityRole="button"
             disabled={isPending}
-            className={`min-h-12 flex-row items-center justify-center gap-2 rounded-xl px-lg active:opacity-90 ${
-              isPending ? 'bg-primary-container/60' : 'bg-primary-container'
+            className={`h-12 flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood ${
+              isPending ? 'opacity-70' : 'active:bg-landing-obsidian'
             }`}
             onPress={handleSubmit(submit)}
           >
             {isPending ? (
-              <>
-                <ActivityIndicator size="small" color={COLORS.onPrimary} />
-                <Text className="font-sans text-body-md font-bold text-on-primary">
-                  Đang phối đồ…
-                </Text>
-              </>
+              <ActivityIndicator size="small" color={COLORS.paper} />
             ) : (
-              <>
-                <Sparkles size={18} color={COLORS.onPrimary} />
-                <Text className="font-sans text-body-md font-bold text-on-primary">
-                  Gợi ý bộ phối
-                </Text>
-              </>
+              <Sparkles size={16} strokeWidth={1.75} color={COLORS.paper} />
             )}
+            <Text className="font-sans text-[11.5px] font-semibold uppercase tracking-[0.18em] text-landing-paper">
+              {isPending ? 'Đang phối đồ…' : 'Gợi ý bộ phối'}
+            </Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -768,3 +765,5 @@ export function StylistScreen() {
     </>
   );
 }
+
+export default StylistScreen;
