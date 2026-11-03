@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "295740422471",
+    "project_id": "wdp-493",
+    "storage_bucket": "wdp-493.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:295740422471:android:23743a76c8f8dec5183462",
+        "android_client_info": {
+          "package_name": "com.fashionai.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcbCnzOC9_M_mZxMA1Cll-eH3ke9TvTNc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

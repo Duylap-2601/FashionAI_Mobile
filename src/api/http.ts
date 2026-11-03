@@ -124,8 +124,8 @@ export const http = {
     return request<T>('patch', url, data, options);
   },
 
-  delete<T = void>(url: string, options?: HttpOptions): Promise<T> {
-    return request<T>('delete', url, undefined, options);
+  delete<T = void>(url: string, data?: unknown, options?: HttpOptions): Promise<T> {
+    return request<T>('delete', url, data, options);
   },
 
   /** Giữ lại `meta` (page, limit, total, totalPages) cho danh sách phân trang. */

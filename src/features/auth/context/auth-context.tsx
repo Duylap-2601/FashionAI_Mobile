@@ -5,6 +5,7 @@ import { User, LoginDto, RegisterDto } from '@/features/auth/types/auth';
 import { authApi } from '@/features/auth/api/auth.api';
 import { getTokens, setTokens, clearTokens, getStoredUser, setStoredUser } from '@/features/auth/storage/secure-storage';
 import { onUnauthorized } from '@/api/client';
+import { unregisterPushToken } from '@/features/notifications/utils/unregister-push-token';
 import { ENV } from '@/config/env';
 
 // Complete auth session if returning from WebBrowser
@@ -129,6 +130,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     const { refreshToken } = await getTokens();
+    await unregisterPushToken();
     try {
       await authApi.logout(refreshToken);
     } catch (err) {
@@ -140,6 +142,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logoutAll = async () => {
+    await unregisterPushToken();
     try {
       await authApi.logoutAll();
     } catch (err) {
@@ -161,6 +164,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const changePassword = async (oldPassword: string, newPassword: string) => {
+    await unregisterPushToken();
     await authApi.changePassword(oldPassword, newPassword);
     // BE revokes all refresh tokens on password change, so the current session is dead.
     await clearTokens();
