@@ -96,7 +96,7 @@ export function StylistHistoryScreen({ navigation }: Props) {
       onEndReachedThreshold={0.35}
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={
-        <View className="gap-3 border-b border-landing-line px-lg pb-5 pt-lg">
+        <View className="gap-4 border-b border-landing-line px-lg pb-5 pt-lg">
           <BackButton onPress={() => navigation.goBack()} />
           <View className="flex-row items-center gap-2">
             <Sparkles size={14} strokeWidth={1.75} color={COLORS.brassInk} />

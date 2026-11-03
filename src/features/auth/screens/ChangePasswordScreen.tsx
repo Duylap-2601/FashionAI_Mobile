@@ -66,7 +66,7 @@ export const ChangePasswordScreen: React.FC<Props> = ({ navigation }) => {
         >
           <BackButton onPress={() => navigation.goBack()} />
 
-          <View className="mt-2 gap-2 border-b border-landing-line pb-5">
+          <View className="mt-4 gap-2 border-b border-landing-line pb-5">
             <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink">
               Tài khoản
             </Text>

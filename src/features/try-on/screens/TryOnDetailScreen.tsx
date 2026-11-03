@@ -75,7 +75,7 @@ export const TryOnDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       <AppHeader />
       <ScrollView className="flex-1 bg-background" contentContainerClassName="p-xl">
         <BackButton onPress={() => navigation.goBack()} label="Quay lại" />
-      <Text className="mb-md text-headline-lg font-bold text-on-surface">Chi tiết Try-On</Text>
+      <Text className="mt-4 mb-md text-headline-lg font-bold text-on-surface">Chi tiết Try-On</Text>
       <ComparisonSlider before={data.humanImageUrl} after={data.resultUrl} />
 
       <View className="mt-xl rounded-xl border border-surface-line bg-surface-lowest p-lg shadow-sm">

@@ -458,7 +458,7 @@ export function MeasurementsScreen() {
       >
         <BackButton onPress={() => navigation.goBack()} />
 
-        <View className="mb-5 gap-2 border-b border-landing-line pb-5">
+        <View className="mt-4 mb-5 gap-2 border-b border-landing-line pb-5">
           <Text className={eyebrowClass}>Tài khoản</Text>
           <Text
             accessibilityRole="header"

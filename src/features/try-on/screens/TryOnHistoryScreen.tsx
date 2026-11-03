@@ -380,7 +380,7 @@ export const TryOnHistoryScreen: React.FC = () => {
           <View>
             <View className="border-b border-landing-line pb-5">
               <BackButton onPress={handleGoBack} />
-              <Text className={`${EYEBROW_CLASS} mt-1`}>Tài khoản</Text>
+              <Text className={`${EYEBROW_CLASS} mt-4`}>Tài khoản</Text>
               <Text
                 accessibilityRole="header"
                 className="mt-2 font-display text-headline-lg text-landing-obsidian"

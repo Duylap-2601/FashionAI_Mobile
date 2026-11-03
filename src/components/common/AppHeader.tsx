@@ -45,13 +45,15 @@ export const AppHeader: React.FC<IAppHeaderProps> = ({
         </View>
 
         <View className="flex-row items-center gap-1.5">
-          <TouchableOpacity
-            accessibilityLabel="Tìm kiếm"
-            onPress={() => navigation.navigate('Search')}
-            className="h-9 w-9 items-center justify-center rounded-full active:bg-surface-container"
-          >
-            <Search size={18} color={COLORS.onSurface} />
-          </TouchableOpacity>
+          {showSearch ? (
+            <TouchableOpacity
+              accessibilityLabel="Tìm kiếm"
+              onPress={() => navigation.navigate('Search')}
+              className="h-9 w-9 items-center justify-center rounded-full active:bg-surface-container"
+            >
+              <Search size={18} color={COLORS.onSurface} />
+            </TouchableOpacity>
+          ) : null}
 
           <NotificationBell />
 

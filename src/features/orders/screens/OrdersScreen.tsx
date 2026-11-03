@@ -429,7 +429,7 @@ export function OrdersScreen() {
       >
         <BackButton onPress={() => navigation.goBack()} />
 
-        <View className="mb-lg gap-3 border-b border-landing-line pb-5">
+        <View className="mt-4 mb-lg gap-3 border-b border-landing-line pb-5">
           <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
             Tài khoản
           </Text>

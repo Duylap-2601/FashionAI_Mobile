@@ -23,7 +23,7 @@ export const BackButton: React.FC<IBackButtonProps> = ({
       accessibilityLabel={resolvedAccessibilityLabel}
       hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
       onPress={onPress}
-      className="mb-2 flex-row items-center gap-1 self-start active:opacity-60"
+      className="flex-row items-center gap-1 self-start active:opacity-60"
     >
       <ArrowLeft size={14} color={COLORS.onSurfaceVariant} />
       <Text className="text-label-lg font-medium text-on-surface-variant">{label}</Text>

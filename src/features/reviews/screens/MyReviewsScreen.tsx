@@ -283,7 +283,7 @@ export function MyReviewsScreen({ navigation }: Props) {
         onEndReachedThreshold={0.35}
         ListHeaderComponent={
           <View>
-            <View className="gap-3 border-b border-landing-line px-lg pb-5 pt-lg">
+            <View className="gap-4 border-b border-landing-line px-lg pb-5 pt-lg">
               <BackButton onPress={() => navigation.goBack()} />
               <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
                 Tài khoản

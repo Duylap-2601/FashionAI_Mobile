@@ -276,7 +276,7 @@ export const SubscriptionPlansScreen: React.FC = () => {
 
       <ScrollView
         className="flex-1"
-        contentContainerClassName="gap-6 px-lg pb-giant pt-lg"
+        contentContainerClassName="gap-4 px-lg pb-giant pt-lg"
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
