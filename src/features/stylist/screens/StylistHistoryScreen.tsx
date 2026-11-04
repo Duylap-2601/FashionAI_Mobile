@@ -1,14 +1,14 @@
 import React, { useCallback, useMemo } from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Text, View } from 'react-native';
 import { Sparkles } from 'lucide-react-native';
 import { AppHeader } from '@/components/common/AppHeader';
 import { BackButton } from '@/components/common/BackButton';
-import { ErrorView } from '@/components/common/ErrorView';
 import { COLORS } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
 import { ApiError } from '@/types/api';
 import { StylistHistoryCard } from '../components/StylistHistoryCard';
+import { StylistStatePanel } from '../components/StylistStatePanel';
 import {
   useDeleteStylistHistoryItem,
   useStylistHistory,
@@ -41,7 +41,7 @@ export function StylistHistoryScreen({ navigation }: Props) {
     (result: IStylistResult) => {
       Alert.alert(
         'Xóa kết quả tư vấn?',
-        'Kết quả đã xóa không thể khôi phục.',
+        'Kết quả và các bộ phối gợi ý sẽ bị xóa khỏi lịch sử.',
         [
           { text: 'Hủy', style: 'cancel' },
           {
@@ -61,8 +61,11 @@ export function StylistHistoryScreen({ navigation }: Props) {
 
   if (historyQuery.isLoading && results.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center gap-3 bg-landing-paper">
-        <ActivityIndicator color={COLORS.oxblood} />
+      <View
+        accessibilityRole="progressbar"
+        className="flex-1 items-center justify-center gap-3 bg-landing-paper"
+      >
+        <ActivityIndicator size="large" color={COLORS.oxblood} />
         <Text className="font-sans text-body-sm text-landing-muted">
           Đang tải lịch sử tư vấn…
         </Text>
@@ -72,11 +75,12 @@ export function StylistHistoryScreen({ navigation }: Props) {
 
   if (historyQuery.isError && results.length === 0) {
     return (
-      <ErrorView
+      <StylistStatePanel
         fullscreen
-        title="Chưa thể tải lịch sử tư vấn"
-        message={getErrorMessage(historyQuery.error)}
-        onRetry={() => void historyQuery.refetch()}
+        title="Không tải được lịch sử"
+        description="Kiểm tra kết nối rồi thử lại."
+        actionLabel="Thử lại"
+        onAction={() => void historyQuery.refetch()}
       />
     );
   }
@@ -86,87 +90,74 @@ export function StylistHistoryScreen({ navigation }: Props) {
       <AppHeader />
       <FlatList
         className="flex-1"
-      data={results}
-      keyExtractor={(item) => item.id}
-      contentContainerClassName="flex-grow gap-lg pb-xxxl"
-      contentInsetAdjustmentBehavior="automatic"
-      refreshing={historyQuery.isRefetching && !historyQuery.isFetchingNextPage}
-      onRefresh={() => void historyQuery.refetch()}
-      onEndReached={loadMore}
-      onEndReachedThreshold={0.35}
-      showsVerticalScrollIndicator={false}
-      ListHeaderComponent={
-        <View className="gap-4 border-b border-landing-line px-lg pb-5 pt-lg">
-          <BackButton onPress={() => navigation.goBack()} />
-          <View className="flex-row items-center gap-2">
-            <Sparkles size={14} strokeWidth={1.75} color={COLORS.brassInk} />
-            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
-              AI Stylist
+        data={results}
+        keyExtractor={(item) => item.id}
+        contentContainerClassName="flex-grow gap-lg pb-xxxl"
+        contentInsetAdjustmentBehavior="automatic"
+        refreshing={historyQuery.isRefetching && !historyQuery.isFetchingNextPage}
+        onRefresh={() => void historyQuery.refetch()}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.35}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <View className="gap-4 border-b border-landing-line px-lg pb-5 pt-lg">
+            <BackButton label="Quay lại" onPress={() => navigation.goBack()} />
+            <View className="flex-row items-center gap-2">
+              <Sparkles size={14} strokeWidth={1.75} color={COLORS.brassInk} />
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
+                AI Stylist
+              </Text>
+            </View>
+            <View className="flex-row items-end justify-between gap-3">
+              <Text
+                accessibilityRole="header"
+                className="flex-1 font-display text-headline-lg text-landing-obsidian"
+              >
+                Lịch sử tư vấn
+              </Text>
+              <Text className="shrink-0 font-mono text-[11px] uppercase tracking-[0.16em] text-landing-muted">
+                {historyQuery.data?.pages[0]?.meta.total ?? results.length} lần tư vấn
+              </Text>
+            </View>
+            <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
+              Các lần tư vấn phối đồ bạn đã nhận, kèm bộ phối từ sản phẩm trong cửa hàng.
             </Text>
+            {historyQuery.isError ? (
+              <Text
+                accessibilityRole="alert"
+                className="border-l-2 border-brass bg-ivory px-4 py-3 font-sans text-body-sm text-landing-muted"
+              >
+                Chưa thể cập nhật lịch sử mới nhất. Nội dung đã tải vẫn được giữ lại.
+              </Text>
+            ) : null}
           </View>
-          <View className="flex-row items-end justify-between gap-3">
-            <Text
-              accessibilityRole="header"
-              className="flex-1 font-display text-headline-lg text-landing-obsidian"
-            >
-              Lịch sử tư vấn
-            </Text>
-            <Text className="shrink-0 font-mono text-[11px] uppercase tracking-[0.16em] text-landing-muted">
-              {String(historyQuery.data?.pages[0]?.meta.total ?? results.length).padStart(2, '0')} kết quả
-            </Text>
+        }
+        renderItem={({ item }) => (
+          <StylistHistoryCard
+            result={item}
+            deleting={deleteMutation.isPending && deleteMutation.variables === item.id}
+            onOpen={(resultId) => navigation.navigate('StylistResult', { resultId })}
+            onDelete={confirmDelete}
+          />
+        )}
+        ListEmptyComponent={
+          <View className="mx-lg">
+            <StylistStatePanel
+              title="Chưa có lần tư vấn nào"
+              description="AI Stylist xem ảnh và mô tả của bạn rồi gợi ý bộ phối từ sản phẩm trong cửa hàng."
+              actionLabel="Nhờ AI Stylist"
+              actionVariant="primary"
+              onAction={() => navigation.navigate('Stylist')}
+            />
           </View>
-          <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
-            Xem lại những lần tư vấn phong cách đã thực hiện với AI.
-          </Text>
-          {historyQuery.isError ? (
-            <Text
-              accessibilityRole="alert"
-              className="border-l-2 border-brass bg-ivory px-4 py-3 font-sans text-body-sm text-landing-muted"
-            >
-              Chưa thể cập nhật lịch sử mới nhất. Nội dung đã tải vẫn được giữ lại.
-            </Text>
-          ) : null}
-        </View>
-      }
-      renderItem={({ item }) => (
-        <StylistHistoryCard
-          result={item}
-          deleting={deleteMutation.isPending && deleteMutation.variables === item.id}
-          onOpen={(resultId) => navigation.navigate('StylistResult', { resultId })}
-          onDelete={confirmDelete}
-        />
-      )}
-      ListEmptyComponent={
-        <View className="mx-lg items-center gap-5 border border-dashed border-taupe bg-ivory px-6 py-14">
-          <View className="h-16 w-16 items-center justify-center border border-landing-line">
-            <Sparkles size={24} strokeWidth={1.5} color={COLORS.oxblood} />
-          </View>
-          <View className="gap-2">
-            <Text className="text-center font-display text-[20px] text-landing-obsidian">
-              Chưa có lịch sử tư vấn
-            </Text>
-            <Text className="text-center font-sans text-body-sm leading-relaxed text-landing-muted">
-              Kết quả AI Stylist của bạn sẽ được lưu tại đây để xem lại bất cứ lúc nào.
-            </Text>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => navigation.navigate('Stylist')}
-            className="h-11 items-center justify-center rounded-subtle bg-oxblood px-5 active:opacity-90"
-          >
-            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
-              Tạo tư vấn mới
-            </Text>
-          </Pressable>
-        </View>
-      }
-      ListFooterComponent={
-        historyQuery.isFetchingNextPage ? (
-          <View className="py-lg">
-            <ActivityIndicator color={COLORS.oxblood} />
-          </View>
-        ) : null
-      }
+        }
+        ListFooterComponent={
+          historyQuery.isFetchingNextPage ? (
+            <View className="py-lg">
+              <ActivityIndicator color={COLORS.oxblood} />
+            </View>
+          ) : null
+        }
       />
     </View>
   );
