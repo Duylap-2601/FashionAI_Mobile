@@ -62,6 +62,24 @@ export function useOrder(id: string | number) {
   };
 }
 
+/**
+ * Đơn đã tạo nhưng chưa thanh toán, để checkout nhắc khách trả đơn cũ thay vì đặt thêm đơn trùng.
+ * Khoá nằm dưới `['orders']` nên tạo/hủy đơn (invalidate `['orders']`) cũng làm mới danh sách này.
+ */
+export function useUnpaidOrders() {
+  const query = useQuery({
+    queryKey: ['orders', 'unpaid'],
+    queryFn: ({ signal }) => ordersApi.getUnpaidOrders({ signal }),
+  });
+
+  return {
+    unpaidOrders: query.data ?? [],
+    isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
+  };
+}
+
 export function useCancelOrder() {
   const queryClient = useQueryClient();
   
