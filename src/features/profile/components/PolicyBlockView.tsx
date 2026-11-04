@@ -159,7 +159,7 @@ function StackedTable({ columns, rows }: { columns: string[]; rows: string[][] }
           </Text>
           {row.slice(1).map((cell, index) => (
             <View key={`${row[0]}-${columns[index + 1]}`} className="gap-xs">
-              <Text className="font-sans text-label-md uppercase tracking-wider text-brass-ink">
+              <Text className="font-sans text-label-md uppercase tracking-[0.16em] text-brass-ink">
                 {columns[index + 1]}
               </Text>
               <Text className="font-sans text-body-sm leading-relaxed text-obsidian">

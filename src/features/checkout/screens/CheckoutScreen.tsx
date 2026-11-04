@@ -166,8 +166,9 @@ function OutlineAction({
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
       disabled={disabled}
-      className={`shrink-0 items-center justify-center rounded-subtle border border-landing-line px-3.5 ${
-        compact ? 'h-9' : 'h-11'
+      // Bản compact chỉ gọn chữ; chiều cao giữ 44px cho vùng chạm (design/DESIGN.md › Accessibility).
+      className={`h-11 shrink-0 items-center justify-center rounded-subtle border border-landing-line ${
+        compact ? 'px-3' : 'px-3.5'
       } ${disabled ? 'opacity-50' : 'active:bg-ivory'}`}
     >
       <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
@@ -754,7 +755,7 @@ export function CheckoutScreen() {
             params: { screen: 'Measurements' },
           })
         }
-        className="mt-3 h-9 items-center justify-center self-start rounded-subtle border border-landing-line px-3.5 active:bg-landing-paper"
+        className="mt-3 h-11 items-center justify-center self-start rounded-subtle border border-landing-line px-3.5 active:bg-landing-paper"
       >
         <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
           Cập nhật số đo
@@ -803,7 +804,7 @@ export function CheckoutScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={handleRetryQuote}
-            className="mt-2 h-9 flex-row items-center gap-1.5 self-start rounded-subtle border border-landing-line px-3 active:bg-landing-paper"
+            className="mt-2 h-11 flex-row items-center gap-1.5 self-start rounded-subtle border border-landing-line px-3 active:bg-landing-paper"
           >
             <RefreshCw size={13} strokeWidth={1.75} color={COLORS.oxblood} />
             <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
@@ -1016,7 +1017,7 @@ export function CheckoutScreen() {
                   selected={paymentMethod === EPaymentMethod.ZALOPAY}
                   onPress={() => setPaymentMethod(EPaymentMethod.ZALOPAY)}
                   title="ZaloPay"
-                  description="Quét QR hoặc mở ứng dụng ZaloPay. Trạng tự cập nhật khi thanh toán xong."
+                  description="Quét QR hoặc mở ứng dụng ZaloPay. Trang tự cập nhật khi thanh toán xong."
                   mark={
                     <View className="h-7 w-7 items-center justify-center rounded-subtle border border-landing-line bg-landing-paper">
                       <Wallet size={14} strokeWidth={1.75} color={COLORS.oxblood} />

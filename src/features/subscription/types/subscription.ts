@@ -98,6 +98,8 @@ export interface PlanCardData {
   isPopular?: boolean;
   features: PlanFeature[];
   ctaText: string;
+  /** Lượt dùng từ GET /payments/plans; không có khi API lỗi (đang dùng DEFAULT_PLANS). */
+  quotas?: PlanQuota[];
 }
 
 export interface QuotaComparisonRow {

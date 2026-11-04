@@ -15,7 +15,7 @@ import {
 } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { MainTabParamList, RootStackParamList } from './types';
-import { Home, Package, Sparkles, Wand2, User, type LucideIcon } from 'lucide-react-native';
+import { Home, Package, Sparkles, WandSparkles, User, type LucideIcon } from 'lucide-react-native';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { TryOnStack } from './try-on-stack';
 import { ShopScreen } from '../features/products/screens/ShopScreen';
@@ -27,16 +27,18 @@ import { COLORS as THEME_COLORS } from '../constants/theme';
 import { FloatingChatBubble } from '../features/chat/components/FloatingChatBubble';
 import { CartSync } from '../features/cart/components/CartSync';
 
-// React Navigation's screenOptions/tabBarIcon require plain style objects
-// (no className support), so the Atelier Paper tokens are passed in as values.
-// Mirrors FE's BottomTabBar (src/components/layout/BottomTabBar.tsx).
+// React Navigation's screenOptions (tabBarStyle, tint colors) and lucide icon props
+// only take plain values, so the Atelier Paper tokens come from COLORS
+// (design/design-system.md › Mobile Tab Shell). Label and indicator use className.
 const COLORS = {
   paper: THEME_COLORS.paper,
   line: THEME_COLORS.line,
-  primaryContainer: THEME_COLORS.primaryContainer,
-  onPrimary: THEME_COLORS.onPrimary,
+  oxblood: THEME_COLORS.oxblood,
   muted: THEME_COLORS.muted,
 };
+
+// design/DESIGN.md › Main Tab Shell: 78px plus the bottom safe area.
+const TAB_BAR_HEIGHT = 78;
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -66,32 +68,27 @@ const MainAnnouncementBar = () => {
   );
 };
 
+// Active: oxblood icon and label; inactive: muted (FE BottomTabBar uses the same tokens).
 const TabIcon = ({ Icon, focused }: { Icon: LucideIcon; focused: boolean }) => (
   <Icon
     size={20}
-    color={focused ? COLORS.primaryContainer : COLORS.muted}
-    strokeWidth={1.75}
+    color={focused ? COLORS.oxblood : COLORS.muted}
+    strokeWidth={focused ? 2 : 1.75}
   />
 );
 
 const TabLabel = ({ label, focused }: { label: string; focused: boolean }) => (
   <Text
-    style={{
-      marginTop: 4,
-      fontSize: 10,
-      lineHeight: 10,
-      fontWeight: '600',
-      letterSpacing: 1,
-      textTransform: 'uppercase',
-      color: focused ? COLORS.primaryContainer : COLORS.muted,
-      fontFamily: 'Be Vietnam Pro',
-    }}
+    numberOfLines={1}
+    className={`mt-1 font-sans text-[10px] font-semibold uppercase leading-3 tracking-[0.1em] ${
+      focused ? 'text-oxblood' : 'text-landing-muted'
+    }`}
   >
     {label}
   </Text>
 );
 
-// 2px × 32px oxblood indicator at the top of the active tab (FE BottomTabBar).
+// 4x4 oxblood indicator dot under the active tab label (design/DESIGN.md › Main Tab Shell).
 const TabButton = ({ children, style, accessibilityState, ...rest }: BottomTabBarButtonProps) => {
   const focused = accessibilityState?.selected ?? false;
 
@@ -101,18 +98,13 @@ const TabButton = ({ children, style, accessibilityState, ...rest }: BottomTabBa
       accessibilityState={accessibilityState}
       style={style}
     >
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: '50%',
-          marginLeft: -16,
-          width: 32,
-          height: 2,
-          backgroundColor: focused ? COLORS.primaryContainer : 'transparent',
-        }}
-      />
       {children}
+      <View
+        pointerEvents="none"
+        className={`absolute bottom-3 left-1/2 -ml-0.5 h-1 w-1 rounded-full ${
+          focused ? 'bg-oxblood' : 'bg-transparent'
+        }`}
+      />
     </PlatformPressable>
   );
 };
@@ -148,12 +140,16 @@ export const MainTabs: React.FC = () => {
         headerShown: true,
         header: () => <AppHeader />,
         tabBarButton: (props) => <TabButton {...props} />,
-        tabBarActiveTintColor: COLORS.primaryContainer,
+        tabBarActiveTintColor: COLORS.oxblood,
         tabBarInactiveTintColor: COLORS.muted,
+        // Paper bar with a 1px brass hairline on top, no elevation (design/design-system.md).
         tabBarStyle: {
           backgroundColor: COLORS.paper,
           borderTopColor: COLORS.line,
-          height: 56 + insets.bottom,
+          borderTopWidth: 1,
+          elevation: 0,
+          shadowOpacity: 0,
+          height: TAB_BAR_HEIGHT + insets.bottom,
           paddingBottom: insets.bottom,
           paddingTop: 0,
           paddingHorizontal: 0,
@@ -179,7 +175,7 @@ export const MainTabs: React.FC = () => {
         options={{
           title: 'Khám phá',
           header: () => <AppHeader showSearch={false} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="Sản Phẩm" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Sản phẩm" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={Package} focused={focused} />,
         }}
       />
@@ -201,7 +197,7 @@ export const MainTabs: React.FC = () => {
           title: 'AI Stylist',
           header: () => <AppHeader />,
           tabBarLabel: ({ focused }) => <TabLabel label="AI Stylist" focused={focused} />,
-          tabBarIcon: ({ focused }) => <TabIcon Icon={Wand2} focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon Icon={WandSparkles} focused={focused} />,
         }}
       />
       <Tab.Screen

@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -27,13 +28,15 @@ import {
   Sparkles,
   Star,
   Wallet,
+  X,
 } from 'lucide-react-native';
 import { AppHeader } from '@/components/common/AppHeader';
 import { COLORS } from '@/constants/theme';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/use-measurements-completeness';
+import { ToneLabel } from '@/features/orders/components/ToneLabel';
 import { useOrders } from '@/features/orders/hooks/use-orders';
-import { EOrderStatus } from '@/features/orders/types/order';
+import { ORDER_STATUS_CONFIG } from '@/features/orders/utils/order-status';
 import type { ProfileStackParamList, RootStackParamList } from '@/navigation/types';
 import { formatCurrency } from '@/utils/format';
 import { usersApi, type UserQuotaResponse } from '../api/users.api';
@@ -49,20 +52,7 @@ type ProfileNavigationProp = CompositeNavigationProp<
 const CATEGORY_LABELS: Record<string, string> = {
   UPPER: 'Áo',
   LOWER: 'Quần & váy',
-  FULL_BODY: 'Bộ liền',
-};
-
-const ORDER_STATUS_LABELS: Record<string, string> = {
-  [EOrderStatus.PENDING]: 'Chờ xử lý',
-  [EOrderStatus.PENDING_PAYMENT]: 'Chờ thanh toán',
-  [EOrderStatus.CONFIRMED]: 'Đã xác nhận',
-  [EOrderStatus.PROCESSING]: 'Đang chuẩn bị',
-  [EOrderStatus.SHIPPING]: 'Đang giao',
-  [EOrderStatus.DELIVERED]: 'Đã giao',
-  [EOrderStatus.COMPLETED]: 'Hoàn thành',
-  [EOrderStatus.CANCELLED]: 'Đã hủy',
-  [EOrderStatus.REFUND_PENDING]: 'Chờ hoàn tiền',
-  [EOrderStatus.REFUNDED]: 'Đã hoàn tiền',
+  FULL_BODY: 'Đồ liền',
 };
 
 type NavRowIcon = React.ComponentType<{
@@ -81,8 +71,11 @@ const POLICY_ICONS: Record<PolicyType, NavRowIcon> = {
 
 const labelClass =
   'font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink';
-const mutedLabelClass =
-  'font-sans text-[11px] uppercase tracking-[0.16em] text-landing-muted';
+// Nút nhỏ trong hàng thông tin (web: accountButtonClassName(..., 'sm')), cao 44px cho vùng chạm.
+const smallOutlineButtonClass =
+  'h-11 items-center justify-center rounded-subtle border border-landing-line px-3.5 active:opacity-70';
+const smallButtonLabelClass =
+  'font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em]';
 
 function formatDate(value?: string | null): string | null {
   if (!value) return null;
@@ -132,7 +125,7 @@ function LinkAction({ label, onPress }: { label: string; onPress: () => void }) 
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      className="min-h-9 flex-row items-center gap-1 active:opacity-70"
+      className="min-h-11 flex-row items-center gap-1.5 active:opacity-70"
     >
       <Text className="font-sans text-body-sm text-oxblood">{label}</Text>
       <ArrowRight size={13} strokeWidth={1.75} color={COLORS.oxblood} />
@@ -145,24 +138,34 @@ function InfoRow({
   value,
   action,
   muted,
+  mono,
+  note,
+  valueAccessibilityLabel,
 }: {
   label: string;
   value: string;
   action?: React.ReactNode;
   muted?: boolean;
+  mono?: boolean;
+  note?: { text: string; className: string };
+  valueAccessibilityLabel?: string;
 }) {
   return (
-    <View className="flex-row items-center justify-between gap-4 border-b border-landing-line py-3.5">
+    <View className="flex-row items-center justify-between gap-4 border-b border-landing-line/70 py-3.5">
       <Text className="font-sans text-body-sm text-landing-muted">{label}</Text>
       <View className="flex-1 items-end">
         <Text
           numberOfLines={1}
-          className={`text-right font-sans text-body-md ${
+          accessibilityLabel={valueAccessibilityLabel}
+          className={`text-right text-body-md ${mono ? 'font-mono' : 'font-sans'} ${
             muted ? 'text-landing-muted' : 'text-landing-obsidian'
           }`}
         >
           {value}
         </Text>
+        {note ? (
+          <Text className={`mt-0.5 font-sans text-[12px] ${note.className}`}>{note.text}</Text>
+        ) : null}
       </View>
       {action ? <View className="shrink-0">{action}</View> : null}
     </View>
@@ -172,8 +175,8 @@ function InfoRow({
 function QuotaMeter({ label, quota }: { label: string; quota?: UserQuotaResponse }) {
   if (!quota) {
     return (
-      <View className="gap-2 border-b border-landing-line py-3.5">
-        <View className="h-3 w-32 bg-taupe/40" />
+      <View className="gap-2 border-b border-landing-line/60 py-3.5">
+        <View className="h-4 w-40 bg-taupe/40" />
       </View>
     );
   }
@@ -187,7 +190,7 @@ function QuotaMeter({ label, quota }: { label: string; quota?: UserQuotaResponse
       : Math.min(100, Math.round((quota.used / limit) * 100));
 
   return (
-    <View className="gap-2 border-b border-landing-line py-3.5">
+    <View className="gap-2 border-b border-landing-line/60 py-3.5">
       <View className="flex-row items-baseline justify-between gap-4">
         <Text className="font-sans text-body-sm text-landing-obsidian">{label}</Text>
         <Text
@@ -203,7 +206,12 @@ function QuotaMeter({ label, quota }: { label: string; quota?: UserQuotaResponse
         </Text>
       </View>
       {!unlimited && !notIncluded ? (
-        <View className="h-[3px] overflow-hidden bg-taupe/45">
+        <View
+          accessibilityRole="progressbar"
+          accessibilityLabel={`${label}: đã dùng ${quota.used} trên ${limit} lượt`}
+          accessibilityValue={{ min: 0, max: limit, now: quota.used }}
+          className="h-[3px] overflow-hidden bg-taupe/45"
+        >
           <View
             style={{ width: `${percent}%` }}
             className="h-full bg-oxblood"
@@ -230,8 +238,10 @@ function NavRow({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint={description}
       onPress={onPress}
-      className="flex-row items-center gap-3 border-b border-landing-line py-3.5 active:opacity-70"
+      className="min-h-11 flex-row items-center gap-3 border-b border-landing-line/70 py-3.5 active:opacity-70"
     >
       <View className="h-9 w-9 shrink-0 items-center justify-center border border-landing-line">
         <Icon size={16} strokeWidth={1.5} color={COLORS.oxblood} />
@@ -242,7 +252,7 @@ function NavRow({
             {label}
           </Text>
           {badge ? (
-            <Text className="border border-oxblood/40 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-oxblood">
+            <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-oxblood">
               {badge}
             </Text>
           ) : null}
@@ -261,6 +271,7 @@ function NavRow({
 
 export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<ProfileNavigationProp>();
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { user, logout, refreshUser } = useAuth();
   const { hasMeasurement, byCategory, isLoading: measurementsLoading } =
@@ -295,7 +306,7 @@ export const ProfileScreen: React.FC = () => {
   const email = profile?.email || user?.email || '';
   const tier = String(profile?.tier || user?.tier || 'FREE').toUpperCase();
   const tierLabel =
-    tier === 'VIP' ? 'VIP' : tier === 'MEMBER' ? 'Member' : 'Free';
+    tier === 'VIP' ? 'VIP' : tier === 'MEMBER' ? 'Member' : 'Miễn phí';
   const tierExpiresAt = formatDate(
     (profile as any)?.tierExpiresAt ?? (user as any)?.tierExpiresAt,
   );
@@ -316,6 +327,7 @@ export const ProfileScreen: React.FC = () => {
   });
 
   const recentOrders = useMemo(() => orders.slice(0, 3), [orders]);
+  const quotaResetAt = tryOnQuota?.resetAt ? new Date(tryOnQuota.resetAt) : null;
 
   const startEditingName = () => {
     setNameDraft(name);
@@ -358,7 +370,7 @@ export const ProfileScreen: React.FC = () => {
           <Text className={labelClass}>Tài khoản</Text>
           <Text
             accessibilityRole="header"
-            className="font-display text-headline-lg text-landing-obsidian"
+            className="font-display text-[30px] leading-tight text-landing-obsidian"
           >
             Hồ sơ của tôi
           </Text>
@@ -385,7 +397,9 @@ export const ProfileScreen: React.FC = () => {
                 editable={!updateName.isPending}
                 placeholder="Họ và tên"
                 placeholderTextColor={COLORS.muted}
-                className="h-11 rounded-subtle border border-landing-line bg-landing-paper/60 px-3.5 font-sans text-body-md text-landing-obsidian"
+                accessibilityLabel="Họ và tên"
+                autoComplete="name"
+                className="h-11 rounded-subtle border border-landing-line bg-ivory/80 px-3 font-sans text-body-md text-landing-obsidian"
               />
               {nameError ? (
                 <Text accessibilityRole="alert" className="font-sans text-body-sm text-danger">
@@ -397,9 +411,9 @@ export const ProfileScreen: React.FC = () => {
                   accessibilityRole="button"
                   disabled={updateName.isPending}
                   onPress={saveName}
-                  className="h-10 items-center justify-center rounded-subtle bg-oxblood px-4 active:opacity-90"
+                  className="h-11 items-center justify-center rounded-subtle bg-oxblood px-4 active:opacity-90"
                 >
-                  <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-paper">
+                  <Text className={`${smallButtonLabelClass} text-landing-paper`}>
                     {updateName.isPending ? 'Đang lưu' : 'Lưu'}
                   </Text>
                 </Pressable>
@@ -407,9 +421,9 @@ export const ProfileScreen: React.FC = () => {
                   accessibilityRole="button"
                   disabled={updateName.isPending}
                   onPress={() => setEditingName(false)}
-                  className="h-10 items-center justify-center rounded-subtle border border-landing-line px-4 active:bg-ivory"
+                  className={smallOutlineButtonClass}
                 >
-                  <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
+                  <Text className={`${smallButtonLabelClass} text-landing-obsidian`}>
                     Hủy
                   </Text>
                 </Pressable>
@@ -423,10 +437,11 @@ export const ProfileScreen: React.FC = () => {
               action={
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel="Sửa họ và tên"
                   onPress={startEditingName}
-                  className="h-9 items-center justify-center rounded-subtle border border-landing-line px-3 active:bg-ivory"
+                  className={smallOutlineButtonClass}
                 >
-                  <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
+                  <Text className={`${smallButtonLabelClass} text-landing-obsidian`}>
                     Sửa
                   </Text>
                 </Pressable>
@@ -438,33 +453,39 @@ export const ProfileScreen: React.FC = () => {
             label="Email"
             value={email || 'Chưa có'}
             muted={!email}
+            note={
+              isVerified !== undefined
+                ? {
+                    text: isVerified ? 'Đã xác minh' : 'Chưa xác minh',
+                    className: isVerified ? 'text-sage-ink' : 'text-brass-ink',
+                  }
+                : undefined
+            }
           />
-          {isVerified !== undefined ? (
-            <InfoRow
-              label="Xác minh"
-              value={isVerified ? 'Đã xác minh' : 'Chưa xác minh'}
-              muted={!isVerified}
-            />
-          ) : null}
           <InfoRow
             label="Mật khẩu"
             value="••••••••"
+            valueAccessibilityLabel="Đã ẩn"
             muted
+            mono
             action={
               <Pressable
                 accessibilityRole="button"
                 onPress={() => navigation.navigate('ChangePassword')}
-                className="h-9 items-center justify-center rounded-subtle border border-landing-line px-3 active:bg-ivory"
+                className={smallOutlineButtonClass}
               >
-                <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
+                <Text className={`${smallButtonLabelClass} text-landing-obsidian`}>
                   Đổi mật khẩu
                 </Text>
               </Pressable>
             }
           />
           {joinedAt ? (
-            <InfoRow label="Ngày tham gia" value={joinedAt} />
+            <InfoRow label="Ngày tham gia" value={joinedAt} mono />
           ) : null}
+          <Text className="font-sans text-[12px] leading-relaxed text-landing-muted">
+            Số điện thoại và địa chỉ giao hàng nằm trong Sổ địa chỉ.
+          </Text>
         </Section>
 
         {/* Membership */}
@@ -478,8 +499,8 @@ export const ProfileScreen: React.FC = () => {
           }
         >
           <View className="gap-1">
-            <Text className={mutedLabelClass}>Gói hiện tại</Text>
-            <Text className="mt-1 font-display text-[40px] leading-none text-oxblood">
+            <Text className={labelClass}>Gói hiện tại</Text>
+            <Text className="mt-2 font-display text-[44px] leading-none text-oxblood">
               {tierLabel}
             </Text>
             <Text className="mt-2 font-sans text-body-sm text-landing-muted">
@@ -492,11 +513,25 @@ export const ProfileScreen: React.FC = () => {
           </View>
 
           <View className="mt-2">
-            <Text className={mutedLabelClass}>Lượt dùng hôm nay</Text>
+            <Text className={labelClass}>Lượt dùng hôm nay</Text>
             <View className="mt-1">
               <QuotaMeter label="Thử đồ AI" quota={tryOnQuota} />
               <QuotaMeter label="AI Stylist" quota={stylistQuota} />
             </View>
+            {quotaResetAt && !Number.isNaN(quotaResetAt.getTime()) ? (
+              <Text className="mt-2 font-sans text-[12px] text-landing-muted">
+                Làm mới lúc{' '}
+                <Text className="font-mono">
+                  {quotaResetAt.toLocaleString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    day: '2-digit',
+                    month: '2-digit',
+                  })}
+                </Text>
+                .
+              </Text>
+            ) : null}
           </View>
         </Section>
 
@@ -506,15 +541,17 @@ export const ProfileScreen: React.FC = () => {
           description="Mỗi nhóm trang phục cần một bộ số đo riêng trước khi đặt may."
           action={
             <LinkAction
-              label="Cập nhật"
+              label="Cập nhật số đo"
               onPress={() => navigation.navigate('Measurements')}
             />
           }
         >
           {measurementsLoading ? (
-            <Text className="font-sans text-body-sm text-landing-muted">
-              Đang tải tình trạng số đo…
-            </Text>
+            <View accessibilityLabel="Đang tải tình trạng số đo" className="gap-3">
+              {[0, 1, 2].map((key) => (
+                <View key={key} className="h-5 w-2/3 bg-taupe/40" />
+              ))}
+            </View>
           ) : !hasMeasurement ? (
             <Pressable
               accessibilityRole="button"
@@ -530,7 +567,7 @@ export const ProfileScreen: React.FC = () => {
               {byCategory.map((category) => (
                 <View
                   key={category.category}
-                  className="flex-row items-start justify-between gap-4 border-b border-landing-line py-3"
+                  className="flex-row items-start justify-between gap-4 border-b border-landing-line/70 py-3"
                 >
                   <Text className="font-sans text-body-sm text-landing-obsidian">
                     {CATEGORY_LABELS[category.category] ?? category.category}
@@ -539,7 +576,7 @@ export const ProfileScreen: React.FC = () => {
                     <View className="flex-row items-center gap-1.5">
                       <Check size={13} strokeWidth={2} color={COLORS.sageInk} />
                       <Text className="font-sans text-body-sm text-sage-ink">
-                        Đủ số đo
+                        Đủ số đo để đặt may
                       </Text>
                     </View>
                   ) : (
@@ -558,48 +595,57 @@ export const ProfileScreen: React.FC = () => {
           title="Đơn gần đây"
           action={
             <LinkAction
-              label="Tất cả"
+              label="Tất cả đơn hàng"
               onPress={() => navigation.navigate('Orders')}
             />
           }
         >
           {ordersLoading ? (
-            <Text className="font-sans text-body-sm text-landing-muted">
-              Đang tải đơn hàng…
-            </Text>
+            <View accessibilityLabel="Đang tải đơn hàng" className="gap-4">
+              {[0, 1].map((key) => (
+                <View key={key} className="h-12 bg-taupe/30" />
+              ))}
+            </View>
           ) : recentOrders.length === 0 ? (
             <Text className="font-sans text-body-sm text-landing-muted">
               Bạn chưa có đơn hàng nào.
             </Text>
           ) : (
             <View>
-              {recentOrders.map((order) => (
-                <Pressable
-                  key={String(order.id)}
-                  accessibilityRole="button"
-                  onPress={() =>
-                    navigation.navigate('OrderDetail', { orderId: String(order.id) })
-                  }
-                  className="gap-1.5 border-b border-landing-line py-3.5 active:opacity-70"
-                >
-                  <View className="flex-row items-baseline justify-between gap-4">
-                    <Text className="font-mono text-[13px] text-landing-obsidian">
-                      {order.orderNumber}
-                    </Text>
-                    <Text className="font-mono text-[13px] text-oxblood">
-                      {formatCurrency(order.total)}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center justify-between gap-3">
-                    <Text className="font-sans text-[11px] uppercase tracking-[0.12em] text-brass-ink">
-                      {ORDER_STATUS_LABELS[order.status] ?? order.status}
-                    </Text>
-                    <Text className="font-sans text-[11px] text-landing-muted">
-                      {formatDate(order.createdAt)} · {order.items.length} món
-                    </Text>
-                  </View>
-                </Pressable>
-              ))}
+              {recentOrders.map((order) => {
+                // GET /orders trả orderCode và totalVnd/totalAmount (như getOrderCode/getOrderTotal của web).
+                const code = `ORD-${order.orderCode ?? order.orderNumber ?? order.id}`;
+                const total = order.totalVnd ?? order.totalAmount ?? order.total;
+                const status = ORDER_STATUS_CONFIG[order.status] ?? {
+                  label: String(order.status ?? ''),
+                  tone: 'closed' as const,
+                };
+                const itemCount = Array.isArray(order.items) ? order.items.length : 0;
+                return (
+                  <Pressable
+                    key={String(order.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Xem đơn ${code}`}
+                    onPress={() =>
+                      navigation.navigate('OrderDetail', { orderId: String(order.id) })
+                    }
+                    className="gap-1.5 border-b border-landing-line/70 py-4 active:opacity-70"
+                  >
+                    <View className="flex-row items-baseline justify-between gap-4">
+                      <Text className="font-mono text-[13px] text-landing-obsidian">{code}</Text>
+                      <Text className="font-mono text-[13px] text-oxblood">
+                        {formatCurrency(total)}
+                      </Text>
+                    </View>
+                    <View className="flex-row flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                      <ToneLabel tone={status.tone} label={status.label} />
+                      <Text className="font-sans text-[12px] text-landing-muted">
+                        {formatDate(order.createdAt)} · <Text className="font-mono">{itemCount}</Text> món
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
             </View>
           )}
         </Section>
@@ -676,10 +722,10 @@ export const ProfileScreen: React.FC = () => {
         <Pressable
           accessibilityRole="button"
           onPress={() => setShowLogoutModal(true)}
-          className="h-12 flex-row items-center justify-center gap-2 rounded-subtle border border-landing-line active:bg-ivory"
+          className="h-11 flex-row items-center justify-center gap-2 rounded-subtle border border-landing-line active:opacity-70"
         >
-          <LogOut size={16} strokeWidth={1.75} color={COLORS.muted} />
-          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-muted">
+          <LogOut size={16} strokeWidth={1.75} color={COLORS.obsidian} />
+          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
             Đăng xuất
           </Text>
         </Pressable>
@@ -689,44 +735,71 @@ export const ProfileScreen: React.FC = () => {
         visible={showLogoutModal}
         transparent
         animationType="fade"
+        navigationBarTranslucent
+        statusBarTranslucent
         onRequestClose={() => setShowLogoutModal(false)}
       >
-        <View className="flex-1 items-center justify-center bg-landing-obsidian/60 px-5">
-          <View className="w-full max-w-[360px] gap-3 rounded-subtle border border-landing-line bg-landing-paper p-6">
-            <View className="h-12 w-12 items-center justify-center border border-landing-line">
-              <LogOut size={22} strokeWidth={1.5} color={COLORS.oxblood} />
+        <View className="flex-1 justify-end">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Đóng hộp thoại"
+            disabled={isLoggingOut}
+            onPress={() => setShowLogoutModal(false)}
+            className="absolute inset-0 bg-landing-obsidian/45"
+          />
+          <View
+            className="w-full max-w-[420px] self-center border-t border-landing-line bg-landing-paper px-5 pt-5"
+            style={{ paddingBottom: Math.max(insets.bottom, 20) }}
+          >
+            <View className="flex-row items-start justify-between gap-3">
+              <Text
+                accessibilityRole="header"
+                className="flex-1 font-display text-[24px] leading-tight text-landing-obsidian"
+              >
+                Xác nhận đăng xuất
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Đóng"
+                accessibilityState={{ disabled: isLoggingOut }}
+                disabled={isLoggingOut}
+                onPress={() => setShowLogoutModal(false)}
+                className="-mr-2 h-11 w-11 items-center justify-center active:opacity-60"
+              >
+                <X size={18} strokeWidth={1.75} color={COLORS.muted} />
+              </Pressable>
             </View>
-            <Text className="font-display text-[22px] leading-tight text-landing-obsidian">
-              Xác nhận đăng xuất
-            </Text>
-            <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
+            <Text className="mt-3 font-sans text-body-sm leading-relaxed text-landing-muted">
               Bạn có chắc chắn muốn đăng xuất khỏi tài khoản của mình?
             </Text>
 
-            <View className="mt-2 flex-row gap-2.5">
+            <View className="mt-6 gap-3">
               <Pressable
                 accessibilityRole="button"
-                disabled={isLoggingOut}
-                onPress={() => setShowLogoutModal(false)}
-                className="h-11 flex-1 items-center justify-center rounded-subtle border border-landing-line active:bg-ivory"
-              >
-                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
-                  Hủy
-                </Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
+                accessibilityLabel="Đăng xuất"
+                accessibilityState={{ disabled: isLoggingOut }}
                 disabled={isLoggingOut}
                 onPress={() => void confirmLogout()}
-                className="h-11 flex-1 flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood active:opacity-90"
+                className="h-11 flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood active:opacity-90"
               >
                 {isLoggingOut ? (
                   <ActivityIndicator size="small" color={COLORS.paper} />
                 ) : (
-                  <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-paper">
+                  <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
                     Đăng xuất
                   </Text>
                 )}
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Giữ lại"
+                disabled={isLoggingOut}
+                onPress={() => setShowLogoutModal(false)}
+                className="h-11 items-center justify-center rounded-subtle border border-landing-line active:opacity-70"
+              >
+                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+                  Giữ lại
+                </Text>
               </Pressable>
             </View>
           </View>

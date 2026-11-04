@@ -1,6 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   RefreshControl,
@@ -10,14 +9,7 @@ import {
 } from 'react-native';
 import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
-  Check,
-  MapPin,
-  Pencil,
-  Plus,
-  RefreshCw,
-  Trash2,
-} from 'lucide-react-native';
+import { Plus } from 'lucide-react-native';
 import { AppHeader } from '@/components/common/AppHeader';
 import { BackButton } from '@/components/common/BackButton';
 import { COLORS } from '@/constants/theme';
@@ -46,6 +38,9 @@ function getAddressErrorMessage(error: unknown, fallback: string) {
   }
   return fallback;
 }
+
+const ACTION_LABEL_CLASS = 'font-sans text-[11px] font-semibold uppercase tracking-[0.16em]';
+const SMALL_ACTION_LABEL_CLASS = 'font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em]';
 
 function formatAddress(address: IUserAddress) {
   return [address.addressLine, address.wardName, address.provinceName]
@@ -141,14 +136,14 @@ export function AddressesScreen() {
 
   const handleDelete = (address: IUserAddress) => {
     Alert.alert(
-      'Xóa địa chỉ',
+      'Xóa địa chỉ này?',
       address.isDefault
-        ? 'Địa chỉ này đang là mặc định. Nếu xóa, hệ thống sẽ chọn một địa chỉ khác làm mặc định.'
-        : 'Bạn có chắc muốn xóa địa chỉ này?',
+        ? `${address.recipientName}, ${formatAddress(address)}. Địa chỉ này đang là mặc định, hệ thống sẽ chọn một địa chỉ khác làm mặc định.`
+        : `${address.recipientName}, ${formatAddress(address)}`,
       [
-        { text: 'Hủy', style: 'cancel' },
+        { text: 'Giữ lại', style: 'cancel' },
         {
-          text: 'Xóa',
+          text: 'Xóa địa chỉ',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -203,32 +198,32 @@ export function AddressesScreen() {
           </Text>
           <Text
             accessibilityRole="header"
-            className="font-display text-headline-lg text-landing-obsidian"
+            className="font-display text-[30px] leading-tight text-landing-obsidian"
           >
-            Sổ địa chỉ giao hàng
+            Sổ địa chỉ
           </Text>
           <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
-            {addresses.length}/{ADDRESS_LIMIT} địa chỉ. Địa chỉ đầu tiên sẽ tự động là mặc định.
+            Địa chỉ giao hàng dùng khi đặt may. Lưu tối đa {ADDRESS_LIMIT} địa chỉ, địa chỉ đầu tiên tự
+            thành mặc định.
           </Text>
         </View>
 
         <Pressable
           accessibilityRole="button"
+          accessibilityState={{ disabled: isAtLimit || addressesQuery.isLoading }}
           onPress={openCreateForm}
           disabled={isAtLimit || addressesQuery.isLoading}
-          className={`h-12 flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood ${
-            isAtLimit ? 'opacity-50' : 'active:bg-landing-obsidian'
+          className={`h-11 flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood ${
+            isAtLimit ? 'opacity-50' : 'active:opacity-90'
           }`}
         >
           <Plus size={16} strokeWidth={1.75} color={COLORS.paper} />
-          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
-            Thêm địa chỉ
-          </Text>
+          <Text className={`${ACTION_LABEL_CLASS} text-landing-paper`}>Thêm địa chỉ</Text>
         </Pressable>
 
         {isAtLimit && (
           <Text className="border-l-2 border-brass bg-ivory px-4 py-3 font-sans text-body-sm text-landing-obsidian">
-            Bạn đã đạt giới hạn 10 địa chỉ. Hãy xóa bớt để thêm địa chỉ mới.
+            Bạn đã đạt giới hạn {ADDRESS_LIMIT} địa chỉ. Hãy xóa bớt để thêm địa chỉ mới.
           </Text>
         )}
 
@@ -245,112 +240,131 @@ export function AddressesScreen() {
         )}
 
         {addressesQuery.isLoading ? (
-          <View className="items-center justify-center gap-3 rounded-subtle border border-landing-line bg-ivory py-12">
-            <ActivityIndicator color={COLORS.oxblood} />
-            <Text className="font-sans text-body-sm text-landing-muted">
-              Đang tải địa chỉ…
-            </Text>
+          <View accessibilityLabel="Đang tải sổ địa chỉ" className="gap-3">
+            {[0, 1].map((key) => (
+              <View key={key} className="h-24 bg-taupe/30" />
+            ))}
           </View>
         ) : addressesQuery.isError ? (
-          <View className="items-center justify-center gap-2 rounded-subtle border border-landing-line bg-ivory px-6 py-10">
-            <MapPin size={30} strokeWidth={1.5} color={COLORS.oxblood} />
-            <Text className="mt-2 text-center font-display text-[19px] text-landing-obsidian">
-              Không thể tải sổ địa chỉ
+          <View
+            accessibilityRole="alert"
+            className="items-center rounded-subtle border border-landing-line bg-ivory/60 px-6 py-14"
+          >
+            <Text className="text-center font-display text-[24px] leading-tight text-danger">
+              Không tải được sổ địa chỉ
             </Text>
-            <Text className="text-center font-sans text-body-sm text-landing-muted">
-              {getAddressErrorMessage(
-                addressesQuery.error,
-                'Vui lòng kiểm tra kết nối và thử lại.',
-              )}
+            <Text className="mt-2 max-w-error-state text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+              {getAddressErrorMessage(addressesQuery.error, 'Kiểm tra kết nối rồi thử lại.')}
             </Text>
             <Pressable
+              accessibilityRole="button"
               onPress={() => addressesQuery.refetch()}
-              className="mt-3 h-11 flex-row items-center gap-2 rounded-subtle border border-landing-line px-4 active:bg-landing-paper"
+              className="mt-6 h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:opacity-70"
             >
-              <RefreshCw size={15} strokeWidth={1.75} color={COLORS.oxblood} />
-              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-oxblood">
-                Thử lại
-              </Text>
+              <Text className={`${ACTION_LABEL_CLASS} text-landing-obsidian`}>Thử lại</Text>
             </Pressable>
           </View>
-        ) : sortedAddresses.length === 0 && !showForm ? (
-          <View className="items-center justify-center gap-2 rounded-subtle border border-dashed border-taupe bg-ivory px-6 py-12">
-            <MapPin size={30} strokeWidth={1.5} color={COLORS.muted} />
-            <Text className="mt-2 text-center font-display text-[19px] text-landing-obsidian">
-              Bạn chưa có địa chỉ giao hàng
-            </Text>
-            <Text className="text-center font-sans text-body-sm text-landing-muted">
-              Thêm địa chỉ để đặt hàng nhanh hơn.
-            </Text>
-          </View>
-        ) : (
-          sortedAddresses.map((address) => (
-            <View
-              key={address.id}
-              className={`gap-3 rounded-subtle border bg-ivory p-4 ${
-                address.isDefault ? 'border-oxblood/40' : 'border-landing-line'
-              }`}
-            >
-              <View className="flex-row items-start justify-between gap-3">
-                <View className="flex-1 flex-row flex-wrap items-center gap-2">
-                  <Text className="font-display text-[17px] text-landing-obsidian">
-                    {address.recipientName}
-                  </Text>
-                  {address.isDefault ? (
-                    <Text className="border border-oxblood/40 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-oxblood">
-                      Mặc định
-                    </Text>
-                  ) : null}
-                  {address.label ? (
-                    <Text className="border border-landing-line px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-landing-muted">
-                      {address.label}
-                    </Text>
-                  ) : null}
-                </View>
-                <Text className="font-mono text-[12px] text-landing-obsidian">
-                  {address.phone}
-                </Text>
-              </View>
-
-              <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
-                {formatAddress(address)}
+        ) : sortedAddresses.length === 0 ? (
+          !showForm ? (
+            <View className="items-center rounded-subtle border border-landing-line bg-ivory/60 px-6 py-14">
+              <Text className="text-center font-display text-[24px] leading-tight text-landing-obsidian">
+                Chưa có địa chỉ nào
               </Text>
-
-              <View className="flex-row flex-wrap items-center gap-4 border-t border-landing-line pt-2">
-                {!address.isDefault && (
-                  <Pressable
-                    onPress={() => handleSetDefault(address)}
-                    disabled={setDefaultAddress.isPending}
-                    className="min-h-11 flex-row items-center gap-1.5 active:opacity-60"
-                  >
-                    <Check size={14} strokeWidth={2} color={COLORS.sageInk} />
-                    <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-sage-ink">
-                      Đặt mặc định
-                    </Text>
-                  </Pressable>
-                )}
-                <Pressable
-                  onPress={() => openEditForm(address)}
-                  className="min-h-11 flex-row items-center gap-1.5 active:opacity-60"
-                >
-                  <Pencil size={14} strokeWidth={1.75} color={COLORS.obsidian} />
-                  <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-landing-obsidian">
-                    Sửa
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => handleDelete(address)}
-                  disabled={deleteAddress.isPending}
-                  className="min-h-11 flex-row items-center gap-1.5 active:opacity-60"
-                >
-                  <Trash2 size={14} strokeWidth={1.75} color={COLORS.oxblood} />
-                  <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-oxblood">
-                    Xóa
-                  </Text>
-                </Pressable>
-              </View>
+              <Text className="mt-2 max-w-error-state text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+                Thêm một địa chỉ để đặt hàng nhanh hơn. Địa chỉ đầu tiên sẽ là mặc định.
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={openCreateForm}
+                className="mt-6 h-11 items-center justify-center rounded-subtle bg-oxblood px-5 active:opacity-90"
+              >
+                <Text className={`${ACTION_LABEL_CLASS} text-landing-paper`}>Thêm địa chỉ</Text>
+              </Pressable>
             </View>
-          ))
+          ) : null
+        ) : (
+          <View className="gap-2">
+            <Text className="font-sans text-[12px] text-landing-muted">
+              <Text className="font-mono text-landing-obsidian">
+                {addresses.length}/{ADDRESS_LIMIT}
+              </Text>{' '}
+              địa chỉ
+            </Text>
+            <View className="border-y border-landing-line/70">
+              {sortedAddresses.map((address, index) => (
+                <View
+                  key={address.id}
+                  className={`gap-4 py-5 ${
+                    index < sortedAddresses.length - 1 ? 'border-b border-landing-line/70' : ''
+                  }`}
+                >
+                  <View>
+                    <View className="flex-row flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <Text className="font-sans text-body-md font-medium text-landing-obsidian">
+                        {address.recipientName}
+                      </Text>
+                      <Text className="font-mono text-[13px] text-landing-muted">
+                        {address.phone}
+                      </Text>
+                      {address.label ? (
+                        <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brass-ink">
+                          {address.label}
+                        </Text>
+                      ) : null}
+                      {address.isDefault ? (
+                        <View className="flex-row items-center gap-1.5">
+                          <View className="h-1.5 w-1.5 rounded-full bg-oxblood" />
+                          <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-oxblood">
+                            Mặc định
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <Text className="mt-1.5 font-sans text-body-sm leading-relaxed text-landing-muted">
+                      {formatAddress(address)}
+                    </Text>
+                  </View>
+
+                  <View className="flex-row flex-wrap items-center gap-2">
+                    {!address.isDefault && (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Đặt địa chỉ của ${address.recipientName} làm mặc định`}
+                        accessibilityState={{ disabled: setDefaultAddress.isPending }}
+                        onPress={() => handleSetDefault(address)}
+                        disabled={setDefaultAddress.isPending}
+                        className={`mr-2 min-h-11 justify-center active:opacity-60 ${
+                          setDefaultAddress.isPending ? 'opacity-50' : ''
+                        }`}
+                      >
+                        <Text className="font-sans text-[12px] text-oxblood">Đặt mặc định</Text>
+                      </Pressable>
+                    )}
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Sửa địa chỉ của ${address.recipientName}`}
+                      onPress={() => openEditForm(address)}
+                      className="h-11 items-center justify-center rounded-subtle border border-landing-line px-3.5 active:opacity-70"
+                    >
+                      <Text className={`${SMALL_ACTION_LABEL_CLASS} text-landing-obsidian`}>Sửa</Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Xóa địa chỉ của ${address.recipientName}`}
+                      accessibilityState={{ disabled: deleteAddress.isPending }}
+                      onPress={() => handleDelete(address)}
+                      disabled={deleteAddress.isPending}
+                      className={`h-11 items-center justify-center rounded-subtle border border-danger/40 px-3.5 active:opacity-70 ${
+                        deleteAddress.isPending ? 'opacity-50' : ''
+                      }`}
+                    >
+                      <Text className={`${SMALL_ACTION_LABEL_CLASS} text-danger`}>Xóa</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
         )}
       </ScrollView>
     </View>
