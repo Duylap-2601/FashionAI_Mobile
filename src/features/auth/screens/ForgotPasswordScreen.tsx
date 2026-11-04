@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowRight } from 'lucide-react-native';
 import { AuthStackParamList } from '@/navigation/types';
 import { authApi } from '@/features/auth/api/auth.api';
 import {
@@ -11,6 +12,13 @@ import {
 } from '@/features/auth/schemas/auth.schema';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { COLORS } from '@/constants/theme';
+import {
+  AuthBackLink,
+  AuthHeading,
+  AuthLead,
+  AuthScreen,
+} from '@/features/auth/components/auth-form';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ForgotPassword'>;
 
@@ -27,80 +35,64 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   });
 
   const onSubmit = async (values: ForgotPasswordFormValues) => {
+    const email = values.email.trim();
     try {
       setIsSubmitting(true);
-      await authApi.forgotPassword(values.email.trim());
+      await authApi.forgotPassword(email);
+      // Backend không cho biết email có tồn tại hay không, nên câu chữ không khẳng định đã gửi.
       Alert.alert(
-        'Đã gửi liên kết',
-        'Vui lòng kiểm tra hộp thư email của bạn để đặt lại mật khẩu.',
+        'Kiểm tra email của bạn',
+        `Nếu ${email} đã đăng ký tài khoản, link đặt lại mật khẩu đã được gửi tới hộp thư. Link có hiệu lực trong 1 giờ.`,
         [
           {
-            text: 'OK',
+            text: 'Về đăng nhập',
             onPress: () => navigation.navigate('Login'),
           },
         ]
       );
     } catch (err: any) {
-      Alert.alert('Thất bại', err.message || 'Không thể gửi yêu cầu đặt lại mật khẩu');
+      Alert.alert('Chưa gửi được yêu cầu', err.message || 'Không thể gửi email đặt lại mật khẩu.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-surface"
-    >
-      <ScrollView contentContainerClassName="grow justify-center px-xxl py-xxxl">
-        <View className="mb-xxxl items-center">
-          <Text className="text-xl font-extrabold text-on-surface-strong">Quên mật khẩu</Text>
-          <Text className="mt-sm text-center text-body-sm leading-relaxed text-on-surface-variant">
-            Nhập email của bạn và chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu.
-          </Text>
-        </View>
+    <AuthScreen>
+      <AuthBackLink label="Quay lại đăng nhập" onPress={() => navigation.navigate('Login')} />
 
-        <View className="mb-xxl">
-          <View className="mb-lg">
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { value, onChange, onBlur } }) => (
-                <Input
-                  label="Email"
-                  placeholder="name@example.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  error={errors.email?.message}
-                />
-              )}
-            />
-          </View>
+      <AuthHeading eyebrow="Khôi phục tài khoản" title="Quên mật khẩu?">
+        <AuthLead>
+          Nhập email bạn đã dùng để đăng ký. Chúng tôi sẽ gửi link đặt lại mật khẩu.
+        </AuthLead>
+      </AuthHeading>
 
-          <View className="mb-xxl">
-            <Button
-              className="mt-md"
-              title="Gửi liên kết"
-              onPress={handleSubmit(onSubmit)}
-              loading={isSubmitting}
-              
-              textClassName="text-primary-foreground"
-            />
-          </View>
+      <Controller
+        control={control}
+        name="email"
+        render={({ field: { value, onChange, onBlur } }) => (
+          <Input
+            label="Email"
+            placeholder="nhap@email.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={value}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            error={errors.email?.message}
+          />
+        )}
+      />
 
-          <TouchableOpacity
-            className="mt-lg min-h-11 items-center justify-center py-sm"
-            onPress={() => navigation.navigate('Login')}
-          >
-            <Text className="text-label-lg text-on-surface-variant">
-              Quay lại Đăng nhập
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Button
+        className="mt-md"
+        size="lg"
+        title="Gửi link đặt lại"
+        loadingTitle="Đang gửi"
+        onPress={handleSubmit(onSubmit)}
+        loading={isSubmitting}
+        rightIcon={<ArrowRight size={16} strokeWidth={1.75} color={COLORS.paper} />}
+      />
+    </AuthScreen>
   );
 };

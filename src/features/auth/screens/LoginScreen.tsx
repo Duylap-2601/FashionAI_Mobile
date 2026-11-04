@@ -1,23 +1,24 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from 'react-native';
+import { View, Text, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowRight } from 'lucide-react-native';
 import { AuthStackParamList } from '@/navigation/types';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import Svg, { Path } from 'react-native-svg';
 import { loginSchema, LoginFormValues } from '@/features/auth/schemas/auth.schema';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Wordmark } from '@/components/common/Wordmark';
+import { COLORS } from '@/constants/theme';
+import {
+  AUTH_LABEL_CLASS,
+  AuthDivider,
+  AuthHeading,
+  AuthLead,
+  AuthScreen,
+  AuthTextLink,
+} from '@/features/auth/components/auth-form';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -66,7 +67,8 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
       if (err.statusCode === 403) {
         Alert.alert(
           'Tài khoản chưa xác thực',
-          err.message || 'Vui lòng xác thực email trước khi đăng nhập.',
+          err.message ||
+            'Tài khoản chưa xác thực email. Vui lòng xác thực OTP trước khi đăng nhập.',
           [
             { text: 'Đóng', style: 'cancel' },
             {
@@ -95,90 +97,78 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-surface"
-    >
-      <ScrollView contentContainerClassName="grow justify-center px-xxl py-xxxl">
-        <View className="mb-xxxl items-center">
-          <Wordmark size="lg" variant="dark" />
-          <Text className="mt-sm text-center text-body-sm text-on-surface-variant">
-            Đăng nhập để trải nghiệm AI Virtual Try-On
-          </Text>
+    <AuthScreen>
+      <AuthHeading eyebrow="Tài khoản" title="Đăng nhập">
+        <View className="flex-row flex-wrap items-center gap-xs">
+          <AuthLead>Chưa có tài khoản?</AuthLead>
+          <AuthTextLink label="Tạo tài khoản" onPress={() => navigation.navigate('Register')} />
         </View>
+      </AuthHeading>
 
-        <View className="mb-xxl">
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <Input
-                label="Email"
-                placeholder="name@example.com"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.email?.message}
-              />
-            )}
+      <Controller
+        control={control}
+        name="email"
+        render={({ field: { value, onChange, onBlur } }) => (
+          <Input
+            label="Email"
+            placeholder="nhap@email.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={value}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            error={errors.email?.message}
           />
+        )}
+      />
 
-          <Controller
-            control={control}
-            name="password"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <Input
-                label="Mật khẩu"
-                placeholder="••••••••"
-                secureTextEntry
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.password?.message}
-              />
-            )}
+      {/* Nhãn mật khẩu kèm "Quên mật khẩu?" bên phải, như AuthField của FE. */}
+      <View className="mb-sm mt-sm flex-row items-baseline justify-between gap-md">
+        <Text className={AUTH_LABEL_CLASS}>Mật khẩu</Text>
+        <AuthTextLink
+          label="Quên mật khẩu?"
+          onPress={() => navigation.navigate('ForgotPassword')}
+        />
+      </View>
+      <Controller
+        control={control}
+        name="password"
+        render={({ field: { value, onChange, onBlur } }) => (
+          <Input
+            accessibilityLabel="Mật khẩu"
+            placeholder="Nhập mật khẩu"
+            secureTextEntry
+            value={value}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            error={errors.password?.message}
           />
+        )}
+      />
 
-          <TouchableOpacity
-            className="mb-md min-h-11 self-end justify-center"
-            onPress={() => navigation.navigate('ForgotPassword')}
-          >
-            <Text className="text-label-lg text-primary-container">Quên mật khẩu?</Text>
-          </TouchableOpacity>
+      <Button
+        className="mt-md"
+        size="lg"
+        title="Đăng nhập"
+        loadingTitle="Đang đăng nhập"
+        onPress={handleSubmit(onSubmit)}
+        loading={isSubmitting}
+        disabled={isGoogleSubmitting}
+        rightIcon={<ArrowRight size={16} strokeWidth={1.75} color={COLORS.paper} />}
+      />
 
-<Button
-              title="Đăng nhập"
-              onPress={handleSubmit(onSubmit)}
-              loading={isSubmitting}
-              disabled={isGoogleSubmitting}
-              textClassName="text-primary-foreground"
-            />
+      <AuthDivider />
 
-          <View className="my-xl flex-row items-center">
-            <View className="h-px flex-1 bg-surface-line" />
-            <Text className="mx-md text-label-md text-outline">HOẶC</Text>
-            <View className="h-px flex-1 bg-surface-line" />
-          </View>
-
-          <Button
-            title="Tiếp tục với Google"
-            variant="outline"
-            onPress={handleGoogleLogin}
-            loading={isGoogleSubmitting}
-            disabled={isSubmitting}
-            leftIcon={<GoogleLogo size={20} />}
-          />
-        </View>
-
-        <View className="mt-lg flex-row items-center justify-center">
-          <Text className="text-body-sm text-on-surface-variant">Chưa có tài khoản? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text className="text-label-lg text-primary-container">Đăng ký ngay</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Button
+        title="Tiếp tục với Google"
+        variant="secondary"
+        size="lg"
+        onPress={handleGoogleLogin}
+        loading={isGoogleSubmitting}
+        disabled={isSubmitting}
+        leftIcon={<GoogleLogo size={18} />}
+        textClassName="text-[14px] font-medium normal-case tracking-normal"
+      />
+    </AuthScreen>
   );
 };
