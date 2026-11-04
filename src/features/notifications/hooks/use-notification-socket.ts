@@ -5,6 +5,9 @@ import { getMainSocket } from '@/realtime/socket';
 import { getTokens } from '@/features/auth/storage/secure-storage';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { notificationKeys } from '@/features/notifications/hooks/notification-keys';
+import { MY_RETURNS_KEY } from '@/features/orders/hooks/use-orders';
+
+const ORDER_NOTIFICATION_TYPES = ['ORDER_STATUS', 'PAYMENT', 'ORDER_ISSUE'];
 
 interface ReauthAck {
   ok: boolean;
@@ -12,7 +15,8 @@ interface ReauthAck {
 }
 
 // Lắng nghe socket chính cho tính năng thông báo:
-// - event `notification` (BE push khi có thông báo mới) → refresh list + badge.
+// - event `notification` (BE push khi có thông báo mới) → refresh list + badge;
+//   thông báo đơn / thanh toán / đổi trả còn làm mới dữ liệu đơn.
 // - `token:expiring` → gửi lại token tươi qua `auth:refresh` (BE yêu cầu,
 //   xem realtime.gateway.ts). Thất bại → reconnect để handshake lại.
 // - `token:expired` → server đã disconnect → reconnect (đọc lại token mới nhất).
@@ -32,8 +36,15 @@ export function useNotificationSocket(enabled = true) {
       queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
     };
 
-    const handlePush = () => {
+    const handlePush = (notification?: { type?: string }) => {
       refreshQueries();
+      // Đổi trạng thái đơn, duyệt đổi trả, ghi nhận thanh toán / hoàn tiền: tải lại đơn và
+      // yêu cầu đổi trả để màn đang mở cập nhật ngay (như RealtimeProvider của web).
+      if (notification?.type && ORDER_NOTIFICATION_TYPES.includes(notification.type)) {
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
+        queryClient.invalidateQueries({ queryKey: ['orderIssues'] });
+        queryClient.invalidateQueries({ queryKey: MY_RETURNS_KEY });
+      }
     };
 
     const handleExpiring = async () => {
