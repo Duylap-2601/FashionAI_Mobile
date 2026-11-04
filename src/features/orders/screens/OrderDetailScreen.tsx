@@ -24,21 +24,19 @@ import { useCart } from '@/features/cart/hooks/use-cart';
 import { paymentsApi } from '@/features/payments/api/payments.api';
 import { useOrder, useCancelOrder, useConfirmDelivery, useOrderIssues } from '../hooks/use-orders';
 import { ReportIssueModal, type ReportableOrderItem } from '../components/ReportIssueModal';
-import { OrderIssuesList } from '../components/OrderIssuesList';
+import { ISSUE_STATUS } from '../components/OrderIssuesList';
+import { STATUS_TONE_CLASSES, ToneLabel, type StatusTone } from '../components/ToneLabel';
+import type { OrderIssueStatus } from '../types/order';
 import { getOrderItemImage, getOrderItemName } from '../utils/order-items';
-import { canReportOrderIssue, getBlockedReportItemIds } from '../utils/order-returns';
+import {
+  RETURN_HISTORY_STATUSES,
+  RETURN_STATUS_LABELS,
+  canReportOrderIssue,
+  getBlockedReportItemIds,
+  toVnd,
+} from '../utils/order-returns';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderDetail'>;
-
-type StatusTone = 'attention' | 'active' | 'done' | 'closed' | 'error';
-
-const STATUS_TONE_CLASSES: Record<StatusTone, { dot: string; text: string }> = {
-  attention: { dot: 'bg-brass', text: 'text-brass-ink' },
-  active: { dot: 'bg-oxblood', text: 'text-landing-obsidian' },
-  done: { dot: 'bg-sage', text: 'text-sage-ink' },
-  closed: { dot: 'bg-taupe', text: 'text-landing-muted' },
-  error: { dot: 'bg-danger', text: 'text-danger' },
-};
 
 const STATUS_CONFIG: Record<
   string,
@@ -488,6 +486,12 @@ export function OrderDetailScreen({ route, navigation }: Props) {
   const discount = order.discountVnd ?? order.discountAmount ?? order.discount ?? 0;
   const paidAmount =
     order.amountPaidVnd ?? order.amountPaid ?? order.paidAmount ?? order.paidAmountVnd ?? 0;
+  const refundedAmount = toVnd(order.amountRefundedVnd);
+  // Báo lỗi, trả hàng và hoàn tiền nằm ở màn riêng; màn đơn chỉ giữ thẻ tóm tắt.
+  const hasReturns =
+    issues.length > 0 || (order.refunds?.length ?? 0) > 0 || RETURN_HISTORY_STATUSES.includes(status);
+  const returnsStatus =
+    RETURN_STATUS_LABELS[status] ?? (issues[0] ? ISSUE_STATUS[issues[0].status as OrderIssueStatus] : null);
 
   const isPaid = order.isPaid === true;
   const isPendingPayment = ['PENDING', 'PENDING_PAYMENT', 'CREATED'].includes(status) && !isPaid;
@@ -773,6 +777,34 @@ export function OrderDetailScreen({ route, navigation }: Props) {
           </View>
         ) : null}
 
+        {hasReturns ? (
+          <View className="mt-4 gap-3 rounded-subtle border border-landing-line bg-ivory p-4">
+            <View className="gap-1.5">
+              <Text className={LABEL_CLASS}>Đổi trả & hoàn tiền</Text>
+              <View className="flex-row flex-wrap items-center gap-x-3 gap-y-1">
+                {returnsStatus ? <ToneLabel tone={returnsStatus.tone} label={returnsStatus.label} /> : null}
+                <Text className="font-sans text-[12px] text-landing-muted">
+                  <Text className="font-mono">{issues.length}</Text> yêu cầu
+                  {refundedAmount > 0 ? (
+                    <>
+                      {' '}· Đã hoàn{' '}
+                      <Text className="font-mono text-landing-obsidian">{formatCurrency(refundedAmount)}</Text>
+                    </>
+                  ) : null}
+                </Text>
+              </View>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Xem đổi trả và hoàn tiền"
+              onPress={() => navigation.navigate('OrderReturns', { orderId: order.id })}
+              className="h-11 items-center justify-center self-start rounded-subtle border border-landing-line px-4 active:opacity-70"
+            >
+              <Text className={`${ACTION_LABEL_CLASS} text-landing-obsidian`}>Xem đổi trả & hoàn tiền</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         <View className="mt-4 rounded-subtle border border-landing-line bg-ivory">
           <View className="flex-row flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-landing-line/70 px-4 py-3">
             <View className="flex-row items-center gap-2">
@@ -898,9 +930,16 @@ export function OrderDetailScreen({ route, navigation }: Props) {
 
                   {canReportIssue ? (
                     item.id !== undefined && blockedReportItemIds.has(String(item.id)) ? (
-                      <Text className="py-3 font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-muted">
-                        Đã gửi yêu cầu · chờ shop xử lý
-                      </Text>
+                      <Pressable
+                        accessibilityRole="link"
+                        accessibilityLabel="Đã gửi yêu cầu, xem trạng thái"
+                        onPress={() => navigation.navigate('OrderReturns', { orderId: order.id })}
+                        className="h-11 justify-center self-start active:opacity-60"
+                      >
+                        <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-muted">
+                          Đã gửi yêu cầu · xem trạng thái
+                        </Text>
+                      </Pressable>
                     ) : (
                       <Pressable
                         accessibilityRole="button"
@@ -920,15 +959,6 @@ export function OrderDetailScreen({ route, navigation }: Props) {
             })}
           </View>
         </View>
-
-        {issues.length > 0 ? (
-          <View className="mt-4 rounded-subtle border border-landing-line bg-ivory p-4">
-            <Text className={LABEL_CLASS}>Sự cố đã báo</Text>
-            <View className="mt-3">
-              <OrderIssuesList orderId={orderId} />
-            </View>
-          </View>
-        ) : null}
 
         <View className="mt-4 rounded-subtle border border-landing-line bg-ivory p-4">
           <Text className="font-display text-[20px] leading-tight text-landing-obsidian">
@@ -961,6 +991,12 @@ export function OrderDetailScreen({ route, navigation }: Props) {
             ) : null}
             <SummaryRow label="Tổng cộng" value={formatCurrency(totalAmount)} strong />
             <SummaryRow label="Đã thanh toán" value={formatCurrency(paidAmount)} />
+            {refundedAmount > 0 ? (
+              <SummaryRow
+                label={paidAmount > 0 && refundedAmount < paidAmount ? 'Đã hoàn một phần' : 'Đã hoàn tiền'}
+                value={formatCurrency(refundedAmount)}
+              />
+            ) : null}
           </View>
         </View>
 
@@ -1054,7 +1090,7 @@ export function OrderDetailScreen({ route, navigation }: Props) {
           accountNumber: order.refundAccountNumber,
           accountHolder: order.refundAccountHolder,
         }}
-        onSuccess={() => refetch()}
+        onSuccess={() => navigation.navigate('OrderReturns', { orderId: order.id })}
       />
     </View>
   );

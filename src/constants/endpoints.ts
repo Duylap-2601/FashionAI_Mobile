@@ -98,6 +98,7 @@ export const ENDPOINTS = {
       `/orders/${orderId}/items/${itemId}/issues`,
     ISSUES: (orderId: string | number) => `/orders/${orderId}/issues`,
     ISSUE_DETAIL: (issueId: string | number) => `/order-issues/${issueId}`,
+    MY_RETURNS: '/order-issues/mine',
   },
   PAYMENTS: {
     CHECKOUT: '/payments/checkout',

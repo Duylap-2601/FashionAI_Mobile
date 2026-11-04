@@ -15,6 +15,7 @@ import { ReviewsScreen } from "../features/reviews/screens/ReviewsScreen";
 import { MyReviewsScreen } from "../features/reviews/screens/MyReviewsScreen";
 
 import { OrderDetailScreen } from "../features/orders/screens/OrderDetailScreen";
+import { OrderReturnsScreen } from "../features/orders/screens/OrderReturnsScreen";
 import { OrderSuccessScreen } from "../features/orders/screens/OrderSuccessScreen";
 
 import { StylistScreen } from "../features/stylist/screens/StylistScreen";
@@ -83,6 +84,14 @@ export const RootNavigator: React.FC = () => {
             <Stack.Screen
               name="OrderDetail"
               component={OrderDetailScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
+
+            <Stack.Screen
+              name="OrderReturns"
+              component={OrderReturnsScreen}
               options={{
                 headerShown: false,
               }}

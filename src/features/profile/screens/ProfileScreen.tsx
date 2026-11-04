@@ -19,6 +19,7 @@ import {
   LogOut,
   MapPin,
   Package,
+  RotateCcw,
   Ruler,
   Sparkles,
   Star,
@@ -605,6 +606,12 @@ export const ProfileScreen: React.FC = () => {
               label="Đơn hàng của tôi"
               description="Theo dõi và quản lý đơn hàng"
               onPress={() => navigation.navigate('Orders')}
+            />
+            <NavRow
+              icon={RotateCcw}
+              label="Đổi trả & hoàn tiền"
+              description="Theo dõi yêu cầu báo lỗi, hàng hoàn và tiền hoàn"
+              onPress={() => navigation.navigate('Returns')}
             />
             <NavRow
               icon={Star}
