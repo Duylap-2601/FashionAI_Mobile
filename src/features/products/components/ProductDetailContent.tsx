@@ -1,8 +1,9 @@
 import React, { useMemo, useRef } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
-import type { TextStyle } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { AlertCircle } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
+import { RatingStars } from '@/features/reviews/components/RatingStars';
+import { GARMENT_TYPE_TABS } from '../constants/product-filters';
 import type { IProduct } from '../types/product';
 import { formatProductPrice } from '../utils/product-display';
 import { ProductDescription } from './ProductDescription';
@@ -31,16 +32,29 @@ interface ProductColorOption {
   hex: string | null;
 }
 
-const productNameStyle: TextStyle = {
-  fontFamily: 'Playfair Display',
-  fontSize: 32,
-  lineHeight: 40,
-  fontWeight: '600',
-  color: COLORS.obsidian,
-};
+const LABEL_CLASS = 'font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink';
+const SECTION_TITLE_CLASS = 'font-display text-headline-md font-normal text-landing-obsidian';
+
+// Same assurances and process steps as FE ProductPurchasePanel / ProductDetailTabs.
+const ASSURANCES = ['May đo riêng', 'Tư vấn số đo', 'Đổi trả 7 ngày'] as const;
+const TAILORING_STEPS = [
+  ['01', 'Cung cấp số đo', 'Nhập số đo cơ thể trong trang hồ sơ hoặc khi đặt hàng.'],
+  ['02', 'Thợ may cắt rập', 'Đội ngũ may đo tinh chỉnh rập cá nhân hóa cho từng khách hàng.'],
+  ['03', 'Hoàn thiện và giao', 'Sản phẩm được kiểm tra form dáng trước khi giao đến bạn.'],
+] as const;
 
 function isDisplayableColor(value: string): boolean {
   return /^#(?:[\da-f]{3}|[\da-f]{6}|[\da-f]{8})$/i.test(value.trim());
+}
+
+// Light swatches carry a taupe border so they do not disappear on ivory (FE isLightHex).
+function isLightHex(hex: string): boolean {
+  const normalized = hex.replace('#', '');
+  if (normalized.length !== 6) return false;
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+  return (red * 299 + green * 587 + blue * 114) / 1000 > 200;
 }
 
 export function ProductDetailContent({
@@ -75,6 +89,10 @@ export function ProductDetailContent({
     const singleColor = product.color?.trim();
     return singleColor ? [{ name: singleColor, hex: null }] : [];
   }, [product.color, product.colors]);
+  const garmentTypeLabel = product.garmentType
+    ? GARMENT_TYPE_TABS.find((tab) => tab.garmentType === product.garmentType)?.label
+    : undefined;
+  const hasReviews = product.reviewCount > 0 && product.avgRating > 0;
   const showOriginalPrice =
     product.originalPrice !== null && product.originalPrice > product.price;
   const discountPercent = showOriginalPrice
@@ -83,6 +101,9 @@ export function ProductDetailContent({
           100,
       )
     : 0;
+  const description =
+    product.description?.trim() ||
+    `Sản phẩm ${product.name} được may đo theo số đo cá nhân đã lưu trong hồ sơ, hoàn thiện bởi StAie. và giao đến bạn sau khi kiểm tra form dáng.`;
 
   return (
     <View
@@ -92,171 +113,176 @@ export function ProductDetailContent({
         reportReviewsOffset();
       }}
     >
-      <View className="gap-sm">
-        {product.brand ? (
-          <Text
-            selectable
-            className="font-sans text-label-md uppercase tracking-widest text-landing-muted"
-          >
-            {product.brand}
-          </Text>
+      {/* Purchase panel: ivory, hairline border (FE ProductPurchasePanel). */}
+      <View className="border border-landing-line bg-landing-ivory p-5">
+        <Text selectable className={LABEL_CLASS}>
+          {product.brand || 'StAie. Signature'}
+        </Text>
+        {garmentTypeLabel ? (
+          <View className="mt-3 self-start border border-landing-line px-2.5 py-1">
+            <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-landing-muted">
+              {garmentTypeLabel}
+            </Text>
+          </View>
         ) : null}
-        <Text selectable style={productNameStyle}>
+        <Text
+          selectable
+          accessibilityRole="header"
+          className="mt-4 font-display text-product-title font-medium text-landing-obsidian"
+        >
           {product.name}
         </Text>
 
-        <TouchableOpacity
+        <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Xem ${product.reviewCount} đánh giá của sản phẩm`}
-          activeOpacity={0.68}
+          accessibilityLabel={
+            hasReviews
+              ? `${product.avgRating.toFixed(1)} trên 5 sao, xem ${product.reviewCount} đánh giá của sản phẩm`
+              : 'Xem đánh giá sản phẩm'
+          }
           onPress={onReviewsSummaryPress}
-          className="min-h-11 min-w-11 flex-row items-center gap-xs self-start"
+          className="mt-1 min-h-11 flex-row items-center gap-sm self-start active:opacity-70"
         >
-          <Text
-            accessibilityElementsHidden
-            className="text-body-lg text-brass"
-          >
-            ★
-          </Text>
-          <Text className="font-mono text-body-md font-bold tabular-nums text-obsidian">
-            {product.avgRating.toFixed(1)}
-          </Text>
-          <Text className="font-sans text-body-md tabular-nums text-landing-muted underline">
-            ({product.reviewCount.toLocaleString('vi-VN')} đánh giá)
-          </Text>
-          <Text
-            accessibilityElementsHidden
-            className="text-headline-md text-landing-muted"
-          >
-            ›
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View className="flex-row flex-wrap items-center gap-sm">
-        <Text
-          selectable
-          className="font-mono text-product-price tabular-nums text-oxblood"
-        >
-          {formatProductPrice(product.price)}
-        </Text>
-        {showOriginalPrice ? (
-          <>
-            <Text
-              selectable
-              className="font-mono text-body-md tabular-nums text-landing-muted line-through"
-            >
-              {formatProductPrice(product.originalPrice!)}
-            </Text>
-            <Text className="rounded-subtle bg-oxblood px-sm py-xs font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-paper">
-              {discountPercent > 0 ? `-${discountPercent}%` : 'Giá ưu đãi'}
-            </Text>
-          </>
-        ) : null}
-      </View>
-
-      {unavailable ? (
-        <View
-          accessibilityRole="alert"
-          className="gap-xs rounded-subtle border border-landing-line bg-ivory p-md"
-        >
-          <Text className="font-sans text-body-md font-bold text-obsidian">
-            Tạm ngừng nhận đơn
-          </Text>
-          <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
-            Sản phẩm hiện chưa sẵn sàng để thêm vào giỏ hàng.
-          </Text>
-        </View>
-      ) : (
-        <View className="min-h-7 flex-row items-center gap-sm">
-          <View className="h-2 w-2 rounded-full bg-sage" />
-          <Text className="font-sans text-body-sm font-medium text-sage-ink">
-            Đang nhận đơn may đo
-          </Text>
-        </View>
-      )}
-
-      {colorOptions.length > 0 ? (
-        <View className="gap-md border-t border-landing-line pt-xl">
-          <Text className="font-display text-headline-sm text-obsidian">
-            Màu sắc:
-            {selectedColor ? (
-              <Text className="font-normal text-landing-muted">
-                {' '}
-                {selectedColor}
+          {hasReviews ? (
+            <>
+              <RatingStars value={product.avgRating} size="xs" />
+              <Text className="font-mono text-xs tabular-nums text-landing-obsidian">
+                {product.avgRating.toFixed(1)}
               </Text>
-            ) : null}
-          </Text>
-          <View className="flex-row flex-wrap gap-1.5">
-            {colorOptions.map((color) => {
-              const selected = color.name === selectedColor;
-              return (
-                <TouchableOpacity
-                  key={color.name}
-                  accessibilityRole="radio"
-                  accessibilityLabel={`Chọn màu ${color.name}`}
-                  accessibilityState={{ selected }}
-                  activeOpacity={0.68}
-                  onPress={() => onSelectColor(color.name)}
-                  className="h-11 w-11 items-center justify-center"
-                >
-                  <View
-                    className={
-                      selected
-                        ? 'h-8 w-8 items-center justify-center rounded-full border-2 border-oxblood'
-                        : 'h-8 w-8 items-center justify-center rounded-full'
-                    }
-                  >
-                    <View
-                      className={
-                        color.hex
-                          ? 'h-6 w-6 rounded-full border border-landing-line'
-                          : 'h-6 w-6 rounded-full border border-taupe'
-                      }
-                      style={color.hex ? { backgroundColor: color.hex } : undefined}
-                    />
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-      ) : null}
+              <Text className="font-sans text-xs text-landing-muted underline">
+                ({product.reviewCount.toLocaleString('vi-VN')} đánh giá)
+              </Text>
+            </>
+          ) : (
+            <Text className="font-sans text-xs text-landing-muted underline">
+              Chưa có đánh giá
+            </Text>
+          )}
+        </Pressable>
 
-      <View className="gap-sm rounded-subtle border border-landing-line bg-ivory p-lg">
-        <Text className="font-sans text-label-md uppercase tracking-wide text-brass-ink">
-          MAY ĐO CÁ NHÂN
-        </Text>
-        <Text className="font-display text-headline-sm text-obsidian">
-          Thiết kế dành riêng cho số đo của bạn
-        </Text>
-        <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
-          FashionAI không dùng kích cỡ tiêu chuẩn. Số đo cơ thể sẽ được áp dụng
-          trong quy trình đặt may để tạo độ vừa vặn phù hợp với riêng bạn.
-        </Text>
-        {/* Same note and link as FE product detail (ProductDetailTabs). */}
-        <View className="mt-xs flex-row items-start gap-sm border-t border-landing-line pt-md">
-          <View className="pt-xs">
-            <AlertCircle size={16} strokeWidth={1.75} color={COLORS.brassInk} />
-          </View>
-          <View className="flex-1">
+        <View className="mt-4 flex-row flex-wrap items-baseline gap-x-3 gap-y-2">
+          <Text
+            selectable
+            className="font-mono text-product-price tabular-nums text-oxblood"
+          >
+            {formatProductPrice(product.price)}
+          </Text>
+          {showOriginalPrice ? (
+            <>
+              <Text
+                selectable
+                className="font-mono text-sm tabular-nums text-landing-muted line-through"
+              >
+                {formatProductPrice(product.originalPrice!)}
+              </Text>
+              <View className="self-center bg-oxblood px-2 py-1">
+                <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-landing-paper">
+                  {discountPercent > 0 ? `-${discountPercent}%` : 'Giá ưu đãi'}
+                </Text>
+              </View>
+            </>
+          ) : null}
+        </View>
+
+        <View className="my-5 h-px w-full bg-landing-line" />
+
+        {unavailable ? (
+          <View
+            accessibilityRole="alert"
+            className="gap-xs border-l-2 border-danger bg-landing-paper px-md py-sm"
+          >
+            <Text className="font-sans text-body-md font-semibold text-landing-obsidian">
+              Tạm ngừng nhận đơn
+            </Text>
             <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
-              Sản phẩm được may theo số đo đã lưu. Nếu sản phẩm có lỗi may hoặc
-              sai lệch từ phía StAie., bạn có 7 ngày kể từ khi đơn hoàn tất để
-              gửi yêu cầu đổi trả.
+              Sản phẩm hiện chưa sẵn sàng để thêm vào giỏ hàng.
             </Text>
-            <TouchableOpacity
-              accessibilityRole="link"
-              accessibilityLabel="Xem chính sách đổi trả"
-              activeOpacity={0.68}
-              onPress={onReturnPolicyPress}
-              className="min-h-11 justify-center self-start"
-            >
-              <Text className="font-sans text-body-sm font-semibold text-oxblood underline">
-                Xem chính sách đổi trả
-              </Text>
-            </TouchableOpacity>
           </View>
+        ) : (
+          <View className="min-h-7 flex-row items-center gap-sm">
+            <View className="h-2 w-2 rounded-full bg-sage" />
+            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-sage-ink">
+              Đang nhận đơn may đo
+            </Text>
+          </View>
+        )}
+
+        <View className="mt-5">
+          {colorOptions.length > 0 ? (
+            <>
+              <Text className="mb-3 font-sans text-sm font-medium text-landing-obsidian">
+                Màu sắc:{' '}
+                <Text className="font-normal text-landing-muted">
+                  {selectedColor ?? ''}
+                </Text>
+              </Text>
+              <View
+                accessibilityRole="radiogroup"
+                accessibilityLabel="Chọn màu"
+                className="flex-row flex-wrap gap-1.5"
+              >
+                {colorOptions.map((color) => {
+                  const selected = color.name === selectedColor;
+                  const light = color.hex ? isLightHex(color.hex) : true;
+                  return (
+                    <Pressable
+                      key={color.name}
+                      accessibilityRole="radio"
+                      accessibilityLabel={`Chọn màu ${color.name}`}
+                      accessibilityState={{ selected, checked: selected }}
+                      onPress={() => onSelectColor(color.name)}
+                      className={`min-h-11 w-16 items-center gap-1.5 rounded-subtle border-2 px-1 py-1.5 active:opacity-70 ${
+                        selected ? 'border-oxblood' : 'border-transparent'
+                      }`}
+                    >
+                      <View
+                        className={`h-6 w-6 rounded-full border ${
+                          light ? 'border-taupe' : 'border-landing-line'
+                        }`}
+                        style={color.hex ? { backgroundColor: color.hex } : undefined}
+                      />
+                      <Text
+                        numberOfLines={1}
+                        className={`font-sans text-[10px] ${
+                          selected
+                            ? 'font-semibold text-landing-obsidian'
+                            : 'text-landing-muted'
+                        }`}
+                      >
+                        {color.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          ) : (
+            <>
+              <Text className="font-sans text-sm font-medium text-landing-obsidian">
+                Màu sắc
+              </Text>
+              <Text className="mt-2 font-sans text-xs text-landing-muted">
+                Màu tiêu chuẩn theo thiết kế.
+              </Text>
+            </>
+          )}
+        </View>
+
+        <View className="mt-5 flex-row gap-1.5">
+          {ASSURANCES.map((label) => (
+            <View
+              key={label}
+              className="flex-1 items-center justify-center border border-landing-line px-1 py-2"
+            >
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                className="text-center font-sans text-[10px] font-semibold uppercase tracking-[0.12em] text-landing-muted"
+              >
+                {label}
+              </Text>
+            </View>
+          ))}
         </View>
       </View>
 
@@ -265,11 +291,18 @@ export function ProductDetailContent({
         onPressMeasurements={onMeasurementsPress}
       />
 
+      {/* FE ProductDetailTabs › Mô tả sản phẩm: description block, then the metadata rows. */}
       <View className="gap-md border-t border-landing-line pt-xl">
-        <Text className="font-display text-headline-sm text-obsidian">
-          Thông tin sản phẩm
+        <Text accessibilityRole="header" className={SECTION_TITLE_CLASS}>
+          Chi tiết sản phẩm
         </Text>
-        <View>
+        <View className="border border-landing-line bg-landing-ivory p-4">
+          <ProductDescription
+            key={`${product.id}:${description}`}
+            description={description}
+          />
+        </View>
+        <View className="mt-xs border-y border-landing-line">
           {[
             ['Chất liệu', product.material?.trim() || 'Đang cập nhật'],
             ['Quy cách may', 'May đo theo số đo cá nhân'],
@@ -291,16 +324,55 @@ export function ProductDetailContent({
         </View>
       </View>
 
-      {product.description?.trim() ? (
-        <View className="gap-md border-t border-landing-line pt-xl">
-          <Text className="font-display text-headline-sm text-obsidian">
-            Chi tiết sản phẩm
-          </Text>
-          <ProductDescription key={`${product.id}:${product.description}`} description={product.description} />
-        </View>
-      ) : null}
-
       <ProductOutfitSuggestions product={product} onAskStylist={onAskStylist} />
+
+      {/* FE ProductDetailTabs › Quy trình may đo: mono step numbers and the real 7-day window. */}
+      <View className="gap-md border-t border-landing-line pt-xl">
+        <Text accessibilityRole="header" className={SECTION_TITLE_CLASS}>
+          Quy trình may đo
+        </Text>
+        <View className="border border-landing-line bg-landing-ivory p-5">
+          <Text className={LABEL_CLASS}>May đo cá nhân</Text>
+          <Text className="mt-1.5 font-display text-lg text-landing-obsidian">
+            Quy trình may đo theo số đo riêng
+          </Text>
+          <View className="mt-5 gap-4">
+            {TAILORING_STEPS.map(([step, title, desc]) => (
+              <View key={step} className="border-t border-landing-line pt-4">
+                <Text className="font-mono text-lg text-oxblood">{step}</Text>
+                <Text className="mt-1 font-sans text-sm font-semibold text-landing-obsidian">
+                  {title}
+                </Text>
+                <Text className="mt-1 font-sans text-xs leading-relaxed text-landing-muted">
+                  {desc}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+        <View className="flex-row items-start gap-sm">
+          <View className="pt-0.5">
+            <AlertCircle size={16} strokeWidth={1.75} color={COLORS.brassInk} />
+          </View>
+          <View className="flex-1">
+            <Text className="font-sans text-sm leading-relaxed text-landing-muted">
+              Sản phẩm được may theo số đo đã lưu. Nếu sản phẩm có lỗi may hoặc
+              sai lệch từ phía StAie., bạn có 7 ngày kể từ khi đơn hoàn tất để
+              gửi yêu cầu đổi trả.
+            </Text>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel="Xem chính sách đổi trả"
+              onPress={onReturnPolicyPress}
+              className="min-h-11 justify-center self-start active:opacity-70"
+            >
+              <Text className="font-sans text-sm font-semibold text-oxblood underline">
+                Xem chính sách đổi trả
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
 
       <View
         onLayout={(event) => {
@@ -340,7 +412,7 @@ function MetadataRow({
       </Text>
       <Text
         selectable
-        className="flex-1 font-sans text-body-md leading-relaxed text-landing-muted"
+        className="flex-1 font-sans text-sm leading-relaxed text-landing-muted"
       >
         {value}
       </Text>

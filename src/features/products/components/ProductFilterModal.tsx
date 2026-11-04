@@ -120,9 +120,9 @@ function PriceSlider({
         }
         className="h-11 justify-center"
       >
-        <View className="h-1 w-full rounded-full bg-landing-line" />
+        <View className="h-1 w-full bg-landing-line" />
         <View
-          className="absolute left-0 top-5 h-1 rounded-full bg-landing-oxblood"
+          className="absolute left-0 top-5 h-1 bg-landing-oxblood"
           style={{ width: trackWidth * ratio }}
         />
         <View
@@ -157,7 +157,7 @@ function FilterGroup({
       className={
         isFirst
           ? 'pb-6'
-          : 'border-t border-landing-line/70 py-6'
+          : 'border-t border-landing-line py-6'
       }
     >
       <Text className="mb-4 font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-landing-brass-ink">
@@ -233,13 +233,22 @@ export function ProductFilterModal({
           className="absolute inset-0 bg-landing-obsidian/45"
         />
 
-        <View className="max-h-[85%] border-t border-landing-line bg-landing-paper">
-          <View className="flex-row items-start justify-between gap-4 border-b border-landing-line/70 px-4 pb-4 pt-5">
+        {/* Bottom sheet: 18px top corners and a drag handle (design/DESIGN.md › Bottom Sheets). */}
+        <View className="max-h-[85%] rounded-t-xl border-t border-landing-line bg-landing-paper">
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            className="mt-2 h-1 w-10 self-center rounded-subtle bg-taupe"
+          />
+          <View className="flex-row items-start justify-between gap-4 border-b border-landing-line px-4 pb-4 pt-4">
             <View>
               <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-landing-brass-ink">
                 Tinh chỉnh
               </Text>
-              <Text className="mt-1.5 font-display text-2xl font-normal leading-tight text-landing-obsidian">
+              <Text
+                accessibilityRole="header"
+                className="mt-1.5 font-display text-2xl font-normal leading-tight text-landing-obsidian"
+              >
                 Bộ lọc
               </Text>
             </View>
@@ -247,9 +256,9 @@ export function ProductFilterModal({
               accessibilityRole="button"
               accessibilityLabel="Đóng"
               onPress={onClose}
-              className="h-11 w-11 items-center justify-center active:opacity-70"
+              className="-mr-2 h-11 w-11 items-center justify-center active:opacity-70"
             >
-              <X size={20} color={COLORS.oxblood} strokeWidth={1.75} />
+              <X size={20} color={COLORS.muted} strokeWidth={1.75} />
             </Pressable>
           </View>
 
@@ -358,12 +367,12 @@ export function ProductFilterModal({
           </ScrollView>
 
           <View
-            className="flex-row gap-2 border-t border-landing-line/70 px-4 pt-3"
+            className="flex-row gap-2 border-t border-landing-line px-4 pt-3"
             style={{ paddingBottom: Math.max(insets.bottom, 12) }}
           >
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Xóa tất cả bộ lọc"
+              accessibilityLabel="Xoá tất cả bộ lọc"
               accessibilityState={{ disabled: !hasDraftFilters }}
               disabled={!hasDraftFilters}
               onPress={handleClearAll}
@@ -372,7 +381,7 @@ export function ProductFilterModal({
               }`}
             >
               <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
-                Xóa tất cả
+                Xoá tất cả
               </Text>
             </Pressable>
 
@@ -380,7 +389,7 @@ export function ProductFilterModal({
               accessibilityRole="button"
               accessibilityLabel={`Xem ${filteredCount} sản phẩm`}
               onPress={handleApply}
-              className="h-12 flex-[1.4] items-center justify-center rounded-subtle bg-landing-obsidian active:opacity-80"
+              className="h-12 flex-[1.4] items-center justify-center rounded-subtle bg-oxblood active:opacity-90"
             >
               <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
                 Xem {filteredCount} sản phẩm

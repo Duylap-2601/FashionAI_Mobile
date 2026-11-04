@@ -1,28 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { COLORS } from '@/constants/theme';
+import { useReducedMotion } from '../hooks/use-reduced-motion';
 
 interface AnnouncementBarProps {
   onPressTryOn?: () => void;
   onPressShop?: () => void;
 }
 
+// FE MESSAGES (FashionAI_FE/src/features/home/constants/announcement-bar.ts), kept
+// honest for the app: shipping is quoted by GHN at checkout (no free-shipping
+// threshold exists in the backend) and no collection launch is claimed.
 const ANNOUNCEMENT_MESSAGES = [
   { text: 'StAie. Chuẩn dáng từ đầu, đẹp từng đường may', target: 'shop' },
   { text: 'Thử đồ AI miễn phí, xem kết quả trước khi mua', target: 'try-on' },
-  { text: 'Freeship toàn quốc cho đơn hàng từ 500.000₫', target: 'shop' },
-  { text: 'Bộ sưu tập mới 2026 đã chính thức ra mắt', target: 'shop' },
+  { text: 'May đo theo số đo riêng của bạn', target: 'shop' },
+  { text: 'Khám phá bộ sưu tập công sở của StAie.', target: 'shop' },
 ];
 
 export function AnnouncementBar({ onPressTryOn, onPressShop }: AnnouncementBarProps) {
   const [currentIdx, setCurrentIdx] = useState(0);
+  const reduceMotion = useReducedMotion();
 
+  // Rotates every 5s like FE; off under the system reduce-motion setting.
   useEffect(() => {
+    if (reduceMotion) return;
     const timer = setInterval(() => {
       setCurrentIdx((prev) => (prev + 1) % ANNOUNCEMENT_MESSAGES.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [reduceMotion]);
 
   const handlePrev = () => {
     setCurrentIdx((prev) => (prev - 1 + ANNOUNCEMENT_MESSAGES.length) % ANNOUNCEMENT_MESSAGES.length);
@@ -43,39 +51,42 @@ export function AnnouncementBar({ onPressTryOn, onPressShop }: AnnouncementBarPr
   };
 
   return (
-    <View
-      accessibilityRole="header"
-      className="z-50 h-10 w-full flex-row items-center justify-between border-b border-landing-paper/10 bg-landing-obsidian px-2"
-    >
+    <View className="z-50 h-10 w-full flex-row items-center justify-between border-b border-landing-paper/10 bg-landing-obsidian px-2">
       <Pressable
-        onPress={handlePrev}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        className="h-8 w-8 items-center justify-center rounded-full active:bg-landing-paper/10"
+        accessibilityRole="button"
         accessibilityLabel="Thông báo trước"
+        onPress={handlePrev}
+        // 40px bar; the slop lifts the target to 44px.
+        hitSlop={2}
+        className="h-10 w-10 items-center justify-center active:opacity-60"
       >
-        <ChevronLeft size={14} color="rgba(239, 233, 225, 0.45)" />
+        <ChevronLeft size={14} color={COLORS.paper} opacity={0.45} />
       </Pressable>
 
       <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={current.text}
         onPress={handlePress}
-        className="mx-2 flex-1 flex-row items-center justify-center active:opacity-80"
+        className="mx-2 h-10 flex-1 flex-row items-center justify-center gap-2.5 active:opacity-80"
       >
-        <View className="mr-2 h-1.5 w-1.5 rounded-full bg-landing-brass" />
+        <View className="h-1 w-1 rounded-full bg-landing-brass" />
         <Text
+          accessibilityLiveRegion="polite"
           numberOfLines={1}
-          className="text-center font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-paper/85"
+          className="shrink text-center font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-landing-paper/80"
         >
           {current.text}
         </Text>
       </Pressable>
 
       <Pressable
-        onPress={handleNext}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        className="h-8 w-8 items-center justify-center rounded-full active:bg-landing-paper/10"
+        accessibilityRole="button"
         accessibilityLabel="Thông báo tiếp theo"
+        onPress={handleNext}
+        hitSlop={2}
+        className="h-10 w-10 items-center justify-center active:opacity-60"
       >
-        <ChevronRight size={14} color="rgba(239, 233, 225, 0.45)" />
+        <ChevronRight size={14} color={COLORS.paper} opacity={0.45} />
       </Pressable>
     </View>
   );

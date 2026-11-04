@@ -12,7 +12,7 @@ export function ProductDescription({ description }: { description: string }) {
           testID="product-description"
           selectable
           numberOfLines={expanded ? undefined : 4}
-          className="font-sans text-body-md leading-relaxed text-landing-muted"
+          className="font-sans text-[15px] leading-relaxed text-landing-muted"
         >
           {description}
         </Text>
@@ -25,7 +25,7 @@ export function ProductDescription({ description }: { description: string }) {
           onTextLayout={({ nativeEvent }) =>
             setOverflows(nativeEvent.lines.length > 4)
           }
-          className="pointer-events-none absolute inset-x-0 top-0 font-sans text-body-md leading-relaxed text-landing-muted opacity-0"
+          className="pointer-events-none absolute inset-x-0 top-0 font-sans text-[15px] leading-relaxed text-landing-muted opacity-0"
         >
           {description}
         </Text>
@@ -35,9 +35,9 @@ export function ProductDescription({ description }: { description: string }) {
           accessibilityRole="button"
           accessibilityState={{ expanded }}
           onPress={() => setExpanded((value) => !value)}
-          className="min-h-11 min-w-11 justify-center self-start px-sm active:opacity-70"
+          className="min-h-11 min-w-11 justify-center self-start active:opacity-70"
         >
-          <Text className="font-sans text-body-md font-semibold text-oxblood">
+          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-oxblood">
             {expanded ? "Thu gọn" : "Xem thêm"}
           </Text>
         </Pressable>

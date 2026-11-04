@@ -3,12 +3,12 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Pressable,
   Text,
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Button } from '@/components/ui/Button';
-import { ErrorView } from '@/components/common/ErrorView';
+import { MessageSquarePlus } from 'lucide-react-native';
 import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { COLORS } from '@/constants/theme';
 import { useAuth } from '@/features/auth/hooks/use-auth';
@@ -30,6 +30,8 @@ import type { CreateReviewFormValues } from '../schemas/review.schema';
 import type { IReview, ReviewRating } from '../types/review';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Reviews'>;
+
+const BUTTON_LABEL_CLASS = 'font-sans text-[11px] font-semibold uppercase tracking-[0.14em]';
 
 function getErrorMessage(error: unknown): string {
   return error instanceof ApiError
@@ -136,158 +138,197 @@ export function ReviewsScreen({ navigation, route }: Props) {
 
   const confirmDelete = useCallback(
     (review: IReview) => {
-      Alert.alert('Xóa đánh giá?', 'Đánh giá đã xóa không thể khôi phục.', [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa',
-          style: 'destructive',
-          onPress: () => {
-            void deleteMutation
-              .mutateAsync({ reviewId: review.id, productId: review.productId })
-              .catch((error: unknown) => {
-                Alert.alert('Không thể xóa đánh giá', getErrorMessage(error));
-              });
+      // Wording mirrors FE ReviewSection › AccountConfirmDialog.
+      Alert.alert(
+        'Xóa đánh giá',
+        'Bạn có chắc chắn muốn xóa đánh giá này? Sau khi xóa, bạn có thể đánh giá lại sản phẩm này.',
+        [
+          { text: 'Giữ lại', style: 'cancel' },
+          {
+            text: 'Xóa đánh giá',
+            style: 'destructive',
+            onPress: () => {
+              void deleteMutation
+                .mutateAsync({ reviewId: review.id, productId: review.productId })
+                .catch((error: unknown) => {
+                  Alert.alert('Không thể xóa đánh giá', getErrorMessage(error));
+                });
+            },
           },
-        },
-      ]);
+        ],
+      );
     },
     [deleteMutation],
   );
 
   if (!productId) {
     return (
-      <ErrorView
-        fullscreen
-        title="Không thể mở đánh giá"
-        message="Thông tin sản phẩm không hợp lệ."
-      />
+      <View className="flex-1 justify-center bg-landing-ivory">
+        <ReviewEmptyState
+          tone="error"
+          title="Không thể mở đánh giá"
+          description="Thông tin sản phẩm không hợp lệ."
+        />
+      </View>
     );
   }
 
   if (reviewsQuery.isLoading && reviews.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center bg-surface-lowest">
-        <ActivityIndicator size="large" color={COLORS.primaryContainer} />
-        <Text className="mt-md font-sans text-body-sm text-catalog-muted-text">Đang tải đánh giá...</Text>
+      <View
+        accessibilityRole="progressbar"
+        accessibilityLabel="Đang tải đánh giá"
+        className="flex-1 items-center justify-center bg-landing-ivory"
+      >
+        <ActivityIndicator size="large" color={COLORS.oxblood} />
+        <Text className="mt-md font-sans text-body-sm text-landing-muted">Đang tải đánh giá...</Text>
       </View>
     );
   }
 
   if (reviewsQuery.isError && reviews.length === 0) {
     return (
-      <ErrorView
-        fullscreen
-        title="Chưa thể tải đánh giá"
-        message={getErrorMessage(reviewsQuery.error)}
-        onRetry={() => void reviewsQuery.refetch()}
-      />
+      <View className="flex-1 justify-center bg-landing-ivory">
+        <ReviewEmptyState
+          tone="error"
+          title="Chưa thể tải đánh giá"
+          description={getErrorMessage(reviewsQuery.error)}
+          actionLabel="Thử lại"
+          onAction={() => void reviewsQuery.refetch()}
+        />
+      </View>
     );
   }
 
   return (
     <>
       <FlatList
-        className="flex-1 bg-surface-lowest"
-      data={reviews}
-      keyExtractor={(item) => item.id}
-      contentContainerClassName="gap-xxl pb-xxxl"
-      contentInsetAdjustmentBehavior="automatic"
-      keyboardShouldPersistTaps="handled"
-      refreshing={reviewsQuery.isRefetching && !reviewsQuery.isFetchingNextPage}
-      onRefresh={refresh}
-      onEndReached={loadMore}
-      onEndReachedThreshold={0.35}
-      ListHeaderComponent={
-        <View className="gap-xxl pt-xxl">
-          <View className="gap-sm px-lg">
-            <Text accessibilityRole="header" className="font-sans text-headline-lg font-bold text-primary-container">Đánh giá & Nhận xét</Text>
-            <Text className="font-sans text-body-sm leading-relaxed text-catalog-muted-text">Phản hồi thực tế từ khách hàng đã trải nghiệm sản phẩm may đo.</Text>
-          </View>
-          <View className="mx-lg flex-row flex-wrap gap-sm">
-            <Button
-              title={writing ? 'Đóng biểu mẫu' : 'Viết đánh giá'}
-              size="sm"
-              className="!rounded-xl"
-              textClassName="font-sans !text-on-primary"
-              onPress={handleToggleWriting}
-            />
-            <Button
-              title="Đánh giá của tôi"
-              variant="outline"
-              size="sm"
-              className="!rounded-xl !border-catalog-line"
-              textClassName="font-sans !text-primary-container"
-              onPress={() => navigation.navigate('MyReviews')}
-            />
-          </View>
-
-          {writing ? (
-            <View className="mx-lg">
-              <ReviewForm
-                mode="create"
-                submitting={createMutation.isPending}
-                errorMessage={createMutation.isError ? getErrorMessage(createMutation.error) : undefined}
-                onSubmit={submitCreate}
-                onCancel={() => setWriting(false)}
-              />
-            </View>
-          ) : null}
-
-          <ReviewStatsCard
-            stats={statsQuery.data}
-            loading={statsQuery.isLoading}
-            error={statsQuery.isError}
-            onRetry={() => void statsQuery.refetch()}
-          >
-            <Text className="font-sans text-body-sm font-semibold text-on-surface-variant">Lọc theo:</Text>
-            <RatingFilter value={rating} onChange={setRating} stats={statsQuery.data} />
-          </ReviewStatsCard>
-
-          {reviewsQuery.isError ? (
-            <View className="mx-lg rounded-xl border border-catalog-line bg-catalog-muted p-lg">
-              <Text className="font-sans text-body-sm text-danger">
-                Chưa thể cập nhật danh sách mới nhất. Nội dung đã tải vẫn được giữ lại.
+        className="flex-1 bg-landing-ivory"
+        data={reviews}
+        keyExtractor={(item) => item.id}
+        contentContainerClassName="gap-lg pb-xxxl"
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        refreshing={reviewsQuery.isRefetching && !reviewsQuery.isFetchingNextPage}
+        onRefresh={refresh}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.35}
+        ListHeaderComponent={
+          <View className="gap-8 pb-sm pt-xl">
+            <View className="mx-lg border-b border-landing-line pb-5">
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink">
+                Đánh giá
               </Text>
+              <Text accessibilityRole="header" className="mt-2 font-display text-headline-lg text-landing-obsidian">
+                Đánh giá và nhận xét
+              </Text>
+              <Text className="mt-2 font-sans text-sm leading-relaxed text-landing-muted">
+                Phản hồi thực tế từ khách hàng đã trải nghiệm sản phẩm và may đo.
+              </Text>
+              <View className="mt-5 flex-row flex-wrap gap-2">
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={writing ? 'Đóng biểu mẫu' : 'Viết đánh giá'}
+                  accessibilityState={{ expanded: writing }}
+                  onPress={handleToggleWriting}
+                  className="h-11 flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood px-5 active:opacity-90"
+                >
+                  <MessageSquarePlus size={16} strokeWidth={1.75} color={COLORS.paper} />
+                  <Text className={`${BUTTON_LABEL_CLASS} text-landing-paper`}>
+                    {writing ? 'Đóng biểu mẫu' : 'Viết đánh giá'}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Đánh giá của tôi"
+                  onPress={() => navigation.navigate('MyReviews')}
+                  className="h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:opacity-70"
+                >
+                  <Text className={`${BUTTON_LABEL_CLASS} text-landing-obsidian`}>Đánh giá của tôi</Text>
+                </Pressable>
+              </View>
             </View>
-          ) : null}
-        </View>
-      }
-      renderItem={({ item }) => (
-        <View className="gap-sm">
-          <ReviewCard
-            review={item}
-            owned={item.userId === user?.id}
-            onEdit={(review) => {
-              updateMutation.reset();
-              setWriting(false);
-              setEditing(review);
-            }}
-            onDelete={confirmDelete}
+
+            {writing ? (
+              <View className="mx-lg">
+                <ReviewForm
+                  mode="create"
+                  submitting={createMutation.isPending}
+                  errorMessage={createMutation.isError ? getErrorMessage(createMutation.error) : undefined}
+                  onSubmit={submitCreate}
+                  onCancel={() => setWriting(false)}
+                />
+              </View>
+            ) : null}
+
+            <ReviewStatsCard
+              stats={statsQuery.data}
+              loading={statsQuery.isLoading}
+              error={statsQuery.isError}
+              selectedRating={rating}
+              onRetry={() => void statsQuery.refetch()}
+            >
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brass-ink">
+                Lọc theo
+              </Text>
+              <RatingFilter value={rating} onChange={setRating} stats={statsQuery.data} />
+            </ReviewStatsCard>
+
+            {reviewsQuery.isError ? (
+              <View accessibilityRole="alert" className="mx-lg border-l-2 border-danger bg-landing-paper px-md py-sm">
+                <Text className="font-sans text-body-sm text-danger">
+                  Chưa thể cập nhật danh sách mới nhất. Nội dung đã tải vẫn được giữ lại.
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        }
+        renderItem={({ item }) => (
+          <View className="gap-sm">
+            <ReviewCard
+              review={item}
+              owned={item.userId === user?.id}
+              onEdit={(review) => {
+                updateMutation.reset();
+                setWriting(false);
+                setEditing(review);
+              }}
+              onDelete={confirmDelete}
+            />
+            {editing?.id === item.id ? (
+              <View className="mx-lg">
+                <ReviewForm
+                  mode="edit"
+                  initialRating={item.rating}
+                  initialComment={item.comment}
+                  submitting={updateMutation.isPending}
+                  errorMessage={updateMutation.isError ? getErrorMessage(updateMutation.error) : undefined}
+                  onSubmit={submitEdit}
+                  onCancel={() => setEditing(null)}
+                />
+              </View>
+            ) : null}
+          </View>
+        )}
+        ListEmptyComponent={
+          <ReviewEmptyState
+            title={rating ? `Chưa có đánh giá ${rating} sao nào` : 'Chưa có đánh giá nào cho sản phẩm này'}
+            description={
+              rating
+                ? 'Hãy thử chọn mức sao khác hoặc xem tất cả đánh giá.'
+                : 'Nếu bạn đã mua và nhận sản phẩm này, hãy là người đầu tiên chia sẻ cảm nhận.'
+            }
+            actionLabel={writing ? undefined : 'Viết đánh giá'}
+            actionIcon
+            onAction={writing ? undefined : handleToggleWriting}
           />
-          {editing?.id === item.id ? (
-            <View className="mx-lg">
-              <ReviewForm
-                mode="edit"
-                initialRating={item.rating}
-                initialComment={item.comment}
-                submitting={updateMutation.isPending}
-                errorMessage={updateMutation.isError ? getErrorMessage(updateMutation.error) : undefined}
-                onSubmit={submitEdit}
-                onCancel={() => setEditing(null)}
-              />
-            </View>
-          ) : null}
-        </View>
-      )}
-      ListEmptyComponent={
-        <ReviewEmptyState
-          title={rating ? `Chưa có đánh giá ${rating} sao` : 'Chưa có đánh giá'}
-          description={rating ? 'Hãy thử chọn mức sao khác hoặc xem tất cả đánh giá.' : 'Nếu bạn đã mua và nhận sản phẩm này, hãy là người đầu tiên chia sẻ cảm nhận nhé!'}
-        />
-      }
-        ListFooterComponent={reviewsQuery.isFetchingNextPage ? (
-          <ActivityIndicator className="py-lg" color={COLORS.primaryContainer} />
-        ) : null}
+        }
+        ListFooterComponent={
+          reviewsQuery.isFetchingNextPage ? (
+            <ActivityIndicator className="py-lg" color={COLORS.oxblood} />
+          ) : null
+        }
       />
       <FeedbackModal
         visible={eligibilityModal !== null}
@@ -295,7 +336,7 @@ export function ReviewsScreen({ navigation, route }: Props) {
         title={
           eligibilityModal === 'already_reviewed'
             ? 'Bạn đã đánh giá sản phẩm này'
-            : 'Chỉ user đã mua và nhận hàng mới được đánh giá'
+            : 'Chỉ khách đã mua và nhận hàng mới được đánh giá'
         }
         message={
           eligibilityModal === 'already_reviewed'

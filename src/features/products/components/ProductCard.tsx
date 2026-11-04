@@ -19,6 +19,9 @@ import {
   getProductMainImage,
 } from '../utils/product-display';
 
+// The 40px quick actions match FE; the slop brings each touch target to 44x44.
+const QUICK_ACTION_HIT_SLOP = 2;
+
 interface ProductCardProps {
   product: IProduct;
   presentation?: 'default' | 'catalog';
@@ -49,8 +52,8 @@ export const ProductCard = React.memo(function ProductCard({
           100,
       )
     : 0;
-  const hasRating = product.avgRating > 0 || product.reviewCount > 0;
-  const ratingValue = product.avgRating > 0 ? product.avgRating : 5;
+  // Only real review data: no 5.0 fallback when a product has no average yet.
+  const hasRating = product.avgRating > 0;
 
   useEffect(
     () => () => {
@@ -119,10 +122,7 @@ export const ProductCard = React.memo(function ProductCard({
               onError={() => setFailedImageUrl(imageUrl)}
             />
           ) : (
-            <View className="h-full w-full items-center justify-center gap-xs bg-landing-paper">
-              <Text className="font-sans text-headline-md text-landing-muted">
-                ⌕
-              </Text>
+            <View className="h-full w-full items-center justify-center bg-landing-ivory">
               <Text className="font-sans text-body-sm text-landing-muted">
                 Chưa có ảnh
               </Text>
@@ -135,13 +135,13 @@ export const ProductCard = React.memo(function ProductCard({
           >
             {hasDiscount && discountPercent > 0 ? (
               <View className="bg-landing-oxblood px-2 py-1">
-                <Text className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-landing-paper">
+                <Text className="font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-landing-paper">
                   -{discountPercent}%
                 </Text>
               </View>
             ) : (product as { isNew?: boolean }).isNew ? (
               <View className="bg-landing-sage px-2 py-1">
-                <Text className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-landing-obsidian">
+                <Text className="font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-landing-obsidian">
                   Mới
                 </Text>
               </View>
@@ -156,6 +156,7 @@ export const ProductCard = React.memo(function ProductCard({
                   ? `Đã thêm ${product.name} vào giỏ hàng`
                   : `Thêm ${product.name} vào giỏ hàng`
               }
+              hitSlop={QUICK_ACTION_HIT_SLOP}
               onPress={(event) => {
                 event.stopPropagation();
                 handleQuickAdd();
@@ -172,6 +173,7 @@ export const ProductCard = React.memo(function ProductCard({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Thử đồ AI cho ${product.name}`}
+              hitSlop={QUICK_ACTION_HIT_SLOP}
               onPress={(event) => {
                 event.stopPropagation();
                 handleTryOn();
@@ -195,7 +197,7 @@ export const ProductCard = React.memo(function ProductCard({
               <View className="shrink-0 flex-row items-center gap-1">
                 <Star size={11} color={COLORS.brass} fill={COLORS.brass} />
                 <Text className="font-sans text-[10px] font-medium text-landing-brass-ink">
-                  {ratingValue.toFixed(1)}
+                  {product.avgRating.toFixed(1)}
                 </Text>
                 {product.reviewCount ? (
                   <Text className="font-sans text-[10px] text-landing-muted">

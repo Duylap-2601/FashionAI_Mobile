@@ -19,12 +19,15 @@ import { ErrorView } from "@/components/common/ErrorView";
 import { Input } from "@/components/ui/Input";
 import { COLORS, SPACING } from "@/constants/theme";
 import {
+  AlertTriangle,
   ArrowUpDown,
   Search,
   SlidersHorizontal,
+  X,
 } from "lucide-react-native";
 import { MainTabParamList, RootStackParamList } from "@/navigation/types";
 import { GarmentTypeTabs } from "../components/GarmentTypeTabs";
+import { PRODUCT_SORT_OPTIONS } from "../constants/product-filters";
 import { ProductCard } from "../components/ProductCard";
 import {
   ProductFilterModal,
@@ -155,6 +158,9 @@ export const ShopScreen: React.FC = () => {
     );
   }, [color, maxPrice, subCategory]);
   const hasActiveFilters = activeFilterCount > 0;
+  const sortLabel =
+    PRODUCT_SORT_OPTIONS.find((option) => option.value === sort)?.label ??
+    PRODUCT_SORT_OPTIONS[0].label;
   const productCardWidth = Math.max(
     1,
     (layoutWidth - SPACING.lg * 2 - SPACING.catalogGap) / 2,
@@ -239,13 +245,13 @@ export const ShopScreen: React.FC = () => {
           autoCapitalize="none"
           autoCorrect={false}
           containerClassName="flex-1 !mb-0"
-          fieldContainerClassName={`!rounded-subtle !bg-landing-ivory !px-sm ${
+          fieldContainerClassName={`!h-11 !rounded-subtle !bg-landing-ivory !px-sm ${
             isSearchFocused
               ? "!border-2 !border-landing-oxblood"
               : "!border-landing-line"
           }`}
-          className="font-sans !text-body-sm"
-          leftIcon={<Search size={16} color={COLORS.catalogMutedText} />}
+          className="font-sans !text-sm !text-landing-obsidian"
+          leftIcon={<Search size={16} strokeWidth={1.75} color={COLORS.muted} />}
           placeholder="Tìm sản phẩm"
           returnKeyType="search"
           value={searchInput}
@@ -256,13 +262,11 @@ export const ShopScreen: React.FC = () => {
             searchInput ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Xóa tìm kiếm"
+                accessibilityLabel="Xoá từ khoá tìm kiếm"
                 onPress={handleClearSearch}
-                className="min-h-11 min-w-11 items-center justify-center active:opacity-70"
+                className="-mr-sm min-h-11 min-w-11 items-center justify-center active:opacity-70"
               >
-                <Text className="font-sans text-headline-md text-catalog-muted-text">
-                  ×
-                </Text>
+                <X size={14} strokeWidth={1.75} color={COLORS.muted} />
               </Pressable>
             ) : null
           }
@@ -272,9 +276,9 @@ export const ShopScreen: React.FC = () => {
           accessibilityRole="button"
           accessibilityLabel={`Mở bộ lọc${activeFilterCount ? `, ${activeFilterCount} đang áp dụng` : ""}`}
           onPress={() => setFiltersVisible(true)}
-          className="h-11 flex-row items-center gap-1.5 rounded-subtle border border-landing-obsidian px-3 active:opacity-70"
+          className="h-11 flex-row items-center gap-sm rounded-subtle border border-landing-obsidian/70 px-3.5 active:opacity-70"
         >
-          <SlidersHorizontal size={16} color={COLORS.obsidian} />
+          <SlidersHorizontal size={16} strokeWidth={1.75} color={COLORS.obsidian} />
           <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
             Lọc
           </Text>
@@ -287,17 +291,11 @@ export const ShopScreen: React.FC = () => {
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Mở sắp xếp, đang chọn ${
-            sort === "price_asc"
-              ? "giá thấp đến cao"
-              : sort === "price_desc"
-                ? "giá cao đến thấp"
-                : "mới nhất"
-          }`}
+          accessibilityLabel={`Sắp xếp, đang chọn ${sortLabel}`}
           onPress={() => setSortSheetVisible(true)}
-          className="h-11 w-11 items-center justify-center rounded-subtle border border-landing-obsidian active:opacity-70"
+          className="h-11 w-11 items-center justify-center rounded-subtle border border-landing-obsidian/70 active:opacity-70"
         >
-          <ArrowUpDown size={16} color={COLORS.obsidian} />
+          <ArrowUpDown size={16} strokeWidth={1.75} color={COLORS.obsidian} />
         </Pressable>
       </View>
 
@@ -309,25 +307,39 @@ export const ShopScreen: React.FC = () => {
       </View>
 
       <View className="mx-lg flex-row items-baseline justify-between border-b border-landing-line pb-4">
-        <Text className="font-mono text-[11px] uppercase tracking-[0.2em] text-landing-muted">
-          <Text className="text-landing-obsidian">
-            {totalProducts.toLocaleString("vi-VN")}
-          </Text>{" "}
-          sản phẩm
+        <Text
+          accessibilityLiveRegion="polite"
+          className="font-mono text-[11px] uppercase tracking-[0.2em] text-landing-muted"
+        >
+          {isLoading ? (
+            "Đang tải sản phẩm"
+          ) : (
+            <>
+              <Text className="text-landing-obsidian">
+                {totalProducts.toLocaleString("vi-VN")}
+              </Text>{" "}
+              sản phẩm
+            </>
+          )}
         </Text>
       </View>
 
       {isError && products.length > 0 ? (
-        <View className="mx-lg flex-row items-center justify-between rounded-md bg-catalog-muted p-md">
-          <Text className="flex-1 font-sans text-body-sm text-danger">
+        <View
+          accessibilityRole="alert"
+          className="mx-lg flex-row items-center gap-3 border border-landing-line bg-landing-ivory px-4 py-1"
+        >
+          <AlertTriangle size={16} strokeWidth={1.75} color={COLORS.oxblood} />
+          <Text className="flex-1 font-sans text-sm text-landing-obsidian">
             Chưa thể cập nhật danh sách mới nhất.
           </Text>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel="Thử tải lại danh sách sản phẩm"
             onPress={() => void refetch()}
-            className="min-h-11 justify-center px-sm active:opacity-70"
+            className="min-h-11 justify-center active:opacity-70"
           >
-            <Text className="font-sans text-body-sm font-bold text-danger">
+            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-oxblood underline">
               Thử lại
             </Text>
           </Pressable>
@@ -396,11 +408,19 @@ export const ShopScreen: React.FC = () => {
         ListHeaderComponent={header}
         ListEmptyComponent={
           <ProductsEmptyState
-            title="Không tìm thấy sản phẩm phù hợp"
-            description="Hãy thử thay đổi từ khóa hoặc điều chỉnh bộ lọc của bạn."
+            title={
+              hasActiveFilters
+                ? "Chưa có thiết kế nào khớp với bộ lọc này."
+                : "Không tìm thấy sản phẩm phù hợp"
+            }
+            description={
+              hasActiveFilters
+                ? undefined
+                : "Hãy thử thay đổi từ khóa hoặc điều chỉnh bộ lọc của bạn."
+            }
             actionTitle={
               hasActiveFilters
-                ? "Xóa bộ lọc"
+                ? "Xoá bộ lọc"
                 : search
                   ? "Xóa tìm kiếm"
                   : undefined
@@ -416,10 +436,16 @@ export const ShopScreen: React.FC = () => {
         }
         ListFooterComponent={
           isFetchingNextPage ? (
-            <View className="min-h-16 flex-row items-center justify-center gap-sm">
-              <ActivityIndicator color={COLORS.primaryContainer} />
-              <Text className="font-sans text-body-sm text-catalog-muted-text">
-                Đang tải thêm...
+            <View className="mx-lg mt-xxl min-h-16 flex-row items-center justify-center gap-sm border-t border-landing-line pt-xl">
+              <ActivityIndicator color={COLORS.oxblood} />
+              <Text className="font-mono text-[11px] uppercase tracking-[0.2em] text-landing-muted">
+                Đang tải thêm
+              </Text>
+            </View>
+          ) : products.length > 0 && !hasNextPage ? (
+            <View className="mx-lg mb-xxl mt-xxl border-t border-landing-line pt-xl">
+              <Text className="text-center font-mono text-[11px] uppercase tracking-[0.2em] text-landing-muted">
+                Đã xem hết {totalProducts.toLocaleString("vi-VN")} sản phẩm
               </Text>
             </View>
           ) : (
