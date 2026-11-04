@@ -125,7 +125,7 @@ function OrderMeta({ orderCode, totalAmount }: IOrderMetaProps) {
           MÃ ĐƠN
         </Text>
         <Text className="font-mono text-[16px] text-landing-obsidian">
-          {orderCode || '—'}
+          {orderCode || 'Chưa có'}
         </Text>
       </View>
       <View className="shrink-0 items-end gap-1.5">

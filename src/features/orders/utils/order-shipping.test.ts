@@ -9,7 +9,7 @@ describe('shipmentStatusLabel', () => {
   it('falls back to the normalized status, then to the raw text', () => {
     expect(shipmentStatusLabel('READY_TO_PICK', null)).toBe('Chờ lấy hàng');
     expect(shipmentStatusLabel(null, 'new_ghn_code')).toBe('new_ghn_code');
-    expect(shipmentStatusLabel(null, null)).toBe('—');
+    expect(shipmentStatusLabel(null, null)).toBe('Chưa cập nhật');
   });
 });
 

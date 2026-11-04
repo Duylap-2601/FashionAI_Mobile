@@ -15,6 +15,7 @@ import {
   setStoredPushToken,
 } from '@/features/notifications/storage/push-token-storage';
 import { ENV } from '@/config/env';
+import { COLORS } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/types';
 import { getOrderNotificationTarget } from '../utils/order-notification-target';
 
@@ -67,7 +68,7 @@ async function getExpoPushToken(): Promise<string | null> {
       name: 'Thông báo',
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#5D1C34',
+      lightColor: COLORS.oxblood,
     });
   }
 

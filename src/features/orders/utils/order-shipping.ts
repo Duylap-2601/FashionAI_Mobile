@@ -46,7 +46,7 @@ const SHIPMENT_STATUS_LABELS: Record<string, string> = {
 export function shipmentStatusLabel(status?: string | null, rawStatus?: string | null): string {
   const raw = (rawStatus ?? '').trim().toLowerCase();
   if (raw) return SHIPMENT_RAW_STATUS_LABELS[raw] ?? raw;
-  if (!status) return '—';
+  if (!status) return 'Chưa cập nhật';
   return SHIPMENT_STATUS_LABELS[status] ?? status;
 }
 

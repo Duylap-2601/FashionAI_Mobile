@@ -23,10 +23,11 @@ import { BackButton } from '@/components/common/BackButton';
 import { COLORS } from '@/constants/theme';
 import { formatDate, formatDateTime } from '@/utils/date';
 import { useInfiniteOrders, useCancelOrder, useConfirmDelivery } from '../hooks/use-orders';
-import { ToneLabel, type StatusTone } from '../components/ToneLabel';
+import { ToneLabel } from '../components/ToneLabel';
 import { getOrderItemImage, getOrderItemName } from '../utils/order-items';
 import { RETURN_HISTORY_STATUSES } from '../utils/order-returns';
 import { getCarrierLabel } from '../utils/order-shipping';
+import { ORDER_STATUS_CONFIG } from '../utils/order-status';
 
 // Mỗi tab là một trạng thái BE lọc được (GET /orders?status=), giống trang Đơn hàng trên web.
 const FILTER_TABS: { id: string; label: string; status?: string }[] = [
@@ -45,29 +46,7 @@ const SEARCH_DEBOUNCE_MS = 400;
 
 const STEPS = ['Đã đặt', 'Duyệt số đo', 'Đang may', 'Đang giao', 'Giao xong'] as const;
 
-const STATUS_CONFIG: Record<string, { label: string; tone: StatusTone; step: number }> = {
-  CREATED: { label: 'Chờ thanh toán', tone: 'attention', step: 0 },
-  PENDING: { label: 'Chờ thanh toán', tone: 'attention', step: 0 },
-  PENDING_PAYMENT: { label: 'Chờ thanh toán', tone: 'attention', step: 0 },
-  PAID: { label: 'Đã thanh toán', tone: 'active', step: 0 },
-  CONFIRMED: { label: 'Đã xác nhận', tone: 'active', step: 0 },
-  MEASUREMENT_REVIEW: { label: 'Đang duyệt số đo', tone: 'active', step: 1 },
-  MEASUREMENT_CONFIRMED: { label: 'Đã chốt số đo', tone: 'active', step: 1 },
-  PROCESSING: { label: 'Đang chuẩn bị', tone: 'active', step: 2 },
-  TAILORING: { label: 'Đang may', tone: 'active', step: 2 },
-  QUALITY_CHECK: { label: 'Kiểm tra chất lượng', tone: 'active', step: 2 },
-  READY_TO_SHIP: { label: 'Chờ giao', tone: 'active', step: 3 },
-  SHIPPING: { label: 'Đang giao', tone: 'active', step: 3 },
-  DELIVERED: { label: 'Đã giao', tone: 'done', step: 3 },
-  COMPLETED: { label: 'Hoàn tất', tone: 'done', step: 4 },
-  CANCELLED: { label: 'Đã hủy', tone: 'closed', step: -1 },
-  EXPIRED: { label: 'Hết hạn thanh toán', tone: 'closed', step: -1 },
-  RETURNED: { label: 'Đã hoàn trả', tone: 'closed', step: -1 },
-  RETURN_REQUESTED: { label: 'Yêu cầu hoàn trả', tone: 'attention', step: -1 },
-  RETURN_APPROVED: { label: 'Đã duyệt hoàn trả', tone: 'attention', step: -1 },
-  RETURNING: { label: 'Đang hoàn trả', tone: 'attention', step: -1 },
-  FAILED: { label: 'Thanh toán thất bại', tone: 'error', step: -1 },
-};
+const STATUS_CONFIG = ORDER_STATUS_CONFIG;
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   COD: 'Thanh toán khi nhận hàng',
