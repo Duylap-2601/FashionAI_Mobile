@@ -1,7 +1,6 @@
 import React from 'react';
-import { Pressable, Text, useWindowDimensions, View } from 'react-native';
-import { ArrowRight } from 'lucide-react-native';
-import { Button } from '@/components/ui/Button';
+import { Platform, Pressable, Text, useWindowDimensions, View } from 'react-native';
+import { ArrowUpRight } from 'lucide-react-native';
 import { COLORS, SPACING } from '@/constants/theme';
 import type { Collection } from '../types/collection';
 import { CollectionCover } from './CollectionCover';
@@ -12,6 +11,7 @@ interface CollectionHeroCardProps {
   onTryOnPress: () => void;
 }
 
+// Editorial hero plate; CTAs follow FE HeroBanner (paper fill + paper outline on obsidian).
 export function CollectionHeroCard({
   collection,
   onPress,
@@ -21,9 +21,10 @@ export function CollectionHeroCard({
   const imageWidth = Math.max(1, width - SPACING.lg * 2);
   const imageUrl =
     collection.coverImages[1] ?? collection.coverImages[0] ?? null;
+  const fontFamilyDisplay = Platform.OS === 'ios' ? 'Playfair Display' : 'serif';
 
   return (
-    <View className="h-collection-hero overflow-hidden rounded-catalog-gallery bg-editorial-background">
+    <View className="h-collection-hero overflow-hidden rounded-subtle bg-landing-obsidian">
       <CollectionCover
         imageUrl={imageUrl}
         name={collection.name}
@@ -36,45 +37,54 @@ export function CollectionHeroCard({
           accessibilityRole="button"
           accessibilityLabel={`Khám phá bộ sưu tập ${collection.name}`}
           onPress={() => onPress(collection.slug)}
-          className="min-h-11 items-center gap-md active:opacity-80"
+          className="min-h-11 gap-md active:opacity-80"
         >
-          <View className="rounded-full border border-surface-lowest/60 bg-surface-lowest/90 px-md py-xs">
-            <Text className="font-sans text-label-md uppercase tracking-widest text-primary-container">
-              BỘ SƯU TẬP MAY ĐO
+          <View className="flex-row items-center gap-3">
+            <View className="h-px w-10 bg-landing-brass" />
+            <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-landing-brass">
+              Bộ sưu tập may đo
             </Text>
           </View>
           <Text
             numberOfLines={2}
-            className="text-center font-sans text-headline-lg font-bold text-on-primary"
+            style={{
+              fontFamily: fontFamilyDisplay,
+              fontSize: 30,
+              lineHeight: 34,
+              color: COLORS.paper,
+            }}
           >
             {collection.name}
           </Text>
           {collection.description ? (
             <Text
               numberOfLines={2}
-              className="text-center font-sans text-body-md italic text-on-primary/85"
+              className="font-sans text-sm leading-relaxed text-landing-paper/65"
             >
-              “{collection.description}”
+              {collection.description}
             </Text>
           ) : null}
         </Pressable>
-        <View className="flex-row flex-wrap items-center justify-center gap-md">
-          <Button
-            title="Khám phá BST"
-            variant="outline"
-            size="sm"
+        <View className="gap-3">
+          <Pressable
+            accessibilityRole="button"
             onPress={() => onPress(collection.slug)}
-            className="!rounded-full !border-surface-lowest !bg-surface-lowest px-xl"
-            textClassName="font-sans text-on-surface-strong"
-            rightIcon={<ArrowRight size={16} color={COLORS.onSurfaceStrong} />}
-          />
-          <Button
-            title="Thử đồ AI"
-            size="sm"
+            className="h-12 flex-row items-center justify-center gap-3 rounded-subtle border border-landing-paper bg-landing-paper px-6 active:opacity-80"
+          >
+            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-obsidian">
+              Khám phá bộ sưu tập
+            </Text>
+            <ArrowUpRight size={14} color={COLORS.obsidian} />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
             onPress={onTryOnPress}
-            className="!rounded-full border border-surface-lowest/10 px-xl"
-            textClassName="font-sans !text-on-primary"
-          />
+            className="h-12 items-center justify-center rounded-subtle border border-landing-paper/35 px-6 active:opacity-70"
+          >
+            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-paper">
+              Thử đồ AI
+            </Text>
+          </Pressable>
         </View>
       </View>
     </View>

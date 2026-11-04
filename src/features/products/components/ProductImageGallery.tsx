@@ -22,12 +22,13 @@ interface ProductImageGalleryProps {
 }
 
 const MAX_IMAGE_WIDTH = 420;
-const dotStyle = tva({
-  base: 'h-1.5 rounded-full',
+// Hairline page indicators (design/DESIGN.md › Product Detail), not round dots.
+const indicatorStyle = tva({
+  base: 'h-0.5',
   variants: {
     active: {
-      true: 'w-4 bg-oxblood',
-      false: 'w-1.5 bg-taupe',
+      true: 'w-6 bg-oxblood',
+      false: 'w-3 bg-taupe',
     },
   },
 });
@@ -111,18 +112,15 @@ export function ProductImageGallery({
       className="items-center px-lg pt-lg"
     >
       <View style={{ width: imageWidth }}>
-        <View className="overflow-hidden rounded-subtle bg-ivory">
+        <View className="overflow-hidden rounded-subtle border border-landing-line bg-ivory">
           {imageUrls.length === 0 ? (
             <View style={{ height: imageHeight }}>
               <View
                 accessibilityLabel={`${productName}, chưa có ảnh sản phẩm`}
-                className="flex-1 items-center justify-center gap-sm"
+                className="flex-1 items-center justify-center"
               >
-                <Text className="font-sans text-display text-landing-muted">
-                  ◇
-                </Text>
-                <Text className="font-sans text-body-md text-landing-muted">
-                  Chưa có ảnh sản phẩm
+                <Text className="font-sans text-body-sm text-landing-muted">
+                  Chưa có ảnh
                 </Text>
               </View>
             </View>
@@ -154,12 +152,9 @@ export function ProductImageGallery({
                   {failedImageUrls.has(imageUrl) ? (
                     <View
                       accessibilityLabel={`Không thể hiển thị ảnh ${index + 1} của ${productName}`}
-                      className="flex-1 items-center justify-center gap-sm"
+                      className="flex-1 items-center justify-center"
                     >
-                      <Text className="font-sans text-display text-landing-muted">
-                        ◇
-                      </Text>
-                      <Text className="font-sans text-body-md text-landing-muted">
+                      <Text className="font-sans text-body-sm text-landing-muted">
                         Không thể hiển thị ảnh
                       </Text>
                     </View>
@@ -167,6 +162,7 @@ export function ProductImageGallery({
                     <Image
                       source={{ uri: imageUrl }}
                       contentFit="cover"
+                      contentPosition="top"
                       transition={150}
                       style={{ width: imageWidth, height: imageHeight }}
                       onError={() => handleImageError(imageUrl)}
@@ -181,10 +177,10 @@ export function ProductImageGallery({
               accessibilityRole="button"
               accessibilityLabel="Phóng to ảnh"
               onPress={() => setViewerIndex(activeIndex)}
-              className="absolute right-md top-md min-h-11 flex-row items-center gap-xs rounded-subtle border border-landing-line bg-paper/95 px-md active:border-oxblood"
+              className="absolute right-md top-md min-h-11 flex-row items-center gap-sm border border-landing-line bg-landing-paper/95 px-md active:border-oxblood"
             >
               <Maximize2 size={14} strokeWidth={1.75} color={COLORS.obsidian} />
-              <Text className="font-sans text-2xs font-semibold uppercase tracking-widest text-obsidian">
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
                 Phóng to
               </Text>
             </Pressable>
@@ -192,20 +188,24 @@ export function ProductImageGallery({
           {imageUrls.length > 1 ? (
             <View
               pointerEvents="none"
-              className="absolute bottom-md right-md rounded-subtle border border-landing-line bg-ivory/90 px-md py-xs"
+              className="absolute bottom-md right-md border border-landing-line bg-landing-paper/95 px-2.5 py-1"
             >
-              <Text className="font-mono text-label-md tabular-nums text-obsidian">
+              <Text className="font-mono text-[10px] font-medium tabular-nums text-landing-obsidian">
                 {activeIndex + 1} / {imageUrls.length}
               </Text>
             </View>
           ) : null}
         </View>
         {imageUrls.length > 1 ? (
-          <View className="min-h-11 flex-row items-center justify-center gap-xs overflow-hidden">
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            className="min-h-11 flex-row items-center justify-center gap-1.5 overflow-hidden"
+          >
             {imageUrls.map((imageUrl, index) => (
               <View
                 key={imageUrl}
-                className={dotStyle({ active: index === activeIndex })}
+                className={indicatorStyle({ active: index === activeIndex })}
               />
             ))}
           </View>

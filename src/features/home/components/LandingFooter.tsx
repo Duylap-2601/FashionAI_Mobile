@@ -32,7 +32,7 @@ function FooterLink({ label, onPress }: { label: string; onPress: () => void }) 
       <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-paper/60">
         {label}
       </Text>
-      <ChevronRight size={13} color={COLORS.brass} />
+      <ChevronRight size={13} strokeWidth={1.75} color={COLORS.brass} />
     </Pressable>
   );
 }
@@ -54,13 +54,13 @@ function ContactRow({
   icon: Icon,
   children,
 }: {
-  icon: React.ComponentType<{ size?: number; color?: string }>;
+  icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
   children: React.ReactNode;
 }) {
   return (
     <View className="flex-row items-start gap-2.5">
       <View className="pt-0.5">
-        <Icon size={15} color={COLORS.brass} />
+        <Icon size={15} strokeWidth={1.75} color={COLORS.brass} />
       </View>
       <View className="flex-1">{children}</View>
     </View>
@@ -98,16 +98,7 @@ export function LandingFooter({
       {/* Brand */}
       <View>
         <Wordmark size="lg" variant="light" />
-        <Text
-          style={{
-            fontFamily: 'Playfair Display',
-            fontWeight: '600',
-            fontSize: 22,
-            lineHeight: 28,
-            color: COLORS.paper,
-          }}
-          className="mt-3"
-        >
+        <Text className="mt-3 font-display text-[22px] font-semibold leading-[28px] text-landing-paper">
           Chuẩn dáng từ đầu. Đẹp từng đường may.
         </Text>
         <Text className="mt-4 font-sans text-body-sm leading-relaxed text-landing-paper/60">
@@ -119,8 +110,11 @@ export function LandingFooter({
       {/* Explore + Policies */}
       <View className="mt-10 flex-row gap-6 border-t border-landing-paper/10 pt-8">
         <View className="flex-1">
-          <Text className="font-sans text-2xs font-semibold uppercase tracking-[0.2em] text-landing-brass">
-            Khám phá
+          <Text
+            accessibilityRole="header"
+            className="font-sans text-2xs font-semibold uppercase tracking-[0.2em] text-landing-brass"
+          >
+            Bộ sưu tập & sản phẩm
           </Text>
           <View className="mt-2">
             <FooterLink label="Bộ sưu tập mới 2026" onPress={onPressCollections} />
@@ -134,12 +128,15 @@ export function LandingFooter({
         </View>
 
         <View className="flex-1">
-          <Text className="font-sans text-2xs font-semibold uppercase tracking-[0.2em] text-landing-brass">
+          <Text
+            accessibilityRole="header"
+            className="font-sans text-2xs font-semibold uppercase tracking-[0.2em] text-landing-brass"
+          >
             Chính sách
           </Text>
           <View className="mt-2">
             <FooterLink
-              label="Đổi trả 7 ngày"
+              label="Chính sách đổi trả 7 ngày"
               onPress={() => onPressPolicy('return')}
             />
             <FooterLink label="Bảo hành" onPress={() => onPressPolicy('warranty')} />
@@ -147,8 +144,8 @@ export function LandingFooter({
               label="Hướng dẫn chọn size"
               onPress={() => onPressPolicy('size-guide')}
             />
-            <FooterLink label="Bảo mật" onPress={() => onPressPolicy('privacy')} />
-            <FooterLink label="Điều khoản" onPress={() => onPressPolicy('terms')} />
+            <FooterLink label="Chính sách bảo mật" onPress={() => onPressPolicy('privacy')} />
+            <FooterLink label="Điều khoản dịch vụ" onPress={() => onPressPolicy('terms')} />
             <FooterLink label="Tra cứu đơn hàng" onPress={onPressOrders} />
           </View>
         </View>
@@ -156,8 +153,11 @@ export function LandingFooter({
 
       {/* Contact */}
       <View className="mt-10 border-t border-landing-paper/10 pt-8">
-        <Text className="font-sans text-2xs font-semibold uppercase tracking-[0.2em] text-landing-brass">
-          Liên hệ
+        <Text
+          accessibilityRole="header"
+          className="font-sans text-2xs font-semibold uppercase tracking-[0.2em] text-landing-brass"
+        >
+          Thông tin liên hệ
         </Text>
 
         <View className="mt-3 gap-3">
@@ -173,7 +173,7 @@ export function LandingFooter({
             onPress={() => void Linking.openURL(CONTACT.hotlineHref)}
             className="min-h-11 flex-row items-center gap-2.5 active:opacity-70"
           >
-            <Phone size={15} color={COLORS.brass} />
+            <Phone size={15} strokeWidth={1.75} color={COLORS.brass} />
             <Text className="font-sans text-body-sm text-landing-paper/60">
               Hotline: {HOTLINE} ({HOTLINE_HOURS})
             </Text>
@@ -185,7 +185,7 @@ export function LandingFooter({
             onPress={() => void Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
             className="min-h-11 flex-row items-center gap-2.5 active:opacity-70"
           >
-            <Mail size={15} color={COLORS.brass} />
+            <Mail size={15} strokeWidth={1.75} color={COLORS.brass} />
             <Text className="font-sans text-body-sm text-landing-paper/60">
               {SUPPORT_EMAIL}
             </Text>

@@ -14,23 +14,42 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowLeft, Search, X, Clock, Trash2, TrendingUp, Sparkles } from 'lucide-react-native';
-import { COLORS } from '@/constants/theme';
+import {
+  ArrowLeft,
+  ChevronRight,
+  Clock,
+  Search,
+  Sparkles,
+  Trash2,
+  TrendingUp,
+  X,
+} from 'lucide-react-native';
+import { COLORS, SPACING } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
 import { useProducts } from '../hooks/useProducts';
 import { ProductCard } from '../components/ProductCard';
+import { ProductGridSkeleton } from '../components/ProductGridSkeleton';
+import { ProductsEmptyState } from '../components/ProductsEmptyState';
 import { IProduct } from '../types/product';
 import { useDebouncedValue } from '../hooks/use-debounced-value';
 import { useSearchHistory } from '../hooks/use-search-history';
 
+// Same keywords as FE `constants/header-search.ts › POPULAR_SEARCH_KEYWORDS`.
 const POPULAR_SEARCHES = [
   'Áo sơ mi lụa',
-  'Blazer công sở',
-  'Đầm chữ A',
-  'Quần tây âu',
-  'Vest may đo',
-  'Chân váy bút chì',
+  'Blazer dạ tweed',
+  'Đầm dạ hội dáng dài',
+  'Quần tây ống suông',
+  'Set vest nữ thanh lịch',
+  'Chân váy chữ A',
+  'Áo len cardigan',
+  'Đầm hoa nhí vintage',
+  'Áo polo cao cấp',
+  'Váy công sở',
 ];
+
+const SECTION_LABEL_CLASS =
+  'font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink';
 
 export function SearchScreen() {
   const navigation =
@@ -39,16 +58,17 @@ export function SearchScreen() {
   const initialQuery = route.params?.query || '';
 
   const [input, setInput] = useState(initialQuery);
+  const [isFocused, setIsFocused] = useState(false);
   const debouncedSearch = useDebouncedValue(input, 350);
   const { history, addHistory, removeHistory, clearHistory } =
     useSearchHistory();
   const inputRef = useRef<TextInput>(null);
 
+  // Same 2-column grid as Shop: 16px side padding, 10px column gap, 16px row gap.
   const screenWidth = Dimensions.get('window').width;
   const numColumns = 2;
-  const cardGap = 12;
-  const horizontalPadding = 16;
-  const cardWidth = (screenWidth - horizontalPadding * 2 - cardGap) / numColumns;
+  const cardWidth =
+    (screenWidth - SPACING.lg * 2 - SPACING.catalogGap) / numColumns;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -81,6 +101,7 @@ export function SearchScreen() {
     if (!hasActiveSearch || !data) return [];
     return data.pages.flatMap((page) => page.data);
   }, [hasActiveSearch, data]);
+  const totalResults = data?.pages[0]?.meta.total ?? products.length;
 
   const handleProductPress = (productId: string) => {
     void addHistory(input);
@@ -88,37 +109,49 @@ export function SearchScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-lowest">
-      {/* Header Search Bar */}
-      <View className="flex-row items-center px-4 py-3 bg-surface border-b border-surface-line gap-2.5">
+    <SafeAreaView className="flex-1 bg-landing-paper">
+      {/* Header search bar: 44px, square 2px, ivory with a hairline (design/DESIGN.md › Search Bar). */}
+      <View className="flex-row items-center gap-sm border-b border-landing-line bg-landing-paper px-lg py-3">
         <Pressable
           onPress={() => navigation.goBack()}
-          className="w-10 h-10 -ml-1 rounded-full items-center justify-center active:bg-surface-line"
+          accessibilityRole="button"
           accessibilityLabel="Quay lại"
+          className="-ml-3 h-11 w-11 items-center justify-center rounded-full active:opacity-70"
         >
-          <ArrowLeft size={20} color="#1A1A1A" />
+          <ArrowLeft size={20} strokeWidth={1.75} color={COLORS.obsidian} />
         </Pressable>
 
-        <View className="flex-1 flex-row items-center bg-surface-line/50 rounded-xl px-3 h-11 border border-surface-line">
-          <Search size={16} color="#737373" />
+        <View
+          className={`h-11 flex-1 flex-row items-center rounded-subtle bg-landing-ivory pl-3 ${
+            isFocused
+              ? 'border-2 border-landing-oxblood'
+              : 'border border-landing-line'
+          }`}
+        >
+          <Search size={16} strokeWidth={1.75} color={COLORS.muted} />
           <TextInput
             ref={inputRef}
             value={input}
             onChangeText={setInput}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             onSubmitEditing={() => {
               void addHistory(input);
             }}
-            placeholder="Tìm sản phẩm, chất liệu, kiểu dáng..."
-            placeholderTextColor="#A3A3A3"
+            accessibilityLabel="Tìm sản phẩm"
+            placeholder="Tìm sản phẩm, chất liệu, phong cách..."
+            placeholderTextColor={COLORS.muted}
             returnKeyType="search"
-            className="flex-1 ml-2 text-body-md text-on-surface h-full"
+            className="ml-2 h-full flex-1 font-sans text-sm text-landing-obsidian"
           />
           {input.length > 0 && (
             <Pressable
               onPress={() => setInput('')}
-              className="w-7 h-7 rounded-full items-center justify-center active:opacity-70"
+              accessibilityRole="button"
+              accessibilityLabel="Xoá từ khoá tìm kiếm"
+              className="h-11 w-11 items-center justify-center active:opacity-70"
             >
-              <X size={15} color="#737373" />
+              <X size={14} strokeWidth={1.75} color={COLORS.muted} />
             </Pressable>
           )}
         </View>
@@ -129,38 +162,24 @@ export function SearchScreen() {
         // Results View
         <View className="flex-1">
           {isLoading ? (
-            <View className="flex-1 items-center justify-center">
-              <ActivityIndicator size="large" color="#5D1C34" />
-              <Text className="mt-3 text-body-sm text-on-surface-variant">
-                Đang tìm kiếm sản phẩm...
-              </Text>
+            <View className="pt-lg">
+              <ProductGridSkeleton cardWidth={cardWidth} />
             </View>
           ) : products.length === 0 ? (
-            <View className="flex-1 items-center justify-center px-6">
-              <View className="w-16 h-16 rounded-full bg-surface-line items-center justify-center mb-3">
-                <Search size={28} color="#737373" />
-              </View>
-              <Text className="text-headline-sm font-bold text-on-surface text-center mb-1">
-                Không tìm thấy sản phẩm
-              </Text>
-              <Text className="text-body-sm text-on-surface-variant text-center">
-                Không có sản phẩm nào phù hợp với từ khóa “{activeSearch}”. Bạn hãy thử tìm kiếm với từ khóa khác nhé.
-              </Text>
+            <View className="flex-1 justify-center">
+              <ProductsEmptyState
+                title="Không tìm thấy sản phẩm"
+                description={`Không có sản phẩm nào phù hợp với từ khóa “${activeSearch}”. Bạn hãy thử tìm kiếm với từ khóa khác nhé.`}
+              />
             </View>
           ) : (
             <FlatList
               data={products}
               keyExtractor={(item) => String(item.id)}
               numColumns={numColumns}
-              contentContainerStyle={{
-                paddingHorizontal: horizontalPadding,
-                paddingTop: 16,
-                paddingBottom: 32,
-              }}
-              columnWrapperStyle={{
-                justifyContent: 'space-between',
-                marginBottom: cardGap,
-              }}
+              contentContainerClassName="pb-xxxl pt-lg"
+              columnWrapperClassName="items-start gap-catalog-gap px-lg"
+              ItemSeparatorComponent={() => <View className="h-lg" />}
               showsVerticalScrollIndicator={false}
               renderItem={({ item }) => (
                 <ProductCard
@@ -177,16 +196,25 @@ export function SearchScreen() {
               }}
               onEndReachedThreshold={0.5}
               ListHeaderComponent={
-                <View className="mb-3">
-                  <Text className="text-label-sm text-on-surface-variant">
-                    Tìm thấy <Text className="font-bold text-primary">{products.length}</Text> sản phẩm cho “{activeSearch}”
+                <View className="mx-lg mb-lg border-b border-landing-line pb-4">
+                  <Text
+                    accessibilityLiveRegion="polite"
+                    className="font-mono text-[11px] uppercase tracking-[0.2em] text-landing-muted"
+                  >
+                    <Text className="text-landing-obsidian">
+                      {totalResults.toLocaleString('vi-VN')}
+                    </Text>{' '}
+                    sản phẩm cho “{activeSearch}”
                   </Text>
                 </View>
               }
               ListFooterComponent={
                 isFetchingNextPage ? (
-                  <View className="py-4 items-center">
-                    <ActivityIndicator size="small" color="#5D1C34" />
+                  <View className="mx-lg mt-xxl flex-row items-center justify-center gap-sm border-t border-landing-line pt-xl">
+                    <ActivityIndicator size="small" color={COLORS.oxblood} />
+                    <Text className="font-mono text-[11px] uppercase tracking-[0.2em] text-landing-muted">
+                      Đang tải thêm
+                    </Text>
                   </View>
                 ) : null
               }
@@ -198,20 +226,17 @@ export function SearchScreen() {
         // other sections off screen; taps still land while the keyboard is open.
         <ScrollView
           className="flex-1"
-          contentContainerClassName="p-lg"
+          contentContainerClassName="gap-xxl p-lg"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* Lịch sử tìm kiếm: chỉ hiện khi ô tìm kiếm đang trống */}
           {input.trim().length === 0 && history.length > 0 && (
-            <View className="mb-6">
-              <View className="mb-sm flex-row items-center justify-between gap-md">
-                <View className="flex-row items-center gap-1.5">
-                  <Clock size={15} color={COLORS.muted} />
-                  <Text
-                    accessibilityRole="header"
-                    className="font-sans text-label-lg uppercase tracking-wider text-on-surface"
-                  >
+            <View>
+              <View className="mb-sm flex-row items-center justify-between gap-md border-b border-landing-line">
+                <View className="flex-row items-center gap-sm">
+                  <Clock size={14} strokeWidth={1.75} color={COLORS.brassInk} />
+                  <Text accessibilityRole="header" className={SECTION_LABEL_CLASS}>
                     Lịch sử tìm kiếm
                   </Text>
                 </View>
@@ -219,20 +244,20 @@ export function SearchScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Xóa tất cả lịch sử tìm kiếm"
                   onPress={() => void clearHistory()}
-                  className="min-h-11 flex-row items-center gap-xs px-sm active:opacity-70"
+                  className="-mr-sm min-h-11 flex-row items-center gap-xs px-sm active:opacity-70"
                 >
                   <Trash2 size={14} strokeWidth={1.75} color={COLORS.oxblood} />
-                  <Text className="font-sans text-body-sm font-semibold text-oxblood">
+                  <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-oxblood">
                     Xóa tất cả
                   </Text>
                 </Pressable>
               </View>
 
-              <View className="flex-row flex-wrap gap-sm">
+              <View className="flex-row flex-wrap gap-sm pt-xs">
                 {history.map((term) => (
                   <View
                     key={term}
-                    className="max-w-full flex-row items-center rounded-subtle border border-landing-line bg-ivory"
+                    className="max-w-full flex-row items-center rounded-subtle border border-landing-line bg-landing-ivory"
                   >
                     <Pressable
                       accessibilityRole="button"
@@ -242,7 +267,7 @@ export function SearchScreen() {
                     >
                       <Text
                         numberOfLines={1}
-                        className="font-sans text-body-sm text-obsidian"
+                        className="font-sans text-body-sm text-landing-obsidian"
                       >
                         {term}
                       </Text>
@@ -262,43 +287,51 @@ export function SearchScreen() {
           )}
 
           {/* Gợi ý từ khóa phổ biến */}
-          <View className="mb-6">
-            <View className="flex-row items-center gap-1.5 mb-3">
-              <TrendingUp size={15} color="#5D1C34" />
-              <Text className="text-label-sm font-bold text-on-surface uppercase tracking-wider">
+          <View>
+            <View className="mb-sm min-h-11 flex-row items-center gap-sm border-b border-landing-line">
+              <TrendingUp size={14} strokeWidth={1.75} color={COLORS.brassInk} />
+              <Text accessibilityRole="header" className={SECTION_LABEL_CLASS}>
                 Tìm kiếm phổ biến
               </Text>
             </View>
 
-            <View className="flex-row flex-wrap gap-2">
-              {POPULAR_SEARCHES.map((item, idx) => (
+            <View className="flex-row flex-wrap gap-sm pt-xs">
+              {POPULAR_SEARCHES.map((item) => (
                 <Pressable
-                  key={idx}
+                  key={item}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Tìm “${item}”`}
                   onPress={() => handleSelectKeyword(item)}
-                  className="px-3.5 py-2 bg-surface border border-surface-line rounded-xl active:bg-surface-line/50"
+                  className="min-h-11 justify-center rounded-subtle border border-landing-line bg-landing-ivory px-md active:opacity-70"
                 >
-                  <Text className="text-body-sm font-medium text-on-surface">{item}</Text>
+                  <Text className="font-sans text-body-sm text-landing-obsidian">
+                    {item}
+                  </Text>
                 </Pressable>
               ))}
             </View>
           </View>
 
-          {/* AI Banner */}
+          {/* AI Stylist: ivory block with a hairline, one real action into the stylist flow. */}
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Mở AI Stylist để được tư vấn trang phục"
             onPress={() => navigation.navigate('Stylist')}
-            className="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex-row items-center gap-3 active:opacity-85"
+            className="flex-row items-center gap-md rounded-subtle border border-landing-line bg-landing-ivory p-lg active:opacity-80"
           >
-            <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">
-              <Sparkles size={20} color="#5D1C34" />
+            <View className="h-11 w-11 items-center justify-center border border-landing-line bg-landing-paper">
+              <Sparkles size={18} strokeWidth={1.75} color={COLORS.oxblood} />
             </View>
             <View className="flex-1">
-              <Text className="text-body-sm font-bold text-primary">
+              <Text className={SECTION_LABEL_CLASS}>AI Stylist</Text>
+              <Text className="mt-1 font-display text-headline-sm font-normal text-landing-obsidian">
                 Chưa tìm thấy phong cách ưng ý?
               </Text>
-              <Text className="text-[12px] text-on-surface-variant mt-0.5">
-                Nhờ AI Stylist tư vấn trang phục riêng theo vóc dáng của bạn
+              <Text className="mt-1 font-sans text-body-sm leading-relaxed text-landing-muted">
+                Nhờ AI Stylist tư vấn trang phục riêng theo vóc dáng của bạn.
               </Text>
             </View>
+            <ChevronRight size={16} strokeWidth={1.75} color={COLORS.muted} />
           </Pressable>
         </ScrollView>
       )}

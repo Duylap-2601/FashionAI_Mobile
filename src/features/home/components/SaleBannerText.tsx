@@ -1,52 +1,64 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { ArrowRight, Sparkles } from 'lucide-react-native';
+import { View, Text, Pressable, Platform } from 'react-native';
+import { ArrowUpRight, Sparkles } from 'lucide-react-native';
+import { COLORS } from '@/constants/theme';
 
 interface SaleBannerTextProps {
   onPressShop: () => void;
   onPressTryOn: () => void;
 }
 
+// Not mounted on Home: FE decided "No sale banner" (FashionAI_FE/DESIGN.md › Decisions Log).
+// Kept as an honest ivory call-to-action block: no sale percentage, season offer
+// or AI vendor name that the backend does not back.
 export function SaleBannerText({ onPressShop, onPressTryOn }: SaleBannerTextProps) {
+  const fontFamilyDisplay = Platform.OS === 'ios' ? 'Playfair Display' : 'serif';
+
   return (
-    <View className="py-8 px-4 bg-[#FAF7F2] border-y border-[#EAE3D9] items-center">
-      {/* Badge */}
-      <View className="flex-row items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#5D1C34]/10 mb-3">
-        <Sparkles size={12} color="#5D1C34" />
-        <Text className="text-[#5D1C34] text-[11px] font-bold tracking-widest uppercase">
-          ƯU ĐÃI ĐẶC QUYỀN MÙA MỚI
+    <View className="items-center border-y border-landing-line bg-landing-ivory px-lg py-8">
+      <View className="mb-3 flex-row items-center gap-2">
+        <Sparkles size={12} strokeWidth={1.75} color={COLORS.brassInk} />
+        <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink">
+          May đo công sở
         </Text>
       </View>
 
-      {/* Heading */}
-      <Text className="text-[22px] font-black text-neutral-900 tracking-tight text-center uppercase leading-tight mb-2">
-        SALE UP TO 20%{'\n'}
-        <Text className="text-[#5D1C34]">BỘ SƯU TẬP CÔNG SỞ</Text>
+      <Text
+        accessibilityRole="header"
+        style={{
+          fontFamily: fontFamilyDisplay,
+          fontSize: 24,
+          lineHeight: 30,
+          color: COLORS.obsidian,
+          textAlign: 'center',
+        }}
+      >
+        Bộ sưu tập công sở
       </Text>
 
-      {/* Subtitle */}
-      <Text className="text-[13px] text-neutral-600 text-center leading-relaxed max-w-[340px] mb-5">
-        Tối ưu chi phí, nâng tầm phong cách quý cô và quý ông công sở. Trải nghiệm thử đồ ảo AI FASHN trước khi chốt đơn.
+      <Text className="mb-5 mt-2 max-w-[340px] text-center font-sans text-[13px] leading-relaxed text-landing-muted">
+        Nâng tầm phong cách công sở với thiết kế may theo số đo của bạn. Thử đồ AI trước khi chốt đơn.
       </Text>
 
-      {/* Actions */}
-      <View className="flex-col sm:flex-row items-center gap-3 w-full max-w-[320px]">
+      <View className="w-full max-w-[320px] gap-3">
         <Pressable
+          accessibilityRole="button"
           onPress={onPressShop}
-          className="w-full h-11 rounded-full bg-[#5D1C34] flex-row items-center justify-center gap-2 shadow-md active:opacity-90"
+          className="h-11 w-full flex-row items-center justify-center gap-2 rounded-subtle bg-landing-oxblood px-5 active:opacity-90"
         >
-          <Text className="text-white text-[12px] font-bold tracking-wider uppercase">
-            MUA NGAY BÂY GIỜ
+          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+            Mua ngay
           </Text>
-          <ArrowRight size={14} color="#FFFFFF" />
+          <ArrowUpRight size={14} color={COLORS.paper} />
         </Pressable>
 
         <Pressable
+          accessibilityRole="button"
           onPress={onPressTryOn}
-          className="w-full h-11 rounded-full bg-white border border-neutral-300 flex-row items-center justify-center gap-2 shadow-xs active:opacity-90"
+          className="h-11 w-full items-center justify-center rounded-subtle border border-landing-line px-5 active:opacity-70"
         >
-          <Text className="text-neutral-800 text-[12px] font-semibold tracking-wider uppercase">
-            THỬ ĐỒ AI MIỄN PHÍ
+          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+            Thử đồ AI
           </Text>
         </Pressable>
       </View>

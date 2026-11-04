@@ -1,14 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { Image } from 'expo-image';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { ChevronRight, MessageSquarePlus } from 'lucide-react-native';
+import React, { useMemo } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import { ChevronRight, MessageSquarePlus, Star } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
+import { RatingStars } from '@/features/reviews/components/RatingStars';
+import { ReviewCard } from '@/features/reviews/components/ReviewCard';
 import {
   useProductReviewStats,
   useProductReviews,
 } from '@/features/reviews/hooks/useProductReviews';
-import type { IReview } from '@/features/reviews/types/review';
-import { formatDate } from '@/utils/date';
 
 interface ProductReviewsSectionProps {
   productId: string;
@@ -17,88 +16,13 @@ interface ProductReviewsSectionProps {
   writeReviewDisabled?: boolean;
 }
 
-function ReviewAvatar({
-  displayName,
-  avatarUrl,
-}: {
-  displayName: string;
-  avatarUrl?: string | null;
-}) {
-  const [failed, setFailed] = useState(false);
-  const initial = displayName.charAt(0).toLocaleUpperCase('vi-VN');
+const ACTION_LABEL_CLASS = 'font-sans text-[11px] font-semibold uppercase tracking-[0.14em]';
+const noop = () => undefined;
 
-  if (avatarUrl && !failed) {
-    return (
-      <View className="h-8 w-8 overflow-hidden rounded-full border border-landing-line bg-paper">
-        <Image
-          accessibilityLabel={`Ảnh đại diện của ${displayName}`}
-          source={{ uri: avatarUrl }}
-          contentFit="cover"
-          transition={150}
-          style={StyleSheet.absoluteFill}
-          onError={() => setFailed(true)}
-        />
-      </View>
-    );
-  }
-
-  return (
-    <View className="h-8 w-8 items-center justify-center rounded-full bg-paper">
-      <Text className="font-sans text-body-sm font-bold text-oxblood">
-        {initial}
-      </Text>
-    </View>
-  );
-}
-
-function ReviewRow({ review }: { review: IReview }) {
-  const displayName = review.user?.name?.trim() || 'Người dùng FashionAI';
-
-  return (
-    <View className="gap-sm rounded-subtle border border-landing-line bg-ivory p-md">
-      <View className="flex-row items-center gap-sm">
-        <ReviewAvatar
-          displayName={displayName}
-          avatarUrl={review.user?.avatarUrl}
-        />
-
-        <View className="flex-1">
-          <Text
-            numberOfLines={1}
-            className="font-sans text-body-sm font-semibold text-obsidian"
-          >
-            {displayName}
-          </Text>
-          <Text className="font-sans text-2xs text-landing-muted">
-            {formatDate(review.createdAt)}
-          </Text>
-        </View>
-        <Text
-          accessibilityLabel={`${review.rating} trên 5 sao`}
-          className="font-sans text-body-sm text-brass"
-        >
-          {'★'.repeat(review.rating)}
-          <Text className="text-taupe">
-            {'★'.repeat(5 - review.rating)}
-          </Text>
-        </Text>
-      </View>
-      {review.comment ? (
-        <Text
-          numberOfLines={3}
-          className="font-sans text-body-md leading-relaxed text-landing-muted"
-        >
-          {review.comment}
-        </Text>
-      ) : (
-        <Text className="font-sans text-body-sm italic text-landing-muted">
-          Không có nhận xét bằng chữ.
-        </Text>
-      )}
-    </View>
-  );
-}
-
+/**
+ * Review preview on product detail, following FE ReviewSection: brass label, Playfair title,
+ * one sentence, square oxblood write action, real rating only, paper review cards.
+ */
 export function ProductReviewsSection({
   productId,
   onViewAll,
@@ -114,22 +38,30 @@ export function ProductReviewsSection({
   );
   const stats = statsQuery.data;
   const total = stats?.reviewCount ?? reviewsQuery.data?.pages[0]?.meta.total;
+  const hasRating = Boolean(stats && total && stats.avgRating > 0);
 
   return (
-    <View className="gap-md border-t border-landing-line pt-xl">
-      <View className="gap-xs">
-        <Text
-          accessibilityRole="header"
-          className="font-display text-headline-sm text-obsidian"
-        >
-          Đánh giá từ khách hàng
-        </Text>
-        {stats && total ? (
-          <View className="flex-row items-center gap-xs">
-            <Text accessibilityElementsHidden className="text-body-sm text-brass">
-              ★
-            </Text>
-            <Text className="font-mono text-body-sm tabular-nums text-obsidian">
+    <View className="gap-lg border-t border-landing-line pt-xl">
+      <View className="gap-md border-b border-landing-line pb-5">
+        <View>
+          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink">
+            Đánh giá
+          </Text>
+          <Text
+            accessibilityRole="header"
+            className="mt-2 font-display text-headline-lg font-normal leading-tight text-landing-obsidian"
+          >
+            Đánh giá và nhận xét
+          </Text>
+          <Text className="mt-2 font-sans text-sm leading-relaxed text-landing-muted">
+            Phản hồi thực tế từ khách hàng đã trải nghiệm sản phẩm và may đo.
+          </Text>
+        </View>
+
+        {hasRating && stats && total ? (
+          <View className="flex-row items-center gap-sm">
+            <RatingStars value={stats.avgRating} size="sm" />
+            <Text className="font-mono text-body-sm tabular-nums text-landing-obsidian">
               {stats.avgRating.toFixed(1)}
             </Text>
             <Text className="font-sans text-body-sm tabular-nums text-landing-muted">
@@ -137,49 +69,59 @@ export function ProductReviewsSection({
             </Text>
           </View>
         ) : null}
-      </View>
 
-      <View className="flex-row flex-wrap items-center gap-sm">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Viết đánh giá sản phẩm"
-          disabled={writeReviewDisabled}
-          onPress={onWriteReview}
-          className={`min-h-11 flex-row items-center justify-center gap-xs rounded-subtle bg-oxblood px-md active:opacity-85 ${
-            writeReviewDisabled ? 'opacity-50' : ''
-          }`}
-        >
-          <MessageSquarePlus size={14} color={COLORS.paper} />
-          <Text className="font-sans text-label-md font-semibold uppercase tracking-widest text-paper">
-            Viết đánh giá
-          </Text>
-        </Pressable>
-        {reviews.length > 0 ? (
+        <View className="flex-row flex-wrap items-center gap-sm">
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Xem tất cả đánh giá"
-            onPress={onViewAll}
-            className="min-h-11 flex-row items-center gap-xs rounded-subtle border border-landing-line px-md active:opacity-70"
+            accessibilityLabel="Viết đánh giá sản phẩm"
+            accessibilityState={{ disabled: writeReviewDisabled }}
+            disabled={writeReviewDisabled}
+            onPress={onWriteReview}
+            className={`h-11 flex-row items-center justify-center gap-sm rounded-subtle bg-oxblood px-5 active:opacity-90 ${
+              writeReviewDisabled ? 'opacity-50' : ''
+            }`}
           >
-            <Text className="font-sans text-label-md font-semibold uppercase tracking-widest text-oxblood">
-              Xem tất cả
+            <MessageSquarePlus size={16} strokeWidth={1.75} color={COLORS.paper} />
+            <Text className={`${ACTION_LABEL_CLASS} text-landing-paper`}>
+              Viết đánh giá
             </Text>
-            <ChevronRight size={14} color={COLORS.oxblood} />
           </Pressable>
-        ) : null}
+          {reviews.length > 0 ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Xem tất cả đánh giá"
+              onPress={onViewAll}
+              className="h-11 flex-row items-center gap-xs rounded-subtle border border-landing-line px-4 active:opacity-70"
+            >
+              <Text className={`${ACTION_LABEL_CLASS} text-landing-obsidian`}>
+                Xem tất cả
+              </Text>
+              <ChevronRight size={14} strokeWidth={1.75} color={COLORS.obsidian} />
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
       {reviews.length > 0 ? (
         <View className="gap-md">
           {reviews.map((review) => (
-            <ReviewRow key={review.id} review={review} />
+            <ReviewCard
+              key={review.id}
+              review={review}
+              owned={false}
+              onEdit={noop}
+              onDelete={noop}
+            />
           ))}
         </View>
       ) : (
-        <View className="rounded-subtle border border-landing-line bg-ivory p-md">
-          <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
-            Chưa có đánh giá nào cho sản phẩm này. Nếu bạn đã mua và nhận hàng,
-            hãy chia sẻ cảm nhận đầu tiên.
+        <View className="items-center gap-3 border border-landing-line bg-landing-ivory px-6 py-14">
+          <Star size={28} strokeWidth={1.5} color={COLORS.oxblood} />
+          <Text className="text-center font-display text-xl text-landing-obsidian">
+            Chưa có đánh giá nào cho sản phẩm này
+          </Text>
+          <Text className="text-center font-sans text-sm leading-relaxed text-landing-muted">
+            Nếu bạn đã mua và nhận sản phẩm này, hãy là người đầu tiên chia sẻ cảm nhận.
           </Text>
         </View>
       )}

@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable, Platform } from 'react-native';
+import React, { useId, useState } from 'react';
+import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { ExpandableText } from '@/components/common/ExpandableText';
+import { COLORS } from '@/constants/theme';
 import { LandingSectionHeading } from './LandingSectionHeading';
+import { LOOKBOOK_FALLBACK, type LandingLook } from '../constants/landing-lookbook';
 import type { Collection } from '@/features/collections/types/collection';
 
 interface EditorialLookbookProps {
@@ -11,42 +14,32 @@ interface EditorialLookbookProps {
   onPressTryOn: () => void;
 }
 
-const DEFAULT_LOOKS = [
-  {
-    url: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1200&q=85',
-    title: 'The Monochrome Edit',
-    subtitle: 'Blazer đen, chân váy trắng, một đường cắt sắc.',
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1200&q=85',
-    title: 'Soft Structure',
-    subtitle: 'Suit be hai hàng khuy cho nhịp làm việc chậm lại.',
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1200&q=85',
-    title: 'Quiet Tailoring',
-    subtitle: 'Sơ mi trắng và quần tây xám, chuẩn mực mỗi ngày.',
-  },
-];
-
+// Chapter 04, mirrors FE EditorialLookbook: one portrait plate, look details,
+// previous/next controls and a thumbnail selector, on obsidian.
 export function EditorialLookbook({
   collection,
   onPressTryOn,
 }: EditorialLookbookProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const scrimId = useId().replace(/:/g, '');
 
   const realImages = collection?.coverImages?.filter(Boolean) ?? [];
-  const looks =
+  const looks: LandingLook[] =
     realImages.length > 0
-      ? realImages.slice(0, 3).map((img, idx) => ({
-          url: img,
-          title: collection?.name || DEFAULT_LOOKS[idx % DEFAULT_LOOKS.length].title,
-          subtitle:
-            collection?.description || DEFAULT_LOOKS[idx % DEFAULT_LOOKS.length].subtitle,
-        }))
-      : DEFAULT_LOOKS;
+      ? realImages.slice(0, 3).map((img, idx) => {
+          const fallback = LOOKBOOK_FALLBACK[idx % LOOKBOOK_FALLBACK.length];
+          return {
+            id: `${collection?.id ?? 'look'}-${idx}`,
+            image: { uri: img },
+            title: collection?.name || fallback.title,
+            subtitle: collection?.description || fallback.subtitle,
+          };
+        })
+      : LOOKBOOK_FALLBACK;
 
-  const activeLook = looks[activeIndex] || looks[0];
+  const safeIndex = activeIndex % looks.length;
+  const activeLook = looks[safeIndex] || looks[0];
+  const hasMultipleLooks = looks.length > 1;
 
   const handlePrev = () => {
     setActiveIndex((prev) => (prev - 1 + looks.length) % looks.length);
@@ -57,6 +50,7 @@ export function EditorialLookbook({
   };
 
   const fontFamilyDisplay = Platform.OS === 'ios' ? 'Playfair Display' : 'serif';
+  const lookNumber = String(safeIndex + 1).padStart(2, '0');
 
   return (
     <View className="bg-landing-obsidian px-lg py-16">
@@ -64,144 +58,172 @@ export function EditorialLookbook({
       <LandingSectionHeading
         inverted
         chapter="04"
-        eyebrow="LOOKBOOK"
+        eyebrow="Lookbook"
         action={
           <Pressable
             accessibilityRole="button"
             onPress={onPressTryOn}
-            className="flex-row items-center gap-1.5 active:opacity-75"
+            className="min-h-11 flex-row items-center gap-1.5 active:opacity-75"
           >
             <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-brass">
               Thử outfit
             </Text>
-            <ArrowUpRight size={14} color="#A67D44" />
+            <ArrowUpRight size={14} color={COLORS.brass} />
           </Pressable>
         }
       />
 
-      {/* Main Look Display with Brass Framing Brackets */}
+      {/* Featured plate with brass corner brackets */}
       <View className="mt-8 items-center">
         <View className="relative aspect-[3/4] w-full max-w-[360px] bg-landing-paper/5">
           <Image
-            source={{ uri: activeLook.url }}
+            source={activeLook.image}
+            accessibilityLabel={`${activeLook.title} - ${activeLook.subtitle}`}
             contentFit="cover"
             contentPosition="top"
             transition={200}
-            style={{ width: '100%', height: '100%' }}
+            style={StyleSheet.absoluteFill}
           />
 
-          {/* Scrim Overlay */}
-          <View className="absolute inset-0 bg-gradient-to-t from-landing-obsidian/40 via-transparent to-transparent" />
+          {/* Bottom scrim (FE from-obsidian/35) */}
+          <View pointerEvents="none" className="absolute inset-0">
+            <Svg width="100%" height="100%" accessibilityElementsHidden>
+              <Defs>
+                <LinearGradient id={scrimId} x1="0" y1="1" x2="0" y2="0">
+                  <Stop offset="0" stopColor={COLORS.obsidian} stopOpacity={0.35} />
+                  <Stop offset="0.5" stopColor={COLORS.obsidian} stopOpacity={0} />
+                </LinearGradient>
+              </Defs>
+              <Rect width="100%" height="100%" fill={`url(#${scrimId})`} />
+            </Svg>
+          </View>
 
-          {/* Brass Corner Brackets */}
           <View
             pointerEvents="none"
-            className="absolute -top-2.5 -right-2.5 h-12 w-12 border-r-2 border-t-2 border-landing-brass"
+            className="absolute -right-3 -top-3 h-16 w-16 border-r-2 border-t-2 border-landing-brass"
           />
           <View
             pointerEvents="none"
-            className="absolute -bottom-2.5 -left-2.5 h-12 w-12 border-b-2 border-l-2 border-landing-brass"
+            className="absolute -bottom-3 -left-3 h-16 w-16 border-b-2 border-l-2 border-landing-brass"
           />
 
-          {/* Look Number */}
-          <Text className="absolute left-4 top-4 font-mono text-[11px] tracking-[0.18em] text-landing-paper/80">
-            {String(activeIndex + 1).padStart(2, '0')}
+          <Text className="absolute left-4 top-4 font-mono text-[11px] tracking-[0.18em] text-landing-paper/70">
+            {lookNumber}
           </Text>
         </View>
       </View>
 
-      {/* Look Navigation and Details */}
+      {/* Look navigation and details */}
       <View className="mt-8">
         <View className="flex-row items-center justify-between border-t border-landing-paper/15 pt-4">
-          <Text className="font-mono text-[11px] tracking-[0.18em] text-landing-paper/60">
-            Look {String(activeIndex + 1).padStart(2, '0')} / {String(looks.length).padStart(2, '0')}
+          <Text
+            accessibilityLiveRegion="polite"
+            className="font-mono text-[11px] tracking-[0.18em] text-landing-paper/55"
+          >
+            Look {lookNumber} / {String(looks.length).padStart(2, '0')}
           </Text>
           <View className="flex-row items-center gap-2">
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Look trước"
+              accessibilityState={{ disabled: !hasMultipleLooks }}
+              disabled={!hasMultipleLooks}
               onPress={handlePrev}
-              className="h-10 w-10 items-center justify-center border border-landing-paper/25 bg-transparent active:bg-landing-paper/10"
+              className={`h-11 w-11 items-center justify-center rounded-subtle border border-landing-paper/25 active:opacity-70 ${
+                hasMultipleLooks ? '' : 'opacity-30'
+              }`}
             >
-              <ChevronLeft size={16} color="#EFE9E1" />
+              <ChevronLeft size={16} color={COLORS.paper} />
             </Pressable>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Look tiếp theo"
+              accessibilityState={{ disabled: !hasMultipleLooks }}
+              disabled={!hasMultipleLooks}
               onPress={handleNext}
-              className="h-10 w-10 items-center justify-center border border-landing-paper/25 bg-transparent active:bg-landing-paper/10"
+              className={`h-11 w-11 items-center justify-center rounded-subtle border border-landing-paper/25 active:opacity-70 ${
+                hasMultipleLooks ? '' : 'opacity-30'
+              }`}
             >
-              <ChevronRight size={16} color="#EFE9E1" />
+              <ChevronRight size={16} color={COLORS.paper} />
             </Pressable>
           </View>
         </View>
 
-        <View className="mt-4">
+        <View className="mt-6">
           <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-landing-brass">
-            Look {String(activeIndex + 1).padStart(2, '0')}
+            Look {lookNumber}
           </Text>
           <Text
+            accessibilityRole="header"
             style={{
               fontFamily: fontFamilyDisplay,
-              fontSize: 26,
-              lineHeight: 32,
-              fontWeight: '700',
-              color: '#EFE9E1',
+              fontSize: 32,
+              lineHeight: 37,
+              letterSpacing: -0.8,
+              color: COLORS.paper,
               textTransform: 'uppercase',
-              marginTop: 6,
+              marginTop: 16,
             }}
           >
             {activeLook.title}
           </Text>
           <ExpandableText
             key={activeLook.subtitle}
-            className="mt-2"
+            className="mt-3"
             text={activeLook.subtitle}
             numberOfLines={3}
-            textClassName="font-sans text-body-sm leading-relaxed text-landing-paper/65"
+            textClassName="font-sans text-sm leading-relaxed text-landing-paper/55"
             toggleClassName="text-landing-brass"
           />
 
           <Pressable
             accessibilityRole="button"
             onPress={onPressTryOn}
-            className="mt-4 flex-row items-center gap-1.5 self-start border-b border-landing-brass/60 pb-1"
+            className="mt-6 min-h-11 flex-row items-center gap-2 self-start"
           >
-            <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-landing-brass">
-              Thử outfit này
-            </Text>
-            <ArrowUpRight size={12} color="#A67D44" />
+            <View className="flex-row items-center gap-2 border-b border-landing-brass/50 pb-1">
+              <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-landing-brass">
+                Thử outfit này
+              </Text>
+              <ArrowUpRight size={14} color={COLORS.brass} />
+            </View>
           </Pressable>
         </View>
 
-        {/* 3 Thumbnails Row */}
-        <View className="mt-8 flex-row gap-3">
-          {looks.map((look, idx) => {
-            const isSelected = idx === activeIndex;
-            return (
-              <Pressable
-                key={`${look.title}-${idx}`}
-                accessibilityRole="button"
-                accessibilityLabel={`Xem ${look.title}`}
-                accessibilityState={{ selected: isSelected }}
-                onPress={() => setActiveIndex(idx)}
-                className={`relative aspect-[3/4] flex-1 overflow-hidden border ${
-                  isSelected
-                    ? 'border-2 border-landing-brass'
-                    : 'border-transparent opacity-60'
-                }`}
-              >
-                <Image
-                  source={{ uri: look.url }}
-                  contentFit="cover"
-                  contentPosition="top"
-                  transition={150}
-                  style={{ width: '100%', height: '100%' }}
-                />
-              </Pressable>
-            );
-          })}
-        </View>
+        {/* Thumbnail selector */}
+        {hasMultipleLooks ? (
+          <View className="mt-8 flex-row gap-3">
+            {looks.map((look, idx) => {
+              const isSelected = idx === safeIndex;
+              return (
+                <Pressable
+                  key={look.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Xem ${look.title}`}
+                  accessibilityState={{ selected: isSelected }}
+                  onPress={() => setActiveIndex(idx)}
+                  className={`relative aspect-[3/4] flex-1 overflow-hidden border ${
+                    isSelected
+                      ? 'border-landing-brass'
+                      : 'border-transparent opacity-60'
+                  }`}
+                >
+                  <Image
+                    source={look.image}
+                    contentFit="cover"
+                    contentPosition="top"
+                    transition={150}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <Text className="absolute left-2 top-2 font-mono text-[9px] tracking-[0.16em] text-landing-paper/80">
+                    {String(idx + 1).padStart(2, '0')}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
       </View>
     </View>
   );

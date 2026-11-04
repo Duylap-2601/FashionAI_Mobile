@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, Check, Ruler } from 'lucide-react-native';
+import { AlertCircle, Check, ChevronRight, Ruler } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
 import { measurementsApi } from '@/features/measurements/api/measurements.api';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/use-measurements-completeness';
@@ -64,15 +64,10 @@ export function ProductMeasurementSummary({
           onPress={onPressMeasurements}
           className="min-h-11 flex-row items-center gap-xs px-xs active:opacity-70"
         >
-          <Text className="font-sans text-label-md font-semibold uppercase tracking-widest text-oxblood">
+          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-oxblood">
             Cập nhật số đo
           </Text>
-          <Text
-            accessibilityElementsHidden
-            className="font-sans text-body-md text-oxblood"
-          >
-            ›
-          </Text>
+          <ChevronRight size={12} strokeWidth={1.75} color={COLORS.oxblood} />
         </Pressable>
       </View>
 
@@ -98,7 +93,7 @@ export function ProductMeasurementSummary({
           <View className="flex-row flex-wrap rounded-subtle border border-landing-line bg-paper p-xs">
             {SUMMARY_FIELDS.map((field) => (
               <View key={field.key} className="w-1/3 gap-xs px-xs py-xs">
-                <Text className="font-sans text-2xs uppercase tracking-wide text-landing-muted">
+                <Text className="font-sans text-2xs uppercase tracking-[0.12em] text-landing-muted">
                   {field.label}
                 </Text>
                 <Text className="font-mono text-body-sm tabular-nums text-obsidian">
@@ -132,10 +127,10 @@ export function ProductMeasurementSummary({
             accessibilityRole="button"
             accessibilityLabel="Bổ sung số đo cơ thể"
             onPress={onPressMeasurements}
-            className="min-h-11 flex-row items-center justify-center gap-sm rounded-subtle bg-oxblood px-md active:opacity-85"
+            className="min-h-11 flex-row items-center justify-center gap-sm rounded-subtle bg-oxblood px-md active:opacity-90"
           >
             <Ruler size={14} color={COLORS.paper} strokeWidth={1.75} />
-            <Text className="font-sans text-label-lg font-semibold text-paper">
+            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-paper">
               Bổ sung số đo
             </Text>
           </Pressable>
