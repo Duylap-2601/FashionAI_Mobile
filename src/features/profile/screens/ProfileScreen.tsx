@@ -15,11 +15,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowRight,
   Check,
+  FileText,
   History,
+  Lock,
   LogOut,
   MapPin,
   Package,
+  RotateCcw,
   Ruler,
+  ShieldCheck,
   Sparkles,
   Star,
   Wallet,
@@ -33,6 +37,8 @@ import { EOrderStatus } from '@/features/orders/types/order';
 import type { ProfileStackParamList, RootStackParamList } from '@/navigation/types';
 import { formatCurrency } from '@/utils/format';
 import { usersApi, type UserQuotaResponse } from '../api/users.api';
+import { POLICY_NAV_ITEMS } from '../constants/policies/policy-nav';
+import type { PolicyType } from '../types/policy';
 import type { IUser } from '../types/user';
 
 type ProfileNavigationProp = CompositeNavigationProp<
@@ -57,6 +63,20 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
   [EOrderStatus.CANCELLED]: 'Đã hủy',
   [EOrderStatus.REFUND_PENDING]: 'Chờ hoàn tiền',
   [EOrderStatus.REFUNDED]: 'Đã hoàn tiền',
+};
+
+type NavRowIcon = React.ComponentType<{
+  size?: number;
+  color?: string;
+  strokeWidth?: number;
+}>;
+
+const POLICY_ICONS: Record<PolicyType, NavRowIcon> = {
+  return: RotateCcw,
+  warranty: ShieldCheck,
+  'size-guide': Ruler,
+  privacy: Lock,
+  terms: FileText,
 };
 
 const labelClass =
@@ -201,7 +221,7 @@ function NavRow({
   badge,
   onPress,
 }: {
-  icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  icon: NavRowIcon;
   label: string;
   description: string;
   badge?: string;
@@ -630,6 +650,20 @@ export const ProfileScreen: React.FC = () => {
               description="Bảng giá, gia hạn và lịch sử giao dịch gói"
               onPress={() => navigation.navigate('SubscriptionPlans', { tab: 'plans' })}
             />
+          </View>
+        </Section>
+
+        <Section title="Chính sách">
+          <View>
+            {POLICY_NAV_ITEMS.map((item) => (
+              <NavRow
+                key={item.type}
+                icon={POLICY_ICONS[item.type]}
+                label={item.label}
+                description={item.description}
+                onPress={() => navigation.navigate('Policy', { type: item.type })}
+              />
+            ))}
           </View>
         </Section>
 

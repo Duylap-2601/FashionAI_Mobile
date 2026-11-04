@@ -36,6 +36,7 @@ import { AiStylistCapsule } from '../components/AiStylistCapsule';
 import { LandingFooter } from '../components/LandingFooter';
 import type { IProduct } from '@/features/products/types/product';
 import type { Collection } from '@/features/collections/types/collection';
+import type { PolicyType } from '@/features/profile/types/policy';
 
 type HomeNavigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'HomeTab'>,
@@ -197,15 +198,8 @@ export const HomeScreen: React.FC = () => {
     navigation.navigate('ProfileTab', { screen: 'Orders' });
   }, [navigation]);
 
-  const handleMeasurementsPress = useCallback(() => {
-    navigation.navigate('ProfileTab', {
-      screen: 'Measurements',
-      params: { tab: 'sizes' },
-    });
-  }, [navigation]);
-
   const handlePolicyPress = useCallback(
-    (type: 'privacy' | 'terms' | 'return') => {
+    (type: PolicyType) => {
       navigation.navigate('Policy', { type });
     },
     [navigation],
@@ -363,7 +357,6 @@ export const HomeScreen: React.FC = () => {
         onPressTryOn={handleTryOnPress}
         onPressStylist={handleStylistPress}
         onPressOrders={handleOrdersPress}
-        onPressMeasurements={handleMeasurementsPress}
         onPressPolicy={handlePolicyPress}
       />
 

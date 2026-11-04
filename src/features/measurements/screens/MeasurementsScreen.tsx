@@ -20,6 +20,7 @@ import {
   HelpCircle,
   Save,
   X,
+  ArrowRight,
 } from 'lucide-react-native';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { AppHeader } from '@/components/common/AppHeader';
@@ -28,19 +29,19 @@ import { measurementsApi } from '@/features/measurements/api/measurements.api';
 import { ProfileStackParamList } from '@/navigation/types';
 import { COLORS } from '@/constants/theme';
 import { BodyDiagram } from '../components/BodyDiagram';
+import {
+  LOWER_FIELD_DEFS,
+  OVERVIEW_FIELD_DEFS,
+  SHIRT_SIZE_GUIDE,
+  SHIRT_SIZES,
+  UPPER_FIELD_DEFS,
+  type MeasurementFieldDef,
+} from '../constants/measurement-fields';
 
 type Tab = 'measurements' | 'sizes';
 type BodyType = 'slim' | 'regular' | 'athletic' | 'plus';
 
-interface FieldDef {
-  id: string;
-  label: string;
-  unit: string;
-  min: number;
-  max: number;
-  desc: string;
-  requiredFor?: string;
-}
+type FieldDef = MeasurementFieldDef;
 
 const labelClass =
   'font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink';
@@ -140,31 +141,6 @@ const MeasurementField = React.memo(function MeasurementField({
   );
 });
 
-const OVERVIEW_FIELD_DEFS: FieldDef[] = [
-  { id: 'height', label: 'Chiều cao', unit: 'cm', min: 100, max: 250, desc: 'Từ gót chân đến đỉnh đầu', requiredFor: 'Bắt buộc tất cả' },
-  { id: 'weight', label: 'Cân nặng', unit: 'kg', min: 30, max: 250, desc: 'Cân nặng cơ thể tính theo kilogam' },
-];
-
-const UPPER_FIELD_DEFS: FieldDef[] = [
-  { id: 'shoulder', label: 'Rộng vai', unit: 'cm', min: 30, max: 80, desc: 'Từ đầu vai trái đến vai phải', requiredFor: 'Áo & Đồ liền' },
-  { id: 'chest', label: 'Vòng ngực', unit: 'cm', min: 50, max: 200, desc: 'Vòng lớn nhất của ngực', requiredFor: 'Áo & Đồ liền' },
-  { id: 'shirtLength', label: 'Dài thân áo', unit: 'cm', min: 50, max: 85, desc: 'Từ điểm vai đến lai áo', requiredFor: 'Áo & Đồ liền' },
-  { id: 'sleeveLength', label: 'Dài tay áo', unit: 'cm', min: 45, max: 80, desc: 'Từ vai đến cổ tay', requiredFor: 'Áo' },
-  { id: 'neck', label: 'Vòng cổ', unit: 'cm', min: 28, max: 55, desc: 'Vòng quanh cổ, cách cổ áo 2cm' },
-  { id: 'underbust', label: 'Vòng ngực dưới', unit: 'cm', min: 55, max: 130, desc: 'Ngay dưới chân ngực (dành cho nữ)' },
-  { id: 'wrist', label: 'Vòng cổ tay', unit: 'cm', min: 12, max: 25, desc: 'Vòng quanh khớp cổ tay' },
-];
-
-const LOWER_FIELD_DEFS: FieldDef[] = [
-  { id: 'waist', label: 'Vòng eo', unit: 'cm', min: 50, max: 200, desc: 'Phần thắt nhỏ nhất của eo', requiredFor: 'Quần & Váy' },
-  { id: 'hip', label: 'Vòng hông', unit: 'cm', min: 50, max: 200, desc: 'Vòng lớn nhất của mông', requiredFor: 'Quần & Váy' },
-  { id: 'trouserLength', label: 'Dài quần', unit: 'cm', min: 80, max: 120, desc: 'Từ cạp xuống gấu quần', requiredFor: 'Quần & Váy' },
-  { id: 'thigh', label: 'Vòng đùi', unit: 'cm', min: 35, max: 90, desc: 'Vòng lớn nhất của đùi', requiredFor: 'Quần & Váy' },
-  { id: 'inseam', label: 'Dài đũng quần', unit: 'cm', min: 55, max: 95, desc: 'Từ đáy đũng quần đến mắt cá chân' },
-  { id: 'knee', label: 'Vòng đầu gối', unit: 'cm', min: 25, max: 55, desc: 'Vòng quanh khớp đầu gối' },
-  { id: 'calf', label: 'Vòng bắp chân', unit: 'cm', min: 25, max: 55, desc: 'Vòng lớn nhất của bắp chân' },
-];
-
 const ALL_MEASUREMENT_DEFS = [...OVERVIEW_FIELD_DEFS, ...UPPER_FIELD_DEFS, ...LOWER_FIELD_DEFS];
 
 const MEASUREMENT_DEFS_BY_ID = new Map(ALL_MEASUREMENT_DEFS.map((f) => [f.id, f]));
@@ -175,18 +151,6 @@ const BODY_TYPES: { id: BodyType; label: string; desc: string }[] = [
   { id: 'athletic', label: 'Thể thao', desc: 'Vai rộng, cơ bắp' },
   { id: 'plus', label: 'Plus size', desc: 'Dáng đầy đặn' },
 ];
-
-const SHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
-
-const SIZE_GUIDE: Record<string, { chest: string; waist: string; hip: string }> = {
-  XS: { chest: '80–84', waist: '63–67', hip: '86–90' },
-  S: { chest: '84–88', waist: '67–71', hip: '90–94' },
-  M: { chest: '88–92', waist: '71–75', hip: '94–98' },
-  L: { chest: '92–96', waist: '75–79', hip: '98–102' },
-  XL: { chest: '96–100', waist: '79–83', hip: '102–106' },
-  XXL: { chest: '100–106', waist: '83–89', hip: '106–112' },
-  '3XL': { chest: '106–112', waist: '89–95', hip: '112–118' },
-};
 
 const SIZE_MEASURE_KEYS = ['chest', 'waist', 'hip'] as const;
 type SizeMeasureKey = (typeof SIZE_MEASURE_KEYS)[number];
@@ -210,7 +174,7 @@ function findClosestSize(
 
   let best: { size: string; distance: number } | null = null;
   for (const size of SHIRT_SIZES) {
-    const guide = SIZE_GUIDE[size];
+    const guide = SHIRT_SIZE_GUIDE[size];
     if (!guide) continue;
     let distance = 0;
     for (const key of known) {
@@ -655,6 +619,17 @@ export function MeasurementsScreen() {
                   Nhập vòng ngực, vòng eo hoặc vòng hông ở tab Số đo cơ thể để xem cỡ gần nhất.
                 </Text>
               )}
+              <TouchableOpacity
+                accessibilityRole="link"
+                accessibilityLabel="Xem hướng dẫn chọn size"
+                onPress={() => navigation.navigate('Policy', { type: 'size-guide' })}
+                className="min-h-11 flex-row items-center gap-1.5 self-start active:opacity-60"
+              >
+                <Text className="font-sans text-body-sm text-oxblood">
+                  Hướng dẫn chọn size
+                </Text>
+                <ArrowRight size={14} strokeWidth={1.75} color={COLORS.oxblood} />
+              </TouchableOpacity>
             </View>
 
             <View className="border border-landing-line">
@@ -674,7 +649,7 @@ export function MeasurementsScreen() {
               </View>
 
               {SHIRT_SIZES.map((size, index) => {
-                const guide = SIZE_GUIDE[size];
+                const guide = SHIRT_SIZE_GUIDE[size];
                 if (!guide) return null;
                 const isClosest = closestSize?.size === size;
                 return (
