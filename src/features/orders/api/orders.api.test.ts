@@ -94,4 +94,41 @@ describe('ordersApi', () => {
     const result = await ordersApi.confirmDelivery('1');
     expect(result).toEqual({ success: true });
   });
+
+  it('createOrderIssue sends a refund-only multipart form with the refund bank account', async () => {
+    const appendSpy = jest.spyOn(FormData.prototype, 'append');
+    const issue = { id: 'issue-1', status: 'PENDING' };
+    mock.onPost(ENDPOINTS.ORDERS.REPORT_ISSUE('order-1', 'item-1')).reply((config) => {
+      expect(String(config.headers?.['Content-Type'])).toContain('multipart/form-data');
+      return [201, envelope(issue)];
+    });
+
+    const evidence = { uri: 'file:///evidence.jpg', name: 'evidence.jpg', type: 'image/jpeg' };
+    const result = await ordersApi.createOrderIssue({
+      orderId: 'order-1',
+      orderItemId: 'item-1',
+      reason: 'WRONG_SIZE',
+      description: 'Áo lệch vai trái khoảng 4cm',
+      evidenceImages: [evidence],
+      bankName: 'Vietcombank',
+      accountNumber: '0123456789',
+      accountHolder: 'NGUYEN VAN A',
+    });
+
+    expect(result).toEqual(issue);
+    const fields = Object.fromEntries(
+      appendSpy.mock.calls
+        .filter(([name]) => name !== 'evidenceImages')
+        .map(([name, value]) => [name, value]),
+    );
+    expect(fields).toEqual({
+      reason: 'WRONG_SIZE',
+      description: 'Áo lệch vai trái khoảng 4cm',
+      desiredResolution: 'REFUND',
+      bankName: 'Vietcombank',
+      accountNumber: '0123456789',
+      accountHolder: 'NGUYEN VAN A',
+    });
+    expect(appendSpy.mock.calls.filter(([name]) => name === 'evidenceImages')).toHaveLength(1);
+  });
 });

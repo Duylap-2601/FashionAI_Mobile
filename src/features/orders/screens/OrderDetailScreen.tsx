@@ -23,8 +23,10 @@ import { RootStackParamList } from '@/navigation/types';
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { paymentsApi } from '@/features/payments/api/payments.api';
 import { useOrder, useCancelOrder, useConfirmDelivery, useOrderIssues } from '../hooks/use-orders';
-import { ReportIssueModal } from '../components/ReportIssueModal';
+import { ReportIssueModal, type ReportableOrderItem } from '../components/ReportIssueModal';
 import { OrderIssuesList } from '../components/OrderIssuesList';
+import { getOrderItemImage, getOrderItemName } from '../utils/order-items';
+import { canReportOrderIssue, getBlockedReportItemIds } from '../utils/order-returns';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderDetail'>;
 
@@ -231,35 +233,6 @@ function formatClockDate(value?: string | Date | null): string {
   )}/${date.getFullYear()}`;
 }
 
-function getProductImage(item: any): string {
-  const fallback =
-    'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=300&h=400&fit=crop&auto=format';
-  if (item?.productImageSnapshot) return item.productImageSnapshot;
-  if (item?.imageUrl) return item.imageUrl;
-  if (item?.product?.images) {
-    try {
-      const parsed =
-        typeof item.product.images === 'string'
-          ? JSON.parse(item.product.images)
-          : item.product.images;
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const first = parsed[0];
-        if (typeof first === 'string') return first;
-        if (first && typeof first === 'object') {
-          return first.url || first.uri || first.imageUrl || fallback;
-        }
-      }
-    } catch {
-      return fallback;
-    }
-  }
-  return fallback;
-}
-
-function getItemName(item: any): string {
-  return item?.productName || item?.product?.name || 'Sản phẩm may đo';
-}
-
 function getMeasurementRows(item: any): { key: string; label: string; value: string }[] {
   const snapshot = item?.measurementSnapshot ?? item?.measurements;
   if (!snapshot || typeof snapshot !== 'object') return [];
@@ -453,7 +426,7 @@ export function OrderDetailScreen({ route, navigation }: Props) {
   const { addItem } = useCart();
 
   const [copied, setCopied] = useState(false);
-  const [reportingItem, setReportingItem] = useState<any | null>(null);
+  const [reportingItem, setReportingItem] = useState<ReportableOrderItem | null>(null);
   const [showCancelSheet, setShowCancelSheet] = useState(false);
   const [showConfirmSheet, setShowConfirmSheet] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
@@ -524,7 +497,9 @@ export function OrderDetailScreen({ route, navigation }: Props) {
     ['PENDING', 'PENDING_PAYMENT', 'CREATED'].includes(status);
   const canConfirmDelivery =
     order.allowedActions?.confirmDelivery === true || status === 'DELIVERED';
-  const canReportIssue = status !== 'CANCELLED' && status !== 'PENDING_PAYMENT';
+  // Khớp BE: chỉ báo lỗi khi đơn đã hoàn tất / đang hoàn trả và còn trong 7 ngày.
+  const canReportIssue = canReportOrderIssue(order);
+  const blockedReportItemIds = getBlockedReportItemIds(issues);
 
   const paymentMethodLabel =
     PAYMENT_METHOD_LABELS[String(order.paymentMethod || '')] ||
@@ -640,11 +615,11 @@ export function OrderDetailScreen({ route, navigation }: Props) {
     items.forEach((item: any) => {
       addItem({
         productId: item.productId || item.id,
-        productName: getItemName(item),
+        productName: getOrderItemName(item),
         price: item.price || 0,
         quantity: item.quantity || 1,
         color: item.color || undefined,
-        imageUrl: getProductImage(item),
+        imageUrl: getOrderItemImage(item),
       });
     });
     navigation.navigate('Cart');
@@ -870,7 +845,7 @@ export function OrderDetailScreen({ route, navigation }: Props) {
                 <View key={item.id || index} className="gap-2">
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Xem sản phẩm ${getItemName(item)}`}
+                    accessibilityLabel={`Xem sản phẩm ${getOrderItemName(item)}`}
                     onPress={() =>
                       handleProductPress(item.productId ?? item.product?.id ?? item.id)
                     }
@@ -878,7 +853,7 @@ export function OrderDetailScreen({ route, navigation }: Props) {
                   >
                     <View className="h-20 w-16 shrink-0 overflow-hidden rounded-subtle border border-landing-line bg-ivory">
                       <Image
-                        source={{ uri: getProductImage(item) }}
+                        source={{ uri: getOrderItemImage(item) }}
                         style={{ width: 64, height: 80 }}
                         contentFit="cover"
                       />
@@ -889,7 +864,7 @@ export function OrderDetailScreen({ route, navigation }: Props) {
                         numberOfLines={2}
                         className="font-sans text-[13px] leading-snug text-landing-obsidian"
                       >
-                        {getItemName(item)}
+                        {getOrderItemName(item)}
                       </Text>
                       <Text className="font-sans text-[11.5px] text-landing-muted">
                         Màu: {item.color || 'Mặc định'} · May đo · SL {item.quantity || 1}
@@ -922,17 +897,23 @@ export function OrderDetailScreen({ route, navigation }: Props) {
                   ) : null}
 
                   {canReportIssue ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Báo sự cố sản phẩm"
-                      onPress={() => setReportingItem(item)}
-                      className="h-11 flex-row items-center gap-1.5 self-start active:opacity-60"
-                    >
-                      <AlertTriangle size={13} strokeWidth={1.75} color={COLORS.danger} />
-                      <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-danger">
-                        Báo sự cố / Đổi trả
+                    item.id !== undefined && blockedReportItemIds.has(String(item.id)) ? (
+                      <Text className="py-3 font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-muted">
+                        Đã gửi yêu cầu · chờ shop xử lý
                       </Text>
-                    </Pressable>
+                    ) : (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Báo lỗi sản phẩm này"
+                        onPress={() => setReportingItem(item)}
+                        className="h-11 flex-row items-center gap-1.5 self-start active:opacity-60"
+                      >
+                        <AlertTriangle size={13} strokeWidth={1.75} color={COLORS.danger} />
+                        <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-danger">
+                          Báo lỗi sản phẩm này
+                        </Text>
+                      </Pressable>
+                    )
                   ) : null}
                 </View>
               );
@@ -1068,6 +1049,11 @@ export function OrderDetailScreen({ route, navigation }: Props) {
         onClose={() => setReportingItem(null)}
         orderId={orderId}
         orderItem={reportingItem}
+        defaultBank={{
+          bankName: order.refundBankName,
+          accountNumber: order.refundAccountNumber,
+          accountHolder: order.refundAccountHolder,
+        }}
         onSuccess={() => refetch()}
       />
     </View>
