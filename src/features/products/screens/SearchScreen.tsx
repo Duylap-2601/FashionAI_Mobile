@@ -8,17 +8,20 @@ import {
   ActivityIndicator,
   Keyboard,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ArrowLeft, Search, X, Clock, Trash2, TrendingUp, Sparkles } from 'lucide-react-native';
+import { COLORS } from '@/constants/theme';
+import type { RootStackParamList } from '@/navigation/types';
 import { useProducts } from '../hooks/useProducts';
 import { ProductCard } from '../components/ProductCard';
 import { IProduct } from '../types/product';
 import { useDebouncedValue } from '../hooks/use-debounced-value';
-
-const SEARCH_HISTORY_KEY = '@fashionai_search_history';
+import { useSearchHistory } from '../hooks/use-search-history';
 
 const POPULAR_SEARCHES = [
   'Áo sơ mi lụa',
@@ -30,13 +33,15 @@ const POPULAR_SEARCHES = [
 ];
 
 export function SearchScreen() {
-  const navigation = useNavigation<any>();
-  const route = useRoute<any>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'Search'>>();
   const initialQuery = route.params?.query || '';
 
   const [input, setInput] = useState(initialQuery);
   const debouncedSearch = useDebouncedValue(input, 350);
-  const [history, setHistory] = useState<string[]>([]);
+  const { history, addHistory, removeHistory, clearHistory } =
+    useSearchHistory();
   const inputRef = useRef<TextInput>(null);
 
   const screenWidth = Dimensions.get('window').width;
@@ -45,47 +50,18 @@ export function SearchScreen() {
   const horizontalPadding = 16;
   const cardWidth = (screenWidth - horizontalPadding * 2 - cardGap) / numColumns;
 
-  // Load search history from storage
   useEffect(() => {
-    AsyncStorage.getItem(SEARCH_HISTORY_KEY).then((data) => {
-      if (data) {
-        try {
-          setHistory(JSON.parse(data));
-        } catch {}
-      }
-    });
-
     const timer = setTimeout(() => {
       inputRef.current?.focus();
     }, 150);
     return () => clearTimeout(timer);
   }, []);
 
-  const saveHistory = async (newHistory: string[]) => {
-    setHistory(newHistory);
-    await AsyncStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
-  };
-
-  const addSearchTerm = (term: string) => {
-    const trimmed = term.trim();
-    if (!trimmed) return;
-    const filtered = history.filter((h) => h.toLowerCase() !== trimmed.toLowerCase());
-    const updated = [trimmed, ...filtered].slice(0, 10);
-    saveHistory(updated);
-  };
-
-  const removeHistoryItem = (term: string) => {
-    const updated = history.filter((h) => h !== term);
-    saveHistory(updated);
-  };
-
-  const clearAllHistory = () => {
-    saveHistory([]);
-  };
-
+  // Same triggers as FE: a term is saved when the user submits it, picks a
+  // history or popular keyword, or opens a product from the results.
   const handleSelectKeyword = (term: string) => {
     setInput(term);
-    addSearchTerm(term);
+    void addHistory(term);
     Keyboard.dismiss();
   };
 
@@ -107,7 +83,7 @@ export function SearchScreen() {
   }, [hasActiveSearch, data]);
 
   const handleProductPress = (productId: string) => {
-    addSearchTerm(input);
+    void addHistory(input);
     navigation.navigate('ProductDetail', { productId });
   };
 
@@ -130,9 +106,7 @@ export function SearchScreen() {
             value={input}
             onChangeText={setInput}
             onSubmitEditing={() => {
-              if (input.trim()) {
-                addSearchTerm(input.trim());
-              }
+              void addHistory(input);
             }}
             placeholder="Tìm sản phẩm, chất liệu, kiểu dáng..."
             placeholderTextColor="#A3A3A3"
@@ -170,7 +144,7 @@ export function SearchScreen() {
                 Không tìm thấy sản phẩm
               </Text>
               <Text className="text-body-sm text-on-surface-variant text-center">
-                Không có sản phẩm nào phù hợp với từ khóa "{activeSearch}". Bạn hãy thử tìm kiếm với từ khóa khác nhé.
+                Không có sản phẩm nào phù hợp với từ khóa “{activeSearch}”. Bạn hãy thử tìm kiếm với từ khóa khác nhé.
               </Text>
             </View>
           ) : (
@@ -205,7 +179,7 @@ export function SearchScreen() {
               ListHeaderComponent={
                 <View className="mb-3">
                   <Text className="text-label-sm text-on-surface-variant">
-                    Tìm thấy <Text className="font-bold text-primary">{products.length}</Text> sản phẩm cho "{activeSearch}"
+                    Tìm thấy <Text className="font-bold text-primary">{products.length}</Text> sản phẩm cho “{activeSearch}”
                   </Text>
                 </View>
               }
@@ -220,40 +194,66 @@ export function SearchScreen() {
           )}
         </View>
       ) : (
-        // Discovery / History View
-        <View className="flex-1 px-4 py-4">
-          {/* Lịch sử tìm kiếm */}
-          {history.length > 0 && (
+        // Discovery / History View. Scrolls so a full history never pushes the
+        // other sections off screen; taps still land while the keyboard is open.
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="p-lg"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Lịch sử tìm kiếm: chỉ hiện khi ô tìm kiếm đang trống */}
+          {input.trim().length === 0 && history.length > 0 && (
             <View className="mb-6">
-              <View className="flex-row items-center justify-between mb-3">
+              <View className="mb-sm flex-row items-center justify-between gap-md">
                 <View className="flex-row items-center gap-1.5">
-                  <Clock size={15} color="#737373" />
-                  <Text className="text-label-sm font-bold text-on-surface uppercase tracking-wider">
-                    Tìm kiếm gần đây
+                  <Clock size={15} color={COLORS.muted} />
+                  <Text
+                    accessibilityRole="header"
+                    className="font-sans text-label-lg uppercase tracking-wider text-on-surface"
+                  >
+                    Lịch sử tìm kiếm
                   </Text>
                 </View>
                 <Pressable
-                  onPress={clearAllHistory}
-                  className="px-2 py-1 rounded active:opacity-70"
+                  accessibilityRole="button"
+                  accessibilityLabel="Xóa tất cả lịch sử tìm kiếm"
+                  onPress={() => void clearHistory()}
+                  className="min-h-11 flex-row items-center gap-xs px-sm active:opacity-70"
                 >
-                  <Text className="text-[12px] font-semibold text-primary">Xóa tất cả</Text>
+                  <Trash2 size={14} strokeWidth={1.75} color={COLORS.oxblood} />
+                  <Text className="font-sans text-body-sm font-semibold text-oxblood">
+                    Xóa tất cả
+                  </Text>
                 </Pressable>
               </View>
 
-              <View className="flex-row flex-wrap gap-2">
-                {history.map((term, idx) => (
+              <View className="flex-row flex-wrap gap-sm">
+                {history.map((term) => (
                   <View
-                    key={idx}
-                    className="flex-row items-center bg-surface border border-surface-line rounded-xl pl-3 pr-2 py-1.5 shadow-xs"
+                    key={term}
+                    className="max-w-full flex-row items-center rounded-subtle border border-landing-line bg-ivory"
                   >
-                    <Pressable onPress={() => handleSelectKeyword(term)}>
-                      <Text className="text-body-sm text-on-surface mr-1">{term}</Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Tìm “${term}”`}
+                      onPress={() => handleSelectKeyword(term)}
+                      className="min-h-11 shrink justify-center pl-md active:opacity-70"
+                    >
+                      <Text
+                        numberOfLines={1}
+                        className="font-sans text-body-sm text-obsidian"
+                      >
+                        {term}
+                      </Text>
                     </Pressable>
                     <Pressable
-                      onPress={() => removeHistoryItem(term)}
-                      className="p-1 rounded-full active:bg-surface-line"
+                      accessibilityRole="button"
+                      accessibilityLabel={`Xóa “${term}” khỏi lịch sử`}
+                      onPress={() => void removeHistory(term)}
+                      className="h-11 w-11 items-center justify-center active:opacity-70"
                     >
-                      <X size={12} color="#737373" />
+                      <X size={14} strokeWidth={1.75} color={COLORS.muted} />
                     </Pressable>
                   </View>
                 ))}
@@ -300,7 +300,7 @@ export function SearchScreen() {
               </Text>
             </View>
           </Pressable>
-        </View>
+        </ScrollView>
       )}
     </SafeAreaView>
   );
