@@ -16,7 +16,7 @@ interface IWordmarkProps {
 
 export const Wordmark: React.FC<IWordmarkProps> = ({ size = 'md', variant = 'dark' }) => {
   const { fontSize, lineHeight } = SIZE_MAP[size];
-  const color = variant === 'light' ? COLORS.paper : COLORS.primaryContainer;
+  const color = variant === 'light' ? COLORS.paper : COLORS.oxblood;
 
   return (
     <Text
