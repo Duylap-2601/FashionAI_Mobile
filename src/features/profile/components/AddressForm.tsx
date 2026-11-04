@@ -346,8 +346,11 @@ export function AddressForm({
 
   return (
     <View className="gap-4 rounded-subtle border border-landing-line bg-ivory p-5">
-      <Text className="font-display text-[20px] leading-tight text-landing-obsidian">
-        {mode === 'book' ? 'Địa chỉ mới' : 'Nhập địa chỉ giao hàng'}
+      <Text
+        accessibilityRole="header"
+        className="font-display text-[22px] leading-tight text-landing-obsidian"
+      >
+        {mode === 'book' ? (initial?.id ? 'Sửa địa chỉ' : 'Địa chỉ mới') : 'Nhập địa chỉ giao hàng'}
       </Text>
 
       {catalogError && (
@@ -393,26 +396,27 @@ export function AddressForm({
           placeholder="Số điện thoại"
           placeholderTextColor={COLORS.muted}
           keyboardType="phone-pad"
+          autoComplete="tel"
           maxLength={20}
           accessibilityLabel="Số điện thoại"
-          className={inputClass}
+          className={`${inputClass} font-mono`}
         />
       </View>
 
       <View className="gap-1.5">
-        <Text className={fieldLabelClass}>Số nhà và tên đường</Text>
+        <Text className={fieldLabelClass}>Số nhà, tên đường</Text>
         <TextInput
           value={addressLine}
           onChangeText={setAddressLine}
           placeholder="Số nhà, tên đường"
           placeholderTextColor={COLORS.muted}
-          accessibilityLabel="Số nhà và tên đường"
+          accessibilityLabel="Số nhà, tên đường"
           className={inputClass}
         />
       </View>
 
       <View className="gap-1.5">
-        <Text className={fieldLabelClass}>Tỉnh/Thành</Text>
+        <Text className={fieldLabelClass}>Tỉnh / Thành phố</Text>
         <Pressable
           onPress={() => setPicker('province')}
           disabled={provinceDisabled}
@@ -430,14 +434,14 @@ export function AddressForm({
           >
             {provincesQuery.isLoading
               ? 'Đang tải Tỉnh/Thành...'
-              : provinceName || 'Tỉnh/Thành sau sáp nhập'}
+              : provinceName || 'Chọn Tỉnh/Thành (sau sáp nhập)'}
           </Text>
           <ChevronDown size={16} strokeWidth={1.75} color={COLORS.muted} />
         </Pressable>
       </View>
 
       <View className="gap-1.5">
-        <Text className={fieldLabelClass}>Phường/Xã</Text>
+        <Text className={fieldLabelClass}>Phường / Xã</Text>
         <Pressable
           onPress={() => setPicker('ward')}
           disabled={wardDisabled}
@@ -455,7 +459,7 @@ export function AddressForm({
           >
             {wardsQuery.isLoading
               ? 'Đang tải Phường/Xã...'
-              : wardName || 'Chọn Tỉnh/Thành trước'}
+              : wardName || (provinceId ? 'Chọn Phường/Xã' : 'Chọn Tỉnh/Thành trước')}
           </Text>
           <ChevronDown size={16} strokeWidth={1.75} color={COLORS.muted} />
         </Pressable>
@@ -479,11 +483,16 @@ export function AddressForm({
       )}
 
       <View className="gap-1.5">
-        <Text className={fieldLabelClass}>Nhãn</Text>
+        <Text className={fieldLabelClass}>
+          Nhãn{' '}
+          <Text className="font-normal normal-case tracking-normal text-landing-muted">
+            (không bắt buộc)
+          </Text>
+        </Text>
         <TextInput
           value={label}
           onChangeText={setLabel}
-          placeholder="Nhãn: Nhà riêng, Văn phòng"
+          placeholder="Nhà riêng, Văn phòng"
           placeholderTextColor={COLORS.muted}
           maxLength={50}
           accessibilityLabel="Nhãn"

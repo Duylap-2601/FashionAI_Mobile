@@ -55,13 +55,16 @@ export function QuotaExhaustedModal({
 
   return (
     <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
-      <View className="flex-1 items-center justify-center bg-landing-obsidian/60 p-5">
-        <View className="relative w-full max-w-[360px] items-center rounded-subtle border border-landing-line bg-landing-paper p-6">
+      <View className="flex-1 items-center justify-center bg-landing-obsidian/45 p-5">
+        <View
+          accessibilityViewIsModal
+          className="relative w-full max-w-[360px] items-center rounded-subtle border border-landing-line bg-landing-paper p-6"
+        >
           <Pressable
             onPress={onClose}
-            className="absolute right-4 top-4 h-9 w-9 items-center justify-center active:opacity-70"
+            className="absolute right-2 top-2 h-11 w-11 items-center justify-center active:opacity-70"
             accessibilityRole="button"
-            accessibilityLabel="Đóng modal"
+            accessibilityLabel="Đóng"
           >
             <X size={18} strokeWidth={1.75} color={COLORS.muted} />
           </Pressable>
@@ -70,14 +73,17 @@ export function QuotaExhaustedModal({
             <Clock size={28} strokeWidth={1.5} color={COLORS.brassInk} />
           </View>
 
-          <Text className="mb-2 px-2 text-center font-display text-[22px] leading-tight text-landing-obsidian">
+          <Text
+            accessibilityRole="header"
+            className="mb-2 px-2 text-center font-display text-[22px] leading-tight text-landing-obsidian"
+          >
             {hasDeficit ? 'Không đủ lượt trong ngày' : `Hết lượt ${actionName} hôm nay`}
           </Text>
 
           <Text className="mb-6 px-1 text-center font-sans text-body-sm leading-relaxed text-landing-muted">
             {hasDeficit
-              ? `Yêu cầu này cần ${requested} lượt nhưng bạn chỉ còn ${remaining} lượt trong ngày. Quota sẽ được đặt lại lúc ${formattedResetTime}.`
-              : `Bạn đã sử dụng hết lượt ${actionName} trong ngày. Quota sẽ được tự động làm mới lúc ${formattedResetTime}.`}
+              ? `Yêu cầu này cần ${requested} lượt nhưng bạn chỉ còn ${remaining} lượt trong ngày. Lượt dùng sẽ được làm mới lúc ${formattedResetTime}.`
+              : `Bạn đã sử dụng hết lượt ${actionName} trong ngày. Lượt dùng sẽ được tự động làm mới lúc ${formattedResetTime}.`}
           </Text>
 
           <View className="mb-3 w-full gap-2.5">

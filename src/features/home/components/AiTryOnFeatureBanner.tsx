@@ -1,5 +1,5 @@
 import React, { useId, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { ArrowUpRight, Sparkles } from 'lucide-react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -72,7 +72,7 @@ export function AiTryOnFeatureBanner({
   const markImageFailed = (url: string) =>
     setFailedImages((prev) => ({ ...prev, [url]: true }));
 
-  const fontFamilyDisplay = 'Playfair Display';
+  const fontFamilyDisplay = Platform.OS === 'ios' ? 'Playfair Display' : 'serif';
 
   return (
     <View className="bg-landing-paper py-16">
@@ -80,35 +80,36 @@ export function AiTryOnFeatureBanner({
         {/* Chapter 05 Section Heading */}
         <LandingSectionHeading
           chapter="05"
-          eyebrow="AI TRY-ON"
-          title="THỬ PHOM DÁNG TRƯỚC KHI QUYẾT ĐỊNH."
+          eyebrow="AI Try-On"
+          title="Thử phom dáng trước khi quyết định."
           description="Chọn một thiết kế, tải ảnh của bạn hoặc mở camera. Phòng thử sẽ ghép món đồ lên dáng người thật để bạn xem chi tiết."
         />
 
         {/* 3 Step Bars */}
-        <View className="mt-8 gap-3">
+        <View className="mt-8 gap-4">
           {STEPS.map((step) => (
             <View
               key={step.num}
-              className="flex-row items-center gap-4 rounded-subtle bg-landing-sage-ink p-4"
+              accessible
+              accessibilityLabel={`Bước ${step.num} ${step.title}. ${step.body}`}
+              className="flex-row items-center gap-5 bg-landing-sage-ink py-4 pl-4 pr-5"
             >
               <Text
                 style={{
                   fontFamily: fontFamilyDisplay,
-                  fontSize: 34,
-                  lineHeight: 38,
-                  color: '#EFE9E1',
-                  fontWeight: '700',
-                  width: 36,
+                  fontSize: 48,
+                  lineHeight: 48,
+                  color: COLORS.paper,
+                  width: 48,
                 }}
               >
                 {step.num}
               </Text>
               <View className="flex-1">
-                <Text className="font-sans text-[13px] font-bold text-landing-paper">
+                <Text className="font-sans text-sm font-semibold text-landing-paper">
                   {step.title}
                 </Text>
-                <Text className="mt-0.5 font-sans text-[11.5px] leading-relaxed text-landing-paper/90">
+                <Text className="mt-1 font-sans text-xs leading-relaxed text-landing-paper/90">
                   {step.body}
                 </Text>
               </View>
@@ -117,38 +118,42 @@ export function AiTryOnFeatureBanner({
         </View>
 
         {/* CTA Button */}
-        <View className="mt-6">
+        <View className="mt-8">
           <Pressable
             accessibilityRole="button"
             onPress={() => onPressTryOn()}
-            className="min-h-12 w-full flex-row items-center justify-center gap-2 rounded-subtle bg-landing-oxblood px-6 active:opacity-90"
+            className="h-12 w-full flex-row items-center justify-center gap-2 rounded-subtle bg-landing-oxblood px-6 active:opacity-90"
           >
             <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-paper">
               Mở phòng thử AI
             </Text>
-            <ArrowUpRight size={14} color="#EFE9E1" />
+            <ArrowUpRight size={14} color={COLORS.paper} />
           </Pressable>
         </View>
       </View>
 
-      {/* Interactive Try-On Studio Stage — full-bleed to screen edges, square corners,
-          no drop shadow: matches FE's stage card instead of a rounded/shadowed box
-          floating inside the paper background. */}
-      <View className="mt-10 bg-landing-sage-ink p-5 sm:p-6">
+      {/* Interactive try-on studio stage: full-bleed sage-ink band like FE, square
+          corners and no drop shadow (design/DESIGN.md: no decorative shadows). */}
+      <View className="mt-10 bg-landing-sage-ink p-5">
         {/* Studio Inner Card */}
         <View className="relative aspect-[4/5] w-full overflow-hidden bg-landing-ivory">
           {currentImage ? (
             <Image
               source={{ uri: currentImage }}
+              accessibilityLabel={
+                activeProduct
+                  ? `Xem trước thử đồ AI cho ${activeProduct.name}`
+                  : 'Xem trước phòng thử đồ AI'
+              }
               contentFit="cover"
               contentPosition="top"
               transition={200}
               onError={() => markImageFailed(currentImage)}
-              style={{ width: '100%', height: '100%' }}
+              style={StyleSheet.absoluteFill}
             />
           ) : (
             <View className="h-full w-full items-center justify-center gap-2 bg-landing-ivory">
-              <Sparkles size={22} color="#7C5722" />
+              <Sparkles size={22} strokeWidth={1.75} color={COLORS.brassInk} />
               <Text className="font-sans text-[11px] uppercase tracking-[0.16em] text-landing-muted">
                 Chọn thiết kế để xem trước
               </Text>
@@ -190,29 +195,41 @@ export function AiTryOnFeatureBanner({
             className="absolute bottom-4 right-4 h-6 w-6 border-b border-r border-landing-paper/70"
           />
 
-          {/* Studio header line */}
-          <View className="absolute left-6 top-6 flex-row items-center gap-2">
+          {/* Studio frame labels are decorative, hidden from screen readers (FE aria-hidden). */}
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            className="absolute left-6 top-6 flex-row items-center gap-2"
+          >
             <View className="h-1.5 w-1.5 rounded-full bg-landing-brass" />
             <Text className="font-sans text-[9px] font-semibold uppercase tracking-[0.2em] text-landing-paper/80">
               Try-On Studio
             </Text>
           </View>
-          <Text className="absolute right-6 top-6 font-mono text-[9px] uppercase tracking-[0.2em] text-landing-paper/60">
+          <Text
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            className="absolute right-6 top-6 font-mono text-[9px] uppercase tracking-[0.2em] text-landing-paper/60"
+          >
             Frame 01
           </Text>
 
           {/* Studio footer line */}
-          <View className="absolute inset-x-6 bottom-6 flex-row items-center justify-between">
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            className="absolute inset-x-6 bottom-6 flex-row items-center justify-between"
+          >
             <Text className="font-sans text-[9px] font-semibold uppercase tracking-[0.2em] text-landing-paper/75">
               {activeProduct ? 'Ảnh sản phẩm' : 'Ảnh minh hoạ'}
             </Text>
-            <Sparkles size={20} color="#A67D44" />
+            <Sparkles size={20} color={COLORS.brass} />
           </View>
         </View>
 
         {/* Selected Product Metadata */}
         <View className="mt-5">
-          <Text className="font-sans text-[9px] font-semibold uppercase tracking-[0.2em] text-landing-paper/75">
+          <Text className="font-sans text-[9px] font-semibold uppercase tracking-[0.2em] text-landing-paper/80">
             {activeProduct ? 'Đang chọn' : 'Phòng thử AI'}
           </Text>
 
@@ -220,11 +237,10 @@ export function AiTryOnFeatureBanner({
             numberOfLines={2}
             style={{
               fontFamily: fontFamilyDisplay,
-              fontSize: 20,
-              lineHeight: 26,
-              color: '#EFE9E1',
-              fontWeight: '700',
-              marginTop: 6,
+              fontSize: 24,
+              lineHeight: 28,
+              color: COLORS.paper,
+              marginTop: 12,
             }}
           >
             {activeProduct?.name ?? 'Chọn một thiết kế để bắt đầu'}
@@ -232,13 +248,13 @@ export function AiTryOnFeatureBanner({
 
           {activeProduct ? (
             <>
-              <Text className="mt-2 font-mono text-sm font-bold text-landing-paper/90">
+              <Text className="mt-3 font-mono text-sm text-landing-paper/90">
                 {formatProductPrice(activeProduct.price)}
               </Text>
 
               {/* Color Swatches */}
               {activeColors.length > 0 && (
-                <View className="mt-3">
+                <View className="mt-4">
                   <View className="flex-row flex-wrap items-center gap-2">
                     {activeColors.map((color) => {
                       const isActive = currentColor
@@ -257,7 +273,7 @@ export function AiTryOnFeatureBanner({
                           }`}
                         >
                           <View
-                            className="h-4 w-4 border border-landing-paper/30"
+                            className="h-4 w-4 border border-landing-paper/25"
                             style={{ backgroundColor: color.hex }}
                           />
                         </Pressable>
@@ -265,7 +281,7 @@ export function AiTryOnFeatureBanner({
                     })}
                   </View>
                   {currentColor ? (
-                    <Text className="mt-1.5 font-sans text-[10px] uppercase tracking-[0.16em] text-landing-paper/70">
+                    <Text className="mt-2 font-sans text-[10px] uppercase tracking-[0.18em] text-landing-paper/70">
                       Màu: {currentColor.name.replace(/^màu\s+/i, '')}
                     </Text>
                   ) : null}
@@ -276,12 +292,12 @@ export function AiTryOnFeatureBanner({
 
           {/* Switch Items (Đổi món) */}
           {choices.length > 1 && (
-            <View className="mt-6 border-t border-landing-paper/15 pt-4">
+            <View className="mt-8 border-t border-landing-paper/15 pt-4">
               <Text className="font-sans text-[9px] font-semibold uppercase tracking-[0.2em] text-landing-paper/75">
                 Đổi món
               </Text>
 
-              <View className="mt-2.5 flex-row gap-2.5">
+              <View className="mt-3 flex-row gap-2">
                 {choices.map((item) => {
                   const isSelected = item.id === activeProduct?.id;
                   const thumbImage = getProductMainImage(item);
@@ -305,7 +321,7 @@ export function AiTryOnFeatureBanner({
                           contentFit="cover"
                           contentPosition="top"
                           onError={() => markImageFailed(thumbImage)}
-                          style={{ width: '100%', height: '100%' }}
+                          style={StyleSheet.absoluteFill}
                         />
                       ) : null}
                       <View
@@ -325,12 +341,12 @@ export function AiTryOnFeatureBanner({
           <Pressable
             accessibilityRole="button"
             onPress={() => onPressTryOn(activeProduct?.id)}
-            className="mt-6 min-h-11 w-full flex-row items-center justify-center gap-2 border border-landing-paper/30 px-5 active:bg-landing-paper/10"
+            className="mt-6 h-11 w-full flex-row items-center justify-center gap-2 rounded-subtle border border-landing-paper/30 px-5 active:opacity-70"
           >
             <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-paper">
               {activeProduct ? 'Thử món này' : 'Chọn trong catalog'}
             </Text>
-            <ArrowUpRight size={14} color="#EFE9E1" />
+            <ArrowUpRight size={14} color={COLORS.paper} />
           </Pressable>
         </View>
       </View>

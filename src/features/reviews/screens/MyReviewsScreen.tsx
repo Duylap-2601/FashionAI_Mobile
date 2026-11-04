@@ -10,13 +10,15 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Image } from 'expo-image';
-import { MessageSquare, Pencil, Star, Trash2 } from 'lucide-react-native';
+import { MessageSquare, Pencil, Trash2 } from 'lucide-react-native';
 import { AppHeader } from '@/components/common/AppHeader';
 import { BackButton } from '@/components/common/BackButton';
 import { COLORS } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
 import { ApiError } from '@/types/api';
 import { formatDate } from '@/utils/date';
+import { RatingStars } from '../components/RatingStars';
+import { ReviewEmptyState } from '../components/ReviewEmptyState';
 import { ReviewForm } from '../components/ReviewForm';
 import { useMyReviews } from '../hooks/useMyReviews';
 import { useDeleteReview, useUpdateReview } from '../hooks/useReviewMutations';
@@ -25,35 +27,12 @@ import type { IReview } from '../types/review';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MyReviews'>;
 
-const STAR_SLOTS = [1, 2, 3, 4, 5];
-
 const SKELETON_ROWS = [0, 1, 2];
 
 const ACTION_HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 };
 
 function getErrorMessage(error: unknown): string {
   return error instanceof ApiError ? error.message : 'Đã xảy ra lỗi. Vui lòng thử lại.';
-}
-
-function ReviewStars({ rating }: { rating: number }) {
-  return (
-    <View
-      accessible
-      accessibilityRole="text"
-      accessibilityLabel={`${rating} trên 5 sao`}
-      className="flex-row items-center gap-[3px]"
-    >
-      {STAR_SLOTS.map((slot) => (
-        <Star
-          key={slot}
-          size={12}
-          strokeWidth={1.5}
-          color={COLORS.oxblood}
-          fill={slot <= rating ? COLORS.oxblood : 'transparent'}
-        />
-      ))}
-    </View>
-  );
 }
 
 interface IReviewRowProps {
@@ -106,7 +85,7 @@ function ReviewRow({ review, onEdit, onDelete, onOpenProduct }: IReviewRowProps)
           </Pressable>
 
           <View className="mt-2 flex-row flex-wrap items-center gap-x-4 gap-y-1">
-            <ReviewStars rating={review.rating} />
+            <RatingStars value={review.rating} size="xs" />
             <Text className="font-mono text-[11px] text-landing-muted">
               {formatDate(review.createdAt)}
               {edited ? ' · đã sửa' : ''}
@@ -162,6 +141,7 @@ function ReviewRow({ review, onEdit, onDelete, onOpenProduct }: IReviewRowProps)
                 className="h-16 w-16 overflow-hidden rounded-subtle border border-landing-line bg-ivory"
               >
                 <Image
+                  accessibilityLabel={`Ảnh ${index + 1} của đánh giá`}
                   source={{ uri: imageUrl }}
                   style={{ width: '100%', height: '100%' }}
                   contentFit="cover"
@@ -242,10 +222,11 @@ export function MyReviewsScreen({ navigation }: Props) {
 
   const confirmDelete = useCallback(
     (review: IReview) => {
-      Alert.alert('Xóa đánh giá?', 'Đánh giá đã xóa không thể khôi phục.', [
-        { text: 'Hủy', style: 'cancel' },
+      // Wording mirrors FE profile-reviews-page › AccountConfirmDialog.
+      Alert.alert('Xóa đánh giá?', 'Đánh giá sẽ biến mất khỏi trang sản phẩm. Sau khi xóa, bạn có thể gửi đánh giá mới.', [
+        { text: 'Giữ lại', style: 'cancel' },
         {
-          text: 'Xóa',
+          text: 'Xóa đánh giá',
           style: 'destructive',
           onPress: () => {
             void deleteMutation
@@ -285,7 +266,7 @@ export function MyReviewsScreen({ navigation }: Props) {
           <View>
             <View className="gap-4 border-b border-landing-line px-lg pb-5 pt-lg">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink">
                 Tài khoản
               </Text>
               <Text
@@ -335,46 +316,27 @@ export function MyReviewsScreen({ navigation }: Props) {
           showSkeleton ? (
             <ReviewListSkeleton />
           ) : showError ? (
-            <View className="mx-lg mt-lg items-center gap-4 rounded-subtle border border-landing-line bg-ivory px-6 py-12">
-              <Text className="text-center font-display text-2xl text-landing-obsidian">
-                Không tải được đánh giá
-              </Text>
-              <Text className="text-center font-sans text-body-md leading-relaxed text-landing-muted">
-                Kiểm tra kết nối rồi thử lại.
-              </Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Thử lại"
-                hitSlop={ACTION_HIT_SLOP}
-                onPress={() => void reviewsQuery.refetch()}
-                className="mt-2 h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:opacity-70"
-              >
-                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
-                  Thử lại
-                </Text>
-              </Pressable>
+            <View className="mt-lg">
+              <ReviewEmptyState
+                tone="error"
+                title="Không tải được đánh giá"
+                description="Kiểm tra kết nối rồi thử lại."
+                actionLabel="Thử lại"
+                onAction={() => void reviewsQuery.refetch()}
+              />
             </View>
           ) : (
-            <View className="mx-lg mt-lg items-center gap-4 rounded-subtle border border-landing-line bg-ivory px-6 py-14">
-              <Text className="text-center font-display text-2xl text-landing-obsidian">
-                Bạn chưa có đánh giá nào
-              </Text>
-              <Text className="text-center font-sans text-body-md leading-relaxed text-landing-muted">
-                Khi đơn may đo hoàn tất, bạn có thể đánh giá từng sản phẩm trong mục Đơn hàng.
-              </Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Xem đơn hàng"
-                hitSlop={ACTION_HIT_SLOP}
-                onPress={() =>
+            <View className="mt-lg">
+              <ReviewEmptyState
+                icon="none"
+                title="Bạn chưa có đánh giá nào"
+                description="Khi đơn may đo hoàn tất, bạn có thể đánh giá từng sản phẩm trong mục Đơn hàng."
+                actionLabel="Xem đơn hàng"
+                actionVariant="primary"
+                onAction={() =>
                   navigation.navigate('Main', { screen: 'ProfileTab', params: { screen: 'Orders' } })
                 }
-                className="mt-2 h-11 items-center justify-center rounded-subtle bg-oxblood px-6 active:opacity-90"
-              >
-                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
-                  Xem đơn hàng
-                </Text>
-              </Pressable>
+              />
             </View>
           )
         }

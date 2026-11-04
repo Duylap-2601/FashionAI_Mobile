@@ -42,9 +42,9 @@ export const RootNavigator: React.FC = () => {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-surface p-xl">
-        <ActivityIndicator size="large" color={COLORS.primaryContainer} />
-        <Text className="mt-md text-body-sm text-on-surface-variant">
+      <View className="flex-1 items-center justify-center bg-landing-paper p-xl">
+        <ActivityIndicator size="large" color={COLORS.oxblood} />
+        <Text className="mt-md font-sans text-body-sm text-landing-muted">
           Đang khởi động FashionAI...
         </Text>
       </View>
@@ -53,6 +53,8 @@ export const RootNavigator: React.FC = () => {
 
   return (
     <NavigationContainer theme={navigationTheme}>
+      {/* Native headers take plain style objects; values come from COLORS
+          (design/design-system.md › Navigation And Headers: paper header, obsidian title). */}
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
       >
@@ -112,12 +114,12 @@ export const RootNavigator: React.FC = () => {
                 headerShown: true,
                 title: "Chi tiết sản phẩm",
                 headerBackTitle: "Sản phẩm",
-                headerTintColor: COLORS.primaryContainer,
+                headerTintColor: COLORS.oxblood,
                 // Header shares the Product Detail paper surface.
                 headerStyle: { backgroundColor: COLORS.paper },
                 headerShadowVisible: false,
                 headerTitleStyle: {
-                  color: COLORS.onSurface,
+                  color: COLORS.obsidian,
                   fontSize: FONT_SIZE.md,
                 },
               }}
@@ -138,10 +140,10 @@ export const RootNavigator: React.FC = () => {
                 headerShown: true,
                 title: "Bộ sưu tập",
                 headerBackTitle: "Trang chủ",
-                headerTintColor: COLORS.primaryContainer,
-                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerTintColor: COLORS.oxblood,
+                headerStyle: { backgroundColor: COLORS.paper },
                 headerTitleStyle: {
-                  color: COLORS.onSurface,
+                  color: COLORS.obsidian,
                   fontSize: FONT_SIZE.md,
                 },
               }}
@@ -154,10 +156,10 @@ export const RootNavigator: React.FC = () => {
                 headerShown: true,
                 title: "Đánh giá sản phẩm",
                 headerBackTitle: "Sản phẩm",
-                headerTintColor: COLORS.primaryContainer,
-                headerStyle: { backgroundColor: COLORS.surfaceLowest },
+                headerTintColor: COLORS.oxblood,
+                headerStyle: { backgroundColor: COLORS.paper },
                 headerTitleStyle: {
-                  color: COLORS.onSurface,
+                  color: COLORS.obsidian,
                   fontSize: FONT_SIZE.md,
                 },
               }}
@@ -178,7 +180,7 @@ export const RootNavigator: React.FC = () => {
                 headerShown: true,
                 title: "AI Stylist",
                 headerBackTitle: "Trang chủ",
-                headerTintColor: COLORS.primaryContainer,
+                headerTintColor: COLORS.oxblood,
                 headerStyle: { backgroundColor: COLORS.paper },
                 headerShadowVisible: false,
                 headerTitleStyle: {
@@ -201,17 +203,8 @@ export const RootNavigator: React.FC = () => {
               name="StylistResult"
               component={StylistResultScreen}
               options={{
-                headerShown: true,
-                title: "Kết quả tư vấn",
-                headerBackTitle: "AI Stylist",
-                headerTintColor: COLORS.primaryContainer,
-                headerStyle: { backgroundColor: COLORS.paper },
-                headerShadowVisible: false,
-                headerTitleStyle: {
-                  color: COLORS.obsidian,
-                  fontFamily: "Playfair Display",
-                  fontSize: FONT_SIZE.xl,
-                },
+                // Màn tự có AppHeader + nút quay lại, như StylistHistory.
+                headerShown: false,
               }}
             />
 

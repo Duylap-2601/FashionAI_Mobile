@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
+import { STYLIST_GENDERS } from '../constants/stylist-options';
 import type { IStylistColorSuggestion, IStylistResult } from '../types/stylist';
 
 interface StylistResultContentProps {
@@ -21,6 +22,9 @@ interface StylistResultContentProps {
 
 const sectionLabelClass =
   'font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink';
+// Chip tóm tắt yêu cầu, cùng kiểu StylistBriefSummary của web (chỉ hiển thị, không bấm được).
+const briefChipClass =
+  'rounded-subtle border border-landing-line bg-ivory px-2.5 py-1 font-sans text-[12px] text-landing-obsidian/80';
 
 function toTips(text: string | undefined): string[] {
   if (!text) return [];
@@ -58,12 +62,12 @@ function ColorChip({ color }: { color: IStylistColorSuggestion }) {
       accessibilityRole="button"
       accessibilityLabel={`Sao chép mã màu ${color.hex}`}
       onPress={() => void copyHex()}
-      className="h-9 flex-row items-center gap-2 rounded-subtle border border-landing-line bg-landing-paper pl-1 pr-2.5 active:border-oxblood"
+      className="min-h-11 flex-row items-center gap-2 rounded-subtle border border-landing-line bg-landing-paper py-1 pl-1 pr-2.5 active:border-oxblood"
     >
       {/* Màu do AI trả về nên không dùng được token. */}
       <View
         style={{ backgroundColor: color.hex }}
-        className="h-7 w-7 border border-landing-obsidian/10"
+        className="h-8 w-8 rounded-subtle border border-landing-obsidian/10"
       />
       <Text className="font-sans text-[12px] font-medium text-landing-obsidian">
         {color.name}
@@ -108,6 +112,12 @@ export function StylistResultContent({
   const tips = toTips(analysis.stylingTips);
   const score = analysis.productCompatibilityScore;
   const tone = score !== null ? scoreTone(score) : null;
+  const genderLabel = STYLIST_GENDERS.find(
+    (option) => option.value === result.genderPreference,
+  )?.label;
+  const briefChips = [result.stylePreference, result.budget, genderLabel].filter(
+    (value): value is string => Boolean(value?.trim()),
+  );
 
   return (
     <View className="gap-8">
@@ -125,17 +135,26 @@ export function StylistResultContent({
           ) : (
             <View className="flex-1 items-center justify-center p-2">
               <Text className="text-center font-sans text-[10px] text-landing-muted">
-                Không có ảnh
+                Chưa có ảnh
               </Text>
             </View>
           )}
         </View>
 
         <View className="flex-1 gap-1">
-          <Text className={sectionLabelClass}>Kết quả tư vấn</Text>
+          <Text className={sectionLabelClass}>Yêu cầu của bạn</Text>
           <Text className="mt-1 font-display text-[22px] leading-tight text-landing-obsidian">
             {result.occasion || 'Tư vấn phong cách cá nhân'}
           </Text>
+          {briefChips.length > 0 ? (
+            <View className="mt-1 flex-row flex-wrap gap-1.5">
+              {briefChips.map((chip) => (
+                <Text key={chip} numberOfLines={1} className={briefChipClass}>
+                  {chip}
+                </Text>
+              ))}
+            </View>
+          ) : null}
           {result.garmentDescription ? (
             <Text
               numberOfLines={2}
@@ -155,8 +174,9 @@ export function StylistResultContent({
       {result.product ? (
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={`Xem sản phẩm ${result.product.name}`}
           onPress={() => onProductPress?.(result.product!.id)}
-          className="flex-row items-center gap-3 rounded-subtle border border-landing-line bg-ivory p-3 active:opacity-80"
+          className="min-h-11 flex-row items-center gap-3 rounded-subtle border border-landing-line bg-ivory p-3 active:opacity-80"
         >
           <Shirt size={16} strokeWidth={1.75} color={COLORS.oxblood} />
           <Text className="flex-1 font-display text-[15px] text-landing-obsidian" numberOfLines={1}>
@@ -168,17 +188,22 @@ export function StylistResultContent({
 
       {/* Bộ phối */}
       <View className="gap-5">
-        <View className="flex-row items-end justify-between gap-3 border-b border-landing-line pb-4">
-          <View>
-            <Text className={sectionLabelClass}>Kết quả</Text>
-            <Text className="mt-2 font-display text-headline-sm text-landing-obsidian">
-              Bộ phối dành cho bạn
+        {outfits.length > 0 ? (
+          <View className="flex-row items-end justify-between gap-3 border-b border-landing-line pb-4">
+            <View>
+              <Text className={sectionLabelClass}>Kết quả</Text>
+              <Text
+                accessibilityRole="header"
+                className="mt-2 font-display text-headline-sm text-landing-obsidian"
+              >
+                Bộ phối dành cho bạn
+              </Text>
+            </View>
+            <Text className="shrink-0 font-mono text-[11px] uppercase tracking-[0.2em] text-landing-muted">
+              {String(outfits.length).padStart(2, '0')} bộ
             </Text>
           </View>
-          <Text className="shrink-0 font-mono text-[11px] uppercase tracking-[0.2em] text-landing-muted">
-            {String(outfits.length).padStart(2, '0')} bộ
-          </Text>
-        </View>
+        ) : null}
 
         {outfits.length > 0 ? (
           <View className="gap-3">
@@ -187,10 +212,18 @@ export function StylistResultContent({
                 key={`${outfit}-${index}`}
                 className="gap-2 rounded-subtle border border-landing-line bg-ivory p-4"
               >
-                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-brass-ink">
-                  Bộ phối {String(index + 1).padStart(2, '0')}
-                </Text>
-                <Text selectable className="font-sans text-body-md leading-relaxed text-landing-obsidian/85">
+                <View className="flex-row items-baseline gap-2.5">
+                  <Text className="font-mono text-[11px] text-brass-ink">
+                    {String(index + 1).padStart(2, '0')}
+                  </Text>
+                  <Text className="font-display text-[18px] leading-snug text-landing-obsidian">
+                    Bộ phối {index + 1}
+                  </Text>
+                </View>
+                <Text
+                  selectable
+                  className="font-sans text-body-md leading-relaxed text-landing-obsidian/85"
+                >
                   {outfit}
                 </Text>
               </View>
@@ -312,7 +345,7 @@ export function StylistResultContent({
       {/* CTA thử đồ */}
       <View className="gap-3 rounded-subtle border border-landing-line bg-ivory p-5">
         <View className="flex-row items-center gap-3">
-          <View className="h-10 w-10 items-center justify-center border border-landing-line">
+          <View className="h-10 w-10 items-center justify-center rounded-subtle border border-landing-line">
             <Shirt size={18} strokeWidth={1.5} color={COLORS.oxblood} />
           </View>
           <View className="flex-1">

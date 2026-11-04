@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
   Pressable,
   Animated,
 } from 'react-native';
@@ -18,13 +17,12 @@ import { ArrowUpRight } from 'lucide-react-native';
 import { MainTabParamList, RootStackParamList } from '@/navigation/types';
 import { COLORS } from '@/constants/theme';
 import { homeScrollY } from '@/navigation/home-scroll';
-import { EmptyState } from '@/components/common/EmptyState';
-import { ErrorView } from '@/components/common/ErrorView';
 import { CollectionCarousel } from '@/features/collections/components/CollectionCarousel';
 import { CollectionSkeleton } from '@/features/collections/components/CollectionSkeleton';
 import { usePublishedCollections } from '@/features/collections/hooks/usePublishedCollections';
 import { useCollectionProducts } from '@/features/collections/hooks/useCollectionProducts';
 import { useProducts } from '@/features/products/hooks/useProducts';
+import { ProductsEmptyState } from '@/features/products/components/ProductsEmptyState';
 import { OnboardingModal } from '@/features/auth/components/OnboardingModal';
 
 import { HomeHeroBanner } from '../components/HomeHeroBanner';
@@ -217,8 +215,8 @@ export const HomeScreen: React.FC = () => {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor={COLORS.primaryContainer}
-          colors={[COLORS.primaryContainer]}
+          tintColor={COLORS.oxblood}
+          colors={[COLORS.oxblood]}
         />
       }
     >
@@ -232,17 +230,21 @@ export const HomeScreen: React.FC = () => {
       {collectionsQuery.isLoading && collections.length === 0 ? (
         <CollectionSkeleton />
       ) : collectionsQuery.isError && collections.length === 0 ? (
-        <ErrorView
-          title="Chưa thể tải bộ sưu tập"
-          message="Vui lòng kiểm tra kết nối và thử lại."
-          onRetry={() => void collectionsQuery.refetch()}
-        />
+        <View className="pt-xxl">
+          <ProductsEmptyState
+            title="Chưa thể tải bộ sưu tập"
+            description="Vui lòng kiểm tra kết nối và thử lại."
+            actionTitle="Thử lại"
+            onAction={() => void collectionsQuery.refetch()}
+          />
+        </View>
       ) : collections.length === 0 ? (
-        <EmptyState
-          icon="◇"
-          title="Chưa có bộ sưu tập"
-          description="Các bộ sưu tập mới sẽ được cập nhật tại đây."
-        />
+        <View className="pt-xxl">
+          <ProductsEmptyState
+            title="Chưa có bộ sưu tập"
+            description="Các bộ sưu tập mới sẽ được cập nhật tại đây."
+          />
+        </View>
       ) : (
         <>
           {collectionsQuery.isError && (
@@ -253,16 +255,16 @@ export const HomeScreen: React.FC = () => {
               <Text className="flex-1 font-sans text-body-sm text-landing-muted">
                 Chưa thể cập nhật danh sách mới nhất.
               </Text>
-              <TouchableOpacity
+              <Pressable
                 accessibilityRole="button"
-                activeOpacity={0.7}
+                accessibilityLabel="Thử tải lại bộ sưu tập"
                 onPress={() => void collectionsQuery.refetch()}
-                className="justify-center px-2 py-1"
+                className="min-h-11 min-w-11 items-center justify-center px-2 active:opacity-70"
               >
-                <Text className="font-sans text-body-sm font-bold text-landing-oxblood">
+                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-oxblood">
                   Thử lại
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           )}
 
@@ -276,25 +278,25 @@ export const HomeScreen: React.FC = () => {
             <View className="px-lg">
               <LandingSectionHeading
                 chapter="02"
-                eyebrow="BỘ SƯU TẬP"
-                title="BỐN CHƯƠNG. MỘT PHONG CÁCH."
+                eyebrow="Bộ sưu tập"
+                title="Bốn chương. Một phong cách."
                 description="Mỗi bộ sưu tập là một lớp cắt may riêng cho nhịp sống công sở. Chọn một chương để xem thiết kế."
                 action={
                   <Pressable
                     accessibilityRole="button"
                     onPress={handleShopPress}
-                    className="flex-row items-center gap-1.5 active:opacity-75"
+                    className="min-h-11 flex-row items-center gap-1.5 active:opacity-75"
                   >
                     <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-oxblood">
                       Xem tất cả
                     </Text>
-                    <ArrowUpRight size={14} color="#5D1C34" />
+                    <ArrowUpRight size={14} color={COLORS.oxblood} />
                   </Pressable>
                 }
               />
             </View>
 
-            <View className="mt-8">
+            <View className="mt-10">
               <CollectionCarousel
                 collections={collections}
                 selectedCollectionId={selectedCollection?.id}
@@ -309,11 +311,11 @@ export const HomeScreen: React.FC = () => {
           {/* 4. Featured Products (Chapter 03) */}
           <HomeProductSection
             chapter="03"
-            badge="SẢN PHẨM"
+            badge="Sản phẩm"
             title={
               selectedCollection
                 ? selectedCollection.name
-                : 'SẢN PHẨM TIÊU BIỂU'
+                : 'Sản phẩm tiêu biểu'
             }
             subtitle={
               selectedCollection?.description ||

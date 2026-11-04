@@ -124,11 +124,8 @@ export function ProductImageViewer({
             <View
               accessible
               accessibilityLabel={`Không thể hiển thị ảnh ${itemIndex + 1} của ${productName}`}
-              className="items-center gap-sm"
+              className="items-center"
             >
-              <Text className="font-sans text-display text-landing-paper/60">
-                ◇
-              </Text>
               <Text className="font-sans text-body-md text-landing-paper/60">
                 Không thể hiển thị ảnh
               </Text>
@@ -183,7 +180,7 @@ export function ProductImageViewer({
           style={{ paddingTop: insets.top + SPACING.sm }}
         >
           <View className="flex-1">
-            <Text className="font-sans text-2xs font-semibold uppercase tracking-widest text-brass">
+            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass">
               Thư viện ảnh
             </Text>
             <Text
@@ -199,7 +196,7 @@ export function ProductImageViewer({
             accessibilityLabel={`Ảnh ${index + 1} trên ${imageCount}`}
             className="border border-landing-paper/15 px-sm py-xs"
           >
-            <Text className="font-mono text-label-md tabular-nums text-landing-paper/80">
+            <Text className="font-mono text-[10px] tabular-nums text-landing-paper/70">
               {index + 1} / {imageCount}
             </Text>
           </View>

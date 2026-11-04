@@ -11,6 +11,7 @@ import {
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useQuery } from '@tanstack/react-query';
 import {
+  ArrowRight,
   Camera,
   ChevronDown,
   ChevronUp,
@@ -49,10 +50,19 @@ function formatSeconds(total: number): string {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
+// Lý do chưa đủ điều kiện, cùng câu chữ với FE (live-try-on-workspace.tsx › reasonLabel).
+function reasonLabel(reason?: string): string {
+  if (reason === 'free_not_allowed') return 'Nâng cấp gói thành viên để thử đồ trực tiếp.';
+  if (reason === 'subscription_expired') return 'Gói thành viên đã hết hạn. Gia hạn để tiếp tục thử đồ.';
+  return 'Thử đồ trực tiếp chưa khả dụng với tài khoản của bạn.';
+}
+
 const primaryButtonClass =
   'h-12 flex-1 flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood active:opacity-90';
+// Nút viền trên dock obsidian: viền brass mảnh, chữ giấy (DESIGN.md › Live Try-On).
 const outlineButtonClass =
   'h-12 items-center justify-center rounded-subtle border border-landing-line px-4';
+const STAGE_CHIP_CLASS = 'border border-landing-line bg-landing-obsidian/80 px-3 py-2';
 
 export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
   selection,
@@ -123,7 +133,7 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
         : quota && !quota.enabled
           ? 'Thử đồ trực tiếp hiện đang tạm nghỉ. Bạn vẫn có thể thử bằng ảnh.'
           : quota && !quota.eligible
-            ? 'Bạn chưa đủ điều kiện dùng Live Try-On.'
+            ? reasonLabel(quota.disabledReason)
             : !sessionProduct
               ? mode === 'single'
                 ? 'Chọn một sản phẩm để bắt đầu thử đồ.'
@@ -131,7 +141,7 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
               : !garmentSupported
                 ? 'Sản phẩm này chưa hỗ trợ thử trực tiếp.'
                 : quota && quota.remaining <= 0
-                  ? 'Bạn đã dùng hết thời gian Live hôm nay.'
+                  ? 'Bạn đã dùng hết thời gian thử trực tiếp hôm nay.'
                   : null;
 
   const handleStart = async () => {
@@ -249,7 +259,11 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
               </View>
             ) : null}
 
-            <View className="absolute left-4 top-4 flex-row items-center gap-2 bg-landing-obsidian/80 px-3 py-2">
+            <View
+              accessibilityRole="text"
+              accessibilityLiveRegion="polite"
+              className={`absolute left-4 top-4 flex-row items-center gap-2 ${STAGE_CHIP_CLASS}`}
+            >
               <View
                 className={`h-1.5 w-1.5 rounded-full ${
                   isActive ? 'bg-sage' : isPaused ? 'bg-brass' : 'bg-landing-paper/50'
@@ -261,7 +275,7 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
             </View>
 
             {isActive ? (
-              <View className="absolute right-4 top-4 bg-landing-obsidian/80 px-3 py-2">
+              <View className={`absolute right-4 top-4 ${STAGE_CHIP_CLASS}`}>
                 <Text className="font-mono text-[12px] text-landing-paper">
                   {formatSeconds(remainingSeconds)}
                 </Text>
@@ -270,16 +284,18 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
 
             {isPaused ? (
               <View className="absolute inset-0 items-center justify-center bg-landing-obsidian/55">
-                <Text className="font-display text-[22px] text-landing-paper">
+                <Text className="font-display text-[22px] leading-tight text-landing-paper">
                   Phiên đang tạm dừng
                 </Text>
               </View>
             ) : null}
           </View>
-          <View className="flex-row items-center gap-2 border-t border-landing-paper/10 px-lg py-3">
-            <Expand size={14} strokeWidth={1.75} color={COLORS.paper} />
+          <View className="flex-row items-center gap-2 border-t border-landing-line px-lg py-3">
+            <Expand size={14} strokeWidth={1.75} color={COLORS.brass} />
             <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-paper/70">
-              Đứng nơi đủ sáng, giữ trang phục trong khung hình.
+              {mode === 'combo'
+                ? 'Lùi lại để thấy trọn áo và quần trong khung hình.'
+                : 'Đứng nơi đủ sáng, giữ trang phục trong khung hình.'}
             </Text>
           </View>
         </View>
@@ -294,7 +310,10 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
         {/* Trang phục */}
         <View className="mt-8">
           <View className="mb-4 flex-row items-baseline justify-between gap-3">
-            <Text className="font-display text-[22px] leading-tight text-landing-obsidian">
+            <Text
+              accessibilityRole="header"
+              className="font-display text-[22px] leading-tight text-landing-obsidian"
+            >
               Trang phục
             </Text>
             <Text className="font-mono text-xs text-landing-muted">
@@ -303,6 +322,7 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
           </View>
 
           <TryOnSegmented
+            accessibilityLabel="Số món thử"
             value={mode}
             onChange={setMode}
             disabled={selectionDisabled}
@@ -386,6 +406,9 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
         <View className="mt-8 border-y border-landing-line">
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel="Thời gian thử trực tiếp hôm nay"
+            accessibilityHint={quotaOpen ? 'Thu gọn chi tiết' : 'Xem chi tiết thời gian'}
+            accessibilityState={{ expanded: quotaOpen }}
             className="min-h-12 flex-row items-center justify-between gap-3 active:opacity-70"
             onPress={() => setQuotaOpen((prev) => !prev)}
           >
@@ -439,23 +462,32 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
 
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel="Thử bằng ảnh"
+          accessibilityState={{ disabled: inSession || isBusy }}
           disabled={inSession || isBusy}
           onPress={onSwitchToPhoto}
-          className={`mt-4 min-h-11 flex-row items-center justify-center gap-2 ${inSession || isBusy ? 'opacity-45' : 'active:opacity-70'}`}
+          className={`mt-4 min-h-11 flex-row items-center justify-center gap-2 ${inSession || isBusy ? 'opacity-50' : 'active:opacity-70'}`}
         >
           <ImageIcon size={14} strokeWidth={1.75} color={COLORS.muted} />
           <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-muted">
             Thử bằng ảnh
           </Text>
+          <ArrowRight size={13} strokeWidth={1.75} color={COLORS.muted} />
         </Pressable>
 
         {/* Trạng thái không khả dụng */}
         {error || (!inSession && unavailableReason) || permissionDenied ? (
           <View
             accessibilityRole="alert"
-            className="mt-4 border-l-2 border-brass bg-ivory px-4 py-3"
+            className={`mt-4 border-l-2 bg-ivory px-4 py-3 ${
+              error ? 'border-danger' : 'border-landing-brass'
+            }`}
           >
-            <Text className="font-sans text-body-sm leading-relaxed text-landing-obsidian">
+            <Text
+              className={`font-sans text-body-sm leading-relaxed ${
+                error ? 'text-danger' : 'text-landing-obsidian'
+              }`}
+            >
               {error || (!inSession ? unavailableReason : null)}
             </Text>
             {permissionDenied ? (
@@ -466,8 +498,9 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
             {permissionDenied ? (
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel="Cho phép camera"
                 onPress={() => requestPermission()}
-                className="mt-3 h-10 items-center justify-center self-start rounded-subtle bg-oxblood px-4 active:opacity-90"
+                className="mt-3 h-11 items-center justify-center self-start rounded-subtle bg-oxblood px-4 active:opacity-90"
               >
                 <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
                   Cho phép camera
@@ -478,28 +511,32 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
         ) : null}
       </ScrollView>
 
-      {/* Thanh phiên cố định phía trên tab bar */}
-      <View className="absolute bottom-0 left-0 right-0 border-t border-landing-line bg-landing-paper px-lg py-md">
+      {/* Thanh phiên cố định phía trên tab bar: dock obsidian, chữ giấy, viền brass mảnh
+          (DESIGN.md › Live Try-On). */}
+      <View
+        accessibilityLabel="Điều khiển phiên thử trực tiếp"
+        className="absolute bottom-0 left-0 right-0 border-t border-landing-line bg-landing-obsidian px-lg py-md"
+      >
         <View className="mb-3 flex-row items-center justify-between gap-3">
           <View className="flex-row items-center gap-3">
             <View
               className={`h-10 w-10 items-center justify-center border ${
-                lowTime ? 'border-danger/40' : 'border-landing-line'
+                lowTime ? 'border-brass' : 'border-landing-line'
               }`}
             >
-              <Timer
-                size={18}
-                strokeWidth={1.5}
-                color={lowTime ? COLORS.danger : COLORS.brassInk}
-              />
+              <Timer size={18} strokeWidth={1.5} color={COLORS.brass} />
             </View>
             <View>
-              <Text className="font-sans text-[11px] text-landing-muted">
+              <Text className="font-sans text-[11px] text-landing-paper/65">
                 {inSession ? 'Thời gian phiên còn lại' : 'Thời gian cho phiên mới'}
               </Text>
               <Text
-                className={`font-mono text-[28px] leading-8 ${
-                  lowTime ? 'text-danger' : 'text-landing-obsidian'
+                accessibilityRole="timer"
+                accessibilityLabel={`${inSession ? 'Phiên còn' : 'Phiên mới'} ${
+                  quotaQuery.isLoading && !inSession ? 'đang tải' : formatSeconds(seconds)
+                }`}
+                className={`font-mono text-[28px] leading-8 tabular-nums ${
+                  lowTime ? 'text-brass' : 'text-landing-paper'
                 }`}
               >
                 {quotaQuery.isLoading && !inSession ? '--:--' : formatSeconds(seconds)}
@@ -507,8 +544,9 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
             </View>
           </View>
           <Text
+            accessibilityLiveRegion="polite"
             className={`max-w-[130px] text-right font-sans text-[11px] ${
-              isPaused || lowTime ? 'text-brass-ink' : 'text-landing-muted'
+              isPaused || lowTime ? 'text-brass' : 'text-landing-paper/65'
             }`}
           >
             {panelStatus}
@@ -518,9 +556,11 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
         <View className="flex-row gap-2">
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={primaryLabel}
+            accessibilityState={{ disabled: primaryDisabled, busy: isBusy }}
             disabled={primaryDisabled}
             onPress={handlePrimaryPress}
-            className={`${primaryButtonClass} ${primaryDisabled ? 'opacity-45' : ''}`}
+            className={`${primaryButtonClass} ${primaryDisabled ? 'opacity-50' : ''}`}
           >
             {isBusy ? (
               <ActivityIndicator color={COLORS.paper} size="small" />
@@ -536,13 +576,15 @@ export const LiveTryOnContent: React.FC<LiveTryOnContentProps> = ({
           {inSession ? (
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Kết thúc phiên"
+              accessibilityState={{ disabled: isBusy }}
               disabled={isBusy}
               onPress={() => setShowEndModal(true)}
-              className={`${outlineButtonClass} ${isBusy ? 'opacity-45' : 'active:opacity-70'}`}
+              className={`${outlineButtonClass} ${isBusy ? 'opacity-50' : 'active:opacity-70'}`}
             >
               <View className="flex-row items-center gap-1.5">
-                <Square size={13} strokeWidth={1.75} color={COLORS.obsidian} />
-                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
+                <Square size={13} strokeWidth={1.75} color={COLORS.paper} />
+                <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-paper">
                   Kết thúc
                 </Text>
               </View>

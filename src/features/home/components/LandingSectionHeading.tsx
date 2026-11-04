@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Platform } from 'react-native';
 import { ExpandableText } from '@/components/common/ExpandableText';
+import { COLORS } from '@/constants/theme';
 
 interface LandingSectionHeadingProps {
   chapter: string;
@@ -11,6 +12,7 @@ interface LandingSectionHeadingProps {
   inverted?: boolean;
 }
 
+// Mirrors FE LandingSectionHeading: mono chapter, brass eyebrow, serif uppercase title.
 export function LandingSectionHeading({
   chapter,
   eyebrow,
@@ -27,10 +29,10 @@ export function LandingSectionHeading({
         inverted ? 'border-landing-paper/15' : 'border-landing-line'
       }`}
     >
-      <View className="flex-row items-start gap-3 sm:gap-4">
+      <View className="flex-row items-start gap-3">
         {/* Chapter mono number */}
         <Text
-          className={`shrink-0 pt-0.5 font-mono text-lg font-semibold tracking-[0.2em] ${
+          className={`shrink-0 pt-1 font-mono text-lg tracking-[0.2em] ${
             inverted ? 'text-landing-brass' : 'text-landing-brass-ink'
           }`}
         >
@@ -39,9 +41,10 @@ export function LandingSectionHeading({
 
         {/* Content */}
         <View className="flex-1">
-          <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center justify-between gap-3">
             <Text
-              className={`font-sans text-2xl font-bold uppercase tracking-tight ${
+              accessibilityRole="header"
+              className={`flex-1 font-sans text-2xl font-bold uppercase ${
                 inverted ? 'text-landing-brass' : 'text-landing-brass-ink'
               }`}
             >
@@ -57,9 +60,9 @@ export function LandingSectionHeading({
                 fontSize: 20,
                 lineHeight: 26,
                 fontWeight: '600',
-                color: inverted ? '#EFE9E1' : '#11100F',
+                color: inverted ? COLORS.paper : COLORS.obsidian,
                 textTransform: 'uppercase',
-                marginTop: 8,
+                marginTop: 12,
               }}
             >
               {title}
@@ -69,10 +72,10 @@ export function LandingSectionHeading({
           {description ? (
             <ExpandableText
               key={description}
-              className="mt-2"
+              className="mt-4"
               text={description}
               numberOfLines={3}
-              textClassName={`font-sans text-body-sm leading-relaxed ${
+              textClassName={`font-sans text-[15px] leading-relaxed ${
                 inverted ? 'text-landing-paper/65' : 'text-landing-muted'
               }`}
               toggleClassName={inverted ? 'text-landing-brass' : 'text-landing-oxblood'}
@@ -83,4 +86,3 @@ export function LandingSectionHeading({
     </View>
   );
 }
-

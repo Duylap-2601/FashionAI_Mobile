@@ -27,9 +27,10 @@ export function CollectionCarousel({
   onSelectCollection,
 }: CollectionCarouselProps) {
   const renderCollection = useCallback<ListRenderItem<Collection>>(
-    ({ item }) => (
+    ({ item, index }) => (
       <CollectionCard
         collection={item}
+        index={index}
         isSelected={selectedCollectionId === item.id}
         onPress={() => {
           if (onSelectCollection) {
@@ -53,7 +54,10 @@ export function CollectionCarousel({
       ListFooterComponent={
         isFetchingNextPage ? (
           <View className="w-14 items-center justify-center">
-            <ActivityIndicator color={COLORS.primaryContainer} />
+            <ActivityIndicator
+              accessibilityLabel="Đang tải thêm bộ sưu tập"
+              color={COLORS.oxblood}
+            />
           </View>
         ) : null
       }

@@ -18,15 +18,19 @@ export const BackButton: React.FC<IBackButtonProps> = ({
     accessibilityLabel ?? (label === 'Quay lại' ? label : `Quay lại ${label}`);
 
   return (
+    // Liên kết quay lại kiểu FE (chữ hoa giãn chữ, màu muted). hitSlop nới vùng chạm lên 44px
+    // mà không đẩy bố cục màn hình xuống.
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={resolvedAccessibilityLabel}
-      hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+      hitSlop={{ top: 14, bottom: 14, left: 12, right: 12 }}
       onPress={onPress}
-      className="flex-row items-center gap-1 self-start active:opacity-60"
+      className="flex-row items-center gap-sm self-start active:opacity-60"
     >
-      <ArrowLeft size={14} color={COLORS.onSurfaceVariant} />
-      <Text className="text-label-lg font-medium text-on-surface-variant">{label}</Text>
+      <ArrowLeft size={16} strokeWidth={1.75} color={COLORS.muted} />
+      <Text className="font-sans text-label-md uppercase tracking-[0.18em] text-landing-muted">
+        {label}
+      </Text>
     </Pressable>
   );
 };

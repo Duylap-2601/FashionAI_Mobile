@@ -17,32 +17,50 @@ interface RatingFilterProps {
   stats?: IReviewStats;
 }
 
+/** Tab chữ gạch chân như bộ lọc sao của FE RatingOverview, không dùng pill. */
 export function RatingFilter({ value, onChange, stats }: RatingFilterProps) {
   return (
-    <View className="flex-row flex-wrap gap-sm" accessibilityRole="tablist">
+    <View className="flex-row flex-wrap gap-x-5" accessibilityRole="tablist">
       {OPTIONS.map((option) => {
         const selected = value === option.value;
+        const count = stats
+          ? option.value
+            ? stats.distribution[option.value]
+            : stats.reviewCount
+          : null;
+
         return (
           <Pressable
             key={option.label}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
-            className={selected
-              ? 'min-h-11 min-w-11 flex-row items-center justify-center gap-xs rounded-xl bg-primary-container px-md'
-              : 'min-h-11 min-w-11 flex-row items-center justify-center gap-xs rounded-xl border border-catalog-line bg-surface-lowest px-md'}
+            accessibilityLabel={count === null ? option.label : `${option.label}, ${count} đánh giá`}
+            className="min-h-11 justify-center active:opacity-70"
             onPress={() => onChange(option.value)}
           >
-            <Text
-              numberOfLines={1}
-              className={selected ? 'font-sans text-body-sm font-medium text-on-primary' : 'font-sans text-body-sm font-medium text-on-surface-variant'}
+            <View
+              className={`flex-row items-center gap-1.5 border-b-2 pb-1 ${
+                selected ? 'border-oxblood' : 'border-transparent'
+              }`}
             >
-              {option.label}
-            </Text>
-            {stats ? (
-              <Text className={selected ? 'font-sans text-body-sm text-on-primary/80' : 'font-sans text-body-sm text-catalog-muted-text'}>
-                ({option.value ? stats.distribution[option.value] : stats.reviewCount})
+              <Text
+                numberOfLines={1}
+                className={`font-sans text-[11px] font-semibold uppercase tracking-[0.12em] ${
+                  selected ? 'text-landing-oxblood' : 'text-landing-muted'
+                }`}
+              >
+                {option.label}
               </Text>
-            ) : null}
+              {count !== null ? (
+                <Text
+                  className={`font-mono text-[10px] ${
+                    selected ? 'text-landing-oxblood/70' : 'text-landing-muted'
+                  }`}
+                >
+                  ({count})
+                </Text>
+              ) : null}
+            </View>
           </Pressable>
         );
       })}

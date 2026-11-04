@@ -8,8 +8,6 @@ import {
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { EmptyState } from '@/components/common/EmptyState';
-import { ErrorView } from '@/components/common/ErrorView';
 import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { CheckCircle2 } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
@@ -25,6 +23,7 @@ import { ProductImageGallery } from '../components/ProductImageGallery';
 import { useProduct } from '../hooks/useProduct';
 import { useLocalCartReady } from '../hooks/use-local-cart-ready';
 import { ProductCartButton } from '../components/ProductCartButton';
+import { ProductsEmptyState } from '../components/ProductsEmptyState';
 import {
   getProductImageUrls,
   getProductMainImage,
@@ -47,6 +46,30 @@ function getInitialColor(
 export function ProductDetailScreen(props: ProductDetailScreenProps) {
   // Reset product-local selections and feedback when this route changes product.
   return <ProductDetail key={props.route.params.productId} {...props} />;
+}
+
+// Full-screen state on paper with the FE ivory state block (FE ProductDetailStates › ProductNotFound).
+function DetailState({
+  title,
+  description,
+  actionTitle,
+  onAction,
+}: {
+  title: string;
+  description: string;
+  actionTitle?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <View className="flex-1 justify-center bg-landing-paper">
+      <ProductsEmptyState
+        title={title}
+        description={description}
+        actionTitle={actionTitle}
+        onAction={onAction}
+      />
+    </View>
+  );
 }
 
 function ProductDetail({
@@ -124,7 +147,7 @@ function ProductDetail({
       setReviewNotice(
         reviewEligibility.reason === 'already_reviewed'
           ? 'Bạn đã đánh giá sản phẩm này.'
-          : 'Chỉ user đã mua và nhận hàng mới được đánh giá.',
+          : 'Chỉ khách đã mua và nhận hàng mới được đánh giá.',
       );
       return;
     }
@@ -214,10 +237,9 @@ function ProductDetail({
 
   if (!productId) {
     return (
-      <ErrorView
-        fullscreen
+      <DetailState
         title="Không thể mở sản phẩm"
-        message="Thông tin sản phẩm không hợp lệ. Vui lòng quay lại và thử lần nữa."
+        description="Thông tin sản phẩm không hợp lệ. Vui lòng quay lại và thử lần nữa."
       />
     );
   }
@@ -228,11 +250,9 @@ function ProductDetail({
 
   if (isNotFound) {
     return (
-      <EmptyState
-        fullscreen
-        icon="◇"
-        title="Không tìm thấy sản phẩm"
-        description="Sản phẩm có thể đã ngừng hiển thị hoặc không còn tồn tại."
+      <DetailState
+        title="Sản phẩm này không còn trong bộ sưu tập"
+        description="Sản phẩm bạn đang tìm kiếm có thể đã ngừng kinh doanh hoặc đường dẫn không tồn tại."
         actionTitle="Quay lại cửa hàng"
         onAction={navigation.goBack}
       />
@@ -241,27 +261,26 @@ function ProductDetail({
 
   if (productQuery.isError && !product) {
     return (
-      <ErrorView
-        fullscreen
+      <DetailState
         title="Chưa thể tải sản phẩm"
-        message="Vui lòng kiểm tra kết nối và thử lại."
-        onRetry={() => void productQuery.refetch()}
+        description="Vui lòng kiểm tra kết nối và thử lại."
+        actionTitle="Thử lại"
+        onAction={() => void productQuery.refetch()}
       />
     );
   }
 
   if (!product) {
     return (
-      <ErrorView
-        fullscreen
+      <DetailState
         title="Chưa thể hiển thị sản phẩm"
-        message="Vui lòng quay lại cửa hàng và thử lần nữa."
+        description="Vui lòng quay lại cửa hàng và thử lần nữa."
       />
     );
   }
 
   return (
-    <View className="flex-1 bg-paper">
+    <View className="flex-1 bg-landing-paper">
       <ScrollView
         ref={scrollRef}
         contentContainerClassName="pb-xxl"
@@ -269,8 +288,8 @@ function ProductDetail({
         refreshControl={
           <RefreshControl
             refreshing={productQuery.isFetching}
-            tintColor={COLORS.primaryContainer}
-            colors={[COLORS.primaryContainer]}
+            tintColor={COLORS.oxblood}
+            colors={[COLORS.oxblood]}
             onRefresh={() => void productQuery.refetch()}
           />
         }
@@ -279,7 +298,7 @@ function ProductDetail({
         {productQuery.isError ? (
           <View
             accessibilityRole="alert"
-            className="mx-lg mt-lg min-h-12 flex-row items-center gap-md rounded-subtle border border-landing-line bg-ivory p-md"
+            className="mx-lg mt-lg min-h-12 flex-row items-center gap-md border border-landing-line bg-landing-ivory px-4 py-3"
           >
             <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-muted">
               Chưa thể cập nhật thông tin mới nhất. Nội dung đã tải vẫn được giữ
@@ -291,7 +310,7 @@ function ProductDetail({
               onPress={() => void productQuery.refetch()}
               className="min-h-11 min-w-11 items-center justify-center px-sm active:opacity-70"
             >
-              <Text className="font-sans text-body-sm font-bold text-oxblood">
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-oxblood underline">
                 Thử lại
               </Text>
             </Pressable>
@@ -329,8 +348,8 @@ function ProductDetail({
         visible={cartFeedback !== null && cartFeedback.productId === product.id}
         title="Đã thêm vào giỏ hàng"
         type="success"
-        customIcon={<CheckCircle2 size={36} color={COLORS.primaryContainer} />}
-        iconBgClassName="bg-catalog-muted"
+        customIcon={<CheckCircle2 size={36} strokeWidth={1.5} color={COLORS.oxblood} />}
+        iconBgClassName="bg-landing-paper"
         dismissible
         onClose={closeCartFeedback}
         primaryButtonText="Xem giỏ hàng"
@@ -339,10 +358,10 @@ function ProductDetail({
         onSecondaryPress={closeCartFeedback}
       >
         <View accessibilityLiveRegion="polite" className="w-full gap-sm">
-          <Text numberOfLines={3} className="text-center font-sans text-body-md font-semibold text-on-surface">
+          <Text numberOfLines={3} className="text-center font-sans text-body-md font-semibold text-landing-obsidian">
             {cartFeedback?.name}{cartFeedback?.color ? ` · ${cartFeedback.color}` : ''}
           </Text>
-          <Text className="text-center font-sans text-body-sm leading-relaxed text-catalog-muted-text">
+          <Text className="text-center font-sans text-body-sm leading-relaxed text-landing-muted">
             Sản phẩm đã được thêm vào giỏ hàng trên thiết bị này.
           </Text>
         </View>

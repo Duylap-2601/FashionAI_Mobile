@@ -9,13 +9,12 @@ import {
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { EmptyState } from '@/components/common/EmptyState';
-import { ErrorView } from '@/components/common/ErrorView';
 import { COLORS, SPACING } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
 import { ApiError } from '@/types/api';
 import { ProductCard } from '@/features/products/components/ProductCard';
 import { ProductGridSkeleton } from '@/features/products/components/ProductGridSkeleton';
+import { ProductsEmptyState } from '@/features/products/components/ProductsEmptyState';
 import type { IProduct } from '@/features/products/types/product';
 import { CollectionDetailHeader } from '../components/CollectionDetailHeader';
 import { CollectionSkeleton } from '../components/CollectionSkeleton';
@@ -79,19 +78,22 @@ export function CollectionDetailScreen({
     }
   }, [productsQuery]);
 
+  // Full-screen states: one ivory block with a serif title, one sentence and
+  // at most one action (FE States), centred on paper.
   if (!slug) {
     return (
-      <ErrorView
-        fullscreen
-        title="Không thể mở bộ sưu tập"
-        message="Thông tin bộ sưu tập không hợp lệ. Vui lòng quay lại và thử lần nữa."
-      />
+      <View className="flex-1 justify-center bg-landing-paper">
+        <ProductsEmptyState
+          title="Không thể mở bộ sưu tập"
+          description="Thông tin bộ sưu tập không hợp lệ. Vui lòng quay lại và thử lần nữa."
+        />
+      </View>
     );
   }
 
   if (collectionQuery.isLoading && !collection) {
     return (
-      <View className="flex-1 bg-surface-lowest">
+      <View className="flex-1 bg-landing-paper">
         <CollectionSkeleton />
       </View>
     );
@@ -99,35 +101,38 @@ export function CollectionDetailScreen({
 
   if (isNotFound) {
     return (
-      <EmptyState
-        fullscreen
-        icon="◇"
-        title="Không tìm thấy bộ sưu tập"
-        description="Bộ sưu tập có thể chưa được công bố hoặc không còn tồn tại."
-        actionTitle="Quay lại trang chủ"
-        onAction={navigation.goBack}
-      />
+      <View className="flex-1 justify-center bg-landing-paper">
+        <ProductsEmptyState
+          title="Không tìm thấy bộ sưu tập"
+          description="Bộ sưu tập có thể chưa được công bố hoặc không còn tồn tại."
+          actionTitle="Quay lại trang chủ"
+          onAction={navigation.goBack}
+        />
+      </View>
     );
   }
 
   if (collectionQuery.isError && !collection) {
     return (
-      <ErrorView
-        fullscreen
-        title="Chưa thể tải bộ sưu tập"
-        message="Vui lòng kiểm tra kết nối và thử lại."
-        onRetry={() => void collectionQuery.refetch()}
-      />
+      <View className="flex-1 justify-center bg-landing-paper">
+        <ProductsEmptyState
+          title="Chưa thể tải bộ sưu tập"
+          description="Vui lòng kiểm tra kết nối và thử lại."
+          actionTitle="Thử lại"
+          onAction={() => void collectionQuery.refetch()}
+        />
+      </View>
     );
   }
 
   if (!collection) {
     return (
-      <ErrorView
-        fullscreen
-        title="Chưa thể hiển thị bộ sưu tập"
-        message="Vui lòng quay lại trang chủ và thử lần nữa."
-      />
+      <View className="flex-1 justify-center bg-landing-paper">
+        <ProductsEmptyState
+          title="Chưa thể hiển thị bộ sưu tập"
+          description="Vui lòng quay lại trang chủ và thử lần nữa."
+        />
+      </View>
     );
   }
 
@@ -137,18 +142,19 @@ export function CollectionDetailScreen({
       (productsQuery.isError && products.length > 0) ? (
         <View
           accessibilityRole="alert"
-          className="m-lg min-h-12 flex-row items-center gap-md rounded-md bg-catalog-muted p-md"
+          className="mx-lg mt-lg min-h-12 flex-row items-center gap-md rounded-subtle border border-landing-line bg-landing-ivory p-md"
         >
-          <Text className="flex-1 font-sans text-body-sm leading-relaxed text-on-surface-variant">
+          <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-muted">
             Chưa thể cập nhật nội dung mới nhất. Dữ liệu đã tải vẫn được giữ
             lại.
           </Text>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel="Thử tải lại bộ sưu tập"
             onPress={handleRefresh}
             className="min-h-11 min-w-11 items-center justify-center px-sm active:opacity-70"
           >
-            <Text className="font-sans text-body-sm font-bold text-primary-container">
+            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-oxblood">
               Thử lại
             </Text>
           </Pressable>
@@ -162,7 +168,7 @@ export function CollectionDetailScreen({
   );
 
   return (
-    <View className="flex-1 bg-surface-lowest">
+    <View className="flex-1 bg-landing-paper">
       <FlatList
         data={products}
         renderItem={renderProduct}
@@ -173,14 +179,14 @@ export function CollectionDetailScreen({
           productsQuery.isLoading ? (
             <ProductGridSkeleton presentation="catalog" cardWidth={cardWidth} />
           ) : productsQuery.isError ? (
-            <ErrorView
+            <ProductsEmptyState
               title="Chưa thể tải sản phẩm"
-              message="Vui lòng kiểm tra kết nối và thử lại."
-              onRetry={() => void productsQuery.refetch()}
+              description="Vui lòng kiểm tra kết nối và thử lại."
+              actionTitle="Thử lại"
+              onAction={() => void productsQuery.refetch()}
             />
           ) : (
-            <EmptyState
-              icon="◇"
+            <ProductsEmptyState
               title="Bộ sưu tập chưa có sản phẩm"
               description="Các thiết kế mới sẽ được cập nhật tại đây."
             />
@@ -189,11 +195,18 @@ export function CollectionDetailScreen({
         ListFooterComponent={
           productsQuery.isFetchingNextPage ? (
             <View className="min-h-16 flex-row items-center justify-center gap-sm">
-              <ActivityIndicator color={COLORS.primaryContainer} />
-              <Text className="font-sans text-body-sm text-catalog-muted-text">
-                Đang tải thêm...
+              <ActivityIndicator color={COLORS.oxblood} />
+              <Text
+                accessibilityLiveRegion="polite"
+                className="font-mono text-[11px] uppercase tracking-[0.2em] text-landing-muted"
+              >
+                Đang tải thêm
               </Text>
             </View>
+          ) : products.length > 0 && !productsQuery.hasNextPage ? (
+            <Text className="mx-lg mb-xxl mt-xxl border-t border-landing-line pt-xxl text-center font-mono text-[11px] uppercase tracking-[0.2em] text-landing-muted">
+              Đã xem hết {productTotal.toLocaleString('vi-VN')} sản phẩm
+            </Text>
           ) : (
             <View className="h-xxl" />
           )

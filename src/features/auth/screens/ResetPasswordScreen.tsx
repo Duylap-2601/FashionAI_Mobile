@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowRight } from 'lucide-react-native';
 import { AuthStackParamList } from '@/navigation/types';
 import { authApi } from '@/features/auth/api/auth.api';
 import {
@@ -11,6 +12,14 @@ import {
 } from '@/features/auth/schemas/auth.schema';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { COLORS } from '@/constants/theme';
+import {
+  AuthBackLink,
+  AuthHeading,
+  AuthLead,
+  AuthScreen,
+  PasswordRules,
+} from '@/features/auth/components/auth-form';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ResetPassword'>;
 
@@ -28,9 +37,13 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
     defaultValues: { password: '', confirmPassword: '' },
   });
 
+  // Chỉ đọc để vẽ thước độ dài và hai quy tắc mật khẩu, không đổi luồng kiểm tra của form.
+  const password = useWatch({ control, name: 'password' }) ?? '';
+  const confirmPassword = useWatch({ control, name: 'confirmPassword' }) ?? '';
+
   const onSubmit = async (values: ResetPasswordFormValues) => {
     if (!token.trim()) {
-      setTokenError('Vui lòng nhập mã token đặt lại mật khẩu');
+      setTokenError('Vui lòng nhập mã đặt lại mật khẩu');
       return;
     }
     setTokenError('');
@@ -38,91 +51,77 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
     try {
       setIsSubmitting(true);
       await authApi.resetPassword(token.trim(), values.password);
-      Alert.alert('Thành công', 'Mật khẩu của bạn đã được cập nhật thành công!', [
+      Alert.alert('Đã đặt mật khẩu mới', 'Đặt lại mật khẩu thành công. Bạn có thể đăng nhập lại.', [
         {
           text: 'Đăng nhập',
           onPress: () => navigation.navigate('Login'),
         },
       ]);
     } catch (err: any) {
-      Alert.alert('Thất bại', err.message || 'Không thể đặt lại mật khẩu. Vui lòng thử lại.');
+      Alert.alert('Chưa đặt lại được mật khẩu', err.message || 'Không thể đặt lại mật khẩu. Vui lòng thử lại.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-surface"
-    >
-      <ScrollView contentContainerClassName="grow justify-center px-xxl py-xxxl">
-        <View className="mb-xxxl items-center">
-          <Text className="text-xxxl font-extrabold text-on-surface-strong">
-            Đặt lại mật khẩu
-          </Text>
-          <Text className="mt-sm text-center text-body-sm leading-5 text-on-surface-variant">
-            Nhập mã xác thực và mật khẩu mới cho tài khoản của bạn.
-          </Text>
-        </View>
+    <AuthScreen>
+      <AuthBackLink label="Quay lại đăng nhập" onPress={() => navigation.navigate('Login')} />
 
-        <View className="mb-xxl">
+      <AuthHeading eyebrow="Khôi phục tài khoản" title="Đặt mật khẩu mới">
+        <AuthLead>Nhập mã đặt lại trong email và mật khẩu mới cho tài khoản của bạn.</AuthLead>
+      </AuthHeading>
+
+      <Input
+        label="Mã đặt lại mật khẩu"
+        placeholder="Dán mã từ email"
+        value={token}
+        onChangeText={setToken}
+        error={tokenError || undefined}
+      />
+
+      <Controller
+        control={control}
+        name="password"
+        render={({ field: { value, onChange, onBlur } }) => (
           <Input
-            label="Mã xác thực (Token)"
-            placeholder="Dán mã token từ email"
-            value={token}
-            onChangeText={setToken}
-            error={tokenError || undefined}
+            label="Mật khẩu mới"
+            placeholder="Ít nhất 8 ký tự"
+            secureTextEntry
+            value={value}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            error={errors.password?.message}
           />
+        )}
+      />
+      <PasswordRules password={password} confirmPassword={confirmPassword} />
 
-          <Controller
-            control={control}
-            name="password"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <Input
-                label="Mật khẩu mới"
-                placeholder="••••••••"
-                secureTextEntry
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.password?.message}
-              />
-            )}
+      <Controller
+        control={control}
+        name="confirmPassword"
+        render={({ field: { value, onChange, onBlur } }) => (
+          <Input
+            label="Xác nhận mật khẩu mới"
+            placeholder="Nhập lại mật khẩu mới"
+            secureTextEntry
+            value={value}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            error={errors.confirmPassword?.message}
           />
+        )}
+      />
 
-          <Controller
-            control={control}
-            name="confirmPassword"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <Input
-                label="Xác nhận mật khẩu mới"
-                placeholder="••••••••"
-                secureTextEntry
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.confirmPassword?.message}
-              />
-            )}
-          />
-
-          <Button
-            title="Lưu mật khẩu mới"
-            onPress={handleSubmit(onSubmit)}
-            loading={isSubmitting}
-          />
-
-          <TouchableOpacity
-            className="mt-lg min-h-11 items-center justify-center py-sm"
-            onPress={() => navigation.navigate('Login')}
-          >
-            <Text className="text-label-lg text-on-surface-variant">
-              Quay lại Đăng nhập
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Button
+        className="mt-md"
+        size="lg"
+        title="Cập nhật mật khẩu"
+        loadingTitle="Đang cập nhật"
+        onPress={handleSubmit(onSubmit)}
+        loading={isSubmitting}
+        rightIcon={<ArrowRight size={16} strokeWidth={1.75} color={COLORS.paper} />}
+      />
+    </AuthScreen>
   );
 };

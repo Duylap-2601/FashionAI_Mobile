@@ -19,20 +19,20 @@ export function ProductCartButton({ onPress }: { onPress: () => void }) {
         showCount ? `Giỏ hàng, ${total} sản phẩm` : "Xem giỏ hàng"
       }
       onPress={onPress}
-      className="relative h-9 w-9 items-center justify-center rounded-full active:bg-surface-container"
+      className="relative h-11 w-11 items-center justify-center rounded-full active:opacity-70"
     >
-      <ShoppingBag size={18} color={COLORS.onSurface} />
+      <ShoppingBag size={18} strokeWidth={1.75} color={COLORS.obsidian} />
       {!ready && isAuthenticated ? (
         <ActivityIndicator
           accessibilityLabel="Đang tải giỏ hàng"
           size="small"
-          color={COLORS.onSurface}
+          color={COLORS.oxblood}
           className="absolute right-0 top-0"
         />
       ) : showCount ? (
         <View
           pointerEvents="none"
-          className="absolute -right-1 -top-1 h-5 min-w-5 items-center justify-center rounded-full border-2 border-landing-paper bg-landing-oxblood px-1"
+          className="absolute right-0 top-0 h-5 min-w-5 items-center justify-center rounded-full border-2 border-landing-paper bg-landing-oxblood px-1"
         >
           <Text className="font-mono text-[9px] font-semibold text-landing-paper">
             {total > 99 ? "99+" : total}

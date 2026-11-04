@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check, Search, Shirt, X } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
 import { mainProductImage } from '@/features/products/api/products.api';
@@ -70,11 +71,16 @@ export function StylistProductPickerModal({
           className="flex-1"
           onPress={close}
         />
-        <View className="h-[88%] flex-col overflow-hidden border-t border-landing-line bg-landing-paper">
-          <View className="flex-row items-start justify-between gap-4 border-b border-landing-line px-5 pb-4 pt-5">
+        {/* Bottom sheet theo design/DESIGN.md: góc trên 18px, tay nắm 40x4 taupe, chừa vùng an toàn đáy. */}
+        <SafeAreaView
+          edges={['bottom']}
+          className="h-[88%] flex-col overflow-hidden rounded-t-xl bg-landing-paper"
+        >
+          <View className="mt-sm h-1 w-10 self-center rounded-subtle bg-taupe" />
+          <View className="flex-row items-start justify-between gap-4 border-b border-landing-line px-5 pb-4 pt-3">
             <View className="flex-1">
-              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink">
-                AI Stylist
+              <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
+                Món muốn phối cùng
               </Text>
               <Text
                 accessibilityRole="header"
@@ -83,7 +89,7 @@ export function StylistProductPickerModal({
                 Chọn sản phẩm
               </Text>
               <Text className="mt-1 font-sans text-body-sm text-landing-muted">
-                Chỉ gồm sản phẩm đang bán trong cửa hàng.
+                AI sẽ phối quanh sản phẩm thật trong cửa hàng.
               </Text>
             </View>
             <Pressable
@@ -171,6 +177,7 @@ export function StylistProductPickerModal({
               return (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={item.name}
                   accessibilityState={{ selected: isSelected }}
                   className={`flex-row items-center gap-3 rounded-subtle border p-2.5 active:opacity-80 ${
                     isSelected
@@ -203,7 +210,7 @@ export function StylistProductPickerModal({
                     </Text>
                   </View>
                   {isSelected ? (
-                    <View className="h-6 w-6 items-center justify-center bg-oxblood">
+                    <View className="h-6 w-6 items-center justify-center rounded-subtle bg-oxblood">
                       <Check size={14} strokeWidth={2.5} color={COLORS.paper} />
                     </View>
                   ) : null}
@@ -211,7 +218,7 @@ export function StylistProductPickerModal({
               );
             }}
           />
-        </View>
+        </SafeAreaView>
       </View>
     </Modal>
   );

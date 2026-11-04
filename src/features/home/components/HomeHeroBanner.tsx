@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useId } from 'react';
-import { View, Text, Pressable, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
 import { LANDING_HERO_SLIDES } from '../constants/landing-hero';
+import { useReducedMotion } from '../hooks/use-reduced-motion';
 
 interface HomeHeroBannerProps {
   onPressCollections: () => void;
@@ -18,6 +19,7 @@ export function HomeHeroBanner({
   const { width } = useWindowDimensions();
   const gradientId = useId().replace(/:/g, '');
   const [activeIndex, setActiveIndex] = useState(0);
+  const reduceMotion = useReducedMotion();
 
   const activeSlide = LANDING_HERO_SLIDES[activeIndex];
   const total = LANDING_HERO_SLIDES.length;
@@ -30,16 +32,18 @@ export function HomeHeroBanner({
     setActiveIndex((prev) => (prev - 1 + total) % total);
   }, [total]);
 
+  // Auto-play every 6s like FE; off under the system reduce-motion setting.
   useEffect(() => {
+    if (reduceMotion) return;
     const timer = setInterval(handleNext, 6000);
     return () => clearInterval(timer);
-  }, [handleNext]);
+  }, [handleNext, reduceMotion]);
 
   // FE: text-[clamp(2.1rem,10.5vw,2.7rem)] leading-[1.1] tracking-[-0.025em].
   const titleSize = Math.min(Math.max(width * 0.105, 33.6), 43.2);
 
   return (
-    <View className="relative w-full overflow-hidden bg-landing-obsidian" style={{ minHeight: 560 }}>
+    <View className="relative min-h-[560px] w-full overflow-hidden bg-landing-obsidian">
       <Image
         key={activeSlide.id}
         source={activeSlide.image}
@@ -47,7 +51,7 @@ export function HomeHeroBanner({
         contentFit="cover"
         contentPosition="top"
         transition={300}
-        style={{ position: 'absolute', inset: 0 }}
+        style={StyleSheet.absoluteFill}
       />
 
       <View pointerEvents="none" className="absolute inset-0">
@@ -78,8 +82,9 @@ export function HomeHeroBanner({
             </Text>
           </View>
 
-          <View style={{ marginTop: 24 }}>
+          <View className="mt-6">
             <Text
+              accessibilityRole="header"
               style={{
                 fontFamily: 'Playfair Display',
                 fontSize: titleSize,
@@ -110,7 +115,7 @@ export function HomeHeroBanner({
             <Pressable
               accessibilityRole="button"
               onPress={onPressCollections}
-              className="h-12 flex-row items-center justify-center gap-3 rounded-subtle border border-landing-paper bg-landing-paper px-6 active:bg-landing-brass"
+              className="h-12 flex-row items-center justify-center gap-3 rounded-subtle border border-landing-paper bg-landing-paper px-6 active:border-landing-brass active:bg-landing-brass"
             >
               <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-obsidian">
                 Khám phá bộ sưu tập
@@ -121,7 +126,7 @@ export function HomeHeroBanner({
             <Pressable
               accessibilityRole="button"
               onPress={onPressTryOn}
-              className="h-12 items-center justify-center rounded-subtle border border-landing-paper/35 px-6 active:bg-landing-paper/10"
+              className="h-12 items-center justify-center rounded-subtle border border-landing-paper/35 px-6 active:opacity-70"
             >
               <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-paper">
                 Thử đồ AI
@@ -130,7 +135,10 @@ export function HomeHeroBanner({
           </View>
 
           <View className="mt-8 flex-row items-center justify-between gap-4 border-t border-landing-paper/15 pt-4">
-            <Text className="font-mono text-[11px] tracking-[0.18em] text-landing-paper/55">
+            <Text
+              accessibilityLiveRegion="polite"
+              className="font-mono text-[11px] tracking-[0.18em] text-landing-paper/55"
+            >
               {String(activeIndex + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
             </Text>
 
@@ -141,6 +149,9 @@ export function HomeHeroBanner({
                     key={slide.id}
                     accessibilityRole="button"
                     accessibilityLabel={`Xem ${slide.name}`}
+                    accessibilityState={{ selected: activeIndex === index }}
+                    // The 6px bar stays thin; the slop lifts the touch target to 44px.
+                    hitSlop={{ top: 19, bottom: 19, left: 4, right: 4 }}
                     onPress={() => setActiveIndex(index)}
                     className={`h-1.5 ${
                       activeIndex === index ? 'w-8 bg-landing-brass' : 'w-3 bg-landing-paper/30'
@@ -153,7 +164,7 @@ export function HomeHeroBanner({
                 accessibilityRole="button"
                 accessibilityLabel="Bộ sưu tập trước"
                 onPress={handlePrev}
-                className="h-11 w-11 items-center justify-center border border-landing-paper/25 active:bg-landing-paper"
+                className="h-11 w-11 items-center justify-center rounded-subtle border border-landing-paper/25 active:opacity-70"
               >
                 <ChevronLeft size={16} color={COLORS.paper} />
               </Pressable>
@@ -161,7 +172,7 @@ export function HomeHeroBanner({
                 accessibilityRole="button"
                 accessibilityLabel="Bộ sưu tập tiếp theo"
                 onPress={handleNext}
-                className="h-11 w-11 items-center justify-center border border-landing-paper/25 active:bg-landing-paper"
+                className="h-11 w-11 items-center justify-center rounded-subtle border border-landing-paper/25 active:opacity-70"
               >
                 <ChevronRight size={16} color={COLORS.paper} />
               </Pressable>
