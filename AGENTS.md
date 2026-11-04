@@ -59,7 +59,9 @@
 | SubscriptionPlansScreen | `SubscriptionPlans` | — |
 | SubscriptionHistoryScreen | `SubscriptionHistory` | — |
 | ChatScreen | `Chat` | — |
-| PolicyScreen | `Policy` | — |
+| PolicyScreen | `Policy` | `Chính sách` (param `type`: `return` \| `warranty` \| `size-guide` \| `privacy` \| `terms`; default `privacy`) |
+
+**Policy pages** (`src/features/profile/screens/PolicyScreen.tsx`): one screen with underline tabs for the five documents. Content is typed `PolicyDocument` data in `src/features/profile/constants/policies/` copied from FE `src/features/policies/constants/` (keep the wording, numbers and `POLICY_CONTACT` in sync with FE) and rendered by `PolicyDocumentView`. The size guide reads its measurement ranges and reference size chart from `src/features/measurements/constants/measurement-fields.ts`, the same list the measurements form uses. Entry points: Profile › Chính sách, Home footer, product detail (return policy note), Measurements › Bảng cỡ tham khảo (size guide), Subscription plans footer.
 
 ## Mobile Design System
 
@@ -166,11 +168,11 @@ Rules:
 | **Shipping (GHN)** | `src/features/shipping/` | `shipping.controller.ts` | ✅ Done — capabilities, address catalog (provinces/wards) |
 | **Payments (SePay)** | `src/features/payments/` | `payments.controller.ts` | ✅ Done — checkout, status polling |
 | **Subscriptions (VIP)** | `src/features/subscription/` | `payments.controller.ts` | ✅ Done — plans, history, cancel, resume |
-| **Profile** | `src/features/profile/` | `users.controller.ts` | ✅ Done — view/edit profile, address book, PolicyScreen |
-| **Measurements** | `src/features/measurements/` | `users.controller.ts` | ✅ Done — MeasurementsScreen, BodyDiagram, completeness hook |
+| **Profile** | `src/features/profile/` | `users.controller.ts` | ✅ Done — view/edit profile, address book, PolicyScreen (return, warranty, size guide, privacy, terms) |
+| **Measurements** | `src/features/measurements/` | `users.controller.ts` | ✅ Done — MeasurementsScreen, BodyDiagram, completeness hook, shared field constants |
 | **Notifications** | `src/features/notifications/` | `notification.controller.ts` + `realtime.gateway.ts` | ✅ Done — list, unread count, NotificationBell, mark read |
 | **Rack (Wardrobe)** | `src/features/rack/` | `rack.controller.ts` | ✅ Done — get, add, remove, clear; RackScreen |
-| **Search** | `src/features/products/screens/SearchScreen.tsx` | `products.controller.ts` | ✅ Done — debounced search over product list |
+| **Search** | `src/features/products/screens/SearchScreen.tsx` | `products.controller.ts` | ✅ Done — debounced search over product list, device search history (`hooks/use-search-history.ts`, FE rules: 12 entries, case-insensitive de-dup) |
 
 ## API Layer
 
@@ -449,6 +451,7 @@ src/
 │   ├── measurements/
 │   │   ├── api/measurements.api.ts
 │   │   ├── components/BodyDiagram.tsx
+│   │   ├── constants/measurement-fields.ts  # form fields, ranges, reference size chart
 │   │   ├── hooks/use-measurements-completeness.ts
 │   │   ├── schemas/measurements.schema.ts
 │   │   └── screens/MeasurementsScreen.tsx
@@ -469,19 +472,20 @@ src/
 │   │   └── api/payments.api.ts
 │   ├── products/
 │   │   ├── api/
-│   │   ├── components/
-│   │   ├── hooks/
+│   │   ├── components/              # incl. ProductImageGallery, ProductImageViewer (full-screen zoom), ZoomableImage
+│   │   ├── hooks/                   # incl. use-search-history.ts
 │   │   ├── mappers/
 │   │   ├── screens/                 # ShopScreen, ProductDetailScreen, SearchScreen
 │   │   ├── store/                   # use-filter-store.ts, filter-store.ts
 │   │   ├── types/product.ts
-│   │   └── utils/
+│   │   └── utils/                   # incl. image-zoom.ts, search-history.ts
 │   ├── profile/
 │   │   ├── api/users.api.ts
-│   │   ├── components/AddressForm.tsx
+│   │   ├── components/              # AddressForm, PolicyDocumentView, PolicyBlockView
+│   │   ├── constants/policies/      # policy-nav, return/warranty/size-guide/privacy/terms documents
 │   │   ├── hooks/use-address-book.ts
 │   │   ├── screens/                 # ProfileScreen, AddressesScreen, PolicyScreen
-│   │   └── types/user.ts
+│   │   └── types/                   # user.ts, policy.ts
 │   ├── rack/
 │   │   ├── api/rack.api.ts
 │   │   ├── components/

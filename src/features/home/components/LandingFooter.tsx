@@ -4,8 +4,7 @@ import { ChevronRight, Clock, Mail, MapPin, Phone, QrCode, Wallet } from 'lucide
 import { COLORS } from '@/constants/theme';
 import { CONTACT } from '@/constants/contact';
 import { Wordmark } from '@/components/common/Wordmark';
-
-type PolicyType = 'privacy' | 'terms' | 'return';
+import type { PolicyType } from '@/features/profile/types/policy';
 
 interface LandingFooterProps {
   onPressHome: () => void;
@@ -14,7 +13,6 @@ interface LandingFooterProps {
   onPressTryOn: () => void;
   onPressStylist: () => void;
   onPressOrders: () => void;
-  onPressMeasurements: () => void;
   onPressPolicy: (type: PolicyType) => void;
 }
 
@@ -93,7 +91,6 @@ export function LandingFooter({
   onPressTryOn,
   onPressStylist,
   onPressOrders,
-  onPressMeasurements,
   onPressPolicy,
 }: LandingFooterProps) {
   return (
@@ -145,9 +142,10 @@ export function LandingFooter({
               label="Đổi trả 7 ngày"
               onPress={() => onPressPolicy('return')}
             />
+            <FooterLink label="Bảo hành" onPress={() => onPressPolicy('warranty')} />
             <FooterLink
-              label="Hướng dẫn số đo"
-              onPress={onPressMeasurements}
+              label="Hướng dẫn chọn size"
+              onPress={() => onPressPolicy('size-guide')}
             />
             <FooterLink label="Bảo mật" onPress={() => onPressPolicy('privacy')} />
             <FooterLink label="Điều khoản" onPress={() => onPressPolicy('terms')} />

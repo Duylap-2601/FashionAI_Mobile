@@ -182,6 +182,10 @@ function ProductDetail({
     });
   }, [navigation, product, mainImageUrl]);
 
+  const handleReturnPolicyPress = useCallback(() => {
+    navigation.navigate('Policy', { type: 'return' });
+  }, [navigation]);
+
   const handleAskAI = useCallback(() => {
     if (!product) return;
     navigation.navigate('Chat', { productId: String(product.id) });
@@ -311,6 +315,7 @@ function ProductDetail({
           onReviewsSectionLayout={handleReviewsSectionLayout}
           onSelectColor={handleSelectColor}
           onAskStylist={handleAskAI}
+          onReturnPolicyPress={handleReturnPolicyPress}
         />
       </ScrollView>
 
