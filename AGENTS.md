@@ -434,7 +434,8 @@ src/
 │   │   ├── types/chat.ts
 │   │   └── utils/                   # chat-error.ts, chat-session-pages.ts
 │   ├── checkout/
-│   │   └── screens/                 # CheckoutScreen.tsx, PaymentScreen.tsx
+│   │   ├── screens/                 # CheckoutScreen.tsx, PaymentScreen.tsx
+│   │   └── utils/checkout-display.ts # summary subtotal/sale split, unpaid-order code/total
 │   ├── collections/
 │   │   ├── api/                     # collections.api.ts, collection.keys.ts
 │   │   ├── components/              # CollectionCard, CollectionCarousel, CollectionCover, CollectionDetailHeader, CollectionHeroCard, CollectionSkeleton
