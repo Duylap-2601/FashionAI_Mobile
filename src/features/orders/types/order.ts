@@ -68,9 +68,21 @@ export interface IOrderQuote {
   total: number;
 }
 
-export type OrderIssueReason = 'WRONG_SIZE' | 'WRONG_COLOR' | 'QUALITY_MISMATCH' | 'OTHER';
-export type OrderIssueDesiredResolution = 'REFUND' | 'EXCHANGE';
+export type OrderIssueReason =
+  | 'WRONG_SIZE'
+  | 'WRONG_COLOR'
+  | 'QUALITY_MISMATCH'
+  | 'OTHER'
+  | 'REFUND_NOT_RECEIVED';
+// BE chỉ còn hỗ trợ hoàn tiền, không còn đổi hàng.
+export type OrderIssueDesiredResolution = 'REFUND';
 export type OrderIssueStatus = 'PENDING' | 'APPROVED' | 'RESOLVED' | 'REJECTED';
+
+export interface IRefundBankAccount {
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+}
 
 export interface IOrderIssue {
   id: string;
@@ -82,6 +94,9 @@ export interface IOrderIssue {
   desiredResolution: OrderIssueDesiredResolution;
   approvedResolution?: OrderIssueDesiredResolution | null;
   evidenceImages?: string[];
+  bankName?: string | null;
+  accountNumber?: string | null;
+  accountHolder?: string | null;
   status: OrderIssueStatus;
   adminNote?: string | null;
   createdAt: string;
@@ -96,12 +111,17 @@ export interface IOrderIssue {
   };
 }
 
-export interface ICreateOrderIssuePayload {
+export interface IEvidenceImage {
+  uri: string;
+  name: string;
+  type: string;
+}
+
+export interface ICreateOrderIssuePayload extends IRefundBankAccount {
   orderId: string | number;
   orderItemId: string | number;
   reason: OrderIssueReason;
   description: string;
-  desiredResolution: OrderIssueDesiredResolution;
-  evidenceImages?: { uri: string; name: string; type: string }[];
+  evidenceImages: IEvidenceImage[];
 }
 

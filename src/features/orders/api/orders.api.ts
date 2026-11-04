@@ -1,5 +1,6 @@
 import { http, HttpOptions } from '@/api/http';
 import { ENDPOINTS } from '@/constants/endpoints';
+import type { ICreateOrderIssuePayload, IOrderIssue } from '../types/order';
 
 export interface IOrderShippingInfo {
   name: string;
@@ -91,26 +92,21 @@ export const ordersApi = {
     return [];
   },
 
-  createOrderIssue: (payload: {
-    orderId: string | number;
-    orderItemId: string | number;
-    reason: string;
-    description: string;
-    desiredResolution: string;
-    evidenceImages?: { uri: string; name: string; type: string }[];
-  }, opts?: HttpOptions): Promise<any> => {
+  createOrderIssue: (payload: ICreateOrderIssuePayload, opts?: HttpOptions): Promise<IOrderIssue> => {
     const form = new FormData();
     form.append('reason', payload.reason);
     form.append('description', payload.description);
-    form.append('desiredResolution', payload.desiredResolution);
+    // BE chỉ nhận hoàn tiền; tài khoản nhận hoàn là bắt buộc (CreateOrderIssueDto).
+    form.append('desiredResolution', 'REFUND');
+    form.append('bankName', payload.bankName);
+    form.append('accountNumber', payload.accountNumber);
+    form.append('accountHolder', payload.accountHolder);
 
-    if (payload.evidenceImages?.length) {
-      payload.evidenceImages.forEach((img) => {
-        form.append('evidenceImages', img as unknown as Blob);
-      });
-    }
+    payload.evidenceImages.forEach((img) => {
+      form.append('evidenceImages', img as unknown as Blob);
+    });
 
-    return http.upload<any>(
+    return http.upload<IOrderIssue>(
       ENDPOINTS.ORDERS.REPORT_ISSUE(payload.orderId, payload.orderItemId),
       form,
       { ...opts, timeout: opts?.timeout ?? 30000 }
