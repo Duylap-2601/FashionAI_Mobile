@@ -12,16 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  Ruler,
-  Info,
-  CheckCircle2,
-  AlertCircle,
-  HelpCircle,
-  Save,
-  X,
-  ArrowRight,
-} from 'lucide-react-native';
+import { CheckCircle2, AlertCircle, HelpCircle, X, ArrowRight } from 'lucide-react-native';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { AppHeader } from '@/components/common/AppHeader';
 import { BackButton } from '@/components/common/BackButton';
@@ -47,7 +38,6 @@ const labelClass =
   'font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink';
 const eyebrowClass =
   'font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink';
-const cardClass = 'rounded-subtle border border-landing-line bg-ivory';
 const primaryButtonTextClass =
   'font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper';
 const secondaryButtonTextClass =
@@ -63,55 +53,59 @@ function isMeasurementFieldValid(field: FieldDef, value: string): boolean | null
 interface MeasurementFieldProps {
   field: FieldDef;
   value: string;
+  isDirty: boolean;
   onChange: (id: string, value: string) => void;
   onHelp: (field: FieldDef) => void;
 }
 
+// Ô nhập số đo kiểu FE measurement-input.tsx: nhãn, chấm oxblood khi đã sửa, ô ivory viền mảnh.
 const MeasurementField = React.memo(function MeasurementField({
   field,
   value,
+  isDirty,
   onChange,
   onHelp,
 }: MeasurementFieldProps) {
   const validStatus = isMeasurementFieldValid(field, value);
 
   return (
-    <View className="mb-3.5">
-      <View className="mb-1.5 flex-row items-center justify-between gap-2">
-        <View className="flex-1 flex-row flex-wrap items-center gap-1.5">
-          <Text className="font-sans text-body-sm font-medium text-landing-obsidian">
-            {field.label}
-          </Text>
-          {field.requiredFor && (
-            <Text className="border border-landing-line px-1.5 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.12em] text-brass-ink">
+    <View className="mb-5">
+      <View className="mb-1 flex-row items-center justify-between gap-2">
+        <View className="flex-1 flex-row flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <Text className="font-sans text-sm text-landing-obsidian">{field.label}</Text>
+          {field.requiredFor ? (
+            <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-brass-ink">
               {field.requiredFor}
             </Text>
-          )}
+          ) : null}
+          {isDirty ? (
+            <View
+              accessible
+              accessibilityLabel="Đã sửa, chưa lưu"
+              className="h-1.5 w-1.5 self-center rounded-full bg-oxblood"
+            />
+          ) : null}
         </View>
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel={`Xem hướng dẫn đo ${field.label}`}
+          accessibilityLabel={`Cách đo ${field.label.toLowerCase()}`}
           onPress={() => onHelp(field)}
-          className="-mr-2 h-11 w-11 items-center justify-center active:opacity-60"
+          className="-mr-2 h-11 w-11 items-center justify-center"
         >
-          <HelpCircle size={15} strokeWidth={1.75} color={COLORS.muted} />
+          <HelpCircle size={16} strokeWidth={1.75} color={COLORS.muted} />
         </TouchableOpacity>
       </View>
 
       <View
-        className={`h-11 flex-row items-center justify-between rounded-subtle border bg-landing-paper/60 px-3.5 ${
-          validStatus === false
-            ? 'border-danger'
-            : validStatus === true
-              ? 'border-sage-ink/50'
-              : 'border-landing-line'
+        className={`h-11 flex-row items-center justify-between rounded-subtle border bg-landing-ivory/80 px-3 ${
+          validStatus === false ? 'border-danger' : 'border-landing-line'
         }`}
       >
         <TextInput
           value={value}
           onChangeText={(v) => onChange(field.id, v)}
-          placeholder="—"
-          placeholderTextColor={COLORS.muted}
+          accessibilityLabel={`${field.label} (${field.unit})`}
+          accessibilityHint={`Từ ${field.min} đến ${field.max} ${field.unit}`}
           keyboardType="numeric"
           className="h-full flex-1 font-mono text-body-md text-landing-obsidian"
         />
@@ -129,12 +123,12 @@ const MeasurementField = React.memo(function MeasurementField({
       </View>
 
       <Text
-        className={`mt-1 font-mono text-[10.5px] ${
+        className={`mt-1 font-sans text-xs ${
           validStatus === false ? 'text-danger' : 'text-landing-muted'
         }`}
       >
         {validStatus === false
-          ? `Phải từ ${field.min}–${field.max} ${field.unit}`
+          ? `Nhập từ ${field.min} đến ${field.max} ${field.unit}.`
           : `${field.min}–${field.max} ${field.unit}`}
       </Text>
     </View>
@@ -190,6 +184,7 @@ function findClosestSize(
   return best ? { size: best.size, basedOn: known, exact: best.distance === 0 } : null;
 }
 
+// Đầu nhóm kiểu FE section-header.tsx: tiêu đề serif + đường mảnh kéo dài.
 function SectionBlock({
   label,
   description,
@@ -201,12 +196,15 @@ function SectionBlock({
 }) {
   return (
     <View>
-      <View className="mb-3 gap-1">
-        <Text className={labelClass}>{label}</Text>
-        {description ? (
-          <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
-            {description}
+      <View className="mb-5">
+        <View className="flex-row items-center gap-4">
+          <Text accessibilityRole="header" className="font-display text-xl leading-tight text-landing-obsidian">
+            {label}
           </Text>
+          <View className="h-px flex-1 bg-landing-line" />
+        </View>
+        {description ? (
+          <Text className="mt-1 font-sans text-xs text-landing-muted">{description}</Text>
         ) : null}
       </View>
       {children}
@@ -232,7 +230,7 @@ export function MeasurementsScreen() {
   const [activeHelpField, setActiveHelpField] = useState<FieldDef | null>(null);
 
   // Query measurements
-  const { data: fetchedMeasurements } = useQuery({
+  const { data: fetchedMeasurements, isLoading: isLoadingMeasurements } = useQuery({
     queryKey: ['user-measurements'],
     queryFn: () => measurementsApi.getMeasurements(),
   });
@@ -311,11 +309,14 @@ export function MeasurementsScreen() {
     [initialMeasurements]
   );
 
-  const isMeasurementsDirty = useMemo(() => {
-    return ALL_MEASUREMENT_DEFS.some(
-      (f) => (measurements[f.id] || '') !== (initialMeasurements[f.id] || '')
-    );
-  }, [measurements, initialMeasurements]);
+  const changedCount = useMemo(
+    () =>
+      ALL_MEASUREMENT_DEFS.filter(
+        (f) => (measurements[f.id] || '') !== (initialMeasurements[f.id] || '')
+      ).length,
+    [measurements, initialMeasurements]
+  );
+  const isMeasurementsDirty = changedCount > 0;
 
   const bannerVisible = isMeasurementsDirty && activeTab === 'measurements';
 
@@ -341,7 +342,7 @@ export function MeasurementsScreen() {
     [measurements]
   );
 
-  // Toast "Đã lưu số đo cơ thể thành công!" tự ẩn sau 3.5s, có nút X tắt ngay.
+  // Toast "Đã lưu số đo" tự ẩn sau 3.5s, có nút X tắt ngay.
   useEffect(() => {
     if (!showSavedToast) return;
     const timer = setTimeout(() => setShowSavedToast(false), 3500);
@@ -389,21 +390,23 @@ export function MeasurementsScreen() {
 
       {showSavedToast && (
         <View
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
           style={{ top: insets.top + 60 }}
-          className="absolute left-4 right-4 z-50 flex-row items-center gap-2 border-l-2 border-sage-ink bg-ivory px-4 py-2"
+          className="absolute left-4 right-4 z-50 flex-row items-center gap-2 border-l-2 border-sage-ink bg-ivory px-4 py-1"
         >
           <CheckCircle2 size={16} strokeWidth={1.75} color={COLORS.sageInk} />
           <Text
             numberOfLines={1}
             className="flex-1 font-sans text-body-sm font-medium text-sage-ink"
           >
-            Đã lưu số đo cơ thể thành công!
+            Đã lưu số đo
           </Text>
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Đóng thông báo"
             onPress={() => setShowSavedToast(false)}
-            className="-mr-2 h-11 w-11 items-center justify-center active:opacity-60"
+            className="-mr-2 h-11 w-11 items-center justify-center"
           >
             <X size={16} strokeWidth={1.75} color={COLORS.muted} />
           </TouchableOpacity>
@@ -413,11 +416,7 @@ export function MeasurementsScreen() {
       <ScrollView
         className="flex-1"
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: 16,
-          paddingBottom: bannerVisible ? 110 : 40,
-        }}
+        contentContainerClassName={`px-lg pt-lg ${bannerVisible ? 'pb-[110px]' : 'pb-10'}`}
         showsVerticalScrollIndicator={false}
       >
         <BackButton onPress={() => navigation.goBack()} />
@@ -435,7 +434,7 @@ export function MeasurementsScreen() {
           </Text>
         </View>
 
-        <View className="mb-6 flex-row gap-6 border-b border-landing-line">
+        <View accessibilityRole="tablist" className="mb-8 flex-row gap-6 border-b border-landing-line">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -444,7 +443,7 @@ export function MeasurementsScreen() {
                 accessibilityRole="tab"
                 accessibilityState={{ selected: isActive }}
                 onPress={() => setActiveTab(tab.id)}
-                className="relative h-11 justify-center active:opacity-70"
+                className="relative h-11 justify-center"
               >
                 <Text
                   className={`font-sans text-sm ${
@@ -463,39 +462,34 @@ export function MeasurementsScreen() {
           })}
         </View>
 
-        {activeTab === 'measurements' && (
-          <View className={`${cardClass} mb-6 gap-5 p-5`}>
-            <View className="gap-2 border-b border-landing-line pb-4">
-              <View className="flex-row items-center gap-2">
-                <Ruler size={14} strokeWidth={1.75} color={COLORS.brassInk} />
-                <Text className={eyebrowClass}>Số đo cơ thể</Text>
+        {activeTab === 'measurements' && isLoadingMeasurements ? (
+          <View className="mb-6 items-center gap-3 py-16">
+            <ActivityIndicator size="large" color={COLORS.oxblood} />
+            <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-landing-muted">
+              Đang tải số đo
+            </Text>
+          </View>
+        ) : null}
+
+        {activeTab === 'measurements' && !isLoadingMeasurements && (
+          <View className="mb-6 gap-10">
+            <View className="gap-6">
+              <View className="border border-landing-line bg-landing-ivory/50 px-3 pb-4 pt-3">
+                <BodyDiagram values={deferredMeasurements} />
               </View>
-              <Text className="font-display text-headline-sm text-landing-obsidian">
-                Số đo của bạn
-              </Text>
-              <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
-                Giúp AI thử đồ chính xác và gợi ý size phù hợp.
+              <Text className="border-l-2 border-landing-brass pl-3 font-sans text-xs leading-relaxed text-landing-muted">
+                Dùng thước dây mềm, đo sát người nhưng không siết. Nhờ người khác đo giúp sẽ chính xác hơn.
               </Text>
             </View>
 
-            <View className="flex-row items-start gap-3 border-l-2 border-brass bg-landing-paper/60 px-4 py-3">
-              <Info size={15} strokeWidth={1.75} color={COLORS.brassInk} />
-              <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-muted">
-                Dùng thước dây mềm, đo sát người nhưng không siết. Nhờ người khác đo giúp sẽ cho kết quả chính xác hơn.
-              </Text>
-            </View>
-
-            <View className="rounded-subtle border border-landing-line bg-landing-paper/60 p-4">
-              <BodyDiagram values={deferredMeasurements} />
-            </View>
-
-            <SectionBlock label="Tổng quan" description="Thông tin cơ bản về cơ thể">
+            <SectionBlock label="Tổng quan" description="Chiều cao, cân nặng">
               <View>
                 {OVERVIEW_FIELD_DEFS.map((f) => (
                   <MeasurementField
                     key={f.id}
                     field={f}
                     value={measurements[f.id] || ''}
+                    isDirty={(measurements[f.id] || '') !== (initialMeasurements[f.id] || '')}
                     onChange={handleMeasurementChange}
                     onHelp={handleHelpField}
                   />
@@ -504,19 +498,20 @@ export function MeasurementsScreen() {
             </SectionBlock>
 
             <SectionBlock label="Dáng người" description="Giúp AI tối ưu kết quả thử đồ">
-              <View className="flex-row flex-wrap gap-2">
+              <View accessibilityRole="radiogroup" className="flex-row flex-wrap gap-2">
                 {BODY_TYPES.map((bt) => {
                   const isSelected = bodyType === bt.id;
                   return (
                     <TouchableOpacity
                       key={bt.id}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: isSelected }}
+                      accessibilityRole="radio"
+                      accessibilityLabel={`${bt.label}, ${bt.desc}`}
+                      accessibilityState={{ checked: isSelected }}
                       onPress={() => setBodyType(bt.id)}
-                      className={`w-[48%] min-h-20 justify-center gap-1 rounded-subtle border px-3.5 py-3 ${
+                      className={`min-h-20 w-[48%] justify-center gap-1 rounded-subtle border px-3.5 py-3 ${
                         isSelected
-                          ? 'border-oxblood bg-ivory'
-                          : 'border-landing-line bg-landing-paper/60'
+                          ? 'border-oxblood bg-landing-ivory'
+                          : 'border-landing-line bg-landing-ivory/50'
                       }`}
                     >
                       <Text
@@ -540,6 +535,7 @@ export function MeasurementsScreen() {
                     key={f.id}
                     field={f}
                     value={measurements[f.id] || ''}
+                    isDirty={(measurements[f.id] || '') !== (initialMeasurements[f.id] || '')}
                     onChange={handleMeasurementChange}
                     onHelp={handleHelpField}
                   />
@@ -554,6 +550,7 @@ export function MeasurementsScreen() {
                     key={f.id}
                     field={f}
                     value={measurements[f.id] || ''}
+                    isDirty={(measurements[f.id] || '') !== (initialMeasurements[f.id] || '')}
                     onChange={handleMeasurementChange}
                     onHelp={handleHelpField}
                   />
@@ -561,41 +558,35 @@ export function MeasurementsScreen() {
               </View>
             </SectionBlock>
 
-            <TouchableOpacity
-              accessibilityRole="button"
-              onPress={handleSaveMeasurements}
-              disabled={hasInvalidMeasurements || isSavingMeasurements || !isMeasurementsDirty}
-              className={`h-12 flex-row items-center justify-center gap-2 rounded-subtle ${
-                isMeasurementsDirty && !hasInvalidMeasurements && !isSavingMeasurements
-                  ? 'bg-oxblood active:bg-landing-obsidian'
-                  : 'border border-landing-line bg-landing-paper/60'
-              }`}
-            >
-              {isSavingMeasurements ? (
-                <ActivityIndicator size="small" color={COLORS.paper} />
-              ) : (
-                <>
-                  <Save
-                    size={15}
-                    strokeWidth={1.75}
-                    color={
-                      isMeasurementsDirty && !hasInvalidMeasurements
-                        ? COLORS.paper
-                        : COLORS.muted
-                    }
-                  />
-                  <Text
-                    className={`font-sans text-[11px] font-semibold uppercase tracking-[0.16em] ${
-                      isMeasurementsDirty && !hasInvalidMeasurements
-                        ? 'text-landing-paper'
-                        : 'text-landing-muted'
-                    }`}
-                  >
-                    {hasInvalidMeasurements ? 'Số đo chưa hợp lệ' : 'Lưu số đo'}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
+            <View className="gap-3 border-t border-landing-line pt-6">
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Lưu số đo"
+                accessibilityState={{
+                  disabled: hasInvalidMeasurements || isSavingMeasurements || !isMeasurementsDirty,
+                  busy: isSavingMeasurements,
+                }}
+                onPress={handleSaveMeasurements}
+                disabled={hasInvalidMeasurements || isSavingMeasurements || !isMeasurementsDirty}
+                className={`h-12 flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood ${
+                  hasInvalidMeasurements || isSavingMeasurements || !isMeasurementsDirty
+                    ? 'opacity-50'
+                    : ''
+                }`}
+              >
+                {isSavingMeasurements ? (
+                  <ActivityIndicator size="small" color={COLORS.paper} />
+                ) : null}
+                <Text className={primaryButtonTextClass}>
+                  {isSavingMeasurements ? 'Đang lưu số đo' : 'Lưu số đo'}
+                </Text>
+              </TouchableOpacity>
+              {hasInvalidMeasurements ? (
+                <Text accessibilityRole="alert" className="font-sans text-xs text-danger">
+                  Sửa các ô đang báo lỗi trước khi lưu.
+                </Text>
+              ) : null}
+            </View>
           </View>
         )}
 
@@ -699,15 +690,18 @@ export function MeasurementsScreen() {
         animationType="fade"
         onRequestClose={() => setActiveHelpField(null)}
       >
-        <View className="flex-1 items-center justify-center bg-landing-obsidian/50 px-5">
-          <View className="w-full max-w-sm gap-4 rounded-subtle border border-landing-line bg-ivory p-5">
+        <View className="flex-1 items-center justify-center bg-landing-obsidian/45 px-5">
+          <View className="w-full max-w-sm gap-4 rounded-subtle border border-landing-line bg-landing-paper p-5">
             <View className="flex-row items-start justify-between gap-3 border-b border-landing-line pb-3">
               <View className="flex-1 gap-1">
                 <View className="flex-row items-center gap-2">
                   <HelpCircle size={14} strokeWidth={1.75} color={COLORS.brassInk} />
                   <Text className={eyebrowClass}>Hướng dẫn đo</Text>
                 </View>
-                <Text className="font-display text-headline-sm text-landing-obsidian">
+                <Text
+                  accessibilityRole="header"
+                  className="font-display text-headline-sm text-landing-obsidian"
+                >
                   {activeHelpField?.label}
                 </Text>
               </View>
@@ -715,7 +709,7 @@ export function MeasurementsScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Đóng hướng dẫn"
                 onPress={() => setActiveHelpField(null)}
-                className="-mr-1 -mt-1 h-11 w-11 items-center justify-center active:opacity-60"
+                className="-mr-2 -mt-2 h-11 w-11 items-center justify-center"
               >
                 <X size={16} strokeWidth={1.75} color={COLORS.muted} />
               </TouchableOpacity>
@@ -725,7 +719,7 @@ export function MeasurementsScreen() {
               {activeHelpField?.desc}
             </Text>
 
-            <View className="border-l-2 border-brass bg-landing-paper/60 px-4 py-3">
+            <View className="border-l-2 border-landing-brass bg-landing-ivory px-4 py-3">
               <Text className="font-sans text-body-sm text-landing-muted">
                 Khoảng số đo hợp lệ:{' '}
                 <Text className="font-mono text-[12px] text-oxblood">
@@ -736,8 +730,9 @@ export function MeasurementsScreen() {
 
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityLabel="Đã hiểu"
               onPress={() => setActiveHelpField(null)}
-              className="h-11 items-center justify-center rounded-subtle bg-oxblood active:bg-landing-obsidian"
+              className="h-11 items-center justify-center rounded-subtle bg-oxblood"
             >
               <Text className={primaryButtonTextClass}>Đã hiểu</Text>
             </TouchableOpacity>
@@ -750,46 +745,58 @@ export function MeasurementsScreen() {
           style={{ paddingBottom: Math.max(insets.bottom, 12) }}
           className="absolute bottom-0 left-0 right-0 z-30 flex-row items-center justify-between border-t border-landing-line bg-landing-paper px-4 pt-3"
         >
-          <View className="mr-3 flex-1 flex-row items-center gap-2">
-            <AlertCircle
-              size={16}
-              strokeWidth={1.75}
-              color={hasInvalidMeasurements ? COLORS.danger : COLORS.brassInk}
-            />
+          <View
+            accessibilityLiveRegion="polite"
+            className="mr-3 flex-1 flex-row items-center gap-2"
+          >
+            {hasInvalidMeasurements ? (
+              <AlertCircle size={16} strokeWidth={1.75} color={COLORS.danger} />
+            ) : (
+              <View className="h-1.5 w-1.5 rounded-full bg-oxblood" />
+            )}
             <Text
               numberOfLines={1}
               className={`flex-1 font-sans text-body-sm ${
                 hasInvalidMeasurements ? 'text-danger' : 'text-landing-obsidian'
               }`}
             >
-              {hasInvalidMeasurements ? 'Số đo chưa hợp lệ' : 'Bạn có thay đổi chưa lưu'}
+              {hasInvalidMeasurements ? (
+                'Số đo chưa hợp lệ'
+              ) : (
+                <>
+                  <Text className="font-mono">{changedCount}</Text> số đo chưa lưu
+                </>
+              )}
             </Text>
           </View>
           <View className="flex-row items-center gap-2">
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityLabel="Hủy thay đổi số đo"
+              accessibilityLabel="Hoàn tác thay đổi số đo"
+              accessibilityState={{ disabled: isSavingMeasurements }}
               disabled={isSavingMeasurements}
               onPress={() => setMeasurements({ ...initialMeasurements })}
-              className="h-11 items-center justify-center rounded-subtle border border-landing-line bg-ivory px-4 active:opacity-70"
+              className="h-11 items-center justify-center rounded-subtle border border-landing-line px-3.5"
             >
-              <Text className={secondaryButtonTextClass}>Hủy</Text>
+              <Text className={secondaryButtonTextClass}>Hoàn tác</Text>
             </TouchableOpacity>
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel="Lưu số đo"
+              accessibilityState={{
+                disabled: hasInvalidMeasurements || isSavingMeasurements,
+                busy: isSavingMeasurements,
+              }}
               disabled={hasInvalidMeasurements || isSavingMeasurements}
               onPress={handleSaveMeasurements}
               className={`h-11 items-center justify-center rounded-subtle bg-oxblood px-4 ${
-                hasInvalidMeasurements || isSavingMeasurements
-                  ? 'opacity-40'
-                  : 'active:bg-landing-obsidian'
+                hasInvalidMeasurements || isSavingMeasurements ? 'opacity-50' : ''
               }`}
             >
               {isSavingMeasurements ? (
                 <ActivityIndicator size="small" color={COLORS.paper} />
               ) : (
-                <Text className={primaryButtonTextClass}>Lưu số đo</Text>
+                <Text className={primaryButtonTextClass}>Lưu</Text>
               )}
             </TouchableOpacity>
           </View>

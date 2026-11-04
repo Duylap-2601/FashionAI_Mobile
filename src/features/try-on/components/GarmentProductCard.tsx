@@ -6,6 +6,7 @@ import { IProduct } from '@/features/products/types/product';
 import { mainProductImage } from '@/features/products/api/products.api';
 import { formatCurrency } from '@/utils/format';
 import { COLORS } from '@/constants/theme';
+import { TRY_ON_LABEL_CLASS } from '@/features/try-on/components/TryOnHeader';
 
 interface GarmentSlotProps {
   label: string;
@@ -16,6 +17,11 @@ interface GarmentSlotProps {
   onClear?: () => void;
   disabled?: boolean;
 }
+
+const THUMB_STYLE = { width: 78, height: 104 } as const;
+const QUIET_ACTION_CLASS = 'min-h-11 justify-center active:opacity-70';
+const QUIET_ACTION_TEXT_CLASS =
+  'font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-muted';
 
 // Ô trang phục kiểu FE (garment-slot.tsx): ảnh 78×104, nhãn brass, tên, giá, đổi/bỏ chọn.
 export const GarmentSlot: React.FC<GarmentSlotProps> = ({
@@ -30,7 +36,7 @@ export const GarmentSlot: React.FC<GarmentSlotProps> = ({
   const imageUrl = product ? mainProductImage(product) : null;
 
   return (
-    <View className={`flex-row gap-lg ${disabled ? 'opacity-60' : ''}`}>
+    <View className={`flex-row gap-lg ${disabled ? 'opacity-50' : ''}`}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={
@@ -38,6 +44,7 @@ export const GarmentSlot: React.FC<GarmentSlotProps> = ({
             ? `Đổi ${label.toLowerCase()}: ${product.name}`
             : `Chọn ${label.toLowerCase()}`
         }
+        accessibilityState={{ disabled }}
         disabled={disabled}
         onPress={onChange}
         className={`h-[104px] w-[78px] shrink-0 items-center justify-center overflow-hidden rounded-subtle border ${
@@ -47,9 +54,10 @@ export const GarmentSlot: React.FC<GarmentSlotProps> = ({
         }`}
       >
         {product && imageUrl ? (
+          // expo-image không nhận className nên kích thước ô 78x104 nằm ở style.
           <Image
             source={{ uri: imageUrl }}
-            style={{ width: 78, height: 104 }}
+            style={THUMB_STYLE}
             contentFit="contain"
             transition={150}
           />
@@ -59,7 +67,7 @@ export const GarmentSlot: React.FC<GarmentSlotProps> = ({
       </Pressable>
 
       <View className="flex-1">
-        <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink">
+        <Text className={TRY_ON_LABEL_CLASS}>
           {label}
           {hint ? (
             <Text className="font-sans text-[11px] font-normal normal-case tracking-normal text-landing-muted">
@@ -73,11 +81,11 @@ export const GarmentSlot: React.FC<GarmentSlotProps> = ({
           <>
             <Text
               numberOfLines={2}
-              className="mt-1.5 font-display text-[16px] leading-snug text-landing-obsidian"
+              className="mt-1.5 font-sans text-sm font-medium leading-snug text-landing-obsidian"
             >
               {product.name}
             </Text>
-            <Text className="mt-1 font-mono text-[12px] text-oxblood">
+            <Text className="mt-1 font-mono text-xs text-oxblood">
               {formatCurrency(product.price)}
             </Text>
           </>
@@ -90,24 +98,26 @@ export const GarmentSlot: React.FC<GarmentSlotProps> = ({
         <View className="mt-auto flex-row items-center gap-5 pt-2">
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={`${product ? 'Đổi món' : 'Chọn món'}: ${label.toLowerCase()}`}
+            accessibilityState={{ disabled }}
             disabled={disabled}
             onPress={onChange}
-            className="min-h-9 justify-center active:opacity-70"
+            className={QUIET_ACTION_CLASS}
           >
-            <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-muted">
+            <Text className={QUIET_ACTION_TEXT_CLASS}>
               {product ? 'Đổi món' : 'Chọn món'}
             </Text>
           </Pressable>
           {product && onClear ? (
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={`Bỏ chọn ${label.toLowerCase()}`}
+              accessibilityState={{ disabled }}
               disabled={disabled}
               onPress={onClear}
-              className="min-h-9 justify-center active:opacity-70"
+              className={QUIET_ACTION_CLASS}
             >
-              <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-muted">
-                Bỏ chọn
-              </Text>
+              <Text className={QUIET_ACTION_TEXT_CLASS}>Bỏ chọn</Text>
             </Pressable>
           ) : null}
         </View>
