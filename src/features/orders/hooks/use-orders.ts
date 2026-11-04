@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ordersApi } from '../api/orders.api';
 import type { ICreateOrderIssuePayload } from '../types/order';
 
@@ -83,6 +83,35 @@ export function useOrderIssues(orderId: string | number) {
   };
 }
 
+export const MY_RETURNS_KEY = ['myReturns'] as const;
+const MY_RETURNS_PAGE_SIZE = 10;
+
+/** Đơn có đổi trả của tôi, tải thêm từng trang khi cuộn. */
+export function useMyReturns() {
+  const query = useInfiniteQuery({
+    queryKey: MY_RETURNS_KEY,
+    queryFn: ({ pageParam, signal }) =>
+      ordersApi.getMyReturns({ page: pageParam, limit: MY_RETURNS_PAGE_SIZE }, { signal }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, _pages, lastPageParam) => {
+      const totalPages = lastPage.meta?.totalPages ?? 1;
+      return lastPageParam < totalPages ? lastPageParam + 1 : undefined;
+    },
+  });
+
+  return {
+    orders: query.data?.pages.flatMap((page) => page.data ?? []) ?? [],
+    total: query.data?.pages[0]?.meta?.total,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    isRefetching: query.isRefetching,
+    refetch: query.refetch,
+    fetchNextPage: query.fetchNextPage,
+    hasNextPage: query.hasNextPage,
+    isFetchingNextPage: query.isFetchingNextPage,
+  };
+}
+
 export function useCreateOrderIssue() {
   const queryClient = useQueryClient();
 
@@ -92,6 +121,7 @@ export function useCreateOrderIssue() {
       queryClient.invalidateQueries({ queryKey: ['orderIssues', variables.orderId] });
       queryClient.invalidateQueries({ queryKey: ['orders', variables.orderId] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: MY_RETURNS_KEY });
     },
   });
 

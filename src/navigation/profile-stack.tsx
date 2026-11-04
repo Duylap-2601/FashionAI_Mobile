@@ -6,6 +6,7 @@ import { AddressesScreen } from '../features/profile/screens/AddressesScreen';
 import { ChangePasswordScreen } from '../features/auth/screens/ChangePasswordScreen';
 import { MeasurementsScreen } from '../features/measurements/screens/MeasurementsScreen';
 import { OrdersScreen } from '../features/orders/screens/OrdersScreen';
+import { MyReturnsScreen } from '../features/orders/screens/MyReturnsScreen';
 import { TryOnHistoryScreen } from '../features/try-on/screens/TryOnHistoryScreen';
 import { TryOnDetailScreen } from '../features/try-on/screens/TryOnDetailScreen';
 
@@ -45,6 +46,13 @@ export const ProfileStack: React.FC = () => {
       <Stack.Screen
         name="Orders"
         component={OrdersScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="Returns"
+        component={MyReturnsScreen}
         options={{
           headerShown: false,
         }}

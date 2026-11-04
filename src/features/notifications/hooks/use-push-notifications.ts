@@ -16,6 +16,7 @@ import {
 } from '@/features/notifications/storage/push-token-storage';
 import { ENV } from '@/config/env';
 import { RootStackParamList } from '@/navigation/types';
+import { getOrderNotificationTarget } from '../utils/order-notification-target';
 
 // Foreground: socket + React Query đã cập nhật UI, không hiện thêm banner.
 // Background/killed: OS tự hiển thị notification, handler không can thiệp.
@@ -99,11 +100,15 @@ function navigateFromNotification(
       : {};
 
   const type = readString(data.notificationType) ?? readString(data.type);
-  const orderId = readString(data.orderId);
   const productId = readString(data.productId);
 
-  if ((type === 'ORDER_STATUS' || type === 'PAYMENT') && orderId) {
-    navigation.navigate('OrderDetail', { orderId });
+  const orderTarget = getOrderNotificationTarget(type, data);
+  if (orderTarget) {
+    if (orderTarget.screen === 'Returns') {
+      navigation.navigate('Main', { screen: 'ProfileTab', params: { screen: 'Returns' } });
+    } else {
+      navigation.navigate(orderTarget.screen, { orderId: orderTarget.orderId });
+    }
     return;
   }
 

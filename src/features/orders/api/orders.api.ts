@@ -1,6 +1,7 @@
 import { http, HttpOptions } from '@/api/http';
 import { ENDPOINTS } from '@/constants/endpoints';
-import type { ICreateOrderIssuePayload, IOrderIssue } from '../types/order';
+import { isPaginationMeta, type ApiPaginationMeta } from '@/types/api';
+import type { ICreateOrderIssuePayload, IMyReturnOrder, IOrderIssue } from '../types/order';
 
 export interface IOrderShippingInfo {
   name: string;
@@ -83,6 +84,18 @@ export const ordersApi = {
 
   updateMeasurement: (orderId: string | number, itemId: string | number, data: any, opts?: HttpOptions): Promise<any> => {
     return http.patch<any>(ENDPOINTS.ORDERS.UPDATE_MEASUREMENT(orderId, itemId), data, opts);
+  },
+
+  /** Các đơn có yêu cầu đổi trả của tôi, mới cập nhật trước. */
+  getMyReturns: async (
+    params: { page?: number; limit?: number } = {},
+    opts?: HttpOptions,
+  ): Promise<{ data: IMyReturnOrder[]; meta?: ApiPaginationMeta }> => {
+    const res = await http.getPaged<IMyReturnOrder[]>(ENDPOINTS.ORDERS.MY_RETURNS, { ...opts, params });
+    return {
+      data: Array.isArray(res.data) ? res.data : [],
+      meta: isPaginationMeta(res.meta) ? res.meta : undefined,
+    };
   },
 
   getOrderIssues: async (orderId: string | number, opts?: HttpOptions): Promise<any[]> => {

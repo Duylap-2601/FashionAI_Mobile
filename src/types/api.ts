@@ -88,7 +88,7 @@ export function unwrapPaginated<T>(payload: unknown): ApiPaginatedResponse<T> {
   throw new ApiError('Invalid paginated response', 500, 'INVALID_PAGINATED_RESPONSE');
 }
 
-function isPaginationMeta(value: unknown): value is ApiPaginationMeta {
+export function isPaginationMeta(value: unknown): value is ApiPaginationMeta {
   if (!value || typeof value !== 'object') {
     return false;
   }

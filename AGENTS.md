@@ -33,7 +33,7 @@
 |---|---|---|---|
 | **AuthStack** | `src/navigation/auth-stack.tsx` | Login, Register, ForgotPassword, ResetPassword, VerifyEmail | Unauthenticated flow — email/password + Google OAuth |
 | **TryOnStack** | `src/navigation/try-on-stack.tsx` | TryOnHome, TryOnHistory, TryOnDetail, TryOnLive | Nested stack inside TryOnTab |
-| **ProfileStack** | `src/navigation/profile-stack.tsx` | ProfileHome, ChangePassword, Measurements, Addresses, Orders, TryOnHistory, TryOnDetail | Nested stack inside ProfileTab |
+| **ProfileStack** | `src/navigation/profile-stack.tsx` | ProfileHome, ChangePassword, Measurements, Addresses, Orders, Returns, TryOnHistory, TryOnDetail | Nested stack inside ProfileTab |
 | **MainTabs** | `src/navigation/main-tabs.tsx` | HomeTab, ShopTab, TryOnTab, StylistTab, ProfileTab | Authenticated bottom tabs (5 tabs) |
 | **RootNavigator** | `src/navigation/root-navigator.tsx` | Auth / Main + all modal/stack screens | Switches based on `isAuthenticated` from `AuthContext` |
 
@@ -45,6 +45,7 @@
 | CheckoutScreen | `Checkout` | — |
 | PaymentScreen | `Payment` | `Thanh toán SePay` |
 | OrderDetailScreen | `OrderDetail` | `Chi tiết đơn hàng` |
+| OrderReturnsScreen | `OrderReturns` | `Đổi trả & hoàn tiền` (one order: issues, refunds, history) |
 | OrderSuccessScreen | `OrderSuccess` | — |
 | ProductDetailScreen | `ProductDetail` | `Chi tiết sản phẩm` |
 | SearchScreen | `Search` | — |
@@ -160,7 +161,7 @@ Rules:
 | **Collections** | `src/features/collections/` | `collections.controller.ts` | ✅ Done — published list, collection detail, products |
 | **Reviews** | `src/features/reviews/` | `reviews.controller.ts` | ✅ Done — list, stats, create, update, delete, my reviews, replies |
 | **Cart** | `src/features/cart/` | — (Zustand) | ✅ Done — Zustand store + CartScreen |
-| **Orders** | `src/features/orders/` | `orders.controller.ts` | ✅ Done — list, detail, success, cancel, confirm delivery, tracking, issue reporting |
+| **Orders** | `src/features/orders/` | `orders.controller.ts`, `order-issues` | ✅ Done — list, detail, success, cancel, confirm delivery, tracking, issue reporting; returns & refunds on `OrderReturns` (one order) and ProfileStack `Returns` (`GET /order-issues/mine`). Issue reports are refund-only and need the refund bank account; the 7-day window and blocked-item rules live in `utils/order-returns.ts` |
 | **Checkout** | `src/features/checkout/` | — | ✅ Done — CheckoutScreen + PaymentScreen |
 | **Shipping (GHN)** | `src/features/shipping/` | `shipping.controller.ts` | ✅ Done — capabilities, address catalog (provinces/wards) |
 | **Payments (SePay)** | `src/features/payments/` | `payments.controller.ts` | ✅ Done — checkout, status polling |
@@ -238,7 +239,7 @@ Centralized endpoint definitions matching BE routes exactly.
 | `STYLIST` | ANALYZE, HISTORY, DETAIL, DELETE |
 | `RACK` | BASE, ITEM, ALL |
 | `SHIPPING` | CAPABILITIES, ADDRESS_CATALOG_PROVINCES, ADDRESS_CATALOG_WARDS |
-| `ORDERS` | QUOTE, CREATE, LIST, DETAIL, TRACKING, CANCEL, CONFIRM_DELIVERY, UPDATE_MEASUREMENT, REPORT_ISSUE, ISSUES, ISSUE_DETAIL |
+| `ORDERS` | QUOTE, CREATE, LIST, DETAIL, TRACKING, CANCEL, CONFIRM_DELIVERY, UPDATE_MEASUREMENT, REPORT_ISSUE, ISSUES, ISSUE_DETAIL, MY_RETURNS |
 | `PAYMENTS` | CHECKOUT, STATUS, ORDERS, PLANS, SUBSCRIPTIONS_ME, SUBSCRIPTIONS_HISTORY, SUBSCRIPTIONS_CANCEL, SUBSCRIPTIONS_RESUME, SUBSCRIPTIONS_SCHEDULED_CANCEL |
 | `NOTIFICATIONS` | LIST, UNREAD_COUNT, READ, READ_ALL |
 
@@ -459,8 +460,9 @@ src/
 │   │   ├── api/
 │   │   ├── components/
 │   │   ├── hooks/
-│   │   ├── screens/                 # OrdersScreen, OrderDetailScreen, OrderSuccessScreen
-│   │   └── types/order.ts
+│   │   ├── screens/                 # OrdersScreen, OrderDetailScreen, OrderSuccessScreen, OrderReturnsScreen, MyReturnsScreen
+│   │   ├── types/order.ts
+│   │   └── utils/                   # order-items.ts (item name/image), order-returns.ts (issue window, refund labels, evidence)
 │   ├── payments/
 │   │   └── api/payments.api.ts
 │   ├── products/
