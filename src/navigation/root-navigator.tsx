@@ -203,17 +203,8 @@ export const RootNavigator: React.FC = () => {
               name="StylistResult"
               component={StylistResultScreen}
               options={{
-                headerShown: true,
-                title: "Kết quả tư vấn",
-                headerBackTitle: "AI Stylist",
-                headerTintColor: COLORS.oxblood,
-                headerStyle: { backgroundColor: COLORS.paper },
-                headerShadowVisible: false,
-                headerTitleStyle: {
-                  color: COLORS.obsidian,
-                  fontFamily: "Playfair Display",
-                  fontSize: FONT_SIZE.xl,
-                },
+                // Màn tự có AppHeader + nút quay lại, như StylistHistory.
+                headerShown: false,
               }}
             />
 

@@ -6,6 +6,7 @@ import { IChatMessage } from '@/features/chat/types/chat';
 import { AssistantMark } from '@/features/chat/components/AssistantMark';
 import { FormattedAssistantText } from '@/features/chat/components/FormattedAssistantText';
 import { COLORS } from '@/constants/theme';
+import { formatCurrency } from '@/utils/format';
 
 // expo-image không nhận className nên khung ảnh sản phẩm đính kèm giữ kích thước trên style.
 const PRODUCT_THUMB_STYLE = { width: 36, height: 44 } as const;
@@ -44,9 +45,7 @@ function AttachedProduct({ product }: { product: NonNullable<IChatMessage['produ
         </Text>
         {product.price !== undefined ? (
           <Text className="font-mono text-[12px] text-oxblood">
-            {typeof product.price === 'number'
-              ? `${product.price.toLocaleString('vi-VN')} ₫`
-              : product.price}
+            {typeof product.price === 'number' ? formatCurrency(product.price) : product.price}
           </Text>
         ) : null}
       </View>

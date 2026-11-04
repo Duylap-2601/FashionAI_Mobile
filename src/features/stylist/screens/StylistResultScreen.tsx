@@ -2,6 +2,8 @@ import React from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Sparkles } from 'lucide-react-native';
+import { AppHeader } from '@/components/common/AppHeader';
+import { BackButton } from '@/components/common/BackButton';
 import { COLORS } from '@/constants/theme';
 import type { RootStackParamList } from '@/navigation/types';
 import { ApiError } from '@/types/api';
@@ -17,7 +19,29 @@ function getErrorMessage(error: unknown): string {
     : 'Chưa thể tải kết quả tư vấn. Vui lòng thử lại.';
 }
 
+/** AppHeader + nút quay lại như màn lịch sử AI Stylist; mọi trạng thái đều có đường quay lại. */
+function ResultShell({ onBack, children }: { onBack: () => void; children: React.ReactNode }) {
+  return (
+    <View className="flex-1 bg-landing-paper">
+      <AppHeader />
+      <View className="px-lg pt-4">
+        <BackButton label="AI Stylist" onPress={onBack} />
+      </View>
+      {children}
+    </View>
+  );
+}
+
 export function StylistResultScreen({ navigation, route }: Props) {
+  const goBack = () => navigation.goBack();
+  return (
+    <ResultShell onBack={goBack}>
+      <StylistResultBody navigation={navigation} route={route} />
+    </ResultShell>
+  );
+}
+
+function StylistResultBody({ navigation, route }: Props) {
   const resultId = route.params.resultId.trim();
   const resultQuery = useStylistResult(resultId);
   const result = resultQuery.data;
@@ -78,7 +102,6 @@ export function StylistResultScreen({ navigation, route }: Props) {
     <ScrollView
       className="flex-1 bg-landing-paper"
       contentContainerClassName="gap-xl px-lg pb-xxxl pt-lg"
-      contentInsetAdjustmentBehavior="automatic"
       refreshControl={
         <RefreshControl
           refreshing={resultQuery.isRefetching}

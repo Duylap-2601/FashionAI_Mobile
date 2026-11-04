@@ -2,9 +2,10 @@
  * Formatting helpers for Vietnamese locale (kg, cm, VND)
  */
 
+/** Giá VND dạng `1.290.000đ`, cùng cách viết với web (formatVnd). */
 export function formatCurrency(amount?: number | null): string {
-  if (amount === undefined || amount === null || isNaN(amount)) return '0 ₫';
-  return `${amount.toLocaleString('vi-VN')} ₫`;
+  if (amount === undefined || amount === null || isNaN(amount)) return '0đ';
+  return `${amount.toLocaleString('vi-VN')}đ`;
 }
 
 export function formatWeight(kg?: number | null): string {
