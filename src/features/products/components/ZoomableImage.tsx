@@ -179,6 +179,9 @@ function ScrollViewZoomableImage({
       maximumZoomScale={MAX_ZOOM_SCALE}
       bouncesZoom
       centerContent
+      // Unzoomed, the image must not rubber-band and steal swipes from the pager.
+      alwaysBounceVertical={false}
+      alwaysBounceHorizontal={false}
       scrollEventThrottle={16}
       showsHorizontalScrollIndicator={false}
       showsVerticalScrollIndicator={false}
