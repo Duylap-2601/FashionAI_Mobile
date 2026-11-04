@@ -154,7 +154,8 @@ export const RootNavigator: React.FC = () => {
               component={ReviewsScreen}
               options={{
                 headerShown: true,
-                title: "Đánh giá sản phẩm",
+                // Màn đã có tiêu đề "Đánh giá và nhận xét"; header chỉ giữ nút quay lại.
+                title: "",
                 headerBackTitle: "Sản phẩm",
                 headerTintColor: COLORS.oxblood,
                 headerStyle: { backgroundColor: COLORS.paper },

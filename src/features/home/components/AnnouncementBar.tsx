@@ -14,7 +14,8 @@ interface AnnouncementBarProps {
 // threshold exists in the backend) and no collection launch is claimed.
 const ANNOUNCEMENT_MESSAGES = [
   { text: 'StAie. Chuẩn dáng từ đầu, đẹp từng đường may', target: 'shop' },
-  { text: 'Thử đồ AI miễn phí, xem kết quả trước khi mua', target: 'try-on' },
+  // Gói Miễn phí không có lượt thử đồ (AI_ACTION_LIMITS.TRY_ON.FREE = 0), nên không ghi "miễn phí".
+  { text: 'Thử đồ AI, xem kết quả trước khi đặt may', target: 'try-on' },
   { text: 'May đo theo số đo riêng của bạn', target: 'shop' },
   { text: 'Khám phá bộ sưu tập công sở của StAie.', target: 'shop' },
 ];
