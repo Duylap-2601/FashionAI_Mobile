@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   View,
   Text,
   TextInput,
@@ -8,16 +9,10 @@ import {
   Modal as RNModal,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Plus, Trash2 } from 'lucide-react-native';
-import {
-  useChatSessions,
-  useDeleteChatSession,
-} from '@/features/chat/hooks/use-chat-sessions';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { MessageSquare, Plus, Search, Trash2, X } from 'lucide-react-native';
+import { useChatSessions, useDeleteChatSession } from '@/features/chat/hooks/use-chat-sessions';
 import { IChatSession } from '@/features/chat/types/chat';
-import { Loading } from '@/components/common/Loading';
-import { ErrorView } from '@/components/common/ErrorView';
-import { EmptyState } from '@/components/common/EmptyState';
 import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { COLORS } from '@/constants/theme';
 import { formatRelativeTime } from '@/utils/date';
@@ -31,37 +26,69 @@ interface SessionSheetProps {
   onDeletedSession?: (sessionId: string) => void;
 }
 
+const DAY_MS = 86_400_000;
+
+/** Nhóm theo ngày như SessionSidebar của web: Hôm nay / Hôm qua / 7 ngày qua / Cũ hơn. */
+function sessionGroupLabel(updatedAt: string | undefined): string {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const time = updatedAt ? new Date(updatedAt).getTime() : now.getTime();
+  if (Number.isNaN(time) || time >= today) return 'Hôm nay';
+  if (time >= today - DAY_MS) return 'Hôm qua';
+  if (time >= today - 7 * DAY_MS) return '7 ngày qua';
+  return 'Cũ hơn';
+}
+
 const SessionRow: React.FC<{
   item: IChatSession;
   active: boolean;
   onPress: () => void;
   onDelete: () => void;
-}> = ({ item, active, onPress, onDelete }) => (
-  <View
-    className={`mb-sm flex-row items-center gap-sm rounded-xl border p-md ${
-      active ? 'border-primary-container bg-primary-soft' : 'border-surface-line bg-surface-lowest'
-    }`}
-  >
-    <Pressable className="min-h-11 flex-1 justify-center" onPress={onPress}>
-      <Text
-        className="text-body-md font-semibold text-on-surface"
-        numberOfLines={1}
-      >
-        {item.title || item.lastMessage || 'Cuộc trò chuyện mới'}
-      </Text>
-      <Text className="mt-xs text-body-sm text-on-surface-variant">
-        {formatRelativeTime(item.updatedAt)}
-      </Text>
-    </Pressable>
-    <Pressable
-      className="min-h-11 min-w-11 items-center justify-center rounded-full"
-      accessibilityLabel={`Xóa ${item.title || 'cuộc trò chuyện'}`}
-      onPress={onDelete}
+}> = ({ item, active, onPress, onDelete }) => {
+  const title = item.title || item.lastMessage || 'Cuộc trò chuyện mới';
+  return (
+    <View
+      className={`flex-row items-center border-l-2 ${
+        active ? 'border-l-oxblood bg-landing-paper' : 'border-l-transparent'
+      }`}
     >
-      <Trash2 size={18} color={COLORS.danger} />
-    </Pressable>
-  </View>
-);
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ selected: active }}
+        className="min-h-11 flex-1 flex-row items-center gap-2.5 py-sm pl-lg pr-sm active:opacity-70"
+        onPress={onPress}
+      >
+        <MessageSquare
+          size={16}
+          strokeWidth={1.75}
+          color={active ? COLORS.oxblood : COLORS.muted}
+        />
+        <View className="min-w-0 flex-1">
+          <Text
+            className={`font-sans text-[14px] ${
+              active ? 'font-semibold text-landing-obsidian' : 'text-landing-obsidian/80'
+            }`}
+            numberOfLines={1}
+          >
+            {title}
+          </Text>
+          <Text className="mt-0.5 font-sans text-[11px] text-landing-muted">
+            {formatRelativeTime(item.updatedAt)}
+          </Text>
+        </View>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        className="mr-xs h-11 w-11 items-center justify-center active:opacity-60"
+        accessibilityLabel={`Xóa ${item.title || 'cuộc trò chuyện'}`}
+        onPress={onDelete}
+      >
+        <Trash2 size={16} strokeWidth={1.75} color={COLORS.muted} />
+      </Pressable>
+    </View>
+  );
+};
 
 export const SessionSheet: React.FC<SessionSheetProps> = ({
   visible,
@@ -104,92 +131,148 @@ export const SessionSheet: React.FC<SessionSheetProps> = ({
       onRequestClose={onClose}
     >
       <TouchableWithoutFeedback onPress={onClose}>
-        <View className="flex-1 justify-end bg-black/50">
+        <View className="flex-1 justify-end bg-landing-obsidian/45">
           <TouchableWithoutFeedback>
-            <View className="h-3/4 rounded-t-xxl bg-surface-lowest">
-              <View className="my-sm h-1.5 w-10 self-center rounded-full bg-surface-highest" />
-              <View className="flex-row items-center justify-between px-xl pb-sm">
-                <Text className="font-heading text-headline-sm font-bold text-primary-container">
-                  Lịch sử trò chuyện
-                </Text>
-                <Pressable
-                  className="min-h-11 min-w-11 items-center justify-center rounded-full"
-                  accessibilityLabel="Đóng"
-                  onPress={onClose}
-                >
-                  <Ionicons name="close" size={24} className="text-on-surface-variant" />
-                </Pressable>
-              </View>
-
-              <View className="flex-row gap-sm px-xl">
-                <View className="min-h-11 flex-1 flex-row items-center gap-sm rounded-md border border-surface-line bg-surface-low px-md">
-                  <Ionicons name="search-outline" size={20} className="text-on-surface-variant" />
-                  <TextInput
-                    className="flex-1 py-sm text-body-lg text-on-surface"
-                    placeholder="Tìm cuộc trò chuyện..."
-                    placeholderTextColor={COLORS.outline}
-                    value={search}
-                    onChangeText={setSearch}
-                    returnKeyType="search"
-                  />
+            {/* View thường làm con trực tiếp để TouchableWithoutFeedback chặn chạm lọt ra nền. */}
+            <View className="h-3/4 overflow-hidden rounded-t-xl bg-ivory">
+              <SafeAreaView edges={['bottom']} className="flex-1">
+                <View className="mb-xs mt-sm h-1 w-10 self-center rounded-subtle bg-taupe" />
+                <View className="flex-row items-center justify-between border-b border-landing-line pb-sm pl-lg pr-sm">
+                  <Text
+                    accessibilityRole="header"
+                    className="font-display text-[20px] leading-tight text-landing-obsidian"
+                  >
+                    Lịch sử trò chuyện
+                  </Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    className="h-11 w-11 items-center justify-center active:opacity-60"
+                    accessibilityLabel="Đóng"
+                    onPress={onClose}
+                  >
+                    <X size={18} strokeWidth={1.75} color={COLORS.muted} />
+                  </Pressable>
                 </View>
-                <Pressable
-                  className="min-h-11 min-w-11 items-center justify-center rounded-full bg-primary-container"
-                  accessibilityLabel="Cuộc trò chuyện mới"
-                  onPress={() => {
-                    onNewChat();
-                    onClose();
-                  }}
-                >
-                  <Plus size={22} color={COLORS.onPrimary} />
-                </Pressable>
-              </View>
 
-              <View className="mt-md flex-1 px-xl">
-                {sessions.isLoading ? (
-                  <Loading message="Đang tải lịch sử..." />
-                ) : sessions.isError ? (
-                  <ErrorView
-                    title="Không tải được lịch sử"
-                    message="Vui lòng kiểm tra kết nối mạng và thử lại."
-                    onRetry={() => sessions.refetch()}
-                  />
-                ) : (
-                  <FlatList
-                    data={items}
-                    keyExtractor={(item) => String(item.id)}
-                    renderItem={({ item }) => (
-                      <SessionRow
-                        item={item}
-                        active={item.id === currentSessionId}
-                        onPress={() => {
-                          onSelect(item.id);
-                          onClose();
-                        }}
-                        onDelete={() => setPendingDelete(item)}
-                      />
-                    )}
-                    onEndReached={() => {
-                      if (sessions.hasNextPage && !sessions.isFetchingNextPage) {
-                        sessions.fetchNextPage();
-                      }
+                <View className="gap-md border-b border-landing-line p-lg">
+                  <Pressable
+                    accessibilityRole="button"
+                    className="h-11 flex-row items-center justify-center gap-sm rounded-subtle bg-oxblood active:opacity-90"
+                    onPress={() => {
+                      onNewChat();
+                      onClose();
                     }}
-                    onEndReachedThreshold={0.4}
-                    ListEmptyComponent={
-                      <EmptyState
-                        icon="💬"
-                        title="Chưa có cuộc trò chuyện nào"
-                        description="Bắt đầu trò chuyện với StAle. để được tư vấn."
-                      />
-                    }
-                    ListFooterComponent={
-                      sessions.isFetchingNextPage ? (
-                        <Loading message="Đang tải thêm..." />
-                      ) : null
-                    }
-                  />
-                )}
-              </View>
+                  >
+                    <Plus size={16} strokeWidth={1.75} color={COLORS.paper} />
+                    <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-paper">
+                      Cuộc trò chuyện mới
+                    </Text>
+                  </Pressable>
+                  <View className="h-11 flex-row items-center gap-sm rounded-subtle border border-landing-line bg-landing-paper/60 px-md">
+                    <Search size={14} strokeWidth={1.75} color={COLORS.muted} />
+                    <TextInput
+                      className="flex-1 font-sans text-[14px] text-landing-obsidian"
+                      placeholder="Tìm đoạn chat"
+                      placeholderTextColor={COLORS.muted}
+                      accessibilityLabel="Tìm đoạn chat"
+                      value={search}
+                      onChangeText={setSearch}
+                      returnKeyType="search"
+                    />
+                  </View>
+                </View>
+
+                <View className="flex-1">
+                  {sessions.isLoading ? (
+                    <View
+                      accessibilityRole="progressbar"
+                      accessibilityLabel="Đang tải lịch sử"
+                      className="gap-sm p-lg"
+                    >
+                      {[0, 1, 2, 3].map((key) => (
+                        <View key={key} className="h-10 bg-taupe/35" />
+                      ))}
+                    </View>
+                  ) : sessions.isError ? (
+                    <View className="items-center gap-md px-xxl py-giant">
+                      <Text className="text-center font-display text-[18px] text-landing-obsidian">
+                        Không tải được lịch sử
+                      </Text>
+                      <Text className="text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+                        Vui lòng kiểm tra kết nối mạng và thử lại.
+                      </Text>
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => sessions.refetch()}
+                        className="h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:opacity-70"
+                      >
+                        <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+                          Thử lại
+                        </Text>
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <FlatList
+                      data={items}
+                      keyExtractor={(item) => String(item.id)}
+                      contentContainerClassName="pb-lg pt-sm"
+                      keyboardShouldPersistTaps="handled"
+                      renderItem={({ item, index }) => {
+                        const label = sessionGroupLabel(item.updatedAt);
+                        const showLabel =
+                          index === 0 || sessionGroupLabel(items[index - 1]?.updatedAt) !== label;
+                        return (
+                          <View>
+                            {showLabel ? (
+                              <Text
+                                accessibilityRole="header"
+                                className={`px-lg pb-xs font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-brass-ink ${
+                                  index === 0 ? 'pt-sm' : 'pt-xl'
+                                }`}
+                              >
+                                {label}
+                              </Text>
+                            ) : null}
+                            <SessionRow
+                              item={item}
+                              active={item.id === currentSessionId}
+                              onPress={() => {
+                                onSelect(item.id);
+                                onClose();
+                              }}
+                              onDelete={() => setPendingDelete(item)}
+                            />
+                          </View>
+                        );
+                      }}
+                      onEndReached={() => {
+                        if (sessions.hasNextPage && !sessions.isFetchingNextPage) {
+                          sessions.fetchNextPage();
+                        }
+                      }}
+                      onEndReachedThreshold={0.4}
+                      ListEmptyComponent={
+                        <View className="items-center gap-xs px-xxl py-giant">
+                          <MessageSquare size={28} strokeWidth={1.5} color={COLORS.taupe} />
+                          <Text className="mt-sm text-center font-sans text-[14px] font-medium text-landing-obsidian">
+                            {search.trim() ? 'Không tìm thấy kết quả' : 'Chưa có đoạn chat nào'}
+                          </Text>
+                          <Text className="text-center font-sans text-[12px] text-landing-muted">
+                            Bắt đầu trò chuyện để lưu lại lịch sử
+                          </Text>
+                        </View>
+                      }
+                      ListFooterComponent={
+                        sessions.isFetchingNextPage ? (
+                          <View className="py-lg">
+                            <ActivityIndicator color={COLORS.oxblood} />
+                          </View>
+                        ) : null
+                      }
+                    />
+                  )}
+                </View>
+              </SafeAreaView>
             </View>
           </TouchableWithoutFeedback>
         </View>

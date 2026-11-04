@@ -57,8 +57,9 @@ import { toStylistImageFile } from '../utils/stylist-image';
 
 const labelClass =
   'font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink';
+// Cùng OUTLINE_BUTTON_CLASS của stylist-input-panel trên web, nhưng cao 44px cho chạm tay.
 const outlineButtonClass =
-  'h-10 flex-row items-center justify-center gap-1.5 rounded-subtle border border-landing-line px-3.5 active:bg-ivory';
+  'min-h-11 flex-row items-center justify-center gap-1.5 rounded-subtle border border-landing-obsidian/70 px-3.5 active:bg-landing-paper';
 const outlineButtonTextClass =
   'font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian';
 
@@ -74,16 +75,17 @@ function OptionChip({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ selected }}
       onPress={onPress}
-      className={`h-10 items-center justify-center rounded-subtle border px-3.5 ${
+      className={`min-h-11 items-center justify-center rounded-subtle border px-3.5 active:opacity-80 ${
         selected
           ? 'border-oxblood bg-oxblood'
           : 'border-landing-line bg-landing-paper/60'
       }`}
     >
       <Text
-        className={`font-sans text-body-md ${
+        className={`font-sans text-[13px] ${
           selected ? 'text-landing-paper' : 'text-landing-obsidian/80'
         }`}
       >
@@ -342,7 +344,7 @@ export function StylistScreen() {
 
           <View className="mt-2 flex-row flex-wrap items-center gap-2">
             <View
-              className={`h-10 flex-row items-center gap-2 rounded-subtle border px-3 ${
+              className={`min-h-11 flex-row items-center gap-2 rounded-subtle border px-3 ${
                 hasQuota ? 'border-landing-line' : 'border-danger/40'
               }`}
             >
@@ -364,7 +366,7 @@ export function StylistScreen() {
               accessibilityRole="button"
               accessibilityLabel="Xem lịch sử tư vấn"
               onPress={() => navigation.navigate('StylistHistory')}
-              className="h-10 flex-row items-center gap-2 rounded-subtle border border-landing-obsidian/70 px-3 active:bg-ivory"
+              className="min-h-11 flex-row items-center gap-2 rounded-subtle border border-landing-obsidian/70 px-3 active:bg-ivory"
             >
               <History size={14} strokeWidth={1.75} color={COLORS.obsidian} />
               <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
@@ -430,6 +432,8 @@ export function StylistScreen() {
                 <View className="mt-2 flex-row flex-wrap gap-2">
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel="Tải ảnh lên"
+                    accessibilityState={{ disabled: isPending }}
                     disabled={isPending}
                     className={outlineButtonClass}
                     onPress={() => void pickFromLibrary()}
@@ -439,6 +443,8 @@ export function StylistScreen() {
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel="Chụp ảnh"
+                    accessibilityState={{ disabled: isPending }}
                     disabled={isPending}
                     className={outlineButtonClass}
                     onPress={() => void takePhoto()}
@@ -532,6 +538,7 @@ export function StylistScreen() {
                     onChangeText={onChange}
                     autoFocus
                     editable={!isPending}
+                    accessibilityLabel="Dịp mặc khác"
                     placeholder="VD: Hẹn hò, Du lịch biển, Tiệc sinh nhật"
                     placeholderTextColor={COLORS.muted}
                     className="mt-2 h-11 rounded-subtle border border-landing-line bg-landing-paper/60 px-3.5 font-sans text-body-md text-landing-obsidian"
@@ -577,6 +584,7 @@ export function StylistScreen() {
                     onChangeText={onChange}
                     autoFocus
                     editable={!isPending}
+                    accessibilityLabel="Phong cách khác"
                     placeholder="VD: Vintage, Cổ điển, Nữ tính"
                     placeholderTextColor={COLORS.muted}
                     className="mt-2 h-11 rounded-subtle border border-landing-line bg-landing-paper/60 px-3.5 font-sans text-body-md text-landing-obsidian"
@@ -673,11 +681,11 @@ export function StylistScreen() {
             ) : (
               <Pressable
                 accessibilityRole="button"
-                className="h-10 flex-row items-center justify-center gap-1.5 self-start rounded-subtle border border-dashed border-brass/70 px-3.5 active:bg-landing-paper"
+                className="min-h-11 flex-row items-center justify-center gap-1.5 self-start rounded-subtle border border-dashed border-brass/70 px-3.5 active:bg-landing-paper"
                 onPress={() => setShowProductPicker(true)}
               >
                 <Plus size={16} strokeWidth={1.75} color={COLORS.obsidian} />
-                <Text className="font-sans text-body-md text-landing-obsidian/80">
+                <Text className="font-sans text-[13px] text-landing-obsidian/80">
                   Chọn từ cửa hàng
                 </Text>
               </Pressable>
@@ -687,7 +695,10 @@ export function StylistScreen() {
           <View className="h-px bg-landing-line" />
 
           {formError ? (
-            <View className="flex-row items-start gap-3 border-l-2 border-danger bg-landing-paper/60 px-4 py-3">
+            <View
+              accessibilityRole="alert"
+              className="flex-row items-start gap-3 border-l-2 border-danger bg-landing-paper/60 px-4 py-3"
+            >
               <AlertCircle size={16} strokeWidth={1.75} color={COLORS.danger} />
               <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-obsidian">
                 {formError}
@@ -701,7 +712,7 @@ export function StylistScreen() {
                 {analyzeMutation.uploadProgress > 0 &&
                 analyzeMutation.uploadProgress < 100
                   ? `Đang tải ảnh lên ${analyzeMutation.uploadProgress}%`
-                  : 'AI đang phân tích phong cách của bạn…'}
+                  : 'AI đang chọn bộ phối từ cửa hàng…'}
               </Text>
               <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
                 Phân tích có thể mất đến 90 giây. Vui lòng giữ ứng dụng mở.
@@ -719,7 +730,10 @@ export function StylistScreen() {
           ) : null}
 
           {analyzeMutation.error ? (
-            <View className="flex-row items-start gap-3 border-l-2 border-danger bg-landing-paper/60 px-4 py-3">
+            <View
+              accessibilityRole="alert"
+              className="flex-row items-start gap-3 border-l-2 border-danger bg-landing-paper/60 px-4 py-3"
+            >
               <AlertCircle size={16} strokeWidth={1.75} color={COLORS.danger} />
               <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-obsidian">
                 {getErrorMessage(analyzeMutation.error)}
@@ -729,6 +743,7 @@ export function StylistScreen() {
 
           <Pressable
             accessibilityRole="button"
+            accessibilityState={{ disabled: isPending, busy: isPending }}
             disabled={isPending}
             className={`h-12 flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood ${
               isPending ? 'opacity-70' : 'active:bg-landing-obsidian'

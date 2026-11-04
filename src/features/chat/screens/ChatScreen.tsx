@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   View,
   Text,
   Pressable,
@@ -11,8 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { History, RotateCcw, X } from 'lucide-react-native';
+import { ArrowDown, ArrowLeft, History, RotateCcw, X } from 'lucide-react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { RootStackParamList } from '@/navigation/types';
@@ -28,18 +28,20 @@ import {
   IChatContextPayload,
   IChatProductContext,
 } from '@/features/chat/types/chat';
+import { AssistantMark } from '@/features/chat/components/AssistantMark';
 import { ChatMessage } from '@/features/chat/components/ChatMessage';
 import { ChatComposer } from '@/features/chat/components/ChatComposer';
+import { ChatWelcome } from '@/features/chat/components/ChatWelcome';
 import { QuickChips } from '@/features/chat/components/QuickChips';
 import { SessionSheet } from '@/features/chat/components/SessionSheet';
-import { Loading } from '@/components/common/Loading';
-import { EmptyState } from '@/components/common/EmptyState';
-import { ErrorView } from '@/components/common/ErrorView';
-import { Button } from '@/components/ui/Button';
 import { QuotaExhaustedModal } from '@/components/ui/QuotaExhaustedModal';
 import { COLORS } from '@/constants/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
+
+// Atelier Paper, cùng ChatWindow của web: header giấy viền mảnh, nút icon 44px không viền.
+const HEADER_ICON_BUTTON = 'h-11 w-11 items-center justify-center active:opacity-60';
+const ACTION_LABEL = 'font-sans text-[11px] font-semibold uppercase tracking-[0.16em]';
 
 function buildContext(
   measurements: Record<string, number | string | undefined> | null,
@@ -173,9 +175,11 @@ export const ChatScreen: React.FC<Props> = ({ navigation, route }) => {
     listRef.current?.scrollToEnd({ animated: true });
   }, []);
 
+  const quotaRemaining = quota?.remaining;
+
   const handleSend = useCallback(
     (text: string) => {
-      if (typeof quota?.remaining === 'number' && quota.remaining <= 0) {
+      if (typeof quotaRemaining === 'number' && quotaRemaining <= 0) {
         setShowQuotaModal(true);
         return;
       }
@@ -185,7 +189,7 @@ export const ChatScreen: React.FC<Props> = ({ navigation, route }) => {
         context: buildContext(measurementsRef.current, user?.tier),
       });
     },
-    [sendMessage, attachedProduct, user?.tier, quota?.remaining],
+    [sendMessage, attachedProduct, user?.tier, quotaRemaining],
   );
 
   const handleRetry = useCallback(() => {
@@ -212,106 +216,125 @@ export const ChatScreen: React.FC<Props> = ({ navigation, route }) => {
   }, [newChat]);
 
   const showWelcome = messages.length === 0 && !loadingSession && !sessionError;
-  const firstName = user?.name ? user.name.split(' ')[0] : 'bạn';
+  const userName = user?.name?.trim() || undefined;
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background">
+    <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-landing-paper">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
         keyboardVerticalOffset={0}
       >
-        <View className="flex-1 px-xl pt-md">
-          {/* Header burgundy theo ảnh thiết kế */}
-          <View className="rounded-2xl bg-primary-container p-lg shadow-sm">
-            <View className="flex-row items-center gap-md">
-              <View className="h-10 w-10 items-center justify-center rounded-full bg-primary-soft-strong">
-                <Text className="font-heading text-headline-sm font-bold text-primary-container">
-                  S
-                </Text>
-              </View>
-              <View className="flex-1">
-                <Text className="font-heading text-headline-sm font-bold text-primary-foreground">
-                  StAle. Assistant
-                </Text>
-                <View className="mt-xs flex-row items-center gap-xs">
-                  <View className="h-1.5 w-1.5 rounded-full bg-success" />
-                  <Text className="text-body-sm text-primary-foreground">
-                    Trực tuyến · Phản hồi ngay
-                  </Text>
-                </View>
-              </View>
-              <Pressable
-                className="min-h-11 min-w-11 items-center justify-center rounded-full"
-                accessibilityLabel="Cuộc trò chuyện mới"
-                onPress={handleNewChat}
-              >
-                <RotateCcw size={20} className="text-primary-foreground" />
-              </Pressable>
-              <Pressable
-                className="min-h-11 min-w-11 items-center justify-center rounded-full"
-                accessibilityLabel="Lịch sử trò chuyện"
-                onPress={() => setSheetVisible(true)}
-              >
-                <History size={20} className="text-primary-foreground" />
-              </Pressable>
-              <Pressable
-                className="min-h-11 min-w-11 items-center justify-center rounded-full"
-                accessibilityLabel="Đóng trò chuyện"
-                onPress={() => navigation.goBack()}
-              >
-                <X size={22} className="text-primary-foreground" />
-              </Pressable>
+        {/* Header giấy viền mảnh như ChatWindow của web (không dùng khối đỏ đô: đỏ đô chỉ cho hành động chính). */}
+        <View className="flex-row items-center gap-sm border-b border-landing-line px-xs py-xs">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Quay lại"
+            className={HEADER_ICON_BUTTON}
+            onPress={() => navigation.goBack()}
+          >
+            <ArrowLeft size={20} strokeWidth={1.75} color={COLORS.obsidian} />
+          </Pressable>
+          <AssistantMark />
+          <View className="min-w-0 flex-1">
+            <Text
+              accessibilityRole="header"
+              numberOfLines={1}
+              className="font-sans text-[15px] font-semibold leading-tight text-landing-obsidian"
+            >
+              Trợ lý thời trang StAie.
+            </Text>
+            <View className="mt-0.5 flex-row items-center gap-1.5">
+              <View className="h-1.5 w-1.5 rounded-full bg-sage-ink" />
+              <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-landing-muted">
+                StAie. AI Assistant
+              </Text>
             </View>
-            {typeof quota?.remaining === 'number' && typeof quota?.limit === 'number' ? (
-              <View className="mt-md self-start rounded-full bg-black/20 px-md py-xs">
-                <Text className="text-body-sm font-semibold text-primary-foreground">
-                  Còn {quota.remaining}/{quota.limit} lượt hôm nay
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Cuộc trò chuyện mới"
+            className={HEADER_ICON_BUTTON}
+            onPress={handleNewChat}
+          >
+            <RotateCcw size={18} strokeWidth={1.75} color={COLORS.muted} />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Mở lịch sử trò chuyện"
+            className={HEADER_ICON_BUTTON}
+            onPress={() => setSheetVisible(true)}
+          >
+            <History size={18} strokeWidth={1.75} color={COLORS.obsidian} />
+          </Pressable>
+        </View>
+
+        {typeof quota?.remaining === 'number' && typeof quota?.limit === 'number' ? (
+          <View className="flex-row items-center justify-between gap-md border-b border-landing-line px-lg py-sm">
+            <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-brass-ink">
+              Lượt chat hôm nay
+            </Text>
+            <Text
+              className={`font-mono text-[12px] ${
+                quota.remaining <= 0 ? 'text-danger' : 'text-landing-obsidian'
+              }`}
+            >
+              Còn {quota.remaining}/{quota.limit} lượt
+            </Text>
+          </View>
+        ) : null}
+
+        <View className="flex-1 px-lg">
+          {/* Danh sách tin nhắn */}
+          <View className="relative flex-1">
+            {loadingSession ? (
+              <View
+                accessibilityRole="progressbar"
+                className="flex-1 items-center justify-center gap-md"
+              >
+                <ActivityIndicator size="large" color={COLORS.oxblood} />
+                <Text className="font-sans text-body-sm text-landing-muted">
+                  Đang tải cuộc trò chuyện…
                 </Text>
               </View>
-            ) : null}
-          </View>
-
-          {/* Danh sách tin nhắn */}
-          <View className="relative mt-md flex-1">
-            {loadingSession ? (
-              <Loading message="Đang tải cuộc trò chuyện..." />
             ) : sessionError ? (
-              <View className="flex-1">
-                <ErrorView
-                  title="Không tải được cuộc trò chuyện"
-                  message={sessionError}
-                  onRetry={() =>
-                    initialSessionId
-                      ? handleSelectSession(initialSessionId)
-                      : setSessionError(null)
-                  }
-                />
-                <View className="mt-md items-center">
-                  <Button title="Cuộc trò chuyện mới" variant="outline" onPress={handleNewChat} />
+              <View className="flex-1 items-center justify-center gap-md px-lg">
+                <Text className="text-center font-display text-[22px] leading-tight text-landing-obsidian">
+                  Không tải được cuộc trò chuyện
+                </Text>
+                <Text className="max-w-[280px] text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+                  {sessionError}
+                </Text>
+                <View className="mt-sm w-full max-w-[280px] gap-sm">
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() =>
+                      initialSessionId
+                        ? handleSelectSession(initialSessionId)
+                        : setSessionError(null)
+                    }
+                    className="h-11 items-center justify-center rounded-subtle bg-oxblood active:opacity-90"
+                  >
+                    <Text className={`${ACTION_LABEL} text-landing-paper`}>Thử lại</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={handleNewChat}
+                    className="h-11 items-center justify-center rounded-subtle border border-landing-line active:opacity-70"
+                  >
+                    <Text className={`${ACTION_LABEL} text-landing-obsidian`}>
+                      Cuộc trò chuyện mới
+                    </Text>
+                  </Pressable>
                 </View>
               </View>
             ) : showWelcome ? (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <View className="items-center px-md py-xl">
-                  <View className="h-20 w-20 items-center justify-center rounded-2xl bg-surface-low">
-                    <Ionicons
-                      name="chatbubbles-outline"
-                      size={40}
-                      className="text-on-surface-variant"
-                    />
-                  </View>
-                  <Text className="mt-lg text-center font-heading text-headline-sm font-bold text-on-surface">
-                    Xin chào {firstName}! Tôi là StAle. Assistant
-                  </Text>
-                  <Text className="mt-sm text-center text-body-md leading-relaxed text-on-surface-variant">
-                    Tôi có thể giúp bạn thử đồ ảo, tư vấn chọn size vừa vặn, gợi ý
-                    phối đồ và giải đáp đơn hàng.
-                  </Text>
-                  <View className="mt-lg w-full">
-                    <QuickChips items={CHAT_QUICK_REPLIES} onSelect={handleSend} />
-                  </View>
-                </View>
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                <ChatWelcome
+                  userName={userName}
+                  prompts={CHAT_QUICK_REPLIES}
+                  onSelect={handleSend}
+                />
               </ScrollView>
             ) : (
               <FlatList
@@ -320,6 +343,7 @@ export const ChatScreen: React.FC<Props> = ({ navigation, route }) => {
                 keyExtractor={(item) => item.id}
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
+                contentContainerClassName="pt-xl"
                 renderItem={({ item, index }) => (
                   <ChatMessage
                     message={item}
@@ -340,57 +364,56 @@ export const ChatScreen: React.FC<Props> = ({ navigation, route }) => {
                   if (followRef.current) listRef.current?.scrollToEnd({ animated: false });
                 }}
                 ListEmptyComponent={
-                  <EmptyState
-                    icon="💬"
-                    title="Bắt đầu trò chuyện"
-                    description="Nhắn tin cho StAle. để được tư vấn."
-                  />
+                  <View className="items-center gap-xs py-giant">
+                    <Text className="text-center font-display text-[20px] text-landing-obsidian">
+                      Bắt đầu trò chuyện
+                    </Text>
+                    <Text className="text-center font-sans text-body-sm text-landing-muted">
+                      Nhắn tin cho StAie. để được tư vấn.
+                    </Text>
+                  </View>
                 }
                 ListFooterComponent={<View className="h-md" />}
               />
             )}
             {showJump && !loadingSession && !sessionError && !showWelcome ? (
               <Pressable
-                className="absolute bottom-4 right-2 min-h-11 min-w-11 items-center justify-center rounded-full border border-outline-variant bg-primary-container p-sm shadow-sm"
-                accessibilityLabel="Cuộn xuống tin mới nhất"
+                accessibilityRole="button"
+                accessibilityLabel="Cuộn xuống tin nhắn mới nhất"
+                className="absolute bottom-4 right-0 h-11 w-11 items-center justify-center rounded-subtle border border-landing-line bg-ivory active:opacity-80"
                 onPress={jumpToBottom}
               >
-                <Ionicons name="arrow-down" size={20} color={COLORS.onPrimary} />
+                <ArrowDown size={16} strokeWidth={1.75} color={COLORS.obsidian} />
               </Pressable>
             ) : null}
           </View>
 
-          {/* Lỗi + hành động */}
+          {/* Lỗi + hành động: khối giấy kẻ trái như thông báo lỗi của web */}
           {error ? (
-            <View className="mb-md rounded-xl border border-surface-line bg-surface-lowest p-md">
-              <Text className="text-center text-body-sm text-danger">{error.message}</Text>
-              <View className="mt-sm flex-row justify-center gap-md">
-                {error.action === 'subscription' ? (
-                  <Button
-                    title="Xem gói hội viên"
-                    size="sm"
-                    onPress={() => navigation.navigate('SubscriptionPlans')}
-                  />
-                ) : (
-                  <Button title="Thử lại" size="sm" variant="outline" onPress={handleRetry} />
-                )}
-              </View>
-            </View>
-          ) : null}
-
-          {/* Sản phẩm đính kèm */}
-          {attachedProduct ? (
-            <View className="mb-md flex-row items-center gap-sm rounded-xl border border-outline-variant bg-primary-soft px-md py-sm">
-              <Text className="flex-1 text-body-sm font-semibold text-on-surface" numberOfLines={1}>
-                Đang tư vấn: {attachedProduct.name}
+            <View
+              accessibilityRole="alert"
+              className="mb-md gap-xs border-l-2 border-danger bg-ivory px-lg py-sm"
+            >
+              <Text className="font-sans text-body-sm leading-relaxed text-landing-obsidian">
+                {error.message}
               </Text>
-              <Pressable
-                className="min-h-11 min-w-11 items-center justify-center"
-                accessibilityLabel="Gỡ sản phẩm đính kèm"
-                onPress={() => setAttachedProduct(null)}
-              >
-                <X size={18} className="text-on-surface-variant" />
-              </Pressable>
+              {error.action === 'subscription' ? (
+                <Pressable
+                  accessibilityRole="button"
+                  className="min-h-11 self-start justify-center active:opacity-70"
+                  onPress={() => navigation.navigate('SubscriptionPlans')}
+                >
+                  <Text className={`${ACTION_LABEL} text-oxblood`}>Xem gói hội viên</Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  accessibilityRole="button"
+                  className="min-h-11 self-start justify-center active:opacity-70"
+                  onPress={handleRetry}
+                >
+                  <Text className={`${ACTION_LABEL} text-oxblood`}>Thử lại</Text>
+                </Pressable>
+              )}
             </View>
           ) : null}
 
@@ -408,12 +431,34 @@ export const ChatScreen: React.FC<Props> = ({ navigation, route }) => {
             />
           </View>
 
-          {/* Composer sticky đáy */}
+          {/* Composer sticky đáy; sản phẩm đính kèm nằm trong khung như ChatInput của web */}
           <View className="pb-md">
-            <ChatComposer isStreaming={isStreaming} onSend={handleSend} onStop={stop} />
-            <Text className="mt-sm text-center text-body-sm text-on-surface-variant">
-              Ảnh và số đo của bạn chỉ dùng để tư vấn và được bảo mật.
-            </Text>
+            <ChatComposer
+              isStreaming={isStreaming}
+              onSend={handleSend}
+              onStop={stop}
+              attachment={
+                attachedProduct ? (
+                  <View className="mb-sm flex-row items-center gap-sm rounded-subtle border border-landing-line bg-landing-paper pl-md">
+                    <Text
+                      className="flex-1 font-sans text-[12px] text-landing-obsidian"
+                      numberOfLines={1}
+                    >
+                      Đang tư vấn:{' '}
+                      <Text className="font-semibold text-oxblood">{attachedProduct.name}</Text>
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      className="h-11 w-11 items-center justify-center active:opacity-60"
+                      accessibilityLabel="Bỏ đính kèm sản phẩm"
+                      onPress={() => setAttachedProduct(null)}
+                    >
+                      <X size={14} strokeWidth={1.75} color={COLORS.muted} />
+                    </Pressable>
+                  </View>
+                ) : null
+              }
+            />
           </View>
         </View>
       </KeyboardAvoidingView>
