@@ -4,6 +4,7 @@ import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useCartStore } from '@/features/cart/store/use-cart-store';
 import { cartApi, isUuidV4, type CartLineInput } from '../api/cart.api';
 import { cartKeys, useGuestCartHydrated } from '../hooks/use-cart';
+import { useCartRealtime } from '../hooks/use-cart-realtime';
 
 export function CartSync(): null {
   const { isAuthenticated, user } = useAuth();
@@ -12,6 +13,7 @@ export function CartSync(): null {
   const hydrated = useGuestCartHydrated();
   const guestItems = useCartStore((state) => state.items);
   const mergedForRef = useRef<string | null>(null);
+  useCartRealtime();
 
   useEffect(() => {
     if (!isAuthenticated || !userId) {

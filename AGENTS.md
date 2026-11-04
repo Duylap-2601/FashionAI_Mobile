@@ -365,7 +365,8 @@ so use `http://localhost:3001/api` on desktop development. On a physical phone,
 Emulator may require `10.0.2.2` in place of `localhost`.
 
 ## Realtime (Socket.IO) — `src/realtime/socket.ts`
-- **Namespace `/`**: Notifications, `token:expiring`, `token:expired`
+- **Namespace `/`**: Notifications, `token:expiring`, `token:expired`, `cart:updated`
+- `notification` of type ORDER_STATUS / PAYMENT / ORDER_ISSUE also invalidates `['orders']`, `['orderIssues']` and `['myReturns']` (`use-notification-socket.ts`); `cart:updated` refetches the server cart unless a cart mutation (`CART_MUTATION_KEY`) is in flight (`features/cart/hooks/use-cart-realtime.ts`, mounted by `CartSync`)
 - **Namespace `/chat`**: AI Chatbot streaming (`chat:send`, `chat:token`, `chat:done`, `chat:error`)
 - **Transport**: `websocket` only (BE requirement)
 - **Auth**: `auth: { token: accessToken }`
@@ -462,7 +463,7 @@ src/
 │   │   ├── hooks/
 │   │   ├── screens/                 # OrdersScreen, OrderDetailScreen, OrderSuccessScreen, OrderReturnsScreen, MyReturnsScreen
 │   │   ├── types/order.ts
-│   │   └── utils/                   # order-items.ts (item name/image), order-returns.ts (issue window, refund labels, evidence)
+│   │   └── utils/                   # order-items.ts (item name/image), order-returns.ts (issue window, refund labels, evidence), order-shipping.ts (GHN labels, FAI transfer content)
 │   ├── payments/
 │   │   └── api/payments.api.ts
 │   ├── products/

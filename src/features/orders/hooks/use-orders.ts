@@ -17,6 +17,35 @@ export function useOrders() {
   };
 }
 
+const ORDERS_PAGE_SIZE = 20;
+
+/** Đơn của tôi theo tab trạng thái + từ khóa, tải thêm từng trang khi cuộn (như web). */
+export function useInfiniteOrders(filters: { status?: string; search?: string }) {
+  const query = useInfiniteQuery({
+    // Nằm dưới ['orders'] nên hủy đơn / nhận hàng / thông báo realtime đều làm mới danh sách.
+    queryKey: ['orders', 'list', filters],
+    queryFn: ({ pageParam, signal }) =>
+      ordersApi.getOrdersPage({ ...filters, page: pageParam, limit: ORDERS_PAGE_SIZE }, { signal }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, _pages, lastPageParam) => {
+      const totalPages = lastPage.meta?.totalPages ?? 1;
+      return lastPageParam < totalPages ? lastPageParam + 1 : undefined;
+    },
+  });
+
+  return {
+    orders: query.data?.pages.flatMap((page) => page.data) ?? [],
+    total: query.data?.pages[0]?.meta?.total,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    isRefetching: query.isRefetching,
+    refetch: query.refetch,
+    fetchNextPage: query.fetchNextPage,
+    hasNextPage: query.hasNextPage,
+    isFetchingNextPage: query.isFetchingNextPage,
+  };
+}
+
 export function useOrder(id: string | number) {
   const query = useQuery({
     queryKey: ['orders', id],

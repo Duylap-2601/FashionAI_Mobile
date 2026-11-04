@@ -53,6 +53,13 @@ export interface ICreateOrderResponse {
   [key: string]: unknown;
 }
 
+export interface OrdersListParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+  search?: string;
+}
+
 export const ordersApi = {
   quote: (payload: OrderQuotePayload, opts?: HttpOptions): Promise<OrderQuoteResponse> => {
     return http.post<OrderQuoteResponse>(ENDPOINTS.ORDERS.QUOTE, payload, opts);
@@ -66,6 +73,18 @@ export const ordersApi = {
     return http.get<any[]>(ENDPOINTS.ORDERS.LIST, opts);
   },
   
+  /** Một trang đơn của tôi; BE lọc theo một trạng thái và tìm theo mã đơn / tên sản phẩm. */
+  getOrdersPage: async (
+    params: OrdersListParams = {},
+    opts?: HttpOptions,
+  ): Promise<{ data: any[]; meta?: ApiPaginationMeta }> => {
+    const res = await http.getPaged<any[]>(ENDPOINTS.ORDERS.LIST, { ...opts, params });
+    return {
+      data: Array.isArray(res.data) ? res.data : [],
+      meta: isPaginationMeta(res.meta) ? res.meta : undefined,
+    };
+  },
+
   getOrder: (id: string | number, opts?: HttpOptions): Promise<any> => {
     return http.get<any>(ENDPOINTS.ORDERS.DETAIL(id), opts);
   },

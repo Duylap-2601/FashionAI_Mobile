@@ -72,6 +72,19 @@ describe('ordersApi', () => {
     expect(result).toEqual(ordersData);
   });
 
+  it('getOrdersPage sends the tab status and search to the backend', async () => {
+    const ordersData = [{ id: '1', orderCode: 9027452, status: 'SHIPPING' }];
+    const meta = { total: 41, page: 3, limit: 20, totalPages: 3 };
+    mock.onGet(ENDPOINTS.ORDERS.LIST).reply((config) => {
+      expect(config.params).toEqual({ status: 'SHIPPING', search: 'vest', page: 3, limit: 20 });
+      return [200, envelope(ordersData, meta)];
+    });
+
+    await expect(
+      ordersApi.getOrdersPage({ status: 'SHIPPING', search: 'vest', page: 3, limit: 20 }),
+    ).resolves.toEqual({ data: ordersData, meta });
+  });
+
   it('getOrder fetches single order detail', async () => {
     const orderData = { id: '1', orderCode: '9027452', status: 'PENDING' };
 
