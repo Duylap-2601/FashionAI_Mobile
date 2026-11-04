@@ -13,17 +13,16 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
 import { useQuery } from '@tanstack/react-query';
 import {
-  AlertCircle,
   CheckCircle2,
   ChevronLeft,
   Clock,
   ExternalLink,
   X,
-  XCircle,
 } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
 import { formatCurrency } from '@/utils/format';
 import { paymentsApi } from '@/features/payments/api/payments.api';
+import { PaymentStatusCard } from '@/features/payments/components/PaymentStatusCard';
 
 const ZALOPAY_DESCRIPTION =
   'Quét QR hoặc mở ZaloPay. Giữ trang này, đơn tự cập nhật khi thanh toán xong.';
@@ -70,34 +69,6 @@ interface ISheetActionProps {
   onPress: () => void;
 }
 
-function PrimaryAction({ label, onPress }: ISheetActionProps) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      className="h-12 flex-row items-center justify-center rounded-subtle bg-oxblood active:bg-landing-obsidian"
-    >
-      <Text className="font-sans text-[11.5px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
-function OutlineAction({ label, onPress }: ISheetActionProps) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      className="h-12 items-center justify-center rounded-subtle border border-landing-line active:bg-ivory"
-    >
-      <Text className="font-sans text-[11.5px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
 function TextAction({ label, onPress }: ISheetActionProps) {
   return (
     <Pressable
@@ -110,62 +81,31 @@ function TextAction({ label, onPress }: ISheetActionProps) {
   );
 }
 
-interface IResultSheetProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
+type IResultSheetProps = React.ComponentProps<typeof PaymentStatusCard> & {
   onClose: () => void;
-  primary?: ISheetActionProps;
-  secondary?: ISheetActionProps;
-  footnote?: ISheetActionProps;
-}
+};
 
-function ResultSheet({
-  icon,
-  title,
-  description,
-  onClose,
-  primary,
-  secondary,
-  footnote,
-}: IResultSheetProps) {
+/** Kết quả thanh toán trong màn này, cùng khung PaymentStatusCard với màn thành công. */
+function ResultSheet({ onClose, ...card }: IResultSheetProps) {
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-landing-paper">
+      <View className="flex-row justify-end px-3 pt-2">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Đóng"
+          onPress={onClose}
+          className="h-11 w-11 items-center justify-center rounded-subtle active:bg-ivory"
+        >
+          <X size={20} strokeWidth={1.75} color={COLORS.muted} />
+        </Pressable>
+      </View>
       <ScrollView
         className="flex-1"
-        contentContainerClassName="flex-grow justify-center px-5 pb-10 pt-4"
+        contentContainerClassName="flex-grow justify-center px-4 pb-10"
         showsVerticalScrollIndicator={false}
       >
-        <View className="mb-9 flex-row items-start justify-between gap-3">
-          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
-            THANH TOÁN
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Đóng"
-            onPress={onClose}
-            className="-mr-1.5 -mt-2 h-11 w-11 items-center justify-center rounded-subtle active:bg-ivory"
-          >
-            <X size={20} strokeWidth={1.75} color={COLORS.muted} />
-          </Pressable>
-        </View>
-
-        <View className="mb-4">{icon}</View>
-
-        <Text
-          accessibilityRole="header"
-          className="font-display text-[26px] leading-tight text-landing-obsidian"
-        >
-          {title}
-        </Text>
-        <Text className="mt-3 font-sans text-body-md leading-relaxed text-landing-muted">
-          {description}
-        </Text>
-
-        <View className="mt-8 gap-3">
-          {primary ? <PrimaryAction {...primary} /> : null}
-          {secondary ? <OutlineAction {...secondary} /> : null}
-          {footnote ? <TextAction {...footnote} /> : null}
+        <View className="w-full max-w-[520px] self-center">
+          <PaymentStatusCard {...card} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -390,9 +330,10 @@ export function PaymentScreen() {
   if (isRefundRequired) {
     return (
       <ResultSheet
-        icon={<AlertCircle size={28} strokeWidth={1.5} color={COLORS.brassInk} />}
-        title="Thanh toán cần hoàn tiền"
-        description="Hệ thống đã nhận tiền nhưng chưa ghi nhận được cho đơn hàng này. Khoản tiền sẽ được hoàn lại."
+        title="Khoản thanh toán cần hoàn lại"
+        orderCode={orderCode}
+        status={{ tone: 'attention', label: 'Cần hoàn tiền' }}
+        description="Shop đã nhận tiền nhưng không ghi nhận được cho đơn này, thường do đơn đã được thanh toán trước đó. Khoản này sẽ được hoàn lại cho bạn."
         onClose={handleClose}
         primary={{ label: 'Xem đơn hàng', onPress: handleGoToOrder }}
         secondary={{ label: 'Về giỏ hàng', onPress: handleBackToCart }}
@@ -403,11 +344,10 @@ export function PaymentScreen() {
   if (isCancelled) {
     return (
       <ResultSheet
-        icon={<Clock size={28} strokeWidth={1.5} color={COLORS.brassInk} />}
-        title="Thanh toán đã hủy"
-        description={`Bạn đã hủy thanh toán. Đơn hàng ${
-          orderCode ? `#${orderCode} ` : ''
-        }vẫn được giữ ở trạng thái chờ thanh toán trong 24 giờ.`}
+        title="Thanh toán đã bị hủy"
+        orderCode={orderCode}
+        status={{ tone: 'attention', label: 'Chờ thanh toán' }}
+        description="Bạn đã hủy ở cổng thanh toán. Đơn vẫn được giữ ở trạng thái chờ thanh toán, bạn có thể thanh toán lại từ trang đơn hàng."
         onClose={handleClose}
         primary={{ label: 'Xem đơn hàng', onPress: handleGoToOrder }}
         secondary={{ label: 'Thử lại', onPress: handleRetry }}
@@ -419,11 +359,12 @@ export function PaymentScreen() {
   if (isFailed) {
     return (
       <ResultSheet
-        icon={<XCircle size={28} strokeWidth={1.5} color={COLORS.danger} />}
-        title="Thanh toán thất bại"
+        title="Thanh toán chưa thành công"
+        orderCode={orderCode}
+        status={{ tone: 'error', label: 'Thất bại' }}
         description={
           payment?.failureReason ||
-          'Giao dịch chưa được cổng thanh toán xác nhận hoặc liên kết đã hết hạn.'
+          'Cổng thanh toán chưa xác nhận giao dịch. Đơn vẫn chờ thanh toán, bạn có thể thử lại từ trang đơn hàng.'
         }
         onClose={handleClose}
         primary={{ label: 'Xem đơn hàng', onPress: handleGoToOrder }}
@@ -436,8 +377,9 @@ export function PaymentScreen() {
   if (isExpired) {
     return (
       <ResultSheet
-        icon={<Clock size={28} strokeWidth={1.5} color={COLORS.brassInk} />}
         title="Liên kết đã hết hạn"
+        orderCode={orderCode}
+        status={{ tone: 'closed', label: 'Hết hạn' }}
         description="Liên kết thanh toán không còn hiệu lực. Đơn hàng vẫn được giữ, bạn có thể tạo lại thanh toán từ chi tiết đơn."
         onClose={handleClose}
         primary={{ label: 'Xem đơn hàng', onPress: handleGoToOrder }}
@@ -449,8 +391,9 @@ export function PaymentScreen() {
   if (!checkoutUrl) {
     return (
       <ResultSheet
-        icon={<AlertCircle size={28} strokeWidth={1.5} color={COLORS.brassInk} />}
         title="Không tìm thấy liên kết thanh toán"
+        orderCode={orderCode}
+        status={{ tone: 'error', label: 'Không xác định' }}
         description="Không nhận được liên kết thanh toán cho đơn hàng này. Vui lòng mở lại đơn hàng và tạo lại thanh toán."
         onClose={handleClose}
         primary={{ label: 'Xem đơn hàng', onPress: handleGoToOrder }}
