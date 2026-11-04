@@ -11,7 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Camera, Check, ImageUp, Layers, X } from 'lucide-react-native';
+import { Camera, Check, ImageUp, Layers, Lock, X } from 'lucide-react-native';
 import {
   RootStackParamList,
   TryOnStackParamList,
@@ -49,8 +49,10 @@ interface PhotoTryOnContentProps {
 const primaryClass =
   'h-12 w-full flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood active:opacity-90';
 const outlineSmallClass =
-  'h-9 flex-row items-center justify-center gap-1.5 rounded-subtle border border-landing-line px-3.5 active:bg-ivory';
-const quietSmallClass = 'min-h-9 justify-center active:opacity-70';
+  'h-11 flex-row items-center justify-center gap-1.5 rounded-subtle border border-landing-line px-3.5 active:bg-ivory';
+const quietSmallClass = 'min-h-11 justify-center active:opacity-70';
+// expo-image không nhận className nên ảnh lấp khung bằng style.
+const FILL_IMAGE_STYLE = { flex: 1 } as const;
 const smallLabel = 'font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em]';
 
 // Nén ảnh còn tối đa 2048px, JPEG 80% để chắc chắn dưới giới hạn 10MB của BE.
@@ -93,13 +95,10 @@ const UploadZone: React.FC<{
 }> = ({ uri, error, onPickLibrary, onPickCamera, onClear }) => {
   if (uri) {
     return (
-      <View
-        className="w-full overflow-hidden border border-landing-line bg-ivory"
-        style={{ aspectRatio: 3 / 4 }}
-      >
+      <View className="aspect-[3/4] w-full overflow-hidden border border-landing-line bg-ivory">
         <Image
           source={{ uri }}
-          style={{ flex: 1 }}
+          style={FILL_IMAGE_STYLE}
           contentFit="contain"
           transition={200}
           accessibilityLabel="Ảnh toàn thân đã chọn"
@@ -108,7 +107,7 @@ const UploadZone: React.FC<{
           accessibilityRole="button"
           accessibilityLabel="Bỏ ảnh đã chọn"
           onPress={onClear}
-          className="absolute right-3 top-3 h-10 w-10 items-center justify-center rounded-subtle border border-landing-line bg-landing-paper active:opacity-70"
+          className="absolute right-3 top-3 h-11 w-11 items-center justify-center rounded-subtle border border-landing-line bg-landing-paper active:opacity-70"
         >
           <X size={16} strokeWidth={1.75} color={COLORS.obsidian} />
         </Pressable>
@@ -124,10 +123,9 @@ const UploadZone: React.FC<{
 
   return (
     <View
-      className={`w-full items-center justify-center border border-dashed px-6 ${
+      className={`aspect-[3/4] w-full items-center justify-center border border-dashed px-6 ${
         error ? 'border-danger/60 bg-ivory/60' : 'border-taupe bg-ivory/60'
       }`}
-      style={{ aspectRatio: 3 / 4 }}
     >
       <View className="h-12 w-12 items-center justify-center border border-landing-line">
         <ImageUp size={20} strokeWidth={1.5} color={COLORS.oxblood} />
@@ -141,13 +139,15 @@ const UploadZone: React.FC<{
       <View className="mt-6 flex-row flex-wrap justify-center gap-2">
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel="Chọn ảnh từ thư viện"
           onPress={onPickLibrary}
-          className="h-9 items-center justify-center rounded-subtle bg-oxblood px-3.5 active:opacity-90"
+          className="h-11 items-center justify-center rounded-subtle bg-oxblood px-3.5 active:opacity-90"
         >
           <Text className={`${smallLabel} text-landing-paper`}>Chọn ảnh</Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel="Chụp ảnh bằng camera"
           onPress={onPickCamera}
           className={outlineSmallClass}
         >
@@ -159,7 +159,10 @@ const UploadZone: React.FC<{
         PNG, JPG · tối đa 10MB
       </Text>
       {error ? (
-        <Text className="mt-3 max-w-[300px] text-center font-sans text-body-sm text-danger">
+        <Text
+          accessibilityRole="alert"
+          className="mt-3 max-w-[300px] text-center font-sans text-body-sm text-danger"
+        >
           {error}
         </Text>
       ) : null}
@@ -288,7 +291,7 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
         setShowQuotaModal(true);
         setServerError(
           action.remaining === 0
-            ? 'Bạn đã hết lượt thử đồ hôm nay. Quota sẽ được làm mới vào ngày mai.'
+            ? 'Bạn đã hết lượt thử đồ hôm nay. Lượt thử sẽ được làm mới vào ngày mai.'
             : 'Bạn đã vượt quá số lượt thử đồ cho phép.',
         );
         setServerAction('subscription');
@@ -333,7 +336,10 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
       {result && humanImage ? (
         <View>
           <View className="mb-4 flex-row items-baseline justify-between gap-4">
-            <Text className="font-display text-[22px] leading-tight text-landing-obsidian">
+            <Text
+              accessibilityRole="header"
+              className="font-display text-[22px] leading-tight text-landing-obsidian"
+            >
               Kết quả
             </Text>
             <Text className="font-sans text-[11px] text-landing-muted">
@@ -346,6 +352,7 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
           <View className="mt-4 flex-row flex-wrap items-center gap-2">
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Thử món khác"
               onPress={resetResult}
               className={outlineSmallClass}
             >
@@ -353,13 +360,15 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
             </Pressable>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Đổi ảnh"
               onPress={changePhoto}
-              className={quietSmallClass}
+              className={`${quietSmallClass} px-2`}
             >
               <Text className={`${smallLabel} text-landing-muted`}>Đổi ảnh</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Lịch sử thử đồ"
               onPress={() => stackNavigation.navigate('TryOnHistory')}
               className={`${quietSmallClass} ml-auto`}
             >
@@ -370,7 +379,10 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
       ) : (
         <View>
           <View className="mb-4 flex-row items-baseline justify-between gap-4">
-            <Text className="font-display text-[22px] leading-tight text-landing-obsidian">
+            <Text
+              accessibilityRole="header"
+              className="font-display text-[22px] leading-tight text-landing-obsidian"
+            >
               Ảnh của bạn
             </Text>
             <Text className="font-sans text-[11px] text-landing-muted">
@@ -391,21 +403,27 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
             />
 
             {isBusy ? (
-              <View className="absolute inset-0 items-center justify-center gap-3 border border-landing-line bg-landing-paper/90 px-6">
+              <View
+                accessibilityLiveRegion="polite"
+                className="absolute inset-0 items-center justify-center gap-3 border border-landing-line bg-landing-paper/90 px-6"
+              >
                 <ActivityIndicator color={COLORS.oxblood} />
                 <Text className="text-center font-display text-[22px] leading-tight text-landing-obsidian">
                   Đang thử trang phục
                 </Text>
                 <Text className="max-w-[260px] text-center font-sans text-body-sm leading-relaxed text-landing-muted">
                   Giữ nguyên ảnh và trang phục cho tới khi có kết quả.
-                  {progress > 0 ? ` ${progress}%` : ''}
                 </Text>
+                {progress > 0 ? (
+                  <Text className="font-mono text-xs text-landing-obsidian">{progress}%</Text>
+                ) : null}
               </View>
             ) : null}
           </View>
 
           {isBusy ? (
-            <View className="mt-4 h-1.5 overflow-hidden bg-ivory">
+            <View className="mt-4 h-1 overflow-hidden bg-taupe/40">
+              {/* Bề rộng thanh tiến trình tính theo % tải lên. */}
               <View
                 style={{ width: `${Math.max(progress, 4)}%` }}
                 className="h-full bg-oxblood"
@@ -415,7 +433,10 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
 
           <View className="mt-8">
             <View className="mb-4 flex-row items-baseline justify-between gap-3">
-              <Text className="font-display text-[22px] leading-tight text-landing-obsidian">
+              <Text
+                accessibilityRole="header"
+                className="font-display text-[22px] leading-tight text-landing-obsidian"
+              >
                 Trang phục
               </Text>
               <Text className="font-mono text-xs text-landing-muted">
@@ -424,6 +445,7 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
             </View>
 
             <TryOnSegmented
+              accessibilityLabel="Số món thử"
               value={mode}
               onChange={setMode}
               disabled={isBusy}
@@ -488,20 +510,24 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
             </View>
           </View>
 
-          {formError ? (
-            <Text className="mt-4 font-sans text-body-sm text-danger">{formError}</Text>
+          {/* Khi chưa có ảnh, lỗi đã hiện trong ô tải ảnh nên không lặp lại ở đây. */}
+          {formError && humanImage ? (
+            <Text accessibilityRole="alert" className="mt-4 font-sans text-body-sm text-danger">
+              {formError}
+            </Text>
           ) : null}
 
           {serverError ? (
-            <View className="mt-4 border-l-2 border-danger bg-ivory px-4 py-3">
+            <View accessibilityRole="alert" className="mt-4 border-l-2 border-danger bg-ivory px-4 py-3">
               <Text className="font-sans text-body-sm leading-relaxed text-danger">
                 {serverError}
               </Text>
               {serverAction === 'subscription' ? (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel="Xem gói hội viên"
                   onPress={() => rootNavigation.navigate('SubscriptionPlans')}
-                  className="mt-3 h-10 items-center justify-center self-start rounded-subtle bg-oxblood px-4 active:opacity-90"
+                  className="mt-3 h-11 items-center justify-center self-start rounded-subtle bg-oxblood px-4 active:opacity-90"
                 >
                   <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
                     Xem gói hội viên
@@ -514,10 +540,14 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
           <View className="mt-6">
             <Pressable
               accessibilityRole="button"
+              accessibilityState={{
+                disabled: !isBlocked && (!canSubmit || isBusy),
+                busy: isBusy,
+              }}
               disabled={!isBlocked && (!canSubmit || isBusy)}
               onPress={isBlocked ? onPressUpgrade : handleGenerate}
               className={`${primaryClass} ${
-                !isBlocked && (!canSubmit || isBusy) ? 'opacity-45' : ''
+                !isBlocked && (!canSubmit || isBusy) ? 'opacity-50' : ''
               }`}
             >
               {isBusy ? (
@@ -538,6 +568,12 @@ export const PhotoTryOnContent: React.FC<PhotoTryOnContentProps> = ({
               </Text>{' '}
               lượt (mỗi món 1 lượt). Kết quả tự lưu vào lịch sử thử đồ.
             </Text>
+            <View className="mt-3 flex-row items-start gap-2">
+              <Lock size={13} strokeWidth={1.75} color={COLORS.muted} />
+              <Text className="flex-1 font-sans text-body-sm leading-relaxed text-landing-muted">
+                Ảnh chỉ được gửi đi khi bạn bấm Thử trang phục và được lưu kèm kết quả trong lịch sử thử đồ.
+              </Text>
+            </View>
           </View>
         </View>
       )}

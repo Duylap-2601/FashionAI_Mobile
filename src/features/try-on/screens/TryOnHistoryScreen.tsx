@@ -41,6 +41,15 @@ const outlineButtonClass =
   'h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:bg-landing-ivory';
 const outlineButtonTextClass =
   'font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian';
+// Nút nhỏ kiểu FE account-ui (sm) nhưng cao 44px cho ngón tay.
+const SMALL_BUTTON_TEXT_CLASS = 'font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em]';
+const ICON_BUTTON_CLASS =
+  'h-11 w-11 items-center justify-center rounded-subtle border border-landing-line active:border-oxblood';
+// Ô trạng thái rỗng / lỗi giống FE AccountStatePanel.
+const STATE_PANEL_CLASS =
+  'items-center border border-landing-line bg-landing-ivory/60 px-6 py-14';
+// expo-image không nhận className nên ảnh lấp khung bằng style.
+const FILL_IMAGE_STYLE = { width: '100%', height: '100%' } as const;
 
 const SkeletonBlock: React.FC<{ width: number }> = ({ width }) => {
   const [opacity] = useState(() => new Animated.Value(0.35));
@@ -204,24 +213,25 @@ export const TryOnHistoryScreen: React.FC = () => {
     }
   };
 
+  // Nhãn loại trang phục cùng câu chữ với FE (profile-history-page.tsx).
   const getGarmentsLabel = (item: TryOnResult) => {
     if (item.garments && Array.isArray(item.garments) && item.garments.length > 0) {
       const labels = item.garments.map((g) => {
         const c = (g.category || '').toUpperCase();
         if (c.includes('UPPER') || c.includes('AO') || c.includes('TOP')) return 'Áo';
         if (c.includes('LOWER') || c.includes('QUAN') || c.includes('VAY') || c.includes('BOTTOM'))
-          return 'Quần/Váy';
-        if (c.includes('FULL_BODY') || c.includes('SUIT')) return 'Bộ liền thân';
-        return g.category || 'Trang phục';
+          return 'Quần & váy';
+        if (c.includes('FULL_BODY') || c.includes('SUIT')) return 'Đồ liền';
+        return 'Trang phục';
       });
       return labels.join(' + ');
     }
     const c = (item.category || '').toUpperCase();
     if (c.includes('UPPER') || c.includes('AO') || c.includes('TOP')) return 'Áo';
     if (c.includes('LOWER') || c.includes('QUAN') || c.includes('VAY') || c.includes('BOTTOM'))
-      return 'Quần/Váy';
-    if (c.includes('FULL_BODY') || c.includes('SUIT')) return 'Bộ liền thân';
-    return item.category || 'Trang phục';
+      return 'Quần & váy';
+    if (c.includes('FULL_BODY') || c.includes('SUIT')) return 'Đồ liền';
+    return 'Trang phục';
   };
 
   const handleGoBack = () => {
@@ -240,16 +250,16 @@ export const TryOnHistoryScreen: React.FC = () => {
   // Render individual history card
   const renderItem = ({ item }: ListRenderItemInfo<TryOnResult>) => {
     const isSelected = selectedItems.has(item.id);
-    const productName = item.product?.name || (item as any).productId || 'Sản phẩm tự do';
+    // Tên hiển thị không lộ mã sản phẩm thô; FE dùng cùng câu thay thế.
+    const productName = item.product?.name || 'Trang phục đã thử';
     const isDownloadingThis = downloadingId === item.id;
 
     return (
       <View style={{ width: cardWidth }} className="mb-8 min-w-0">
         <View
-          className={`relative overflow-hidden rounded-subtle border bg-ivory ${
+          className={`relative aspect-[3/4] overflow-hidden rounded-subtle border bg-ivory ${
             isSelected ? 'border-oxblood' : 'border-landing-line'
           }`}
-          style={{ aspectRatio: 3 / 4 }}
         >
           <Pressable
             accessibilityRole="button"
@@ -259,9 +269,10 @@ export const TryOnHistoryScreen: React.FC = () => {
           >
             <Image
               source={{ uri: item.resultUrl }}
-              style={{ width: '100%', height: '100%' }}
+              style={FILL_IMAGE_STYLE}
               contentFit="cover"
               transition={200}
+              accessibilityLabel={`Kết quả thử ${productName}`}
             />
           </Pressable>
 
@@ -285,8 +296,12 @@ export const TryOnHistoryScreen: React.FC = () => {
           </Pressable>
 
           {item.isCacheHit ? (
-            <View className="absolute right-2 top-2 h-6 w-6 items-center justify-center rounded-subtle bg-brass">
-              <Zap size={12} strokeWidth={2} color={COLORS.ivory} />
+            <View
+              accessible
+              accessibilityLabel="Lấy từ kết quả đã lưu"
+              className="absolute right-2 top-2 h-6 w-6 items-center justify-center bg-landing-obsidian/80"
+            >
+              <Zap size={12} strokeWidth={2} color={COLORS.brass} />
             </View>
           ) : null}
 
@@ -309,7 +324,10 @@ export const TryOnHistoryScreen: React.FC = () => {
           </Text>
         </View>
 
-        <Text numberOfLines={1} className="mt-1 line-clamp-1 font-sans text-landing-obsidian">
+        <Text
+          numberOfLines={1}
+          className="mt-1 font-sans text-sm font-medium leading-snug text-landing-obsidian"
+        >
           {productName}
         </Text>
 
@@ -318,33 +336,29 @@ export const TryOnHistoryScreen: React.FC = () => {
             accessibilityRole="button"
             accessibilityLabel={`Xem kết quả ${productName}`}
             onPress={() => navigation.navigate('TryOnDetail', { id: item.id })}
-            hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
-            className="h-9 w-9 items-center justify-center rounded-subtle border border-landing-line active:border-oxblood"
+            className={ICON_BUTTON_CLASS}
           >
-            <Eye size={14} strokeWidth={1.75} color={COLORS.oxblood} />
+            <Eye size={16} strokeWidth={1.75} color={COLORS.obsidian} />
           </Pressable>
 
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Tải ảnh ${productName}`}
+            accessibilityState={{ disabled: isDownloadingThis, busy: isDownloadingThis }}
             onPress={() => handleDownload(item)}
             disabled={isDownloadingThis}
-            hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
-            className={`h-9 w-9 items-center justify-center rounded-subtle border border-landing-line active:border-oxblood ${
-              isDownloadingThis ? 'opacity-50' : ''
-            }`}
+            className={`${ICON_BUTTON_CLASS} ${isDownloadingThis ? 'opacity-50' : ''}`}
           >
-            <Download size={14} strokeWidth={1.75} color={COLORS.muted} />
+            <Download size={16} strokeWidth={1.75} color={COLORS.obsidian} />
           </Pressable>
 
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Xoá kết quả ${productName}`}
             onPress={() => handleDeleteItem(item.id)}
-            hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
-            className="h-9 w-9 items-center justify-center rounded-subtle border border-danger/40 active:opacity-70"
+            className="h-11 w-11 items-center justify-center rounded-subtle border border-danger/40 active:opacity-70"
           >
-            <Trash2 size={14} strokeWidth={1.75} color={COLORS.danger} />
+            <Trash2 size={16} strokeWidth={1.75} color={COLORS.danger} />
           </Pressable>
         </View>
       </View>
@@ -393,7 +407,7 @@ export const TryOnHistoryScreen: React.FC = () => {
               </Text>
             </View>
 
-            <View className="mt-6 mb-5 h-11 flex-row items-center gap-2 rounded-subtle border border-landing-line bg-landing-paper/60 px-3">
+            <View className="mt-6 mb-5 h-11 flex-row items-center gap-2 rounded-subtle border border-landing-line bg-landing-ivory/80 pl-3">
               <Search size={16} strokeWidth={1.75} color={COLORS.muted} />
               <TextInput
                 placeholder="Tìm theo tên sản phẩm…"
@@ -408,15 +422,14 @@ export const TryOnHistoryScreen: React.FC = () => {
                   accessibilityRole="button"
                   accessibilityLabel="Xoá từ khoá tìm kiếm"
                   onPress={() => setSearchTerm('')}
-                  hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
-                  className="active:opacity-60"
+                  className="h-11 w-11 items-center justify-center active:opacity-60"
                 >
                   <X size={16} strokeWidth={1.75} color={COLORS.muted} />
                 </Pressable>
               ) : null}
             </View>
 
-            <View className="mb-6 flex-row gap-6 border-b border-landing-line">
+            <View accessibilityRole="tablist" className="mb-6 flex-row gap-6 border-b border-landing-line">
               {CATEGORIES.map((tab) => {
                 const isActive = selectedCategory === tab.id;
                 return (
@@ -453,24 +466,25 @@ export const TryOnHistoryScreen: React.FC = () => {
                 <View className="flex-row gap-2">
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel="Bỏ chọn"
                     onPress={() => setSelectedItems(new Set())}
-                    hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
-                    className="h-9 items-center justify-center rounded-subtle border border-landing-line px-4 active:bg-landing-ivory"
+                    className="h-11 items-center justify-center rounded-subtle border border-landing-line px-3.5 active:bg-landing-ivory"
                   >
-                    <Text className="font-sans text-xs font-medium text-landing-obsidian">
+                    <Text className={`${SMALL_BUTTON_TEXT_CLASS} text-landing-obsidian`}>
                       Bỏ chọn
                     </Text>
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel="Xoá đã chọn"
+                    accessibilityState={{ disabled: removeMany.isPending, busy: removeMany.isPending }}
                     onPress={handleBulkDelete}
                     disabled={removeMany.isPending}
-                    hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
-                    className={`h-9 items-center justify-center rounded-subtle border border-danger/40 px-4 ${
+                    className={`h-11 items-center justify-center rounded-subtle border border-danger/40 px-3.5 ${
                       removeMany.isPending ? 'opacity-50' : 'active:opacity-70'
                     }`}
                   >
-                    <Text className="font-sans text-xs font-medium text-danger">
+                    <Text className={`${SMALL_BUTTON_TEXT_CLASS} text-danger`}>
                       {removeMany.isPending ? 'Đang xoá…' : 'Xoá đã chọn'}
                     </Text>
                   </Pressable>
@@ -479,7 +493,7 @@ export const TryOnHistoryScreen: React.FC = () => {
             ) : null}
 
             {userTier === 'FREE' && allItems.length > 10 ? (
-              <View className="mb-5 flex-row items-center gap-3 border-l-2 border-brass bg-ivory px-4 py-3">
+              <View className="mb-5 flex-row items-center gap-3 border-l-2 border-landing-brass bg-ivory px-4 py-3">
                 <View className="flex-1 gap-1">
                   <Text className="font-sans text-body-sm font-semibold text-landing-obsidian">
                     Bạn đang xem 10 kết quả gần nhất
@@ -490,11 +504,11 @@ export const TryOnHistoryScreen: React.FC = () => {
                 </View>
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel="Mua hàng ngay"
                   onPress={() => navigation.navigate('Main', { screen: 'ShopTab' })}
-                  hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
-                  className="h-9 shrink-0 items-center justify-center rounded-subtle border border-landing-line px-3 active:bg-landing-paper"
+                  className="h-11 shrink-0 items-center justify-center rounded-subtle border border-landing-line px-3 active:bg-landing-paper"
                 >
-                  <Text className="font-sans text-xs font-medium text-landing-obsidian">
+                  <Text className={`${SMALL_BUTTON_TEXT_CLASS} text-landing-obsidian`}>
                     Mua hàng ngay
                   </Text>
                 </Pressable>
@@ -509,9 +523,9 @@ export const TryOnHistoryScreen: React.FC = () => {
                 </Text>
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={allVisibleSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
                   onPress={toggleSelectAll}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  className="justify-center py-2"
+                  className="min-h-11 justify-center active:opacity-70"
                 >
                   <Text
                     className={`font-sans text-xs underline-offset-4 ${
@@ -527,7 +541,10 @@ export const TryOnHistoryScreen: React.FC = () => {
         }
         ListEmptyComponent={
           isLoading ? (
-            <View className="flex-row flex-wrap gap-x-4">
+            <View
+              accessibilityLabel="Đang tải lịch sử thử đồ"
+              className="flex-row flex-wrap gap-x-4"
+            >
               {[0, 1, 2, 3].map((key) => (
                 <View key={key} style={{ width: cardWidth }} className="mb-8">
                   <SkeletonBlock width={cardWidth} />
@@ -535,15 +552,16 @@ export const TryOnHistoryScreen: React.FC = () => {
               ))}
             </View>
           ) : isError ? (
-            <View className="items-center gap-2 rounded-subtle border border-landing-line bg-ivory px-6 py-12">
-              <Text className="text-center font-display text-headline-md text-landing-obsidian">
+            <View accessibilityRole="alert" className={STATE_PANEL_CLASS}>
+              <Text className="text-center font-display text-2xl leading-tight text-danger">
                 Không tải được lịch sử
               </Text>
-              <Text className="mb-4 text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+              <Text className="mb-6 mt-2 text-center font-sans text-body-sm leading-relaxed text-landing-muted">
                 Kiểm tra kết nối rồi thử lại.
               </Text>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel="Thử lại"
                 onPress={() => refetch()}
                 className={outlineButtonClass}
               >
@@ -551,11 +569,11 @@ export const TryOnHistoryScreen: React.FC = () => {
               </Pressable>
             </View>
           ) : (
-            <View className="items-center gap-2 rounded-subtle border border-landing-line bg-ivory px-6 py-14">
-              <Text className="text-center font-display text-2xl text-landing-obsidian">
+            <View className={STATE_PANEL_CLASS}>
+              <Text className="text-center font-display text-2xl leading-tight text-landing-obsidian">
                 {isFiltered ? 'Không có kết quả khớp' : 'Chưa có lịch sử thử đồ'}
               </Text>
-              <Text className="mb-5 text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+              <Text className="mb-6 mt-2 text-center font-sans text-body-sm leading-relaxed text-landing-muted">
                 {isFiltered
                   ? 'Đổi từ khóa hoặc loại trang phục.'
                   : 'Kết quả Thử đồ AI bằng ảnh sẽ được lưu ở đây.'}
@@ -563,6 +581,7 @@ export const TryOnHistoryScreen: React.FC = () => {
               {isFiltered ? (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel="Xem tất cả"
                   onPress={resetFilters}
                   className={outlineButtonClass}
                 >
@@ -571,6 +590,7 @@ export const TryOnHistoryScreen: React.FC = () => {
               ) : (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel="Mở phòng thử"
                   onPress={() =>
                     navigation.navigate('Main', {
                       screen: 'TryOnTab',
