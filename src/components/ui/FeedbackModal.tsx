@@ -5,7 +5,9 @@ import {
   Text,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { AlertCircle, CheckCircle2, Clock, Info, TriangleAlert } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
+import { COLORS } from '@/constants/theme';
 import { Button } from './Button';
 
 export type FeedbackModalType = 'success' | 'error' | 'warning' | 'info';
@@ -33,35 +35,15 @@ export interface FeedbackModalProps {
   dismissible?: boolean;
 }
 
-function getIconStyle(type: FeedbackModalType) {
-  switch (type) {
-    case 'success':
-      return {
-        bgClass: 'bg-success/15',
-        iconName: 'checkmark-circle' as const,
-        iconColorClass: 'text-success',
-      };
-    case 'error':
-      return {
-        bgClass: 'bg-danger/15',
-        iconName: 'alert-circle' as const,
-        iconColorClass: 'text-danger',
-      };
-    case 'warning':
-      return {
-        bgClass: 'bg-warning/15',
-        iconName: 'alert-circle-outline' as const,
-        iconColorClass: 'text-warning',
-      };
-    case 'info':
-    default:
-      return {
-        bgClass: 'bg-primary-soft',
-        iconName: 'information-circle-outline' as const,
-        iconColorClass: 'text-primary-container',
-      };
-  }
-}
+// Màu theo khối thông báo của FE (auth-form AuthAlert): lỗi danger, lưu ý brass ink, thành công sage ink.
+const TYPE_ICON: Record<FeedbackModalType, { Icon: LucideIcon; color: string }> = {
+  success: { Icon: CheckCircle2, color: COLORS.sageInk },
+  error: { Icon: AlertCircle, color: COLORS.danger },
+  warning: { Icon: TriangleAlert, color: COLORS.brassInk },
+  info: { Icon: Info, color: COLORS.brassInk },
+};
+
+const ICON_FRAME_CLASS = 'mb-lg h-16 w-16 items-center justify-center rounded-subtle border border-landing-line';
 
 export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   visible,
@@ -87,14 +69,25 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 }) => {
   const [countdown, setCountdown] = useState(autoCloseSeconds ?? 0);
   const onAutoCloseRef = useRef(onAutoClose);
-  onAutoCloseRef.current = onAutoClose;
+
+  // Đặt lại bộ đếm ngay khi modal mở (hoặc đổi số giây) bằng mẫu "điều chỉnh state theo props"
+  // của React, thay vì gọi setState đồng bộ trong effect.
+  const [countdownKey, setCountdownKey] = useState({ visible, autoCloseSeconds });
+  if (countdownKey.visible !== visible || countdownKey.autoCloseSeconds !== autoCloseSeconds) {
+    setCountdownKey({ visible, autoCloseSeconds });
+    if (visible && autoCloseSeconds && autoCloseSeconds > 0) {
+      setCountdown(autoCloseSeconds);
+    }
+  }
+
+  useEffect(() => {
+    onAutoCloseRef.current = onAutoClose;
+  }, [onAutoClose]);
 
   useEffect(() => {
     if (!visible || !autoCloseSeconds || autoCloseSeconds <= 0) {
       return;
     }
-
-    setCountdown(autoCloseSeconds);
 
     const interval = setInterval(() => {
       setCountdown((prev) => {
@@ -113,21 +106,17 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   const renderIcon = () => {
     if (customIcon) {
       return (
-        <View
-          className={`mb-lg h-16 w-16 items-center justify-center rounded-full ${
-            iconBgClassName ?? 'bg-surface-low'
-          }`}
-        >
+        <View className={`${ICON_FRAME_CLASS} ${iconBgClassName ?? 'bg-landing-ivory'}`}>
           {customIcon}
         </View>
       );
     }
 
-    const { bgClass, iconName, iconColorClass } = getIconStyle(type);
+    const { Icon, color } = TYPE_ICON[type];
 
     return (
-      <View className={`mb-lg h-16 w-16 items-center justify-center rounded-full ${bgClass}`}>
-        <Ionicons name={iconName} size={36} className={iconColorClass} />
+      <View className={`${ICON_FRAME_CLASS} bg-landing-ivory`}>
+        <Icon size={28} strokeWidth={1.5} color={color} />
       </View>
     );
   };
@@ -146,17 +135,23 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
       <TouchableWithoutFeedback
         onPress={dismissible ? onClose : undefined}
       >
-        <View className="flex-1 items-center justify-center bg-black/50 px-xl">
+        <View className="flex-1 items-center justify-center bg-landing-obsidian/45 px-xl">
           <TouchableWithoutFeedback>
-            <View className="w-full max-w-sm items-center rounded-xxl border border-surface-line bg-surface-lowest p-xxl shadow-lg">
+            <View
+              accessibilityViewIsModal
+              className="w-full max-w-sm items-center rounded-subtle border border-landing-line bg-landing-paper px-xxl py-xxxl"
+            >
               {renderIcon()}
 
-              <Text className="mb-xs text-center font-heading text-headline-sm font-bold text-on-surface-strong">
+              <Text
+                accessibilityRole="header"
+                className="mb-sm text-center font-display text-[22px] leading-tight text-landing-obsidian"
+              >
                 {title}
               </Text>
 
               {message ? (
-                <Text className="mb-md text-center font-body text-body-md leading-relaxed text-on-surface-variant">
+                <Text className="mb-md text-center font-sans text-body-md leading-relaxed text-landing-muted">
                   {message}
                 </Text>
               ) : null}
@@ -164,47 +159,37 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
               {children}
 
               {autoCloseSeconds && countdown > 0 ? (
-                <View className="mb-xl flex-row items-center rounded-full border border-surface-line bg-surface-low px-md py-xs">
-                  <Ionicons name="time-outline" size={15} className="text-primary-container" />
-                  <Text className="ml-xs text-body-sm font-semibold text-primary-container">
-                    {countdownPrefix
-                      ? `${countdownPrefix} ${countdown}s...`
-                      : `Tự động chuyển sau ${countdown}s...`}
+                <View
+                  accessibilityLiveRegion="polite"
+                  className="mb-md mt-xs w-full flex-row items-center gap-sm border-l-2 border-landing-brass bg-landing-ivory px-md py-sm"
+                >
+                  <Clock size={14} strokeWidth={1.75} color={COLORS.brassInk} />
+                  <Text className="flex-1 font-sans text-body-sm text-landing-obsidian">
+                    {countdownPrefix ?? 'Tự động chuyển sau'}{' '}
+                    <Text className="font-mono text-brass-ink">{countdown}s</Text>
                   </Text>
                 </View>
               ) : null}
 
-              {secondaryButtonText ? (
-                <View className="mt-md w-full flex-row gap-md">
-                  <View className="flex-1">
-                    <Button
-                      title={secondaryButtonText}
-                      variant={secondaryButtonVariant}
-                      onPress={onSecondaryPress ?? onClose ?? (() => {})}
-                      disabled={secondaryButtonDisabled || primaryButtonLoading}
-                    />
-                  </View>
-                  <View className="flex-1">
-                    <Button
-                      title={primaryButtonText}
-                      variant={resolvedPrimaryVariant}
-                      onPress={onPrimaryPress ?? (() => {})}
-                      loading={primaryButtonLoading}
-                      textClassName="text-primary-foreground"
-                    />
-                  </View>
-                </View>
-              ) : (
-<View className="mt-md w-full">
-                    <Button
-                      title={primaryButtonText}
-                      variant={resolvedPrimaryVariant}
-                      onPress={onPrimaryPress ?? (() => {})}
-                      loading={primaryButtonLoading}
-                      textClassName="text-primary-foreground"
-                    />
-                  </View>
-              )}
+              {/* Nút xếp dọc như AccountConfirmDialog của FE trên màn hẹp: hành động chính ở trên. */}
+              <View className="mt-md w-full gap-sm">
+                <Button
+                  title={primaryButtonText}
+                  variant={resolvedPrimaryVariant}
+                  size="lg"
+                  onPress={onPrimaryPress ?? (() => {})}
+                  loading={primaryButtonLoading}
+                />
+                {secondaryButtonText ? (
+                  <Button
+                    title={secondaryButtonText}
+                    variant={secondaryButtonVariant}
+                    size="lg"
+                    onPress={onSecondaryPress ?? onClose ?? (() => {})}
+                    disabled={secondaryButtonDisabled || primaryButtonLoading}
+                  />
+                ) : null}
+              </View>
             </View>
           </TouchableWithoutFeedback>
         </View>

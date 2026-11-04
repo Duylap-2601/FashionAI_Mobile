@@ -26,46 +26,52 @@ export const AppHeader: React.FC<IAppHeaderProps> = ({
   const totalCartItems = getTotalItems();
 
   return (
-    <View style={{ paddingTop: safeAreaTop ? insets.top : 0, backgroundColor: COLORS.paper }}>
-      <View
-        className="z-20 flex-row items-center justify-between border-b border-landing-line bg-landing-paper px-4"
-        style={{ height: 64 }}
-      >
+    // paddingTop là inset an toàn (giá trị tính lúc chạy), nền paper nằm ở className.
+    <View className="bg-landing-paper" style={{ paddingTop: safeAreaTop ? insets.top : 0 }}>
+      <View className="z-20 h-16 flex-row items-center justify-between border-b border-landing-line bg-landing-paper px-4">
         <View className="flex-row items-center">
           {onBack ? (
             <TouchableOpacity
+              accessibilityRole="button"
               accessibilityLabel="Quay lại"
               onPress={onBack}
-              className="-ml-2 mr-1 h-9 w-9 items-center justify-center rounded-full active:bg-surface-container"
+              className="-ml-3 h-11 w-11 items-center justify-center rounded-full active:opacity-60"
             >
-              <ArrowLeft size={18} color={COLORS.primaryContainer} />
+              <ArrowLeft size={18} color={COLORS.obsidian} />
             </TouchableOpacity>
           ) : null}
 
           <Wordmark size="md" variant="dark" />
         </View>
 
-        <View className="flex-row items-center gap-1.5">
+        <View className="-mr-1 flex-row items-center">
           {showSearch ? (
             <TouchableOpacity
+              accessibilityRole="button"
               accessibilityLabel="Tìm kiếm"
               onPress={() => navigation.navigate('Search')}
-              className="h-9 w-9 items-center justify-center rounded-full active:bg-surface-container"
+              className="h-11 w-11 items-center justify-center rounded-full active:opacity-60"
             >
-              <Search size={18} color={COLORS.onSurface} />
+              <Search size={18} color={COLORS.obsidian} />
             </TouchableOpacity>
           ) : null}
 
           <NotificationBell />
 
           <TouchableOpacity
-            accessibilityLabel="Giỏ hàng"
+            accessibilityRole="button"
+            accessibilityLabel={
+              totalCartItems > 0 ? `Giỏ hàng, ${totalCartItems} sản phẩm` : 'Giỏ hàng'
+            }
             onPress={() => navigation.navigate('Cart')}
-            className="relative h-9 w-9 items-center justify-center rounded-full active:bg-surface-container"
+            className="relative h-11 w-11 items-center justify-center rounded-full active:opacity-60"
           >
-            <ShoppingBag size={18} color={COLORS.onSurface} />
+            <ShoppingBag size={18} color={COLORS.obsidian} />
             {totalCartItems > 0 ? (
-              <View className="absolute -right-1 -top-1 h-5 min-w-5 items-center justify-center rounded-full border-2 border-landing-paper bg-landing-oxblood px-1">
+              <View
+                pointerEvents="none"
+                className="absolute right-0 top-0 h-5 min-w-5 items-center justify-center rounded-full border-2 border-landing-paper bg-landing-oxblood px-1"
+              >
                 <Text className="font-mono text-[9px] font-semibold text-landing-paper">
                   {totalCartItems > 99 ? '99+' : totalCartItems}
                 </Text>

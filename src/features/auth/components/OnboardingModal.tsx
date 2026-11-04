@@ -2,9 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { Sparkles, Ruler, Shirt, ArrowRight, X } from 'lucide-react-native';
+import { Ruler, ArrowRight, X } from 'lucide-react-native';
+import { Button } from '@/components/ui/Button';
+import { COLORS } from '@/constants/theme';
 
 const ONBOARDING_STORAGE_KEY = '@fashionai_onboarding_completed';
+
+// Chỉ nêu những gì tài khoản thật sự có, như danh sách quyền lợi của FE AuthSplitLayout.
+const FEATURES = [
+  { title: 'Thử đồ AI', description: 'Thử trang phục trên ảnh của bạn.' },
+  { title: 'May đo riêng', description: 'Cắt may theo số đo cơ thể bạn lưu trong hồ sơ.' },
+  { title: 'AI Stylist', description: 'Gợi ý phối đồ theo dịp và phong cách.' },
+] as const;
 
 interface OnboardingModalProps {
   forceVisible?: boolean;
@@ -13,13 +22,18 @@ interface OnboardingModalProps {
 
 export function OnboardingModal({ forceVisible, onDismiss }: OnboardingModalProps) {
   const navigation = useNavigation<any>();
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(!!forceVisible);
+
+  // Mở lại khi `forceVisible` bật lên, bằng mẫu "điều chỉnh state theo props" của React
+  // thay vì gọi setState đồng bộ trong effect.
+  const [prevForceVisible, setPrevForceVisible] = useState(forceVisible);
+  if (prevForceVisible !== forceVisible) {
+    setPrevForceVisible(forceVisible);
+    if (forceVisible) setVisible(true);
+  }
 
   useEffect(() => {
-    if (forceVisible) {
-      setVisible(true);
-      return;
-    }
+    if (forceVisible) return;
 
     AsyncStorage.getItem(ONBOARDING_STORAGE_KEY).then((value) => {
       if (!value) {
@@ -48,87 +62,72 @@ export function OnboardingModal({ forceVisible, onDismiss }: OnboardingModalProp
 
   return (
     <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={handleClose}>
-      <View className="flex-1 bg-black/65 items-center justify-center p-5">
-        <View className="bg-surface rounded-3xl p-6 w-full max-w-[360px] items-center border border-surface-line shadow-2xl relative">
-          {/* Close button */}
+      <View className="flex-1 items-center justify-center bg-landing-obsidian/45 p-5">
+        <View
+          accessibilityViewIsModal
+          className="relative w-full max-w-[360px] items-center rounded-subtle border border-landing-line bg-landing-paper p-6"
+        >
           <Pressable
             onPress={handleClose}
-            className="absolute top-4 right-4 w-9 h-9 rounded-full items-center justify-center active:bg-surface-line"
-            accessibilityLabel="Đóng modal"
+            className="absolute right-2 top-2 h-11 w-11 items-center justify-center active:opacity-70"
+            accessibilityRole="button"
+            accessibilityLabel="Đóng"
           >
-            <X size={18} color="#737373" />
+            <X size={18} strokeWidth={1.75} color={COLORS.muted} />
           </Pressable>
 
-          {/* Logo Badge */}
-          <View className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 items-center justify-center mb-4 mt-2">
-            <Sparkles size={32} color="#5D1C34" />
+          <View className="mb-4 mt-2 h-16 w-16 items-center justify-center rounded-subtle border border-landing-line bg-landing-ivory">
+            <Ruler size={28} strokeWidth={1.5} color={COLORS.brassInk} />
           </View>
 
-          {/* Title */}
-          <Text className="text-xl font-bold text-on-surface text-center mb-2">
-            Chào mừng đến FashionAI!
+          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
+            Tài khoản mới
+          </Text>
+          <Text
+            accessibilityRole="header"
+            className="mb-2 mt-2 px-2 text-center font-display text-[24px] leading-tight text-landing-obsidian"
+          >
+            Chào mừng đến StAie.
           </Text>
 
-          <Text className="text-body-sm text-on-surface-variant text-center leading-relaxed mb-5 px-1">
-            Nền tảng thời trang may đo công sở kết hợp trí tuệ nhân tạo. Hãy sẵn sàng trải nghiệm:
+          <Text className="mb-5 px-1 text-center font-sans text-body-md leading-relaxed text-landing-muted">
+            Thêm số đo cơ thể để Thử đồ AI cho kết quả sát với dáng người của bạn hơn.
           </Text>
 
-          {/* Features preview list */}
-          <View className="w-full gap-3 mb-6 bg-surface-lowest p-3.5 rounded-2xl border border-surface-line">
-            <View className="flex-row items-center gap-3">
-              <View className="w-8 h-8 rounded-lg bg-primary/10 items-center justify-center shrink-0">
-                <Shirt size={16} color="#5D1C34" />
+          {/* Danh sách đánh số mono, ngăn bằng hairline, như ACCOUNT_BENEFITS của FE. */}
+          <View className="mb-6 w-full border-t border-landing-line">
+            {FEATURES.map((feature, index) => (
+              <View
+                key={feature.title}
+                className="flex-row gap-md border-b border-landing-line py-md"
+              >
+                <Text className="pt-0.5 font-mono text-[12px] tracking-[0.2em] text-brass-ink">
+                  {String(index + 1).padStart(2, '0')}
+                </Text>
+                <View className="flex-1 gap-0.5">
+                  <Text className="font-sans text-body-md font-semibold text-landing-obsidian">
+                    {feature.title}
+                  </Text>
+                  <Text className="font-sans text-body-sm text-landing-muted">
+                    {feature.description}
+                  </Text>
+                </View>
               </View>
-              <View className="flex-1">
-                <Text className="text-body-sm font-bold text-on-surface">Phòng thử đồ ảo (Try-On)</Text>
-                <Text className="text-[11px] text-on-surface-variant">Thử trang phục trên ảnh của bạn</Text>
-              </View>
-            </View>
-
-            <View className="h-px bg-surface-line/70" />
-
-            <View className="flex-row items-center gap-3">
-              <View className="w-8 h-8 rounded-lg bg-primary/10 items-center justify-center shrink-0">
-                <Ruler size={16} color="#5D1C34" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-body-sm font-bold text-on-surface">May đo chuẩn thông số</Text>
-                <Text className="text-[11px] text-on-surface-variant">Cắt may riêng vừa vặn theo vóc dáng</Text>
-              </View>
-            </View>
-
-            <View className="h-px bg-surface-line/70" />
-
-            <View className="flex-row items-center gap-3">
-              <View className="w-8 h-8 rounded-lg bg-primary/10 items-center justify-center shrink-0">
-                <Sparkles size={16} color="#5D1C34" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-body-sm font-bold text-on-surface">AI Stylist cá nhân</Text>
-                <Text className="text-[11px] text-on-surface-variant">Gợi ý bảng màu và phối outfit</Text>
-              </View>
-            </View>
+            ))}
           </View>
 
-          {/* Action CTAs */}
-          <View className="w-full gap-2.5">
-            <Pressable
+          <View className="w-full gap-sm">
+            <Button
+              title="Thêm số đo ngay"
+              size="lg"
               onPress={handleAddMeasurements}
-              className="w-full min-h-[48px] rounded-xl bg-primary flex-row items-center justify-center gap-2 active:opacity-90 shadow-sm"
-              accessibilityRole="button"
-            >
-              <Ruler size={16} color="#FFFFFF" />
-              <Text className="text-white font-bold text-label-lg">Cập nhật số đo ngay</Text>
-              <ArrowRight size={16} color="#FFFFFF" />
-            </Pressable>
-
-            <Pressable
+              rightIcon={<ArrowRight size={16} strokeWidth={1.75} color={COLORS.paper} />}
+            />
+            <Button
+              title="Bỏ qua, tôi sẽ thêm sau"
+              variant="outline"
               onPress={handleClose}
-              className="w-full min-h-[44px] rounded-xl border border-surface-line items-center justify-center active:bg-surface-line/50"
-              accessibilityRole="button"
-            >
-              <Text className="text-on-surface-variant font-medium text-body-sm">Để tôi khám phá sau</Text>
-            </Pressable>
+            />
           </View>
         </View>
       </View>
