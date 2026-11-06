@@ -42,6 +42,9 @@ export const cartKeys = {
   user: (userId: string | null | undefined) => ['cart', userId ?? null] as const,
 };
 
+/** Mọi mutation giỏ dùng chung key để biết lúc nào còn thay đổi đang gửi lên server. */
+export const CART_MUTATION_KEY = ['cart', 'mutation'] as const;
+
 const EMPTY_ITEMS: ICartLine[] = [];
 
 function subscribeToHydration(notify: () => void) {
@@ -197,6 +200,7 @@ export function useCart() {
   );
 
   const addMutation = useMutation({
+    mutationKey: CART_MUTATION_KEY,
     mutationFn: ({ line }: AddItemVariables) => cartApi.addItem(line),
     onMutate: async ({ display }) => {
       const queryKey = cartKeys.user(userId);
@@ -216,6 +220,7 @@ export function useCart() {
   });
 
   const updateMutation = useMutation({
+    mutationKey: CART_MUTATION_KEY,
     mutationFn: ({ lineId, quantity }: LineQuantityVariables) =>
       cartApi.updateItem(lineId, quantity),
     onMutate: async ({ lineId, quantity }) => {
@@ -236,6 +241,7 @@ export function useCart() {
   });
 
   const removeMutation = useMutation({
+    mutationKey: CART_MUTATION_KEY,
     mutationFn: ({ lineId }: LineIdVariables) => cartApi.removeItem(lineId),
     onMutate: async ({ lineId }) => {
       const queryKey = cartKeys.user(userId);
@@ -255,6 +261,7 @@ export function useCart() {
   });
 
   const clearMutation = useMutation({
+    mutationKey: CART_MUTATION_KEY,
     mutationFn: () => cartApi.clearCart(),
     onMutate: async () => {
       const queryKey = cartKeys.user(userId);
