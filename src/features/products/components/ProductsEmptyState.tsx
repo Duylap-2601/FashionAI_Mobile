@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 interface ProductsEmptyStateProps {
   title: string;
@@ -8,7 +8,8 @@ interface ProductsEmptyStateProps {
   onAction?: () => void;
 }
 
-// Mirrors FE ProductList › EmptyProducts (FashionAI_FE/src/features/products/components/listing/ProductList.tsx).
+// Mirrors FE ProductList › EmptyProducts (FashionAI_FE/src/features/products/components/listing/ProductList.tsx):
+// ivory block, Playfair title, one sentence and at most one square action.
 export function ProductsEmptyState({
   title,
   description,
@@ -26,16 +27,16 @@ export function ProductsEmptyState({
         </Text>
       ) : null}
       {actionTitle && onAction ? (
-        <TouchableOpacity
+        <Pressable
           accessibilityRole="button"
-          activeOpacity={0.85}
+          accessibilityLabel={actionTitle}
           onPress={onAction}
-          className="mt-8 h-11 items-center justify-center rounded-subtle bg-landing-obsidian px-xl active:bg-landing-oxblood"
+          className="mt-8 h-11 items-center justify-center rounded-subtle bg-oxblood px-xl active:opacity-90"
         >
           <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
             {actionTitle}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       ) : null}
     </View>
   );

@@ -39,6 +39,7 @@ export const PICKER_CATEGORIES: { value: PickerCategory; label: string }[] = [
 ];
 
 const PAGE_LIMIT = 10;
+const FILL_IMAGE_STYLE = { flex: 1 } as const;
 
 interface ProductPickerSheetProps {
   visible: boolean;
@@ -64,34 +65,37 @@ const ProductCard: React.FC<{
       className="flex-1 active:opacity-80"
     >
       <View
-        className={`relative w-full overflow-hidden rounded-subtle border bg-ivory ${
+        className={`relative aspect-[3/4] w-full overflow-hidden rounded-subtle border bg-ivory ${
           selected ? 'border-oxblood' : 'border-landing-line'
         }`}
-        style={{ aspectRatio: 3 / 4 }}
       >
         {imageUrl ? (
+          // expo-image không nhận className nên ảnh lấp khung bằng style.
           <Image
             source={{ uri: imageUrl }}
-            style={{ flex: 1 }}
+            style={FILL_IMAGE_STYLE}
             contentFit="contain"
             transition={150}
           />
         ) : (
           <View className="flex-1 items-center justify-center">
             <Text className="font-sans text-body-sm text-landing-muted">
-              Không có ảnh
+              Chưa có ảnh
             </Text>
           </View>
         )}
         {selected ? (
-          <View className="absolute right-2 top-2 h-6 w-6 items-center justify-center bg-oxblood">
+          <View
+            accessibilityLabel="Đang chọn"
+            className="absolute right-2 top-2 h-6 w-6 items-center justify-center bg-oxblood"
+          >
             <Check size={14} strokeWidth={2.5} color={COLORS.paper} />
           </View>
         ) : null}
       </View>
       <Text
         numberOfLines={2}
-        className="mt-2 font-display text-[15px] leading-snug text-landing-obsidian"
+        className="mt-2 font-sans text-sm font-medium leading-snug text-landing-obsidian"
       >
         {item.name}
       </Text>
@@ -115,9 +119,8 @@ export const ProductPickerSheet: React.FC<ProductPickerSheetProps> = ({
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<PickerCategory>(initialCategory);
 
-  useEffect(() => {
-    if (visible) setCategory(initialCategory);
-  }, [visible, initialCategory]);
+  // Danh mục mở đầu lấy từ initialCategory: TryOnWorkspace gắn key theo ô + trạng thái mở,
+  // nên mỗi lần mở sheet là một lần mount mới và useState nhận lại giá trị đầu.
 
   useEffect(() => {
     const timer = setTimeout(() => setSearch(searchInput.trim()), 400);
@@ -172,13 +175,20 @@ export const ProductPickerSheet: React.FC<ProductPickerSheetProps> = ({
         <View className="flex-1 justify-end bg-landing-obsidian/45">
           <TouchableWithoutFeedback>
             <View
-              className="h-[88%] flex-col overflow-hidden border-t border-landing-line bg-landing-paper"
+              className="h-[88%] flex-col overflow-hidden rounded-t-2xl border-t border-landing-line bg-landing-paper"
               style={{ paddingBottom: insets.bottom }}
             >
-              <View className="flex-row items-start justify-between gap-4 border-b border-landing-line px-5 pb-4 pt-5">
+              {/* Thanh kéo 40x4 màu taupe theo DESIGN.md › Bottom Sheets */}
+              <View className="items-center pt-2.5">
+                <View className="h-1 w-10 bg-taupe" />
+              </View>
+              <View className="flex-row items-start justify-between gap-4 border-b border-landing-line px-5 pb-4 pt-3">
                 <View className="flex-1">
                   <Text className={TRY_ON_LABEL_CLASS}>Phòng thử</Text>
-                  <Text className="mt-1.5 font-display text-2xl leading-tight text-landing-obsidian">
+                  <Text
+                    accessibilityRole="header"
+                    className="mt-1.5 font-display text-2xl leading-tight text-landing-obsidian"
+                  >
                     Chọn trang phục
                   </Text>
                   <Text className="mt-1 font-sans text-body-sm text-landing-muted">
@@ -210,13 +220,13 @@ export const ProductPickerSheet: React.FC<ProductPickerSheetProps> = ({
                 </View>
 
                 {categories.length > 1 ? (
-                  <View className="mt-2 flex-row gap-5">
+                  <View accessibilityRole="tablist" className="mt-2 flex-row gap-5">
                     {categories.map((option) => {
                       const selected = category === option.value;
                       return (
                         <Pressable
                           key={option.value}
-                          accessibilityRole="button"
+                          accessibilityRole="tab"
                           accessibilityState={{ selected }}
                           onPress={() => setCategory(option.value)}
                           className={`h-11 justify-center ${
@@ -249,15 +259,19 @@ export const ProductPickerSheet: React.FC<ProductPickerSheetProps> = ({
                   </View>
                 ) : query.isError ? (
                   <View className="flex-1 items-center justify-center gap-3 px-6">
-                    <Text className="text-center font-sans text-body-sm text-landing-muted">
+                    <Text
+                      accessibilityRole="alert"
+                      className="text-center font-sans text-body-sm leading-relaxed text-landing-muted"
+                    >
                       Không tải được trang phục. Vui lòng kiểm tra kết nối và thử lại.
                     </Text>
                     <Pressable
                       accessibilityRole="button"
+                      accessibilityLabel="Thử lại"
                       onPress={() => query.refetch()}
-                      className="h-10 items-center justify-center rounded-subtle border border-landing-line px-4 active:opacity-70"
+                      className="h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:opacity-70"
                     >
-                      <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-oxblood">
+                      <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
                         Thử lại
                       </Text>
                     </Pressable>

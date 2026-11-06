@@ -19,7 +19,8 @@ function getLeafRouteName(route: NestedRoute | undefined): string | undefined {
   return getLeafRouteName(route.state.routes[route.state.index ?? 0]);
 }
 
-// Bubble tròn burgundy cố định góc phải, nổi trên tab bar (theo ảnh thiết kế).
+// Nút vuông 2px đỏ đô cố định góc phải, nổi trên tab bar (cùng nút mở trợ lý của web).
+// Không đổ bóng theo design/DESIGN.md: khối đỏ đô đủ tách khỏi nền giấy.
 // Mount 1 lần trong MainTabs nên hiện trên mọi tab; màn Chat (RootStack) đè lên trên.
 export const FloatingChatBubble: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -43,12 +44,12 @@ export const FloatingChatBubble: React.FC = () => {
 
   return (
     <Pressable
-      accessibilityLabel="Trò chuyện với StAle"
+      accessibilityRole="button"
+      accessibilityLabel="Mở trợ lý thời trang"
       onPress={() => navigation.navigate('Chat', {})}
-      className="absolute bottom-32 right-4 min-h-11 min-w-11 items-center justify-center rounded-full bg-primary-container p-md shadow-sm"
-      style={({ pressed }) => ({ opacity: pressed ? 0.92 : 1 })}
+      className="absolute bottom-32 right-4 h-14 w-14 items-center justify-center rounded-subtle bg-oxblood active:opacity-90"
     >
-      <MessageCircle size={26} color={COLORS.onPrimary} />
+      <MessageCircle size={20} strokeWidth={1.75} color={COLORS.paper} />
     </Pressable>
   );
 };

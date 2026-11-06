@@ -1,6 +1,6 @@
 import MockAdapter from 'axios-mock-adapter';
 import { api } from '@/api/client';
-import { ordersApi } from './orders.api';
+import { ordersApi, UNPAID_ORDERS_LIMIT } from './orders.api';
 import { ENDPOINTS } from '@/constants/endpoints';
 
 const envelope = <T>(data: T, meta?: any) => ({
@@ -72,6 +72,19 @@ describe('ordersApi', () => {
     expect(result).toEqual(ordersData);
   });
 
+  it('getOrdersPage sends the tab status and search to the backend', async () => {
+    const ordersData = [{ id: '1', orderCode: 9027452, status: 'SHIPPING' }];
+    const meta = { total: 41, page: 3, limit: 20, totalPages: 3 };
+    mock.onGet(ENDPOINTS.ORDERS.LIST).reply((config) => {
+      expect(config.params).toEqual({ status: 'SHIPPING', search: 'vest', page: 3, limit: 20 });
+      return [200, envelope(ordersData, meta)];
+    });
+
+    await expect(
+      ordersApi.getOrdersPage({ status: 'SHIPPING', search: 'vest', page: 3, limit: 20 }),
+    ).resolves.toEqual({ data: ordersData, meta });
+  });
+
   it('getOrder fetches single order detail', async () => {
     const orderData = { id: '1', orderCode: '9027452', status: 'PENDING' };
 
@@ -93,6 +106,23 @@ describe('ordersApi', () => {
 
     const result = await ordersApi.confirmDelivery('1');
     expect(result).toEqual({ success: true });
+  });
+
+  it('getMyReturns pages through orders with returns', async () => {
+    const orders = [{ id: 'o1', orderCode: 15560998, status: 'RETURNED', amountRefundedVnd: 769700, issues: [] }];
+    const meta = { total: 11, page: 2, limit: 10, totalPages: 2 };
+    mock.onGet(ENDPOINTS.ORDERS.MY_RETURNS).reply((config) => {
+      expect(config.params).toEqual({ page: 2, limit: 10 });
+      return [200, envelope(orders, meta)];
+    });
+
+    await expect(ordersApi.getMyReturns({ page: 2, limit: 10 })).resolves.toEqual({ data: orders, meta });
+  });
+
+  it('getMyReturns tolerates a response without pagination meta', async () => {
+    mock.onGet(ENDPOINTS.ORDERS.MY_RETURNS).reply(200, envelope([]));
+
+    await expect(ordersApi.getMyReturns()).resolves.toEqual({ data: [], meta: undefined });
   });
 
   it('createOrderIssue sends a refund-only multipart form with the refund bank account', async () => {
@@ -130,5 +160,44 @@ describe('ordersApi', () => {
       accountHolder: 'NGUYEN VAN A',
     });
     expect(appendSpy.mock.calls.filter(([name]) => name === 'evidenceImages')).toHaveLength(1);
+  });
+
+  describe('getUnpaidOrders', () => {
+    it('requests CREATED orders limited to 5 and keeps only PENDING payments', async () => {
+      const ordersData = [
+        { id: 'o-1', orderCode: 101, status: 'CREATED', paymentStatus: 'PENDING', totalVnd: 530000, paymentDueAt: '2026-11-05T08:00:00.000Z' },
+        { id: 'o-2', orderCode: 102, status: 'CREATED', paymentStatus: 'FAILED', totalVnd: 410000 },
+        { id: 'o-3', orderCode: 103, status: 'CREATED', paymentStatus: null, amount: 250000 },
+        { id: 'o-4', orderCode: 104, status: 'CREATED', paymentStatus: 'PENDING', amount: 999000, paymentDueAt: null },
+      ];
+      mock.onGet(ENDPOINTS.ORDERS.LIST).reply(200, envelope(ordersData, { page: 1, limit: 5, total: 4 }));
+
+      const result = await ordersApi.getUnpaidOrders();
+
+      expect(mock.history.get).toHaveLength(1);
+      expect(mock.history.get[0].params).toEqual({ status: 'CREATED', limit: UNPAID_ORDERS_LIMIT });
+      expect(UNPAID_ORDERS_LIMIT).toBe(5);
+      expect(result.map((order) => order.id)).toEqual(['o-1', 'o-4']);
+    });
+
+    it('keeps status and limit even when the caller passes other params, and forwards the signal', async () => {
+      mock.onGet(ENDPOINTS.ORDERS.LIST).reply(200, envelope([]));
+      const controller = new AbortController();
+
+      const result = await ordersApi.getUnpaidOrders({
+        signal: controller.signal,
+        params: { status: 'COMPLETED', limit: 50, search: 'ao' },
+      });
+
+      expect(result).toEqual([]);
+      expect(mock.history.get[0].params).toEqual({ status: 'CREATED', limit: 5, search: 'ao' });
+      expect(mock.history.get[0].signal).toBe(controller.signal);
+    });
+
+    it('returns an empty list when the response data is not an array', async () => {
+      mock.onGet(ENDPOINTS.ORDERS.LIST).reply(200, envelope(null));
+
+      await expect(ordersApi.getUnpaidOrders()).resolves.toEqual([]);
+    });
   });
 });

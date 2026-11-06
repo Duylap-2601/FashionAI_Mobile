@@ -1,7 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subscriptionsApi } from '../api/subscriptions.api';
-import { DEFAULT_PLANS } from '../constants/plans';
-import { PlanCardData, TargetTier } from '../types/subscription';
+import { DEFAULT_PLANS, QUOTA_NOT_INCLUDED, QUOTA_ROWS, formatQuota } from '../constants/plans';
+import { PlanCardData } from '../types/subscription';
+
+function formatPlanPrice(price: number): string {
+  return price === 0 ? '0đ' : `${price.toLocaleString('vi-VN')}đ`;
+}
 
 export const SUBSCRIPTION_QUERY_KEYS = {
   plans: ['subscription-plans'] as const,
@@ -17,20 +21,46 @@ export function useSubscriptionPlans() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Giá, thời hạn và lượt lấy từ API như trang Gói thành viên của web; DEFAULT_PLANS chỉ dự phòng khi API lỗi.
   const mergedPlans: PlanCardData[] = DEFAULT_PLANS.map((defaultPlan) => {
     const apiPlan = query.data?.find((p) => p.tier === defaultPlan.id);
-    if (apiPlan && typeof apiPlan.price === 'number') {
-      return {
-        ...defaultPlan,
-        numericPrice: apiPlan.price,
-        priceText: apiPlan.price === 0 ? '0đ' : `${apiPlan.price.toLocaleString('vi-VN')}đ`,
-      };
-    }
-    return defaultPlan;
+    if (!apiPlan || typeof apiPlan.price !== 'number') return defaultPlan;
+
+    const quotas = Array.isArray(apiPlan.quotas) ? apiPlan.quotas : [];
+    const features = [
+      ...QUOTA_ROWS.map((row) => {
+        const value = formatQuota(
+          quotas.find((quota) => quota.action === row.action),
+          row.unit,
+        );
+        return {
+          text: `${row.label}: ${value.toLowerCase()}`,
+          highlight: defaultPlan.id !== 'FREE' && value !== QUOTA_NOT_INCLUDED,
+        };
+      }),
+      ...(defaultPlan.id === 'FREE'
+        ? []
+        : [{ text: 'Phối bộ khi thử đồ, mỗi món 1 lượt', highlight: false }]),
+      { text: 'Lưu số đo và đặt may theo số đo', highlight: false },
+    ];
+    const name = apiPlan.label || defaultPlan.name;
+
+    return {
+      ...defaultPlan,
+      name,
+      numericPrice: apiPlan.price,
+      priceText: formatPlanPrice(apiPlan.price),
+      periodText:
+        apiPlan.durationDays > 0 ? `/ ${apiPlan.durationDays} ngày` : 'không thời hạn',
+      features,
+      ctaText: `Chọn ${name}`,
+      quotas,
+    };
   });
 
   return {
     plans: mergedPlans,
+    hasApiPlans: mergedPlans.every((plan) => plan.quotas !== undefined),
     rawPlans: query.data || [],
     isLoading: query.isLoading,
     isError: query.isError,

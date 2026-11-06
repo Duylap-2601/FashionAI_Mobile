@@ -94,13 +94,13 @@ export function ProductOutfitSuggestions({
     <View className="gap-md border-t border-landing-line pt-xl">
       <Text
         accessibilityRole="header"
-        className="font-display text-headline-sm text-obsidian"
+        className="font-display text-headline-md font-normal text-landing-obsidian"
       >
         Gợi ý phối đồ
       </Text>
       <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
         {copy.intro[0]}
-        <Text className="font-semibold text-obsidian">{product.name}</Text>
+        <Text className="font-semibold text-landing-obsidian">{product.name}</Text>
         {copy.intro[1]}
       </Text>
 
@@ -110,7 +110,7 @@ export function ProductOutfitSuggestions({
             key={card.title}
             className="gap-xs rounded-subtle border border-landing-line bg-ivory p-md"
           >
-            <Text className="font-sans text-label-md font-semibold uppercase tracking-wide text-brass-ink">
+            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brass-ink">
               {card.title}
             </Text>
             <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
@@ -122,7 +122,7 @@ export function ProductOutfitSuggestions({
 
       <View className="gap-md rounded-subtle border border-landing-line bg-ivory p-md">
         <View className="gap-xs">
-          <Text className="font-sans text-body-sm font-semibold text-obsidian">
+          <Text className="font-sans text-body-sm font-semibold text-landing-obsidian">
             Tư vấn phối đồ theo dáng người
           </Text>
           <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
@@ -133,10 +133,10 @@ export function ProductOutfitSuggestions({
           accessibilityRole="button"
           accessibilityLabel="Hỏi AI Stylist cách phối đồ"
           onPress={onAskStylist}
-          className="min-h-11 flex-row items-center justify-center gap-sm rounded-subtle border border-landing-line bg-paper px-md active:opacity-70"
+          className="min-h-11 flex-row items-center justify-center gap-sm rounded-subtle border border-landing-line px-md active:opacity-70"
         >
-          <Sparkles size={15} color={COLORS.oxblood} />
-          <Text className="font-sans text-label-md font-semibold uppercase tracking-widest text-oxblood">
+          <Sparkles size={16} strokeWidth={1.75} color={COLORS.obsidian} />
+          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
             Hỏi AI Stylist
           </Text>
         </Pressable>

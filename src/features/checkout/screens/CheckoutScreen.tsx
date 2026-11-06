@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -24,16 +24,24 @@ import {
   X,
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { formatCurrency } from '@/utils/format';
+import { formatDateTime } from '@/utils/date';
 import {
   IOrderShippingInfo,
+  IUnpaidOrder,
   OrderCreatePayload,
   ordersApi,
 } from '@/features/orders/api/orders.api';
+import { useUnpaidOrders } from '@/features/orders/hooks/use-orders';
 import { EPaymentMethod } from '@/features/orders/types/order';
+import {
+  getCheckoutSubtotal,
+  getUnpaidOrderCode,
+  getUnpaidOrderTotal,
+} from '@/features/checkout/utils/checkout-display';
 import { paymentsApi } from '@/features/payments/api/payments.api';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/use-measurements-completeness';
 import { useAuth } from '@/features/auth/hooks/use-auth';
@@ -142,16 +150,25 @@ interface IOutlineActionProps {
   onPress: () => void;
   disabled?: boolean;
   compact?: boolean;
+  accessibilityLabel?: string;
 }
 
-function OutlineAction({ label, onPress, disabled, compact }: IOutlineActionProps) {
+function OutlineAction({
+  label,
+  onPress,
+  disabled,
+  compact,
+  accessibilityLabel,
+}: IOutlineActionProps) {
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       onPress={onPress}
       disabled={disabled}
-      className={`shrink-0 items-center justify-center rounded-subtle border border-landing-line px-3.5 ${
-        compact ? 'h-9' : 'h-11'
+      // Bản compact chỉ gọn chữ; chiều cao giữ 44px cho vùng chạm (design/DESIGN.md › Accessibility).
+      className={`h-11 shrink-0 items-center justify-center rounded-subtle border border-landing-line ${
+        compact ? 'px-3' : 'px-3.5'
       } ${disabled ? 'opacity-50' : 'active:bg-ivory'}`}
     >
       <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
@@ -201,6 +218,56 @@ function PaymentCard({ selected, title, description, mark, onPress }: IPaymentCa
   );
 }
 
+interface IUnpaidOrdersNoticeProps {
+  orders: IUnpaidOrder[];
+  onPayOrder: (orderId: string) => void;
+}
+
+/** Nhắc khách thanh toán đơn cũ còn chờ trả tiền thay vì đặt thêm đơn trùng (giống web). */
+function UnpaidOrdersNotice({ orders, onPayOrder }: IUnpaidOrdersNoticeProps) {
+  return (
+    <View className="border-l-2 border-brass bg-ivory px-4 py-3.5">
+      <Text className="font-sans text-body-md font-medium text-landing-obsidian">
+        Bạn còn {orders.length} đơn chưa thanh toán
+      </Text>
+      <Text className="mt-1.5 font-sans text-xs leading-relaxed text-landing-muted">
+        Nếu đây là các món bạn đã đặt, hãy thanh toán đơn cũ thay vì đặt thêm đơn mới. Đơn quá
+        hạn thanh toán sẽ tự hủy.
+      </Text>
+      <View className="mt-3 border-y border-landing-line">
+        {orders.map((order, index) => {
+          const orderCode = getUnpaidOrderCode(order);
+          return (
+            <View
+              key={order.id}
+              className={`items-start gap-2 py-2.5 ${index > 0 ? 'border-t border-landing-line' : ''}`}
+            >
+              <Text className="font-sans text-xs leading-relaxed text-landing-muted">
+                <Text className="font-mono text-landing-obsidian">{orderCode}</Text>
+                {' · '}
+                <Text className="font-mono text-landing-obsidian">
+                  {formatCurrency(getUnpaidOrderTotal(order))}
+                </Text>
+                {order.paymentDueAt ? (
+                  <>
+                    {' · hạn '}
+                    <Text className="font-mono">{formatDateTime(order.paymentDueAt)}</Text>
+                  </>
+                ) : null}
+              </Text>
+              <OutlineAction
+                label="Thanh toán đơn này"
+                accessibilityLabel={`Thanh toán đơn ${orderCode}`}
+                onPress={() => onPayOrder(order.id)}
+              />
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 export function CheckoutScreen() {
   const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
@@ -220,6 +287,19 @@ export function CheckoutScreen() {
     refetch: refetchCart,
   } = useCart();
   const totalItems = getTotalItems();
+  const { unpaidOrders, refetch: refetchUnpaidOrders } = useUnpaidOrders();
+  // Checkout vẫn nằm dưới stack khi khách mở đơn cũ để trả tiền: quay lại thì tải lại danh sách
+  // để không nhắc đơn vừa trả. Lần focus đầu bỏ qua vì query vừa tự tải khi mount.
+  const hasFocusedRef = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasFocusedRef.current) {
+        hasFocusedRef.current = true;
+        return;
+      }
+      refetchUnpaidOrders();
+    }, [refetchUnpaidOrders]),
+  );
 
   const addressesQuery = useUserAddresses();
   const addresses = useMemo(() => addressesQuery.data ?? [], [addressesQuery.data]);
@@ -331,12 +411,21 @@ export function CheckoutScreen() {
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
-  const displaySubtotal = quoteRes?.itemsTotal ?? localSubtotal;
+  // Chỉ để hiển thị: Tạm tính theo giá niêm yết, trừ dòng sale; Tổng cộng vẫn lấy từ báo giá.
+  const { subtotal: displaySubtotal, saleDiscount } = getCheckoutSubtotal(
+    quoteRes,
+    localSubtotal,
+  );
   const displayTotal = quoteRes?.totalAmount ?? localSubtotal;
   const isNotePending = shippingNote !== quoteNote;
 
   const createOrderMutation = useMutation({
     mutationFn: (payload: OrderCreatePayload) => ordersApi.createOrder(payload),
+    // Đơn vừa tạo chưa trả tiền: quay lại checkout thì khối "đơn chưa thanh toán" phải có nó.
+    // Không return promise để không bắt bước tạo thanh toán chờ tải lại danh sách đơn.
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
   });
 
   const checkoutPaymentMutation = useMutation({
@@ -666,7 +755,7 @@ export function CheckoutScreen() {
             params: { screen: 'Measurements' },
           })
         }
-        className="mt-3 h-9 items-center justify-center self-start rounded-subtle border border-landing-line px-3.5 active:bg-landing-paper"
+        className="mt-3 h-11 items-center justify-center self-start rounded-subtle border border-landing-line px-3.5 active:bg-landing-paper"
       >
         <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
           Cập nhật số đo
@@ -715,7 +804,7 @@ export function CheckoutScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={handleRetryQuote}
-            className="mt-2 h-9 flex-row items-center gap-1.5 self-start rounded-subtle border border-landing-line px-3 active:bg-landing-paper"
+            className="mt-2 h-11 flex-row items-center gap-1.5 self-start rounded-subtle border border-landing-line px-3 active:bg-landing-paper"
           >
             <RefreshCw size={13} strokeWidth={1.75} color={COLORS.oxblood} />
             <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
@@ -876,6 +965,14 @@ export function CheckoutScreen() {
           </View>
         ) : (
           <>
+            {/* Ẩn khi đang tạo đơn/thanh toán, giống web ẩn lúc khoá món chờ trả tiền. */}
+            {unpaidOrders.length > 0 && !isSubmitting ? (
+              <UnpaidOrdersNotice
+                orders={unpaidOrders}
+                onPayOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })}
+              />
+            ) : null}
+
             {measurementsGate}
 
             <View className="border-t border-landing-line pt-6">
@@ -920,7 +1017,7 @@ export function CheckoutScreen() {
                   selected={paymentMethod === EPaymentMethod.ZALOPAY}
                   onPress={() => setPaymentMethod(EPaymentMethod.ZALOPAY)}
                   title="ZaloPay"
-                  description="Quét QR hoặc mở ứng dụng ZaloPay. Trạng tự cập nhật khi thanh toán xong."
+                  description="Quét QR hoặc mở ứng dụng ZaloPay. Trang tự cập nhật khi thanh toán xong."
                   mark={
                     <View className="h-7 w-7 items-center justify-center rounded-subtle border border-landing-line bg-landing-paper">
                       <Wallet size={14} strokeWidth={1.75} color={COLORS.oxblood} />
@@ -1038,6 +1135,14 @@ export function CheckoutScreen() {
                     {formatCurrency(displaySubtotal)}
                   </Text>
                 </View>
+                {saleDiscount > 0 ? (
+                  <View className="flex-row items-baseline justify-between gap-4">
+                    <Text className="font-sans text-sm text-landing-muted">Giảm giá sale</Text>
+                    <Text className="font-mono text-sm text-sage-ink">
+                      -{formatCurrency(saleDiscount)}
+                    </Text>
+                  </View>
+                ) : null}
                 <View className="flex-row items-baseline justify-between gap-4">
                   <Text className="font-sans text-sm text-landing-muted">
                     Phí giao hàng (GHN)
@@ -1056,7 +1161,7 @@ export function CheckoutScreen() {
                 </View>
                 {discountAmount > 0 ? (
                   <View className="flex-row items-baseline justify-between gap-4">
-                    <Text className="font-sans text-sm text-landing-muted">Giảm giá</Text>
+                    <Text className="font-sans text-sm text-landing-muted">Mã giảm giá</Text>
                     <Text className="font-mono text-sm text-sage-ink">
                       -{formatCurrency(discountAmount)}
                     </Text>

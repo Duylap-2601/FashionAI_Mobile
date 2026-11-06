@@ -22,30 +22,37 @@ interface SegmentedOption<T extends string> {
   icon?: (selected: boolean) => React.ReactNode;
 }
 
-// Nút gạt vuông kiểu FE (Trực tiếp / Bằng ảnh, Một món / Phối bộ).
+// Nút gạt vuông kiểu FE (Trực tiếp / Bằng ảnh, Một món / Phối bộ). Cao 44px cho ngón tay.
 export function TryOnSegmented<T extends string>({
   options,
   value,
   onChange,
   disabled = false,
+  accessibilityLabel,
 }: {
   options: SegmentedOption<T>[];
   value: T;
   onChange: (value: T) => void;
   disabled?: boolean;
+  accessibilityLabel?: string;
 }) {
   return (
-    <View className="flex-row border border-landing-line">
+    <View
+      accessibilityRole="radiogroup"
+      accessibilityLabel={accessibilityLabel}
+      className="flex-row border border-landing-line"
+    >
       {options.map((option) => {
         const selected = option.value === value;
         return (
           <Pressable
             key={option.value}
-            accessibilityRole="button"
-            accessibilityState={{ selected, disabled }}
+            accessibilityRole="radio"
+            accessibilityLabel={option.label}
+            accessibilityState={{ checked: selected, disabled }}
             disabled={disabled}
             onPress={() => onChange(option.value)}
-            className={`h-10 flex-1 flex-row items-center justify-center gap-1.5 px-4 ${
+            className={`h-11 flex-1 flex-row items-center justify-center gap-1.5 px-4 ${
               selected ? 'bg-oxblood' : ''
             } ${disabled ? 'opacity-50' : ''}`}
           >
@@ -91,7 +98,7 @@ export const TryOnPageHeader: React.FC<TryOnPageHeaderProps> = ({
   return (
     <View className="mb-8 border-b border-landing-line pb-6">
       <Text className={TRY_ON_LABEL_CLASS}>Phòng thử</Text>
-      <Text className="mt-3 font-display text-headline-lg text-landing-obsidian">
+      <Text accessibilityRole="header" className="mt-3 font-display text-headline-lg text-landing-obsidian">
         Thử đồ AI
       </Text>
       <Text className="mt-3 font-sans text-body-md leading-relaxed text-landing-muted">
@@ -100,6 +107,7 @@ export const TryOnPageHeader: React.FC<TryOnPageHeaderProps> = ({
 
       <View className="mt-5">
         <TryOnSegmented
+          accessibilityLabel="Cách thử đồ"
           value={mode}
           onChange={onModeChange}
           disabled={modeDisabled}
@@ -134,15 +142,20 @@ export const TryOnPageHeader: React.FC<TryOnPageHeaderProps> = ({
         {mode === 'photo' && showUpgrade ? (
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel="Nâng cấp gói"
             onPress={onPressUpgrade}
-            className="h-9 items-center justify-center rounded-subtle border border-landing-line px-3.5 active:bg-ivory"
+            className="h-11 items-center justify-center rounded-subtle border border-landing-line px-3.5 active:bg-ivory"
           >
             <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
               Nâng cấp gói
             </Text>
           </Pressable>
+        ) : mode === 'photo' && remaining !== null && limit !== null && limit > 0 && remaining <= 0 ? (
+          <Text accessibilityLiveRegion="polite" className="font-sans text-[11px] text-danger">
+            Hết lượt thử bằng ảnh hôm nay
+          </Text>
         ) : mode === 'photo' && remaining !== null && limit !== null ? (
-          <Text className="font-sans text-[11px] text-landing-muted">
+          <Text accessibilityLiveRegion="polite" className="font-sans text-[11px] text-landing-muted">
             Còn{' '}
             <Text className="font-mono text-landing-obsidian">
               {remaining}/{limit}
@@ -156,7 +169,7 @@ export const TryOnPageHeader: React.FC<TryOnPageHeaderProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Lịch sử thử đồ"
           onPress={() => navigation.navigate('TryOnHistory')}
-          className="min-h-9 flex-row items-center gap-1 active:opacity-70"
+          className="min-h-11 flex-row items-center gap-1 active:opacity-70"
         >
           <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-oxblood">
             Lịch sử thử đồ
@@ -172,7 +185,7 @@ export const TryOnSubscriptionNotice: React.FC<{
   isExpired: boolean;
   onPressUpgrade: () => void;
 }> = ({ isExpired, onPressUpgrade }) => (
-  <View className="mb-8 flex-col gap-4 border-l-2 border-brass bg-ivory px-5 py-4">
+  <View className="mb-8 flex-col gap-4 border-l-2 border-landing-brass bg-ivory px-5 py-4">
     <View>
       <Text className="font-display text-[20px] leading-tight text-landing-obsidian">
         {isExpired
@@ -187,6 +200,7 @@ export const TryOnSubscriptionNotice: React.FC<{
     </View>
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={isExpired ? 'Gia hạn gói' : 'Xem các gói'}
       onPress={onPressUpgrade}
       className="h-12 items-center justify-center rounded-subtle bg-oxblood active:opacity-90"
     >

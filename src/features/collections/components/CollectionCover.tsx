@@ -26,7 +26,7 @@ export function CollectionCover({
   return (
     <View
       pointerEvents="none"
-      className="absolute inset-0 bg-editorial-background"
+      className="absolute inset-0 bg-landing-obsidian"
     >
       {imageUrl && failedImageUrl !== imageUrl ? (
         <Image
@@ -41,11 +41,11 @@ export function CollectionCover({
       ) : (
         <View
           accessibilityLabel={`${name}, chưa có ảnh bộ sưu tập`}
-          className="flex-1 items-center justify-center gap-sm"
+          className="flex-1 items-center justify-center gap-md"
         >
-          <Text className="font-sans text-display text-on-primary/70">◇</Text>
-          <Text className="font-sans text-body-sm text-on-primary/70">
-            Chưa có ảnh bộ sưu tập
+          <View className="h-px w-10 bg-landing-brass" />
+          <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-landing-paper/60">
+            Chưa có ảnh
           </Text>
         </View>
       )}

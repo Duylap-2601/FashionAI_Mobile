@@ -12,13 +12,15 @@ export interface CardProps {
   variant?: 'elevated' | 'outlined' | 'flat';
 }
 
+// Atelier Paper (design/DESIGN.md › Layout System, FE AccountSection `panel`): khung ivory góc 2px,
+// tách lớp bằng viền hairline, không đổ bóng. `elevated` giữ lại cho caller cũ, nay trùng `outlined`.
 const cardStyle = tva({
-  base: 'rounded-lg bg-surface-lowest p-lg',
+  base: 'rounded-subtle bg-landing-ivory p-lg',
   variants: {
     variant: {
-      elevated: 'border border-surface-line shadow-sm',
-      outlined: 'border border-surface-line',
-      flat: 'bg-surface-low',
+      elevated: 'border border-landing-line',
+      outlined: 'border border-landing-line',
+      flat: 'bg-landing-ivory/60',
     },
   },
 });
@@ -35,7 +37,8 @@ export const Card: React.FC<CardProps> = ({
   if (onPress) {
     return (
       <TouchableOpacity
-        activeOpacity={0.7}
+        activeOpacity={0.8}
+        accessibilityRole="button"
         onPress={onPress}
         className={resolvedClassName}
         style={style}

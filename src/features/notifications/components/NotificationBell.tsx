@@ -25,12 +25,15 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
   useNotificationSocket(enableSocket);
 
   return (
+    // 36px như các nút còn lại của AppHeader; hitSlop nới vùng chạm lên 44x44.
     <Pressable
-      accessibilityLabel="Thông báo"
+      accessibilityRole="button"
+      accessibilityLabel={unread > 0 ? `Thông báo, ${unread} chưa đọc` : 'Thông báo'}
+      hitSlop={4}
       onPress={() => navigation.navigate('Notifications')}
       className="relative h-9 w-9 items-center justify-center rounded-full active:opacity-70"
     >
-      <Bell size={18} color={COLORS.onSurface} />
+      <Bell size={18} strokeWidth={1.75} color={COLORS.obsidian} />
       {unread > 0 ? (
         <View
           pointerEvents="none"

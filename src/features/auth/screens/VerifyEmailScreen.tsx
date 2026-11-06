@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import { Mail } from 'lucide-react-native';
 import { AuthStackParamList } from '@/navigation/types';
 import { authApi } from '@/features/auth/api/auth.api';
 import { otpSchema } from '@/features/auth/schemas/auth.schema';
@@ -10,17 +10,25 @@ import { Button } from '@/components/ui/Button';
 import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { COLORS } from '@/constants/theme';
 import { tva } from '@gluestack-ui/nativewind-utils/tva';
+import {
+  AUTH_LABEL_CLASS,
+  AuthBackLink,
+  AuthHeading,
+  AuthLead,
+  AuthScreen,
+} from '@/features/auth/components/auth-form';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'VerifyEmail'>;
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
+// Cỡ chữ tuyệt đối vì tailwind-merge trong tva coi token `text-label-*` là màu chữ.
 const resendTextStyle = tva({
-  base: 'text-label-lg',
+  base: 'font-sans text-[11px] font-semibold uppercase tracking-[0.18em]',
   variants: {
     cooling: {
-      true: 'text-on-surface-variant',
-      false: 'text-primary-container',
+      true: 'text-landing-muted',
+      false: 'text-oxblood',
     },
   },
 });
@@ -87,71 +95,72 @@ export const VerifyEmailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1 bg-surface"
-      >
-        <ScrollView contentContainerClassName="grow justify-center px-xxl py-xxxl">
-          <View className="mb-xxxl items-center">
-            <Text className="text-xxxl font-extrabold text-on-surface-strong">
-              Xác thực email
+      <AuthScreen>
+        <AuthBackLink label="Quay lại đăng nhập" onPress={() => navigation.navigate('Login')} />
+
+        <AuthHeading eyebrow="Xác thực tài khoản" title="Xác thực email">
+          <AuthLead>
+            Nhập mã OTP 4 chữ số đã được gửi tới email của bạn để kích hoạt tài khoản.
+          </AuthLead>
+        </AuthHeading>
+
+        <View className="mb-xxl flex-row items-center gap-md rounded-subtle border border-landing-line bg-landing-ivory px-md py-md">
+          <Text className={AUTH_LABEL_CLASS}>Email</Text>
+          <Text
+            numberOfLines={1}
+            className="flex-1 font-sans text-body-md font-medium text-landing-obsidian"
+          >
+            {email}
+          </Text>
+        </View>
+
+        <OtpInput value={otp} onChange={setOtp} error={otpError || undefined} />
+        <Text className="mb-xxl mt-md text-center font-sans text-body-sm text-landing-muted">
+          Mã OTP có hiệu lực trong <Text className="font-mono">5</Text> phút
+        </Text>
+
+        <Button
+          size="lg"
+          title="Xác thực tài khoản"
+          loadingTitle="Đang xác thực"
+          onPress={handleVerify}
+          loading={isSubmitting}
+          disabled={isResending}
+        />
+
+        <View className="mt-xxl items-center">
+          <Text className="font-sans text-body-sm text-landing-muted">Chưa nhận được mã?</Text>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isSubmitting || isResending || cooldown > 0 }}
+            className="min-h-11 items-center justify-center px-md"
+            onPress={handleResend}
+            disabled={isSubmitting || isResending || cooldown > 0}
+          >
+            <Text className={resendTextStyle({ cooling: cooldown > 0 })}>
+              {isResending ? (
+                'Đang gửi lại'
+              ) : cooldown > 0 ? (
+                <>
+                  Gửi lại sau <Text className="font-mono">{cooldown}s</Text>
+                </>
+              ) : (
+                'Gửi lại mã OTP'
+              )}
             </Text>
-            <Text className="mt-sm text-center text-body-sm leading-relaxed text-on-surface-variant">
-              Mã OTP xác thực đã được gửi tới{'\n'}
-              <Text className="font-semibold text-on-surface">{email}</Text>
-            </Text>
-            <Text className="mt-xs text-center text-body-sm text-on-surface-variant">
-              Mã có hiệu lực trong 5 phút.
-            </Text>
-          </View>
+          </TouchableOpacity>
+        </View>
+      </AuthScreen>
 
-          <View className="mb-xxl">
-            <View className="mb-lg">
-              <OtpInput value={otp} onChange={setOtp} error={otpError || undefined} />
-            </View>
-
-            <Button
-              title="Xác thực"
-              onPress={handleVerify}
-              loading={isSubmitting}
-              disabled={isResending}
-            />
-
-            <TouchableOpacity
-              className="mt-lg min-h-11 items-center justify-center py-sm"
-              onPress={handleResend}
-              disabled={isSubmitting || isResending || cooldown > 0}
-            >
-              <Text className={resendTextStyle({ cooling: cooldown > 0 })}>
-                {isResending
-                  ? 'Đang gửi lại...'
-                  : cooldown > 0
-                    ? `Gửi lại mã (${cooldown}s)`
-                    : 'Gửi lại mã xác thực'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className="mt-sm min-h-11 items-center justify-center py-sm"
-              onPress={() => navigation.navigate('Login')}
-            >
-              <Text className="text-label-lg text-on-surface-variant">
-                Quay lại Đăng nhập
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      {/* Modal xác thực thành công — Tự động chuyển qua Đăng nhập sau 5s */}
+      {/* Modal xác thực thành công: tự động chuyển qua Đăng nhập sau 5s */}
       <FeedbackModal
         visible={showSuccessModal}
         type="success"
-        title="Xác thực thành công!"
-        message="Email của bạn đã được xác thực thành công. Tài khoản đã sẵn sàng để đăng nhập."
+        title="Xác thực email thành công"
+        message="Tài khoản của bạn đã được kích hoạt và sẵn sàng để đăng nhập."
         autoCloseSeconds={5}
         onAutoClose={navigateToLogin}
-        countdownPrefix="Tự động chuyển qua Đăng nhập sau"
+        countdownPrefix="Tự động chuyển đến trang đăng nhập sau"
         primaryButtonText="Đăng nhập ngay"
         onPrimaryPress={navigateToLogin}
       />
@@ -172,15 +181,9 @@ export const VerifyEmailScreen: React.FC<Props> = ({ navigation, route }) => {
       <FeedbackModal
         visible={showResendSuccessModal}
         type="info"
-        customIcon={
-          <Ionicons
-            name="mail-outline"
-            size={32}
-            color={COLORS.primaryContainer}
-          />
-        }
-        title="Đã gửi lại mã xác thực"
-        message={`Mã xác thực mới đã được gửi tới ${email}. Vui lòng kiểm tra hộp thư email của bạn.`}
+        customIcon={<Mail size={28} strokeWidth={1.5} color={COLORS.brassInk} />}
+        title="Đã gửi mã OTP mới"
+        message={`Mã OTP mới đã được gửi tới ${email}. Vui lòng kiểm tra hộp thư của bạn.`}
         primaryButtonText="Đã hiểu"
         onPrimaryPress={() => setShowResendSuccessModal(false)}
         onClose={() => setShowResendSuccessModal(false)}

@@ -33,14 +33,14 @@ export function RelatedProducts({
   }
 
   return (
-    <View className="gap-md border-t border-landing-line pt-xl">
-      <View className="gap-xs">
-        <Text className="font-sans text-label-md font-semibold uppercase tracking-widest text-brass-ink">
+    <View className="gap-lg border-t border-landing-line pt-xl">
+      <View className="gap-xs border-b border-landing-line pb-4">
+        <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink">
           Gợi ý phối đồ
         </Text>
         <Text
           accessibilityRole="header"
-          className="font-display text-headline-sm text-obsidian"
+          className="font-display text-headline-lg font-normal leading-tight text-landing-obsidian"
         >
           Có thể bạn sẽ thích
         </Text>
@@ -48,7 +48,7 @@ export function RelatedProducts({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerClassName="gap-md"
+        contentContainerClassName="gap-catalog-gap"
       >
         {products.map((item) => (
           <ProductCard

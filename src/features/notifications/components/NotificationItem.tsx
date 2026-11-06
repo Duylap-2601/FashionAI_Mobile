@@ -5,27 +5,23 @@ import {
   Info,
   MessageSquare,
   Package,
+  ShieldAlert,
   Tag,
 } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import type { INotification, NotificationType } from '@/features/notifications/types/notification';
 import { formatRelativeTime } from '@/utils/date';
 import { COLORS } from '@/constants/theme';
 
-function iconFor(type: NotificationType) {
-  switch (type) {
-    case 'ORDER_STATUS':
-      return { Icon: Package, color: COLORS.oxblood };
-    case 'PAYMENT':
-      return { Icon: CreditCard, color: COLORS.sageInk };
-    case 'PROMOTION':
-      return { Icon: Tag, color: COLORS.brassInk };
-    case 'REVIEW':
-      return { Icon: MessageSquare, color: COLORS.warning };
-    case 'SYSTEM':
-    default:
-      return { Icon: Info, color: COLORS.muted };
-  }
-}
+// Cùng bảng loại thông báo của trang Thông báo trên web: biểu tượng, nhãn và tông chữ.
+const TYPE_META: Record<NotificationType, { Icon: LucideIcon; label: string; color: string; text: string }> = {
+  ORDER_STATUS: { Icon: Package, label: 'Đơn hàng', color: COLORS.oxblood, text: 'text-oxblood' },
+  PAYMENT: { Icon: CreditCard, label: 'Thanh toán', color: COLORS.sageInk, text: 'text-sage-ink' },
+  PROMOTION: { Icon: Tag, label: 'Khuyến mãi', color: COLORS.brassInk, text: 'text-brass-ink' },
+  REVIEW: { Icon: MessageSquare, label: 'Đánh giá', color: COLORS.brassInk, text: 'text-brass-ink' },
+  SYSTEM: { Icon: Info, label: 'Hệ thống', color: COLORS.muted, text: 'text-landing-muted' },
+  ORDER_ISSUE: { Icon: ShieldAlert, label: 'Đổi trả', color: COLORS.oxblood, text: 'text-oxblood' },
+};
 
 interface NotificationItemProps {
   item: INotification;
@@ -36,38 +32,33 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   item,
   onPress,
 }) => {
-  const { Icon, color } = iconFor(item.type);
+  const meta = TYPE_META[item.type] ?? TYPE_META.SYSTEM;
+  const { Icon } = meta;
   const unread = !item.isRead;
 
   return (
     <Pressable
-      accessibilityLabel={item.title}
+      accessibilityRole="button"
+      accessibilityLabel={`${unread ? 'Chưa đọc: ' : ''}${item.title}`}
       onPress={() => onPress(item)}
-      className={`flex-row gap-3 border-b border-landing-line px-lg py-3.5 active:opacity-80 ${
-        unread ? 'bg-white' : 'bg-transparent'
+      className={`flex-row gap-4 px-4 py-4 active:opacity-80 ${
+        unread ? 'bg-ivory' : 'bg-transparent'
       }`}
     >
       <View className="h-9 w-9 shrink-0 items-center justify-center border border-landing-line bg-landing-paper">
-        <Icon size={16} strokeWidth={1.5} color={color} />
+        <Icon size={16} strokeWidth={1.75} color={meta.color} />
       </View>
 
-      <View className="flex-1">
-        <View className="flex-row items-start justify-between gap-3">
-          <View className="flex-1 flex-row items-start gap-1.5">
-            {unread ? <View className="mt-1.5 h-1.5 w-1.5 bg-oxblood" /> : null}
-            <Text
-              numberOfLines={2}
-              className={`flex-1 font-sans text-body-sm ${
-                unread
-                  ? 'font-semibold text-landing-obsidian'
-                  : 'text-landing-obsidian/80'
-              }`}
-            >
-              {item.title}
-            </Text>
-          </View>
-          <Text className="shrink-0 font-mono text-[10px] text-landing-muted">
-            {formatRelativeTime(item.createdAt)}
+      <View className="min-w-0 flex-1">
+        <View className="flex-row items-start gap-2">
+          {unread ? <View className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-oxblood" /> : null}
+          <Text
+            numberOfLines={2}
+            className={`flex-1 font-sans text-body-md ${
+              unread ? 'font-semibold text-landing-obsidian' : 'text-landing-obsidian/80'
+            }`}
+          >
+            {item.title}
           </Text>
         </View>
         <Text
@@ -77,10 +68,19 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           {item.message}
         </Text>
         {item.data?.orderCode ? (
-          <Text className="mt-1.5 self-start font-mono text-[11px] text-landing-obsidian/70">
+          <Text className="mt-2 font-mono text-[11px] text-landing-obsidian/70">
             Mã đơn #{String(item.data.orderCode)}
           </Text>
         ) : null}
+        <View className="mt-2 flex-row items-center gap-2">
+          <Text className={`font-sans text-[11px] font-semibold uppercase tracking-[0.16em] ${meta.text}`}>
+            {meta.label}
+          </Text>
+          <Text className="font-sans text-[11px] text-landing-muted">·</Text>
+          <Text className="font-sans text-[11px] text-landing-muted">
+            {formatRelativeTime(item.createdAt)}
+          </Text>
+        </View>
       </View>
     </Pressable>
   );

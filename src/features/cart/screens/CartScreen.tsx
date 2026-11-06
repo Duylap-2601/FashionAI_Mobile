@@ -8,6 +8,8 @@ import { useCart } from '@/features/cart/hooks/use-cart';
 import { COLORS } from '@/constants/theme';
 import { formatCurrency } from '@/utils/format';
 
+const FILL_IMAGE_STYLE = { width: '100%', height: '100%' } as const;
+
 export function CartScreen() {
   const navigation = useNavigation();
   const {
@@ -57,8 +59,11 @@ export function CartScreen() {
     return (
       <SafeAreaView className="flex-1 bg-landing-paper">
         {renderHeader()}
-        <View className="flex-1 items-center justify-center">
+        <View className="flex-1 items-center justify-center gap-3">
           <ActivityIndicator size="small" color={COLORS.oxblood} />
+          <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-landing-muted">
+            Đang may giỏ hàng
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -78,7 +83,7 @@ export function CartScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={() => void refetch()}
-            className="mt-6 h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:bg-ivory"
+            className="mt-6 h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:opacity-70"
           >
             <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
               Thử lại
@@ -103,7 +108,7 @@ export function CartScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={() => (navigation as any).navigate('Main', { screen: 'ShopTab' })}
-            className="mt-6 h-11 items-center justify-center rounded-subtle bg-oxblood px-6 active:bg-landing-obsidian"
+            className="mt-6 h-11 items-center justify-center rounded-subtle bg-oxblood px-6 active:opacity-90"
           >
             <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
               Xem sản phẩm
@@ -112,9 +117,11 @@ export function CartScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={openOrders}
-            className="mt-3 min-h-11 justify-center active:opacity-60"
+            className="mt-3 h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:opacity-70"
           >
-            <Text className="font-sans text-xs text-landing-muted">Đơn hàng của tôi</Text>
+            <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+              Đơn hàng của tôi
+            </Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -148,10 +155,12 @@ export function CartScreen() {
                   className="h-24 w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-subtle bg-ivory active:opacity-80"
                 >
                   {item.imageUrl ? (
+                    // expo-image không nhận className, nên kích thước ảnh dùng style.
                     <Image
                       source={{ uri: item.imageUrl }}
-                      style={{ width: '100%', height: '100%' }}
+                      style={FILL_IMAGE_STYLE}
                       contentFit="cover"
+                      contentPosition="top"
                     />
                   ) : (
                     <ShoppingBag size={20} strokeWidth={1.25} color={COLORS.muted} />
@@ -162,7 +171,7 @@ export function CartScreen() {
                   <View className="flex-row items-start justify-between gap-3">
                     <View className="min-w-0 flex-1">
                       <Pressable
-                        accessibilityRole="button"
+                        accessibilityRole="link"
                         onPress={() =>
                           (navigation as any).navigate('ProductDetail', {
                             productId: String(item.productId),
@@ -172,7 +181,7 @@ export function CartScreen() {
                       >
                         <Text
                           numberOfLines={2}
-                          className="font-sans text-body-md text-landing-obsidian"
+                          className="font-sans text-body-md font-medium text-landing-obsidian"
                         >
                           {item.productName}
                         </Text>
@@ -192,17 +201,23 @@ export function CartScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={`Bỏ ${item.productName} khỏi giỏ`}
                       onPress={() => removeItem(item.productId, item.variantId ?? item.id)}
-                      className="-mr-2 -mt-1 h-9 w-9 shrink-0 items-center justify-center active:opacity-60"
+                      className="-mr-3 -mt-2 h-11 w-11 shrink-0 items-center justify-center active:opacity-60"
                     >
                       <X size={16} strokeWidth={1.75} color={COLORS.muted} />
                     </Pressable>
                   </View>
 
                   <View className="mt-3 flex-row items-end justify-between gap-3">
-                    <View className="h-9 flex-row items-center border border-landing-line">
+                    {/* Nút tăng giảm 44x44 theo design/DESIGN.md › Cart. */}
+                    <View
+                      className={`h-11 flex-row items-center rounded-subtle border border-landing-line ${
+                        unavailable ? 'opacity-40' : ''
+                      }`}
+                    >
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel="Giảm số lượng"
+                        accessibilityLabel={`Giảm số lượng ${item.productName}`}
+                        accessibilityState={{ disabled: unavailable }}
                         disabled={unavailable}
                         onPress={() =>
                           updateQuantity(
@@ -211,18 +226,19 @@ export function CartScreen() {
                             item.variantId ?? item.id,
                           )
                         }
-                        className="h-full w-9 items-center justify-center active:opacity-60"
+                        className="h-full w-11 items-center justify-center active:opacity-60"
                       >
                         <Minus size={14} strokeWidth={1.75} color={COLORS.obsidian} />
                       </Pressable>
-                      <View className="h-full min-w-9 items-center justify-center border-x border-landing-line px-2">
+                      <View className="h-full min-w-11 items-center justify-center border-x border-landing-line px-2">
                         <Text className="font-mono text-sm text-landing-obsidian">
                           {item.quantity}
                         </Text>
                       </View>
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel="Tăng số lượng"
+                        accessibilityLabel={`Tăng số lượng ${item.productName}`}
+                        accessibilityState={{ disabled: unavailable }}
                         disabled={unavailable}
                         onPress={() =>
                           updateQuantity(
@@ -231,7 +247,7 @@ export function CartScreen() {
                             item.variantId ?? item.id,
                           )
                         }
-                        className="h-full w-9 items-center justify-center active:opacity-60"
+                        className="h-full w-11 items-center justify-center active:opacity-60"
                       >
                         <Plus size={14} strokeWidth={1.75} color={COLORS.obsidian} />
                       </Pressable>
@@ -256,7 +272,7 @@ export function CartScreen() {
 
       </ScrollView>
 
-      <View className="border-t border-landing-line px-lg pb-6 pt-4">
+      <View className="border-t border-landing-line px-lg pb-3 pt-4">
         <View className="flex-row items-baseline justify-between gap-4">
           <Text className="font-sans text-sm text-landing-muted">
             Tạm tính · <Text className="font-mono">{totalItems}</Text> sản phẩm
@@ -271,12 +287,21 @@ export function CartScreen() {
         <Pressable
           accessibilityRole="button"
           onPress={openCheckout}
-          className="mt-4 h-12 items-center justify-center rounded-subtle bg-oxblood active:bg-landing-obsidian"
+          className="mt-4 h-12 items-center justify-center rounded-subtle bg-oxblood active:opacity-90"
         >
           <Text className="font-sans text-[11.5px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
             Đặt hàng
           </Text>
         </Pressable>
+        <View className="mt-1 flex-row items-center justify-end">
+          <Pressable
+            accessibilityRole="link"
+            onPress={openOrders}
+            className="min-h-11 justify-center active:opacity-60"
+          >
+            <Text className="font-sans text-xs text-landing-muted">Đơn hàng của tôi</Text>
+          </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );

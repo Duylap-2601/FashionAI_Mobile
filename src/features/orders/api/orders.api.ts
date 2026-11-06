@@ -1,6 +1,7 @@
 import { http, HttpOptions } from '@/api/http';
 import { ENDPOINTS } from '@/constants/endpoints';
-import type { ICreateOrderIssuePayload, IOrderIssue } from '../types/order';
+import { isPaginationMeta, type ApiPaginationMeta } from '@/types/api';
+import type { ICreateOrderIssuePayload, IMyReturnOrder, IOrderIssue } from '../types/order';
 
 export interface IOrderShippingInfo {
   name: string;
@@ -36,7 +37,10 @@ export interface OrderCreatePayload extends OrderQuotePayload {
 }
 
 export interface OrderQuoteResponse {
+  /** Tiền hàng sau khi áp chương trình sale (giá sale × số lượng). */
   itemsTotal: number;
+  /** Tiền hàng theo giá niêm yết (giá gốc × số lượng); lớn hơn `itemsTotal` khi có sale. */
+  listItemsTotal?: number;
   shippingFee: number;
   discountAmount: number;
   totalAmount: number;
@@ -52,6 +56,29 @@ export interface ICreateOrderResponse {
   [key: string]: unknown;
 }
 
+export interface OrdersListParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+  search?: string;
+}
+
+/** Số đơn chưa thanh toán tối đa mà checkout nhắc khách (giống web). */
+export const UNPAID_ORDERS_LIMIT = 5;
+
+/** Đơn đã tạo nhưng chưa trả tiền: chỉ các trường của `GET /orders` mà checkout cần. */
+export interface IUnpaidOrder {
+  id: string;
+  orderCode: number;
+  status: string;
+  paymentStatus?: string | null;
+  /** Tổng tiền đơn (VND). Đơn cũ có thể chưa có, khi đó dùng `amount`. */
+  totalVnd?: number | null;
+  amount?: number | null;
+  /** Hạn thanh toán; quá hạn thì máy chủ tự hủy đơn. */
+  paymentDueAt?: string | null;
+}
+
 export const ordersApi = {
   quote: (payload: OrderQuotePayload, opts?: HttpOptions): Promise<OrderQuoteResponse> => {
     return http.post<OrderQuoteResponse>(ENDPOINTS.ORDERS.QUOTE, payload, opts);
@@ -65,10 +92,32 @@ export const ordersApi = {
     return http.get<any[]>(ENDPOINTS.ORDERS.LIST, opts);
   },
   
+  /** Một trang đơn của tôi; BE lọc theo một trạng thái và tìm theo mã đơn / tên sản phẩm. */
+  getOrdersPage: async (
+    params: OrdersListParams = {},
+    opts?: HttpOptions,
+  ): Promise<{ data: any[]; meta?: ApiPaginationMeta }> => {
+    const res = await http.getPaged<any[]>(ENDPOINTS.ORDERS.LIST, { ...opts, params });
+    return {
+      data: Array.isArray(res.data) ? res.data : [],
+      meta: isPaginationMeta(res.meta) ? res.meta : undefined,
+    };
+  },
+
   getOrder: (id: string | number, opts?: HttpOptions): Promise<any> => {
     return http.get<any>(ENDPOINTS.ORDERS.DETAIL(id), opts);
   },
-  
+
+  /** Đơn mới tạo (CREATED) còn chờ thanh toán, để checkout nhắc khách trả đơn cũ thay vì đặt trùng. */
+  getUnpaidOrders: async (opts?: HttpOptions): Promise<IUnpaidOrder[]> => {
+    const orders = await http.get<IUnpaidOrder[]>(ENDPOINTS.ORDERS.LIST, {
+      ...opts,
+      params: { ...opts?.params, status: 'CREATED', limit: UNPAID_ORDERS_LIMIT },
+    });
+    if (!Array.isArray(orders)) return [];
+    return orders.filter((order) => order.paymentStatus === 'PENDING');
+  },
+
   getTracking: (id: string | number, opts?: HttpOptions): Promise<any> => {
     return http.get<any>(ENDPOINTS.ORDERS.TRACKING(id), opts);
   },
@@ -83,6 +132,18 @@ export const ordersApi = {
 
   updateMeasurement: (orderId: string | number, itemId: string | number, data: any, opts?: HttpOptions): Promise<any> => {
     return http.patch<any>(ENDPOINTS.ORDERS.UPDATE_MEASUREMENT(orderId, itemId), data, opts);
+  },
+
+  /** Các đơn có yêu cầu đổi trả của tôi, mới cập nhật trước. */
+  getMyReturns: async (
+    params: { page?: number; limit?: number } = {},
+    opts?: HttpOptions,
+  ): Promise<{ data: IMyReturnOrder[]; meta?: ApiPaginationMeta }> => {
+    const res = await http.getPaged<IMyReturnOrder[]>(ENDPOINTS.ORDERS.MY_RETURNS, { ...opts, params });
+    return {
+      data: Array.isArray(res.data) ? res.data : [],
+      meta: isPaginationMeta(res.meta) ? res.meta : undefined,
+    };
   },
 
   getOrderIssues: async (orderId: string | number, opts?: HttpOptions): Promise<any[]> => {

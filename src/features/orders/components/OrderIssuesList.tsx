@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { X } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
 import { formatDateTime } from '@/utils/date';
 import { useOrderIssues } from '../hooks/use-orders';
 import type { IOrderIssue, OrderIssueDesiredResolution, OrderIssueReason, OrderIssueStatus } from '../types/order';
 import { getOrderItemImage } from '../utils/order-items';
+import { ImagePreviewModal } from './ImagePreviewModal';
 import { ToneLabel, type StatusTone } from './ToneLabel';
 
 interface Props {
@@ -35,7 +35,6 @@ export const ISSUE_STATUS: Record<OrderIssueStatus, { label: string; tone: Statu
 // expo-image không nhận className (chưa cssInterop), nên kích thước ảnh dùng style.
 const THUMB_STYLE = { width: 44, height: 56 } as const;
 const EVIDENCE_STYLE = { width: 56, height: 56 } as const;
-const PREVIEW_STYLE = { width: '100%', height: '70%' } as const;
 
 const FIELD_LABEL_CLASS = 'font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-landing-muted';
 
@@ -159,19 +158,7 @@ export function OrderIssuesList({ orderId }: Props) {
         </View>
       ))}
 
-      <Modal visible={!!zoomedUrl} transparent animationType="fade" onRequestClose={() => setZoomedUrl(null)}>
-        <View className="flex-1 items-center justify-center bg-landing-obsidian/90 p-4">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Đóng ảnh"
-            onPress={() => setZoomedUrl(null)}
-            className="absolute right-4 top-12 z-10 h-11 w-11 items-center justify-center rounded-full bg-landing-ivory/20"
-          >
-            <X size={20} color={COLORS.ivory} />
-          </Pressable>
-          {zoomedUrl ? <Image source={{ uri: zoomedUrl }} style={PREVIEW_STYLE} contentFit="contain" /> : null}
-        </View>
-      </Modal>
+      <ImagePreviewModal url={zoomedUrl} caption="Ảnh minh chứng" onClose={() => setZoomedUrl(null)} />
     </View>
   );
 }

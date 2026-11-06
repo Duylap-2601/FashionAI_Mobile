@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput } from 'react-native';
 import type {
   NativeSyntheticEvent,
@@ -16,11 +16,17 @@ export interface OtpInputProps {
 
 const EMPTY_CHAR = '\u200B';
 
+// Ô OTP theo Input của design/DESIGN.md: góc 2px, nền ivory, viền hairline, viền oxblood khi đang
+// nhập, viền danger khi lỗi. Chữ số dùng mono (mã). Cỡ chữ tuyệt đối vì tailwind-merge trong tva
+// coi token `text-headline-*` là màu chữ.
 const boxStyle = tva({
-  base: 'min-h-11 w-11 items-center justify-center rounded-md border border-surface-line bg-surface-low text-center text-headline-sm text-on-surface',
+  base: 'h-14 w-12 items-center justify-center rounded-subtle border border-landing-line bg-landing-ivory/80 text-center font-mono text-[24px] text-landing-obsidian',
   variants: {
+    focused: {
+      true: 'border-oxblood',
+    },
     error: {
-      true: 'border-danger bg-danger-soft',
+      true: 'border-danger',
     },
   },
 });
@@ -34,6 +40,7 @@ export const OtpInput: React.FC<OtpInputProps> = ({
 }) => {
   const inputRefs = useRef<(TextInput | null)[]>([]);
   const valueRef = useRef(value);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const lastBackspaceTimeRef = useRef(0);
 
   useEffect(() => {
@@ -180,6 +187,11 @@ export const OtpInput: React.FC<OtpInputProps> = ({
             value={digit !== '' ? digit : EMPTY_CHAR}
             onChangeText={(text) => handleChangeText(text, index)}
             onKeyPress={(e) => handleKeyPress(e, index)}
+            onFocus={() => setFocusedIndex(index)}
+            onBlur={() =>
+              setFocusedIndex((current) => (current === index ? null : current))
+            }
+            accessibilityLabel={`Chữ số ${index + 1} của mã xác thực`}
             keyboardType="number-pad"
             inputMode="numeric"
             textContentType="oneTimeCode"
@@ -187,13 +199,16 @@ export const OtpInput: React.FC<OtpInputProps> = ({
             maxLength={length}
             autoFocus={autoFocus && index === 0}
             selectTextOnFocus
-            className={boxStyle({ error: !!error })}
+            className={boxStyle({ focused: focusedIndex === index, error: !!error })}
           />
         ))}
       </View>
 
       {error ? (
-        <Text className="mt-xs text-center text-body-sm text-danger">
+        <Text
+          accessibilityLiveRegion="polite"
+          className="mt-sm text-center font-sans text-body-sm text-danger"
+        >
           {error}
         </Text>
       ) : null}

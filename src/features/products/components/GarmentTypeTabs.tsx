@@ -13,8 +13,11 @@ export function GarmentTypeTabs({
   onSelect,
 }: GarmentTypeTabsProps) {
   return (
+    // Underline text tabs, same labels and type as FE listing › CategoryTabs.
     <ScrollView
       horizontal
+      accessibilityRole="tablist"
+      accessibilityLabel="Loại trang phục"
       showsHorizontalScrollIndicator={false}
       className="border-b border-landing-line"
       contentContainerClassName="gap-xxl px-lg"
@@ -39,7 +42,7 @@ export function GarmentTypeTabs({
               {tab.label}
             </Text>
             {isActive ? (
-              <View className="absolute inset-x-0 bottom-0 h-px bg-landing-oxblood" />
+              <View className="absolute inset-x-0 bottom-0 h-0.5 bg-landing-oxblood" />
             ) : null}
           </Pressable>
         );

@@ -24,21 +24,20 @@ import { useCart } from '@/features/cart/hooks/use-cart';
 import { paymentsApi } from '@/features/payments/api/payments.api';
 import { useOrder, useCancelOrder, useConfirmDelivery, useOrderIssues } from '../hooks/use-orders';
 import { ReportIssueModal, type ReportableOrderItem } from '../components/ReportIssueModal';
-import { OrderIssuesList } from '../components/OrderIssuesList';
+import { ISSUE_STATUS } from '../components/OrderIssuesList';
+import { STATUS_TONE_CLASSES, ToneLabel, type StatusTone } from '../components/ToneLabel';
+import type { OrderIssueStatus } from '../types/order';
 import { getOrderItemImage, getOrderItemName } from '../utils/order-items';
-import { canReportOrderIssue, getBlockedReportItemIds } from '../utils/order-returns';
+import { getShippingLabel, getTransferContent } from '../utils/order-shipping';
+import {
+  RETURN_HISTORY_STATUSES,
+  RETURN_STATUS_LABELS,
+  canReportOrderIssue,
+  getBlockedReportItemIds,
+  toVnd,
+} from '../utils/order-returns';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderDetail'>;
-
-type StatusTone = 'attention' | 'active' | 'done' | 'closed' | 'error';
-
-const STATUS_TONE_CLASSES: Record<StatusTone, { dot: string; text: string }> = {
-  attention: { dot: 'bg-brass', text: 'text-brass-ink' },
-  active: { dot: 'bg-oxblood', text: 'text-landing-obsidian' },
-  done: { dot: 'bg-sage', text: 'text-sage-ink' },
-  closed: { dot: 'bg-taupe', text: 'text-landing-muted' },
-  error: { dot: 'bg-danger', text: 'text-danger' },
-};
 
 const STATUS_CONFIG: Record<
   string,
@@ -488,15 +487,21 @@ export function OrderDetailScreen({ route, navigation }: Props) {
   const discount = order.discountVnd ?? order.discountAmount ?? order.discount ?? 0;
   const paidAmount =
     order.amountPaidVnd ?? order.amountPaid ?? order.paidAmount ?? order.paidAmountVnd ?? 0;
+  const refundedAmount = toVnd(order.amountRefundedVnd);
+  // Báo lỗi, trả hàng và hoàn tiền nằm ở màn riêng; màn đơn chỉ giữ thẻ tóm tắt.
+  const hasReturns =
+    issues.length > 0 || (order.refunds?.length ?? 0) > 0 || RETURN_HISTORY_STATUSES.includes(status);
+  const returnsStatus =
+    RETURN_STATUS_LABELS[status] ?? (issues[0] ? ISSUE_STATUS[issues[0].status as OrderIssueStatus] : null);
 
   const isPaid = order.isPaid === true;
   const isPendingPayment = ['PENDING', 'PENDING_PAYMENT', 'CREATED'].includes(status) && !isPaid;
   const paymentDueAt = order.paymentDueAt || order.paymentExpiresAt || order.paymentDeadline || '';
-  const isCancellable =
-    order.allowedActions?.cancel === true ||
-    ['PENDING', 'PENDING_PAYMENT', 'CREATED'].includes(status);
-  const canConfirmDelivery =
-    order.allowedActions?.confirmDelivery === true || status === 'DELIVERED';
+  // BE quyết định được hủy / xác nhận nhận hàng (allowedActions), như web.
+  const isCancellable = order.allowedActions?.cancel === true;
+  const canConfirmDelivery = order.allowedActions?.confirmDelivery === true;
+  const shippingLabel = getShippingLabel(order);
+  const transferContent = getTransferContent(order);
   // Khớp BE: chỉ báo lỗi khi đơn đã hoàn tất / đang hoàn trả và còn trong 7 ngày.
   const canReportIssue = canReportOrderIssue(order);
   const blockedReportItemIds = getBlockedReportItemIds(issues);
@@ -761,15 +766,50 @@ export function OrderDetailScreen({ route, navigation }: Props) {
                 . Quá hạn đơn sẽ tự hủy.
               </Text>
             ) : null}
-            <Text className="mt-2 font-sans text-[12.5px] leading-relaxed text-landing-muted">
-              Nội dung chuyển khoản:{' '}
-              <Text className="font-mono text-[13px] text-oxblood">{orderCode}</Text>
-            </Text>
+            {transferContent ? (
+              <>
+                <Text className="mt-2 font-sans text-[12.5px] leading-relaxed text-landing-muted">
+                  Nội dung chuyển khoản:{' '}
+                  <Text className="font-mono text-[13px] text-oxblood">{transferContent}</Text>
+                </Text>
+                <Text className="mt-1 font-sans text-[12px] leading-relaxed text-landing-muted">
+                  Nếu đã chuyển khoản mà đơn chưa cập nhật, hãy kiểm tra nội dung chuyển khoản đã ghi đúng mã này.
+                </Text>
+              </>
+            ) : null}
             {paymentError ? (
               <Text className="mt-2 font-sans text-[12px] leading-relaxed text-danger">
                 {paymentError}
               </Text>
             ) : null}
+          </View>
+        ) : null}
+
+        {hasReturns ? (
+          <View className="mt-4 gap-3 rounded-subtle border border-landing-line bg-ivory p-4">
+            <View className="gap-1.5">
+              <Text className={LABEL_CLASS}>Đổi trả & hoàn tiền</Text>
+              <View className="flex-row flex-wrap items-center gap-x-3 gap-y-1">
+                {returnsStatus ? <ToneLabel tone={returnsStatus.tone} label={returnsStatus.label} /> : null}
+                <Text className="font-sans text-[12px] text-landing-muted">
+                  <Text className="font-mono">{issues.length}</Text> yêu cầu
+                  {refundedAmount > 0 ? (
+                    <>
+                      {' '}· Đã hoàn{' '}
+                      <Text className="font-mono text-landing-obsidian">{formatCurrency(refundedAmount)}</Text>
+                    </>
+                  ) : null}
+                </Text>
+              </View>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Xem đổi trả và hoàn tiền"
+              onPress={() => navigation.navigate('OrderReturns', { orderId: order.id })}
+              className="h-11 items-center justify-center self-start rounded-subtle border border-landing-line px-4 active:opacity-70"
+            >
+              <Text className={`${ACTION_LABEL_CLASS} text-landing-obsidian`}>Xem đổi trả & hoàn tiền</Text>
+            </Pressable>
           </View>
         ) : null}
 
@@ -798,11 +838,13 @@ export function OrderDetailScreen({ route, navigation }: Props) {
 
         <View className="mt-4 rounded-subtle border border-landing-line bg-ivory p-4">
           <Text className={LABEL_CLASS}>Vận chuyển</Text>
+          {/* Trạng thái đi theo GHN (displayStatus của BE), như web. */}
+          <Text className="mt-2 font-sans text-[13px] text-landing-obsidian">{shippingLabel}</Text>
           {trackingCode ? (
-            <Text className="mt-2 font-mono text-[13px] text-landing-obsidian">{trackingCode}</Text>
-          ) : (
-            <Text className="mt-2 font-sans text-[13px] text-landing-obsidian">Chưa tạo vận đơn</Text>
-          )}
+            <Text className="mt-1 font-sans text-[12px] text-landing-muted">
+              Mã vận đơn <Text className="font-mono text-landing-obsidian">{trackingCode}</Text>
+            </Text>
+          ) : null}
           {trackingCode && trackingUrl ? (
             <Pressable
               accessibilityRole="button"
@@ -898,9 +940,16 @@ export function OrderDetailScreen({ route, navigation }: Props) {
 
                   {canReportIssue ? (
                     item.id !== undefined && blockedReportItemIds.has(String(item.id)) ? (
-                      <Text className="py-3 font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-muted">
-                        Đã gửi yêu cầu · chờ shop xử lý
-                      </Text>
+                      <Pressable
+                        accessibilityRole="link"
+                        accessibilityLabel="Đã gửi yêu cầu, xem trạng thái"
+                        onPress={() => navigation.navigate('OrderReturns', { orderId: order.id })}
+                        className="h-11 justify-center self-start active:opacity-60"
+                      >
+                        <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-muted">
+                          Đã gửi yêu cầu · xem trạng thái
+                        </Text>
+                      </Pressable>
                     ) : (
                       <Pressable
                         accessibilityRole="button"
@@ -920,15 +969,6 @@ export function OrderDetailScreen({ route, navigation }: Props) {
             })}
           </View>
         </View>
-
-        {issues.length > 0 ? (
-          <View className="mt-4 rounded-subtle border border-landing-line bg-ivory p-4">
-            <Text className={LABEL_CLASS}>Sự cố đã báo</Text>
-            <View className="mt-3">
-              <OrderIssuesList orderId={orderId} />
-            </View>
-          </View>
-        ) : null}
 
         <View className="mt-4 rounded-subtle border border-landing-line bg-ivory p-4">
           <Text className="font-display text-[20px] leading-tight text-landing-obsidian">
@@ -961,6 +1001,12 @@ export function OrderDetailScreen({ route, navigation }: Props) {
             ) : null}
             <SummaryRow label="Tổng cộng" value={formatCurrency(totalAmount)} strong />
             <SummaryRow label="Đã thanh toán" value={formatCurrency(paidAmount)} />
+            {refundedAmount > 0 ? (
+              <SummaryRow
+                label={paidAmount > 0 && refundedAmount < paidAmount ? 'Đã hoàn một phần' : 'Đã hoàn tiền'}
+                value={formatCurrency(refundedAmount)}
+              />
+            ) : null}
           </View>
         </View>
 
@@ -1054,7 +1100,7 @@ export function OrderDetailScreen({ route, navigation }: Props) {
           accountNumber: order.refundAccountNumber,
           accountHolder: order.refundAccountHolder,
         }}
-        onSuccess={() => refetch()}
+        onSuccess={() => navigation.navigate('OrderReturns', { orderId: order.id })}
       />
     </View>
   );

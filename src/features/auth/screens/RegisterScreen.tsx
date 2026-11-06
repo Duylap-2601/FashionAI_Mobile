@@ -1,16 +1,9 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from "react-native";
+import { View, Alert } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowRight } from "lucide-react-native";
 
 import { AuthStackParamList } from "@/navigation/types";
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -20,6 +13,14 @@ import {
 } from "@/features/auth/schemas/auth.schema";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { COLORS } from "@/constants/theme";
+import {
+  AuthHeading,
+  AuthLead,
+  AuthScreen,
+  AuthTextLink,
+  PasswordRules,
+} from "@/features/auth/components/auth-form";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Register">;
 
@@ -36,6 +37,10 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
 
+  // Chỉ đọc để vẽ thước độ dài và hai quy tắc mật khẩu, không đổi luồng kiểm tra của form.
+  const password = useWatch({ control, name: "password" }) ?? "";
+  const confirmPassword = useWatch({ control, name: "confirmPassword" }) ?? "";
+
   const onSubmit = async (values: RegisterFormValues) => {
     const email = values.email.trim();
     try {
@@ -47,114 +52,98 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       });
       navigation.navigate("VerifyEmail", { email });
     } catch (err: any) {
-      Alert.alert("Đăng ký thất bại", err.message || "Không thể tạo tài khoản");
+      Alert.alert(
+        "Đăng ký thất bại",
+        err.message || "Đăng ký tài khoản thất bại. Email có thể đã tồn tại.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-surface"
-    >
-      <ScrollView contentContainerClassName="grow justify-center px-xxl py-xxxl">
-        <View className="mb-xxl items-center">
-          <Text className="text-xxxl font-extrabold text-on-surface-strong">
-            Tạo tài khoản
-          </Text>
-          <Text className="mt-xs text-center text-body-sm text-on-surface-variant">
-            Bắt đầu phong cách mới cùng FashionAI
-          </Text>
+    <AuthScreen>
+      <AuthHeading eyebrow="Tài khoản mới" title="Tạo tài khoản">
+        <View className="flex-row flex-wrap items-center gap-xs">
+          <AuthLead>Đã có tài khoản?</AuthLead>
+          <AuthTextLink label="Đăng nhập" onPress={() => navigation.navigate("Login")} />
         </View>
+      </AuthHeading>
 
-        <View className="mb-xl w-full">
-          <Controller
-            control={control}
-            name="name"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <Input
-                label="Họ và tên"
-                placeholder="Nguyễn Văn A"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.name?.message}
-              />
-            )}
+      <Controller
+        control={control}
+        name="name"
+        render={({ field: { value, onChange, onBlur } }) => (
+          <Input
+            label="Họ và tên"
+            placeholder="Nguyễn Văn A"
+            value={value}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            error={errors.name?.message}
           />
+        )}
+      />
 
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <Input
-                label="Email"
-                placeholder="name@example.com"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.email?.message}
-              />
-            )}
+      <Controller
+        control={control}
+        name="email"
+        render={({ field: { value, onChange, onBlur } }) => (
+          <Input
+            label="Email"
+            placeholder="nhap@email.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={value}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            error={errors.email?.message}
           />
+        )}
+      />
 
-          <Controller
-            control={control}
-            name="password"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <Input
-                label="Mật khẩu"
-                placeholder="Ít nhất 6 ký tự"
-                secureTextEntry
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.password?.message}
-              />
-            )}
+      <Controller
+        control={control}
+        name="password"
+        render={({ field: { value, onChange, onBlur } }) => (
+          <Input
+            label="Mật khẩu"
+            placeholder="Ít nhất 8 ký tự"
+            secureTextEntry
+            value={value}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            error={errors.password?.message}
           />
+        )}
+      />
+      <PasswordRules password={password} confirmPassword={confirmPassword} />
 
-          <Controller
-            control={control}
-            name="confirmPassword"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <Input
-                label="Xác nhận mật khẩu"
-                placeholder="Nhập lại mật khẩu"
-                secureTextEntry
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.confirmPassword?.message}
-              />
-            )}
+      <Controller
+        control={control}
+        name="confirmPassword"
+        render={({ field: { value, onChange, onBlur } }) => (
+          <Input
+            label="Xác nhận mật khẩu"
+            placeholder="Nhập lại mật khẩu"
+            secureTextEntry
+            value={value}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            error={errors.confirmPassword?.message}
           />
+        )}
+      />
 
-          <View className="mb-xxl">
-            <Button
-              className="mt-md w-full"
-              title="Đăng ký"
-              onPress={handleSubmit(onSubmit)}
-              loading={isSubmitting}
-              textClassName="text-primary-foreground"
-            />
-          </View>
-        </View>
-
-        <View className="mt-lg flex-row items-center justify-center">
-          <Text className="text-body-sm text-on-surface-variant">
-            Đã có tài khoản?{" "}
-          </Text>
-          <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-            <Text className="text-label-lg text-primary-container">
-              Đăng nhập
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Button
+        className="mt-md"
+        size="lg"
+        title="Tạo tài khoản"
+        loadingTitle="Đang tạo tài khoản"
+        onPress={handleSubmit(onSubmit)}
+        loading={isSubmitting}
+        rightIcon={<ArrowRight size={16} strokeWidth={1.75} color={COLORS.paper} />}
+      />
+    </AuthScreen>
   );
 };

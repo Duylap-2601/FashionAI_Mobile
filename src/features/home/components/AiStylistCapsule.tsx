@@ -1,7 +1,9 @@
-import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Sparkles, ArrowUpRight } from 'lucide-react-native';
+import { COLORS } from '@/constants/theme';
+import { STYLIST_OCCASIONS } from '@/features/stylist/constants/stylist-options';
 import { LandingSectionHeading } from './LandingSectionHeading';
 import { formatProductPrice, getProductMainImage } from '@/features/products/utils/product-display';
 import type { IProduct } from '@/features/products/types/product';
@@ -14,159 +16,183 @@ interface AiStylistCapsuleProps {
 
 const ROLES = ['Lớp ngoài', 'Nền', 'Điểm nhấn'] as const;
 
-const FALLBACK_CAPSULE = [
-  {
-    id: 'capsule-1',
-    name: 'Áo khoác dạ nữ dáng dài phom ôm',
-    price: 1850000,
-    image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=85',
-  },
-  {
-    id: 'capsule-2',
-    name: 'Sơ mi lụa cổ nơ thanh lịch',
-    price: 790000,
-    image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=85',
-  },
-  {
-    id: 'capsule-3',
-    name: 'Quần âu xếp ly dáng suông',
-    price: 920000,
-    image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=85',
-  },
-];
+function pieceNumber(index: number) {
+  return String(index + 1).padStart(2, '0');
+}
 
+function CapsulePiece({
+  product,
+  index,
+  lead,
+  onPress,
+}: {
+  product: IProduct;
+  index: number;
+  lead: boolean;
+  onPress: (productId: string) => void;
+}) {
+  const [failed, setFailed] = useState(false);
+  const imageUrl = getProductMainImage(product);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${ROLES[index]}: ${product.name}`}
+      onPress={() => onPress(product.id)}
+      className={`relative flex-1 overflow-hidden rounded-subtle border border-landing-line bg-landing-ivory active:opacity-85 ${
+        lead ? 'aspect-[3/4]' : ''
+      }`}
+    >
+      {imageUrl && !failed ? (
+        <Image
+          source={{ uri: imageUrl }}
+          contentFit="contain"
+          contentPosition="top"
+          onError={() => setFailed(true)}
+          style={[StyleSheet.absoluteFill, { margin: 12 }]}
+        />
+      ) : (
+        <View className="flex-1 items-center justify-center">
+          <Text className="font-sans text-[10px] uppercase tracking-[0.16em] text-landing-muted">
+            Chưa có ảnh
+          </Text>
+        </View>
+      )}
+      <View className="absolute left-0 top-3 flex-row items-center gap-2 bg-landing-obsidian px-2.5 py-1.5">
+        <Text className="font-mono text-[9px] font-semibold text-landing-brass">
+          {pieceNumber(index)}
+        </Text>
+        <Text className="font-sans text-[9px] font-semibold uppercase tracking-[0.18em] text-landing-paper">
+          {ROLES[index]}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+// Chapter 06, mirrors FE AiStylistCapsule: a styling board built only from real
+// catalog products, a credits list, occasions and one AI Stylist CTA.
 export function AiStylistCapsule({
   products,
   onPressStylist,
   onPressProduct,
 }: AiStylistCapsuleProps) {
-  const items = products.length >= 3 ? products.slice(0, 3) : FALLBACK_CAPSULE;
+  // Real catalog pieces only (FE renders nothing without products); no invented
+  // names, prices or stock photos.
+  const items = products.slice(0, 3);
+
+  if (items.length === 0) return null;
+
+  const [lead, ...rest] = items;
 
   return (
     <View className="bg-landing-ivory px-lg py-16">
-      {/* Chapter 06 Section Heading */}
       <LandingSectionHeading
         chapter="06"
-        eyebrow="AI STYLIST"
-        title="MỘT BỘ ĐỒ, BA MẢNH GHÉP."
+        eyebrow="AI Stylist"
+        title="Một capsule, ba lớp."
         description="Chọn từ catalog thật, AI Stylist gợi ý cách phối theo dịp và phong cách của bạn. Đây là một capsule mở đầu, không phải một bộ đồ bắt buộc."
       />
 
-      {/* Board Card */}
-      <View className="mt-8 overflow-hidden rounded-3xl bg-landing-paper p-5 border border-landing-line">
-        <View className="mb-4 flex-row items-center justify-between">
-          <View className="flex-row items-center gap-1.5">
-            <Sparkles size={14} color="#7C5722" />
-            <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-landing-obsidian/80">
+      {/* Styling board */}
+      <View className="mt-8 rounded-subtle border border-landing-line bg-landing-paper p-5">
+        <View className="mb-5 flex-row items-center justify-between gap-4">
+          <View className="flex-row items-center gap-2">
+            <Sparkles size={14} strokeWidth={1.75} color={COLORS.brassInk} />
+            <Text className="font-sans text-[9px] font-semibold uppercase tracking-[0.2em] text-landing-obsidian/70">
               Bàn phối đồ
             </Text>
           </View>
-          <Text className="font-mono text-[10px] uppercase tracking-[0.2em] text-landing-muted">
-            Capsule 03 món
+          <Text className="font-mono text-[9px] uppercase tracking-[0.2em] text-landing-muted">
+            Capsule {String(items.length).padStart(2, '0')} món
           </Text>
         </View>
 
-        {/* 3 Pieces Layout */}
         <View className="flex-row gap-3">
-          {/* Main Piece (Lead item) */}
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => onPressProduct(items[0].id)}
-            className="relative aspect-[3/4] flex-1 overflow-hidden rounded-subtle bg-landing-ivory border border-landing-line active:opacity-85"
-          >
-            <Image
-              source={{ uri: (items[0] as any).image || getProductMainImage(items[0] as any) }}
-              contentFit="cover"
-              contentPosition="top"
-              style={{ width: '100%', height: '100%' }}
-            />
-            <View className="absolute left-2 top-2 rounded-subtle bg-landing-obsidian px-2 py-0.5">
-              <Text className="font-mono text-[9px] font-semibold uppercase tracking-wider text-landing-paper">
-                <Text className="text-landing-brass">01 </Text>
-                {ROLES[0]}
-              </Text>
-            </View>
-          </Pressable>
-
-          {/* Secondary 2 Pieces stacked */}
-          <View className="flex-1 gap-3">
-            {items.slice(1, 3).map((item, idx) => (
-              <Pressable
-                key={item.id}
-                accessibilityRole="button"
-                onPress={() => onPressProduct(item.id)}
-                className="relative aspect-[3/2] flex-1 overflow-hidden rounded-subtle bg-landing-ivory border border-landing-line active:opacity-85"
-              >
-                <Image
-                  source={{ uri: (item as any).image || getProductMainImage(item as any) }}
-                  contentFit="cover"
-                  contentPosition="top"
-                  style={{ width: '100%', height: '100%' }}
+          <CapsulePiece product={lead} index={0} lead onPress={onPressProduct} />
+          {rest.length > 0 ? (
+            <View className="flex-1 gap-3">
+              {rest.map((item, idx) => (
+                <CapsulePiece
+                  key={item.id}
+                  product={item}
+                  index={idx + 1}
+                  lead={false}
+                  onPress={onPressProduct}
                 />
-                <View className="absolute left-2 top-2 rounded-subtle bg-landing-obsidian px-1.5 py-0.5">
-                  <Text className="font-mono text-[8px] font-semibold uppercase tracking-wider text-landing-paper">
-                    <Text className="text-landing-brass">0{idx + 2} </Text>
-                    {ROLES[idx + 1]}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
-          </View>
+              ))}
+            </View>
+          ) : null}
         </View>
+      </View>
 
-        {/* Itemized Credits List */}
-        <View className="mt-5 border-t border-landing-line pt-3">
+      {/* Credits */}
+      <View className="mt-8 rounded-subtle bg-landing-paper px-5 py-5">
+        <Text className="font-sans text-[9px] font-semibold uppercase tracking-[0.2em] text-brass-ink">
+          Cách phối
+        </Text>
+        <View className="mt-2">
           {items.map((item, idx) => (
             <Pressable
               key={item.id}
               accessibilityRole="button"
+              accessibilityLabel={`${ROLES[idx]}: ${item.name}, ${formatProductPrice(item.price)}`}
               onPress={() => onPressProduct(item.id)}
-              className="flex-row items-center justify-between py-2 border-b border-landing-line last:border-b-0 active:opacity-75"
+              className={`min-h-11 flex-row items-center gap-3 py-3.5 active:opacity-75 ${
+                idx < items.length - 1 ? 'border-b border-landing-line' : ''
+              }`}
             >
-              <View className="flex-row items-center gap-2 flex-1 mr-2">
-                <Text className="font-mono text-[10px] text-landing-brass-ink">
-                  0{idx + 1}
+              <Text className="w-8 font-mono text-[11px] tracking-[0.16em] text-landing-brass-ink">
+                {pieceNumber(idx)}
+              </Text>
+              <View className="flex-1">
+                <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-muted">
+                  {ROLES[idx]}
                 </Text>
                 <Text
-                  numberOfLines={1}
-                  className="font-sans text-[12px] font-medium text-landing-obsidian flex-1"
+                  numberOfLines={2}
+                  className="mt-0.5 font-sans text-sm font-medium leading-relaxed text-landing-obsidian"
                 >
                   {item.name}
                 </Text>
               </View>
-              <Text className="font-mono text-[11px] font-semibold text-landing-oxblood">
-                {formatProductPrice(item.price)}
-              </Text>
+              <View className="flex-row items-center gap-3">
+                <Text className="font-mono text-[11px] text-landing-oxblood">
+                  {formatProductPrice(item.price)}
+                </Text>
+                <ArrowUpRight size={14} strokeWidth={1.75} color={COLORS.muted} />
+              </View>
             </Pressable>
           ))}
         </View>
       </View>
 
-      {/* Occasions tag */}
-      <View className="mt-5">
-        <Text className="font-sans text-[11px] leading-relaxed text-landing-muted">
-          <Text className="font-semibold uppercase tracking-wider text-landing-obsidian">
-            Phối theo dịp
-          </Text>{' '}
-          / Công sở · Gặp đối tác · Sự kiện tối · Cuối tuần
+      {/* Occasions: the real AI Stylist options */}
+      <Text className="mt-6 font-sans text-xs leading-relaxed text-landing-muted">
+        <Text className="font-semibold uppercase tracking-[0.16em] text-landing-obsidian/70">
+          Phối theo dịp
         </Text>
-      </View>
+        <Text className="text-landing-line">{'  /  '}</Text>
+        {STYLIST_OCCASIONS.join(' · ')}
+      </Text>
 
       {/* Stylist CTA */}
-      <View className="mt-6">
+      <View className="mt-8 gap-3">
         <Pressable
           accessibilityRole="button"
           onPress={onPressStylist}
-          className="min-h-12 w-full flex-row items-center justify-center gap-2 rounded-subtle bg-landing-oxblood px-6 active:opacity-90"
+          className="h-12 w-full flex-row items-center justify-center gap-2 rounded-subtle bg-landing-oxblood px-6 active:opacity-90"
         >
-          <Sparkles size={14} color="#EFE9E1" />
+          <Sparkles size={14} color={COLORS.paper} />
           <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-paper">
             Nhờ AI Stylist phối đồ
           </Text>
-          <ArrowUpRight size={14} color="#EFE9E1" />
+          <ArrowUpRight size={14} color={COLORS.paper} />
         </Pressable>
+        <Text className="font-sans text-[10px] uppercase tracking-[0.16em] text-landing-muted">
+          Capsule minh hoạ từ catalog hiện tại
+        </Text>
       </View>
     </View>
   );
 }
-

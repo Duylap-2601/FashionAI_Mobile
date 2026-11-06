@@ -1,6 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text } from 'react-native';
+import { AlertCircle } from 'lucide-react-native';
 import { tva } from '@gluestack-ui/nativewind-utils/tva';
+import { Button } from '@/components/ui/Button';
+import { COLORS } from '@/constants/theme';
 
 export interface ErrorViewProps {
   title?: string;
@@ -10,14 +13,16 @@ export interface ErrorViewProps {
 }
 
 const containerStyle = tva({
-  base: 'items-center justify-center p-xl',
+  base: 'px-lg py-xl',
   variants: {
     fullscreen: {
-      true: 'flex-1 bg-surface',
+      true: 'flex-1 justify-center bg-landing-paper',
     },
   },
 });
 
+// Khối lỗi giống AccountStatePanel tone="error" của FE: khung ivory viền hairline, tiêu đề
+// Playfair màu danger kèm biểu tượng (không chỉ dựa vào màu), một câu giải thích và nút "Thử lại" viền.
 export const ErrorView: React.FC<ErrorViewProps> = ({
   title = 'Đã có lỗi xảy ra',
   message,
@@ -26,19 +31,21 @@ export const ErrorView: React.FC<ErrorViewProps> = ({
 }) => {
   return (
     <View className={containerStyle({ fullscreen })}>
-      <Text className="mb-md text-icon-xl">⚠️</Text>
-      <Text className="mb-xs text-center text-headline-sm text-on-surface">{title}</Text>
-      <Text className="mb-lg max-w-error-state text-center text-body-sm text-on-surface-variant">
-        {message}
-      </Text>
-      {onRetry && (
-        <TouchableOpacity
-          className="min-h-11 rounded-md bg-primary-container px-xl py-md"
-          onPress={onRetry}
-        >
-          <Text className="text-body-sm font-bold text-on-primary">Thử lại</Text>
-        </TouchableOpacity>
-      )}
+      <View
+        accessibilityRole="alert"
+        className="w-full items-center rounded-subtle border border-landing-line bg-landing-ivory/60 px-xxl py-giant"
+      >
+        <View className="mb-md">
+          <AlertCircle size={24} strokeWidth={1.5} color={COLORS.danger} />
+        </View>
+        <Text className="text-center font-display text-[24px] leading-tight text-danger">{title}</Text>
+        <Text className="mt-sm max-w-error-state text-center font-sans text-body-md leading-relaxed text-landing-muted">
+          {message}
+        </Text>
+        {onRetry ? (
+          <Button title="Thử lại" variant="outline" onPress={onRetry} className="mt-xxl" />
+        ) : null}
+      </View>
     </View>
   );
 };

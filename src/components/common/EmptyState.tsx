@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text } from 'react-native';
 import { tva } from '@gluestack-ui/nativewind-utils/tva';
+import { Button } from '@/components/ui/Button';
 
 export interface EmptyStateProps {
+  /** Ký hiệu trang trí nhỏ phía trên tiêu đề (vd. "◇"). Bỏ trống thì không hiện. */
   icon?: string;
   title: string;
   description?: string;
@@ -12,16 +14,18 @@ export interface EmptyStateProps {
 }
 
 const containerStyle = tva({
-  base: 'items-center justify-center p-xxl',
+  base: 'px-lg py-xl',
   variants: {
     fullscreen: {
-      true: 'flex-1 bg-surface',
+      true: 'flex-1 justify-center bg-landing-paper',
     },
   },
 });
 
+// Khối trạng thái rỗng giống AccountStatePanel của FE: khung ivory viền hairline, tiêu đề
+// Playfair, một câu giải thích muted và tối đa một hành động.
 export const EmptyState: React.FC<EmptyStateProps> = ({
-  icon = '📦',
+  icon,
   title,
   description,
   actionTitle,
@@ -30,21 +34,31 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   return (
     <View className={containerStyle({ fullscreen })}>
-      <Text className="mb-md text-icon-giant">{icon}</Text>
-      <Text className="mb-xs text-center text-headline-sm text-on-surface">{title}</Text>
-      {description ? (
-        <Text className="mb-lg max-w-empty-state text-center text-body-sm text-on-surface-variant">
-          {description}
-        </Text>
-      ) : null}
-      {actionTitle && onAction ? (
-        <TouchableOpacity
-          className="min-h-11 rounded-md bg-primary-container px-xl py-md"
-          onPress={onAction}
+      <View className="w-full items-center rounded-subtle border border-landing-line bg-landing-ivory/60 px-xxl py-giant">
+        {icon ? (
+          <Text
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+            className="mb-md text-center font-display text-[28px] leading-tight text-brass-ink"
+          >
+            {icon}
+          </Text>
+        ) : null}
+        <Text
+          accessibilityRole="header"
+          className="text-center font-display text-[24px] leading-tight text-landing-obsidian"
         >
-          <Text className="text-body-sm font-bold text-on-primary">{actionTitle}</Text>
-        </TouchableOpacity>
-      ) : null}
+          {title}
+        </Text>
+        {description ? (
+          <Text className="mt-sm max-w-empty-state text-center font-sans text-body-md leading-relaxed text-landing-muted">
+            {description}
+          </Text>
+        ) : null}
+        {actionTitle && onAction ? (
+          <Button title={actionTitle} onPress={onAction} className="mt-xxl" />
+        ) : null}
+      </View>
     </View>
   );
 };

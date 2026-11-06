@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
+  FlatList,
   Modal,
   Pressable,
   RefreshControl,
@@ -13,67 +15,38 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import * as Clipboard from 'expo-clipboard';
-import {
-  Check,
-  ChevronDown,
-  ChevronUp,
-  Copy,
-  Package,
-  Search,
-  X,
-} from 'lucide-react-native';
+import { Check, ChevronDown, ChevronUp, Copy, Package, Search, X } from 'lucide-react-native';
 import { useCart } from '@/features/cart/hooks/use-cart';
+import { useDebouncedValue } from '@/features/products/hooks/use-debounced-value';
 import { AppHeader } from '@/components/common/AppHeader';
 import { BackButton } from '@/components/common/BackButton';
 import { COLORS } from '@/constants/theme';
-import { useOrders, useCancelOrder, useConfirmDelivery } from '../hooks/use-orders';
 import { formatDate, formatDateTime } from '@/utils/date';
+import { useInfiniteOrders, useCancelOrder, useConfirmDelivery } from '../hooks/use-orders';
+import { ToneLabel } from '../components/ToneLabel';
+import { getOrderItemImage, getOrderItemName } from '../utils/order-items';
+import { RETURN_HISTORY_STATUSES } from '../utils/order-returns';
+import { getCarrierLabel } from '../utils/order-shipping';
+import { ORDER_STATUS_CONFIG } from '../utils/order-status';
 
-const FILTER_TABS = [
+// Mỗi tab là một trạng thái BE lọc được (GET /orders?status=), giống trang Đơn hàng trên web.
+const FILTER_TABS: { id: string; label: string; status?: string }[] = [
   { id: 'all', label: 'Tất cả' },
-  { id: 'pending', label: 'Chờ thanh toán' },
-  { id: 'measurement', label: 'Duyệt số đo' },
-  { id: 'tailoring', label: 'Đang may' },
-  { id: 'shipping', label: 'Đang giao' },
-  { id: 'completed', label: 'Hoàn tất' },
-  { id: 'cancelled', label: 'Đã hủy' },
-] as const;
+  { id: 'pending', label: 'Chờ thanh toán', status: 'CREATED' },
+  { id: 'measurement', label: 'Duyệt số đo', status: 'MEASUREMENT_REVIEW' },
+  { id: 'tailoring', label: 'Đang may', status: 'TAILORING' },
+  { id: 'ready_to_ship', label: 'Chờ giao', status: 'READY_TO_SHIP' },
+  { id: 'shipping', label: 'Đang giao', status: 'SHIPPING' },
+  { id: 'delivered', label: 'Đã giao', status: 'DELIVERED' },
+  { id: 'completed', label: 'Hoàn tất', status: 'COMPLETED' },
+  { id: 'cancelled', label: 'Đã hủy', status: 'CANCELLED' },
+];
+
+const SEARCH_DEBOUNCE_MS = 400;
 
 const STEPS = ['Đã đặt', 'Duyệt số đo', 'Đang may', 'Đang giao', 'Giao xong'] as const;
 
-type StatusTone = 'attention' | 'active' | 'done' | 'closed' | 'error';
-
-const STATUS_TONE_CLASSES: Record<StatusTone, { dot: string; text: string }> = {
-  attention: { dot: 'bg-brass', text: 'text-brass-ink' },
-  active: { dot: 'bg-oxblood', text: 'text-landing-obsidian' },
-  done: { dot: 'bg-sage', text: 'text-sage-ink' },
-  closed: { dot: 'bg-taupe', text: 'text-landing-muted' },
-  error: { dot: 'bg-danger', text: 'text-danger' },
-};
-
-const STATUS_CONFIG: Record<string, { label: string; tone: StatusTone; step: number }> = {
-  CREATED: { label: 'Chờ thanh toán', tone: 'attention', step: 0 },
-  PENDING: { label: 'Chờ thanh toán', tone: 'attention', step: 0 },
-  PENDING_PAYMENT: { label: 'Chờ thanh toán', tone: 'attention', step: 0 },
-  PAID: { label: 'Đã thanh toán', tone: 'active', step: 0 },
-  CONFIRMED: { label: 'Đã xác nhận', tone: 'active', step: 0 },
-  MEASUREMENT_REVIEW: { label: 'Đang duyệt số đo', tone: 'active', step: 1 },
-  MEASUREMENT_CONFIRMED: { label: 'Đã chốt số đo', tone: 'active', step: 1 },
-  PROCESSING: { label: 'Đang chuẩn bị', tone: 'active', step: 2 },
-  TAILORING: { label: 'Đang may', tone: 'active', step: 2 },
-  QUALITY_CHECK: { label: 'Kiểm tra chất lượng', tone: 'active', step: 2 },
-  READY_TO_SHIP: { label: 'Chờ giao', tone: 'active', step: 3 },
-  SHIPPING: { label: 'Đang giao', tone: 'active', step: 3 },
-  DELIVERED: { label: 'Đã giao', tone: 'done', step: 3 },
-  COMPLETED: { label: 'Hoàn tất', tone: 'done', step: 4 },
-  CANCELLED: { label: 'Đã hủy', tone: 'closed', step: -1 },
-  EXPIRED: { label: 'Hết hạn thanh toán', tone: 'closed', step: -1 },
-  RETURNED: { label: 'Đã hoàn trả', tone: 'closed', step: -1 },
-  RETURN_REQUESTED: { label: 'Yêu cầu hoàn trả', tone: 'attention', step: -1 },
-  RETURN_APPROVED: { label: 'Đã duyệt hoàn trả', tone: 'attention', step: -1 },
-  RETURNING: { label: 'Đang hoàn trả', tone: 'attention', step: -1 },
-  FAILED: { label: 'Thanh toán thất bại', tone: 'error', step: -1 },
-};
+const STATUS_CONFIG = ORDER_STATUS_CONFIG;
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   COD: 'Thanh toán khi nhận hàng',
@@ -99,41 +72,19 @@ const PAYMENT_STATUS_LABELS: Record<string, string> = {
 
 const LABEL_CLASS =
   'font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-brass-ink';
+const CARD_ACTION_CLASS = 'h-11 items-center justify-center rounded-subtle px-3';
+const CARD_ACTION_LABEL_CLASS = 'font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em]';
+
+// expo-image không nhận className (chưa cssInterop), nên kích thước ảnh dùng style.
+const THUMB_STYLE = { width: 48, height: 64 } as const;
 
 function fmtPrice(amount?: number | null): string {
   if (amount === undefined || amount === null || isNaN(amount)) return '0đ';
   return `${amount.toLocaleString('vi-VN')}đ`;
 }
 
-function getProductImage(item: any): string {
-  const fallback =
-    'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=300&h=400&fit=crop&auto=format';
-  if (item?.productImageSnapshot) return item.productImageSnapshot;
-  if (item?.imageUrl) return item.imageUrl;
-  if (item?.product?.images) {
-    try {
-      const parsed =
-        typeof item.product.images === 'string'
-          ? JSON.parse(item.product.images)
-          : item.product.images;
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const first = parsed[0];
-        if (typeof first === 'string') return first;
-        if (first && typeof first === 'object') {
-          return first.url || first.uri || first.imageUrl || fallback;
-        }
-      }
-    } catch {}
-  }
-  return fallback;
-}
-
 function getOrderCode(order: any): string {
   return `ORD-${order?.orderCode || order?.orderNumber || order?.id}`;
-}
-
-function getItemName(item: any): string {
-  return item?.product?.name || item?.productName || 'Sản phẩm công sở';
 }
 
 function getItems(order: any): any[] {
@@ -142,55 +93,6 @@ function getItems(order: any): any[] {
 
 function getItemCount(items: any[]): number {
   return items.reduce((sum, item) => sum + (item?.quantity || 1), 0);
-}
-
-function matchStatus(status: string | undefined, filterId: string): boolean {
-  const s = (status || 'PENDING').toUpperCase();
-  if (filterId === 'all') return true;
-  if (filterId === 'pending') {
-    return ['PENDING', 'PENDING_PAYMENT', 'CREATED'].includes(s);
-  }
-  if (filterId === 'measurement') {
-    return ['MEASUREMENT_REVIEW', 'MEASUREMENT_CONFIRMED'].includes(s);
-  }
-  if (filterId === 'tailoring') {
-    return [
-      'PROCESSING',
-      'TAILORING',
-      'QUALITY_CHECK',
-      'CONFIRMED',
-      'PAID',
-      'READY_TO_SHIP',
-    ].includes(s);
-  }
-  if (filterId === 'shipping') return s === 'SHIPPING';
-  if (filterId === 'completed') return s === 'DELIVERED' || s === 'COMPLETED';
-  if (filterId === 'cancelled') {
-    return [
-      'CANCELLED',
-      'EXPIRED',
-      'FAILED',
-      'RETURN_REQUESTED',
-      'RETURN_APPROVED',
-      'RETURNING',
-      'RETURNED',
-    ].includes(s);
-  }
-  return false;
-}
-
-function StatusLine({ status }: { status: string }) {
-  const config = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
-  const tone = STATUS_TONE_CLASSES[config.tone];
-
-  return (
-    <View className="flex-row items-center gap-2">
-      <View className={`h-1.5 w-1.5 shrink-0 ${tone.dot}`} />
-      <Text className={`font-sans text-[10px] font-semibold uppercase tracking-[0.14em] ${tone.text}`}>
-        {config.label}
-      </Text>
-    </View>
-  );
 }
 
 function StepProgress({ step }: { step: number }) {
@@ -248,6 +150,14 @@ function SummaryLine({
       <Text className="shrink-0 text-right font-mono text-[12px] text-landing-obsidian">
         {value}
       </Text>
+    </View>
+  );
+}
+
+function OrderNote({ children }: { children: React.ReactNode }) {
+  return (
+    <View className="flex-row items-center gap-2 border-l-2 border-brass bg-landing-paper/60 px-3 py-2">
+      {children}
     </View>
   );
 }
@@ -372,47 +282,31 @@ export function OrdersScreen() {
   const navigation = useNavigation<any>();
   const { addItem } = useCart();
 
-  const { orders: fetchedOrders, isLoading, isError, refetch } = useOrders();
+  const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
+  const activeTab = FILTER_TABS.find((tab) => tab.id === activeFilter) ?? FILTER_TABS[0];
+
+  const {
+    orders,
+    total,
+    isLoading,
+    isError,
+    isRefetching,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteOrders({ status: activeTab.status, search: debouncedSearch || undefined });
   const { cancelOrder, isCancelling } = useCancelOrder();
   const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
 
-  const [activeFilter, setActiveFilter] = useState<string>('all');
-  const [search, setSearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
   const [expandedOrders, setExpandedOrders] = useState<Set<string | number>>(new Set());
   const [cancelTarget, setCancelTarget] = useState<any | null>(null);
   const [cancelError, setCancelError] = useState<string | null>(null);
 
-  const allOrders = useMemo(
-    () => (fetchedOrders && Array.isArray(fetchedOrders) ? fetchedOrders : []),
-    [fetchedOrders],
-  );
-
-  const tabCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    FILTER_TABS.forEach((tab) => {
-      counts[tab.id] = allOrders.filter((o: any) => matchStatus(o.status, tab.id)).length;
-    });
-    return counts;
-  }, [allOrders]);
-
-  const filteredOrders = useMemo(() => {
-    return allOrders.filter((order: any) => {
-      const matchTab = matchStatus(order.status, activeFilter);
-
-      const orderCode = getOrderCode(order);
-      const searchTrimmed = search.trim().toLowerCase();
-      const matchSearch =
-        !searchTrimmed ||
-        orderCode.toLowerCase().includes(searchTrimmed) ||
-        (order.items || []).some((item: any) => {
-          const name = item.product?.name || item.productName || '';
-          return name.toLowerCase().includes(searchTrimmed);
-        });
-
-      return matchTab && matchSearch;
-    });
-  }, [allOrders, activeFilter, search]);
+  const isFiltered = activeTab.status !== undefined || debouncedSearch.length > 0;
 
   const toggleExpand = (id: string | number) => {
     setExpandedOrders((prev) => {
@@ -439,11 +333,11 @@ export function OrdersScreen() {
     items.forEach((item: any) => {
       addItem({
         productId: item.productId || item.id,
-        productName: getItemName(item),
+        productName: getOrderItemName(item),
         price: item.price || 0,
         quantity: item.quantity || 1,
         color: item.color || undefined,
-        imageUrl: getProductImage(item),
+        imageUrl: getOrderItemImage(item),
       });
     });
 
@@ -467,19 +361,32 @@ export function OrdersScreen() {
     });
   };
 
+  // Hỏi lại trước khi xác nhận, vì xác nhận xong đơn chuyển sang hoàn tất.
   const handleConfirmDelivery = (order: any) => {
-    confirmDelivery(
-      { id: order.id },
-      {
-        onSuccess: () => Alert.alert('Thành công', 'Cảm ơn bạn đã xác nhận đã nhận hàng!'),
-        onError: () => Alert.alert('Lỗi', 'Chưa thể xác nhận nhận hàng lúc này.'),
-      }
+    Alert.alert(
+      'Đã nhận hàng?',
+      `Bạn xác nhận đã nhận kiện hàng của đơn ${getOrderCode(order)} và hàng hóa đang ở trạng thái tốt.`,
+      [
+        { text: 'Chưa', style: 'cancel' },
+        {
+          text: 'Xác nhận',
+          onPress: () =>
+            confirmDelivery(
+              { id: order.id },
+              {
+                onSuccess: () => Alert.alert('Thành công', 'Cảm ơn bạn đã xác nhận đã nhận hàng!'),
+                onError: () => Alert.alert('Lỗi', 'Chưa thể xác nhận nhận hàng lúc này.'),
+              },
+            ),
+        },
+      ],
     );
   };
 
   const renderOrderCard = (order: any) => {
     const rawStatus = (order.status || 'PENDING').toUpperCase();
     const config = STATUS_CONFIG[rawStatus] || STATUS_CONFIG.PENDING;
+    const carrierLabel = getCarrierLabel(order);
 
     const orderCode = getOrderCode(order);
     const total = order.totalVnd ?? order.totalAmount ?? order.total ?? 0;
@@ -490,32 +397,18 @@ export function OrdersScreen() {
     const firstItem = items[0];
     const itemCount = getItemCount(items);
 
-    const isAwaitingPayment =
-      ['PENDING', 'PENDING_PAYMENT', 'CREATED'].includes(rawStatus) && Boolean(order.paymentDueAt);
+    const isAwaitingPayment = rawStatus === 'CREATED' && order.paymentStatus === 'PENDING';
 
-    const address =
-      order.shippingInfo?.address ||
-      order.shippingAddress?.address ||
-      [
-        order.shippingAddress?.address,
-        order.shippingAddress?.wardName,
-        order.shippingAddress?.districtName,
-        order.shippingAddress?.provinceName,
-      ]
-        .filter(Boolean)
-        .join(', ') ||
-      'Thị trấn An Phú, Huyện An Phú, An Giang';
-
+    const address = [
+      order.shippingInfo?.address || order.shippingAddress?.address || order.shippingAddress?.addressLine,
+      order.shippingInfo?.wardName || order.shippingAddress?.wardName,
+      order.shippingInfo?.provinceName || order.shippingAddress?.provinceName,
+    ]
+      .filter(Boolean)
+      .join(', ');
     const recipient =
-      order.shippingInfo?.name ||
-      order.shippingAddress?.name ||
-      order.shippingAddress?.fullName ||
-      'Khách hàng';
-
-    const phone =
-      order.shippingInfo?.phone ||
-      order.shippingAddress?.phone ||
-      '0912345678';
+      order.shippingInfo?.name || order.shippingAddress?.name || order.shippingAddress?.fullName;
+    const phone = order.shippingInfo?.phone || order.shippingAddress?.phone;
 
     const shippingFee = order.shippingFeeVnd ?? order.shippingFee ?? 0;
     const discount = order.discountVnd ?? order.discountAmount ?? order.discount ?? 0;
@@ -537,13 +430,8 @@ export function OrdersScreen() {
               ? 'Đơn hàng đã hết hạn thanh toán.'
               : 'Đơn hàng đang được xử lý.';
 
-    const isCancellable = order.allowedActions?.cancel || rawStatus === 'PENDING';
-
     return (
-      <View
-        key={String(order.id)}
-        className="gap-3 rounded-subtle border border-landing-line bg-ivory p-4"
-      >
+      <View className="gap-3 rounded-subtle border border-landing-line bg-ivory p-4">
         <View className="flex-row items-start justify-between gap-3">
           <View className="min-w-0 flex-row items-center gap-1">
             <Text
@@ -575,15 +463,16 @@ export function OrdersScreen() {
           </Text>
         </View>
 
-        <StatusLine status={rawStatus} />
+        <View className="gap-1">
+          <ToneLabel tone={config.tone} label={config.label} />
+          {carrierLabel ? (
+            <Text className="font-sans text-[12px] text-landing-muted">Vận chuyển: {carrierLabel}</Text>
+          ) : null}
+        </View>
 
         <View className="flex-row items-start gap-3">
           <View className="h-16 w-12 shrink-0 overflow-hidden rounded-subtle border border-landing-line bg-ivory">
-            <Image
-              source={{ uri: getProductImage(firstItem) }}
-              style={{ width: 48, height: 64 }}
-              contentFit="cover"
-            />
+            <Image source={{ uri: getOrderItemImage(firstItem) }} style={THUMB_STYLE} contentFit="cover" />
           </View>
 
           <View className="min-w-0 flex-1 gap-1">
@@ -591,18 +480,26 @@ export function OrdersScreen() {
               numberOfLines={1}
               className="font-sans text-[13.5px] leading-snug text-landing-obsidian"
             >
-              {firstItem ? getItemName(firstItem) : 'Đơn may đo'}
+              {firstItem ? getOrderItemName(firstItem) : 'Đơn may đo'}
             </Text>
-            <Text className="font-sans text-[12px] text-landing-muted">{itemCount} sản phẩm</Text>
+            <Text className="font-sans text-[12px] text-landing-muted">
+              {items.length > 1 ? `và ${items.length - 1} món khác · ` : ''}
+              {itemCount} sản phẩm
+            </Text>
             <Text className="font-mono text-[15px] text-landing-obsidian">{fmtPrice(total)}</Text>
           </View>
         </View>
 
         {isAwaitingPayment ? (
-          <View className="flex-row items-center gap-2 border-l-2 border-brass bg-landing-paper/60 px-3 py-2">
+          <OrderNote>
             <Text className="flex-1 font-sans text-[12px] leading-relaxed text-landing-obsidian">
-              Đơn đang chờ thanh toán, hạn{' '}
-              <Text className="font-mono">{formatDateTime(order.paymentDueAt)}</Text>.
+              Đơn đang chờ thanh toán
+              {order.paymentDueAt ? (
+                <>
+                  , hạn <Text className="font-mono">{formatDateTime(order.paymentDueAt)}</Text>
+                </>
+              ) : null}
+              .
             </Text>
             <Pressable
               accessibilityRole="button"
@@ -610,11 +507,25 @@ export function OrdersScreen() {
               onPress={() => navigation.navigate('OrderDetail', { orderId: order.id })}
               className="min-h-11 justify-center active:opacity-60"
             >
-              <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-oxblood">
-                Thanh toán
-              </Text>
+              <Text className={`${CARD_ACTION_LABEL_CLASS} text-oxblood`}>Thanh toán</Text>
             </Pressable>
-          </View>
+          </OrderNote>
+        ) : null}
+
+        {order.allowedActions?.updateMeasurement ? (
+          <OrderNote>
+            <Text className="flex-1 font-sans text-[12px] leading-relaxed text-landing-obsidian">
+              Shop cần bạn xem lại số đo cho đơn này.
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Mở đơn ${orderCode} để xem lại số đo`}
+              onPress={() => navigation.navigate('OrderDetail', { orderId: order.id })}
+              className="min-h-11 justify-center active:opacity-60"
+            >
+              <Text className={`${CARD_ACTION_LABEL_CLASS} text-oxblood`}>Mở đơn</Text>
+            </Pressable>
+          </OrderNote>
         ) : null}
 
         <Pressable
@@ -640,51 +551,52 @@ export function OrdersScreen() {
           {order.allowedActions?.confirmDelivery ? (
             <Pressable
               accessibilityRole="button"
-              hitSlop={{ top: 5, bottom: 5, left: 2, right: 2 }}
               disabled={isConfirmingDelivery}
               onPress={() => handleConfirmDelivery(order)}
-              className="h-9 items-center justify-center rounded-subtle bg-oxblood px-3 active:opacity-90 disabled:opacity-60"
+              className={`${CARD_ACTION_CLASS} bg-oxblood active:opacity-90 disabled:opacity-60`}
             >
-              <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-paper">
+              <Text className={`${CARD_ACTION_LABEL_CLASS} text-landing-paper`}>
                 {isConfirmingDelivery ? 'Đang xác nhận…' : 'Đã nhận hàng'}
               </Text>
             </Pressable>
           ) : null}
 
-          {isCancellable ? (
+          {order.allowedActions?.cancel ? (
             <Pressable
               accessibilityRole="button"
-              hitSlop={{ top: 5, bottom: 5, left: 2, right: 2 }}
               disabled={isCancelling}
               onPress={() => handleCancel(order)}
-              className="h-9 items-center justify-center rounded-subtle border border-danger/40 px-3 active:opacity-70 disabled:opacity-60"
+              className={`${CARD_ACTION_CLASS} border border-danger/40 active:opacity-70 disabled:opacity-60`}
             >
-              <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-danger">
-                Hủy đơn
-              </Text>
+              <Text className={`${CARD_ACTION_LABEL_CLASS} text-danger`}>Hủy đơn</Text>
             </Pressable>
           ) : null}
 
           <Pressable
             accessibilityRole="button"
-            hitSlop={{ top: 5, bottom: 5, left: 2, right: 2 }}
             onPress={() => handleReorder(order)}
-            className="h-9 items-center justify-center rounded-subtle border border-landing-line px-3 active:opacity-70"
+            className={`${CARD_ACTION_CLASS} border border-landing-line active:opacity-70`}
           >
-            <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
-              Mua lại
-            </Text>
+            <Text className={`${CARD_ACTION_LABEL_CLASS} text-landing-obsidian`}>Mua lại</Text>
           </Pressable>
+
+          {RETURN_HISTORY_STATUSES.includes(rawStatus) ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Đổi trả đơn ${orderCode}`}
+              onPress={() => navigation.navigate('OrderReturns', { orderId: order.id })}
+              className={`${CARD_ACTION_CLASS} border border-landing-line active:opacity-70`}
+            >
+              <Text className={`${CARD_ACTION_LABEL_CLASS} text-landing-obsidian`}>Đổi trả</Text>
+            </Pressable>
+          ) : null}
 
           <Pressable
             accessibilityRole="button"
-            hitSlop={{ top: 5, bottom: 5, left: 2, right: 2 }}
             onPress={() => navigation.navigate('OrderDetail', { orderId: order.id })}
-            className="h-9 items-center justify-center rounded-subtle border border-landing-line px-3 active:opacity-70"
+            className={`${CARD_ACTION_CLASS} border border-landing-line active:opacity-70`}
           >
-            <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian">
-              Xem đơn
-            </Text>
+            <Text className={`${CARD_ACTION_LABEL_CLASS} text-landing-obsidian`}>Xem đơn</Text>
           </Pressable>
         </View>
 
@@ -701,18 +613,14 @@ export function OrdersScreen() {
                   return (
                     <View key={item.id || itemIdx} className="flex-row items-center gap-3">
                       <View className="h-16 w-12 shrink-0 overflow-hidden rounded-subtle border border-landing-line bg-ivory">
-                        <Image
-                          source={{ uri: getProductImage(item) }}
-                          style={{ width: 48, height: 64 }}
-                          contentFit="cover"
-                        />
+                        <Image source={{ uri: getOrderItemImage(item) }} style={THUMB_STYLE} contentFit="cover" />
                       </View>
                       <View className="min-w-0 flex-1 gap-0.5">
                         <Text
                           numberOfLines={2}
                           className="font-sans text-[13px] leading-snug text-landing-obsidian"
                         >
-                          {getItemName(item)}
+                          {getOrderItemName(item)}
                         </Text>
                         <Text className="font-sans text-[11.5px] text-landing-muted">
                           Màu: {item.color || 'Mặc định'} · May đo · SL {item.quantity || 1}
@@ -730,12 +638,14 @@ export function OrdersScreen() {
             <View className="gap-2">
               <Text className={LABEL_CLASS}>Giao đến</Text>
               <View className="gap-1">
-                <Text className="font-sans text-[13px] font-medium text-landing-obsidian">
-                  {recipient}
-                </Text>
-                <Text className="font-mono text-[12px] text-landing-obsidian">{phone}</Text>
+                {recipient ? (
+                  <Text className="font-sans text-[13px] font-medium text-landing-obsidian">
+                    {recipient}
+                  </Text>
+                ) : null}
+                {phone ? <Text className="font-mono text-[12px] text-landing-obsidian">{phone}</Text> : null}
                 <Text className="font-sans text-[12px] leading-relaxed text-landing-muted">
-                  {address}
+                  {address || 'Chưa có địa chỉ giao hàng'}
                 </Text>
                 {latestMessage ? (
                   <Text className="mt-1 font-sans text-[11.5px] leading-relaxed text-landing-muted">
@@ -764,161 +674,178 @@ export function OrdersScreen() {
     );
   };
 
+  // Phần đầu là element (không phải component) để ô tìm kiếm không mất focus khi danh sách render lại.
+  const listHeader = (
+    <View>
+      <BackButton onPress={() => navigation.goBack()} />
+
+      <View className="mb-lg mt-4 gap-2.5 border-b border-landing-line pb-5">
+        <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
+          Tài khoản
+        </Text>
+        <View className="flex-row items-end justify-between gap-3">
+          <Text
+            accessibilityRole="header"
+            className="flex-1 font-display text-headline-lg text-landing-obsidian"
+          >
+            Đơn hàng
+          </Text>
+          {total !== undefined ? (
+            <Text className="shrink-0 font-mono text-[11px] uppercase tracking-[0.16em] text-landing-muted">
+              {String(total).padStart(2, '0')} đơn
+            </Text>
+          ) : null}
+        </View>
+        <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
+          Theo dõi đơn may đo từ lúc đặt, duyệt số đo, may cho tới khi giao.
+        </Text>
+      </View>
+
+      <View className="mb-lg h-11 flex-row items-center rounded-subtle border border-landing-line bg-ivory px-3.5">
+        <Search size={15} strokeWidth={1.75} color={COLORS.brassInk} />
+        <TextInput
+          placeholder="Tìm mã đơn, sản phẩm…"
+          placeholderTextColor={COLORS.muted}
+          value={search}
+          onChangeText={setSearch}
+          accessibilityLabel="Tìm đơn hàng"
+          returnKeyType="search"
+          className="ml-2.5 flex-1 p-0 font-sans text-body-md text-landing-obsidian"
+        />
+        {search.length > 0 && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Xóa từ khóa tìm kiếm"
+            onPress={() => setSearch('')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            className="h-8 w-8 items-center justify-center active:opacity-60"
+          >
+            <X size={15} strokeWidth={1.75} color={COLORS.muted} />
+          </Pressable>
+        )}
+      </View>
+
+      <View className="-mx-4 mb-lg border-b border-landing-line">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="gap-5 px-4"
+        >
+          {FILTER_TABS.map((tab) => {
+            const isSelected = activeFilter === tab.id;
+
+            return (
+              <Pressable
+                key={tab.id}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isSelected }}
+                onPress={() => setActiveFilter(tab.id)}
+                className={`h-11 flex-row items-center border-b-2 ${
+                  isSelected ? 'border-oxblood' : 'border-transparent'
+                }`}
+              >
+                <Text
+                  className={`font-sans text-[13px] ${
+                    isSelected ? 'font-medium text-oxblood' : 'text-landing-muted'
+                  }`}
+                >
+                  {tab.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+    </View>
+  );
+
+  const renderEmpty = () => {
+    if (isLoading) return <OrdersSkeleton />;
+    if (isError) {
+      return (
+        <View className="items-center gap-4 rounded-subtle border border-landing-line bg-ivory px-6 py-12">
+          <Text className="text-center font-display text-[20px] text-landing-obsidian">
+            Không tải được đơn hàng
+          </Text>
+          <Text className="max-w-[260px] text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+            Kiểm tra kết nối rồi thử lại.
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => refetch()}
+            className="h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:opacity-70"
+          >
+            <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
+              Thử lại
+            </Text>
+          </Pressable>
+        </View>
+      );
+    }
+    return (
+      <View className="items-center gap-5 rounded-subtle border border-dashed border-taupe bg-ivory px-6 py-14">
+        <View className="h-16 w-16 items-center justify-center rounded-subtle border border-landing-line bg-landing-paper">
+          <Package size={24} strokeWidth={1.5} color={COLORS.oxblood} />
+        </View>
+        <View className="gap-2">
+          <Text className="text-center font-display text-[20px] text-landing-obsidian">
+            {isFiltered ? 'Không có đơn phù hợp' : 'Chưa có đơn hàng nào'}
+          </Text>
+          <Text className="max-w-[260px] text-center font-sans text-body-sm leading-relaxed text-landing-muted">
+            {debouncedSearch
+              ? 'Không tìm thấy đơn hàng phù hợp với từ khóa tìm kiếm.'
+              : isFiltered
+                ? 'Bạn chưa có đơn hàng nào trong mục này.'
+                : 'Đơn may đo đầu tiên của bạn sẽ hiện ở đây.'}
+          </Text>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => navigation.navigate('Main', { screen: 'ShopTab' })}
+          className="h-11 items-center justify-center rounded-subtle bg-oxblood px-5 active:opacity-90"
+        >
+          <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
+            Khám phá sản phẩm
+          </Text>
+        </Pressable>
+      </View>
+    );
+  };
+
   return (
     <View className="flex-1 bg-landing-paper">
       <AppHeader />
 
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: 16,
-          paddingBottom: 96,
+      <FlatList
+        data={orders}
+        keyExtractor={(order: any) => String(order.id)}
+        renderItem={({ item }) => renderOrderCard(item)}
+        ItemSeparatorComponent={() => <View className="h-md" />}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={renderEmpty}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <View className="py-4">
+              <ActivityIndicator size="small" color={COLORS.oxblood} />
+            </View>
+          ) : null
+        }
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
         }}
+        onEndReachedThreshold={0.4}
+        keyboardShouldPersistTaps="handled"
+        contentContainerClassName="px-4 pb-24 pt-4"
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={isLoading}
+            refreshing={isRefetching && !isFetchingNextPage}
             onRefresh={() => refetch()}
             colors={[COLORS.oxblood]}
             tintColor={COLORS.oxblood}
           />
         }
-      >
-        <BackButton onPress={() => navigation.goBack()} />
-
-        <View className="mb-lg mt-4 gap-2.5 border-b border-landing-line pb-5">
-          <Text className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brass-ink">
-            Tài khoản
-          </Text>
-          <View className="flex-row items-end justify-between gap-3">
-            <Text
-              accessibilityRole="header"
-              className="flex-1 font-display text-headline-lg text-landing-obsidian"
-            >
-              Đơn hàng
-            </Text>
-            <Text className="shrink-0 font-mono text-[11px] uppercase tracking-[0.16em] text-landing-muted">
-              {String(filteredOrders.length).padStart(2, '0')} đơn
-            </Text>
-          </View>
-          <Text className="font-sans text-body-md leading-relaxed text-landing-muted">
-            Theo dõi đơn may đo từ lúc đặt, duyệt số đo, may cho tới khi giao.
-          </Text>
-        </View>
-
-        <View className="mb-lg h-11 flex-row items-center rounded-subtle border border-landing-line bg-ivory px-3.5">
-          <Search size={15} strokeWidth={1.75} color={COLORS.brassInk} />
-          <TextInput
-            placeholder="Tìm mã đơn, sản phẩm…"
-            placeholderTextColor={COLORS.muted}
-            value={search}
-            onChangeText={setSearch}
-            className="ml-2.5 flex-1 p-0 font-sans text-body-md text-landing-obsidian"
-          />
-          {search.length > 0 && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Xóa từ khóa tìm kiếm"
-              onPress={() => setSearch('')}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              className="h-8 w-8 items-center justify-center active:opacity-60"
-            >
-              <X size={15} strokeWidth={1.75} color={COLORS.muted} />
-            </Pressable>
-          )}
-        </View>
-
-        <View className="-mx-4 mb-lg border-b border-landing-line">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 20 }}>
-            {FILTER_TABS.map((tab) => {
-              const isSelected = activeFilter === tab.id;
-              const count = tabCounts[tab.id] ?? 0;
-
-              return (
-                <Pressable
-                  key={tab.id}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isSelected }}
-                  onPress={() => setActiveFilter(tab.id)}
-                  className={`h-11 flex-row items-center gap-1.5 border-b-2 ${
-                    isSelected ? 'border-oxblood' : 'border-transparent'
-                  }`}
-                >
-                  <Text
-                    className={`font-sans text-[13px] ${
-                      isSelected ? 'font-medium text-oxblood' : 'text-landing-muted'
-                    }`}
-                  >
-                    {tab.label}
-                  </Text>
-                  <Text
-                    className={`font-mono text-[10.5px] ${
-                      isSelected ? 'text-oxblood' : 'text-landing-muted'
-                    }`}
-                  >
-                    {count}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {isLoading && allOrders.length === 0 ? (
-          <OrdersSkeleton />
-        ) : isError ? (
-          <View className="items-center gap-4 rounded-subtle border border-landing-line bg-ivory px-6 py-12">
-            <Text className="text-center font-display text-[20px] text-landing-obsidian">
-              Không tải được đơn hàng
-            </Text>
-            <Text className="max-w-[260px] text-center font-sans text-body-sm leading-relaxed text-landing-muted">
-              Kiểm tra kết nối rồi thử lại.
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => refetch()}
-              className="h-11 items-center justify-center rounded-subtle border border-landing-line px-5 active:opacity-70"
-            >
-              <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian">
-                Thử lại
-              </Text>
-            </Pressable>
-          </View>
-        ) : filteredOrders.length === 0 ? (
-          <View className="items-center gap-5 rounded-subtle border border-dashed border-taupe bg-ivory px-6 py-14">
-            <View className="h-16 w-16 items-center justify-center rounded-subtle border border-landing-line bg-landing-paper">
-              <Package size={24} strokeWidth={1.5} color={COLORS.oxblood} />
-            </View>
-            <View className="gap-2">
-              <Text className="text-center font-display text-[20px] text-landing-obsidian">
-                Chưa có đơn hàng nào
-              </Text>
-              <Text className="max-w-[260px] text-center font-sans text-body-sm leading-relaxed text-landing-muted">
-                {search.trim()
-                  ? 'Không tìm thấy đơn hàng phù hợp với từ khóa tìm kiếm.'
-                  : 'Bạn chưa có đơn hàng nào trong danh mục này.'}
-              </Text>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => navigation.navigate('Main', { screen: 'ShopTab' })}
-              className="h-11 items-center justify-center rounded-subtle bg-oxblood px-5 active:opacity-90"
-            >
-              <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
-                Khám phá sản phẩm
-              </Text>
-            </Pressable>
-          </View>
-        ) : (
-          <>
-            <Text className="mb-3 font-mono text-[11px] uppercase tracking-[0.12em] text-landing-muted">
-              <Text className="text-landing-obsidian">{filteredOrders.length}</Text> đơn
-            </Text>
-            <View className="gap-md">{filteredOrders.map((order: any) => renderOrderCard(order))}</View>
-          </>
-        )}
-      </ScrollView>
+      />
 
       <CancelOrderModal
         order={cancelTarget}
