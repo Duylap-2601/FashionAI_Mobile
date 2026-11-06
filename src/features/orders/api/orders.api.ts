@@ -37,7 +37,10 @@ export interface OrderCreatePayload extends OrderQuotePayload {
 }
 
 export interface OrderQuoteResponse {
+  /** Tiền hàng sau khi áp chương trình sale (giá sale × số lượng). */
   itemsTotal: number;
+  /** Tiền hàng theo giá niêm yết (giá gốc × số lượng); lớn hơn `itemsTotal` khi có sale. */
+  listItemsTotal?: number;
   shippingFee: number;
   discountAmount: number;
   totalAmount: number;
@@ -58,6 +61,22 @@ export interface OrdersListParams {
   limit?: number;
   status?: string;
   search?: string;
+}
+
+/** Số đơn chưa thanh toán tối đa mà checkout nhắc khách (giống web). */
+export const UNPAID_ORDERS_LIMIT = 5;
+
+/** Đơn đã tạo nhưng chưa trả tiền: chỉ các trường của `GET /orders` mà checkout cần. */
+export interface IUnpaidOrder {
+  id: string;
+  orderCode: number;
+  status: string;
+  paymentStatus?: string | null;
+  /** Tổng tiền đơn (VND). Đơn cũ có thể chưa có, khi đó dùng `amount`. */
+  totalVnd?: number | null;
+  amount?: number | null;
+  /** Hạn thanh toán; quá hạn thì máy chủ tự hủy đơn. */
+  paymentDueAt?: string | null;
 }
 
 export const ordersApi = {
@@ -88,7 +107,17 @@ export const ordersApi = {
   getOrder: (id: string | number, opts?: HttpOptions): Promise<any> => {
     return http.get<any>(ENDPOINTS.ORDERS.DETAIL(id), opts);
   },
-  
+
+  /** Đơn mới tạo (CREATED) còn chờ thanh toán, để checkout nhắc khách trả đơn cũ thay vì đặt trùng. */
+  getUnpaidOrders: async (opts?: HttpOptions): Promise<IUnpaidOrder[]> => {
+    const orders = await http.get<IUnpaidOrder[]>(ENDPOINTS.ORDERS.LIST, {
+      ...opts,
+      params: { ...opts?.params, status: 'CREATED', limit: UNPAID_ORDERS_LIMIT },
+    });
+    if (!Array.isArray(orders)) return [];
+    return orders.filter((order) => order.paymentStatus === 'PENDING');
+  },
+
   getTracking: (id: string | number, opts?: HttpOptions): Promise<any> => {
     return http.get<any>(ENDPOINTS.ORDERS.TRACKING(id), opts);
   },
