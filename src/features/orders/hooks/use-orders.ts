@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ordersApi } from '../api/orders.api';
-import { IOrder } from '../types/order';
-import { isCanceledError } from '@/api/http';
+import type { ICreateOrderIssuePayload } from '../types/order';
 
 export function useOrders() {
   const query = useQuery({
@@ -88,14 +87,7 @@ export function useCreateOrderIssue() {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: (payload: {
-      orderId: string | number;
-      orderItemId: string | number;
-      reason: string;
-      description: string;
-      desiredResolution: string;
-      evidenceImages?: Array<{ uri: string; name: string; type: string }>;
-    }) => ordersApi.createOrderIssue(payload),
+    mutationFn: (payload: ICreateOrderIssuePayload) => ordersApi.createOrderIssue(payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['orderIssues', variables.orderId] });
       queryClient.invalidateQueries({ queryKey: ['orders', variables.orderId] });
