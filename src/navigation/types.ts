@@ -1,5 +1,6 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { TryOnCategory } from '@/features/try-on/types/try-on';
+import type { PolicyType } from '@/features/profile/types/policy';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -79,5 +80,5 @@ export type RootStackParamList = {
     returnRoute?: string;
   };
   Notifications: undefined;
-  Policy: { type?: 'privacy' | 'terms' | 'return' } | undefined;
+  Policy: { type?: PolicyType } | undefined;
 };

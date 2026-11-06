@@ -1,6 +1,7 @@
 import React, { useMemo, useRef } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import type { TextStyle } from 'react-native';
+import { AlertCircle } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
 import type { IProduct } from '../types/product';
 import { formatProductPrice } from '../utils/product-display';
@@ -22,6 +23,7 @@ interface ProductDetailContentProps {
   onReviewsSectionLayout: (offsetY: number) => void;
   onSelectColor: (color: string) => void;
   onAskStylist: () => void;
+  onReturnPolicyPress: () => void;
 }
 
 interface ProductColorOption {
@@ -53,6 +55,7 @@ export function ProductDetailContent({
   onReviewsSectionLayout,
   onSelectColor,
   onAskStylist,
+  onReturnPolicyPress,
 }: ProductDetailContentProps) {
   const contentOffsetY = useRef(0);
   const reviewsOffsetY = useRef(0);
@@ -231,6 +234,30 @@ export function ProductDetailContent({
           FashionAI không dùng kích cỡ tiêu chuẩn. Số đo cơ thể sẽ được áp dụng
           trong quy trình đặt may để tạo độ vừa vặn phù hợp với riêng bạn.
         </Text>
+        {/* Same note and link as FE product detail (ProductDetailTabs). */}
+        <View className="mt-xs flex-row items-start gap-sm border-t border-landing-line pt-md">
+          <View className="pt-xs">
+            <AlertCircle size={16} strokeWidth={1.75} color={COLORS.brassInk} />
+          </View>
+          <View className="flex-1">
+            <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
+              Sản phẩm được may theo số đo đã lưu. Nếu sản phẩm có lỗi may hoặc
+              sai lệch từ phía StAie., bạn có 7 ngày kể từ khi đơn hoàn tất để
+              gửi yêu cầu đổi trả.
+            </Text>
+            <TouchableOpacity
+              accessibilityRole="link"
+              accessibilityLabel="Xem chính sách đổi trả"
+              activeOpacity={0.68}
+              onPress={onReturnPolicyPress}
+              className="min-h-11 justify-center self-start"
+            >
+              <Text className="font-sans text-body-sm font-semibold text-oxblood underline">
+                Xem chính sách đổi trả
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
       <ProductMeasurementSummary

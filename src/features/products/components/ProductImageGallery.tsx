@@ -4,12 +4,16 @@ import {
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Pressable,
   Text,
   useWindowDimensions,
   View,
 } from 'react-native';
+import { Maximize2 } from 'lucide-react-native';
 import { tva } from '@gluestack-ui/nativewind-utils/tva';
-import { SPACING } from '@/constants/theme';
+import { COLORS, SPACING } from '@/constants/theme';
+import { getPageIndex } from '../utils/image-zoom';
+import { ProductImageViewer } from './ProductImageViewer';
 
 interface ProductImageGalleryProps {
   imageUrls: string[];
@@ -43,6 +47,7 @@ export function ProductImageGallery({
   const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(
     () => new Set(),
   );
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const imageWidth = Math.max(
     1,
     Math.min(screenWidth - SPACING.lg * 2, MAX_IMAGE_WIDTH),
@@ -72,10 +77,13 @@ export function ProductImageGallery({
 
   const handleMomentumScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const nextIndex = Math.round(
-        event.nativeEvent.contentOffset.x / imageWidth,
+      setActiveIndex(
+        getPageIndex(
+          event.nativeEvent.contentOffset.x,
+          imageWidth,
+          imageUrls.length,
+        ),
       );
-      setActiveIndex(Math.max(0, Math.min(nextIndex, imageUrls.length - 1)));
     },
     [imageUrls.length, imageWidth],
   );
@@ -83,6 +91,19 @@ export function ProductImageGallery({
   const handleImageError = useCallback((imageUrl: string) => {
     setFailedImageUrls((currentUrls) => new Set(currentUrls).add(imageUrl));
   }, []);
+
+  // Keep the inline gallery on the image the user last looked at full screen.
+  const handleViewerClose = useCallback(
+    (lastIndex: number) => {
+      setViewerIndex(null);
+      setActiveIndex(lastIndex);
+      listRef.current?.scrollToOffset({
+        offset: lastIndex * imageWidth,
+        animated: false,
+      });
+    },
+    [imageWidth],
+  );
 
   return (
     <View
@@ -123,7 +144,13 @@ export function ProductImageGallery({
               })}
               onMomentumScrollEnd={handleMomentumScrollEnd}
               renderItem={({ item: imageUrl, index }) => (
-                <View style={{ width: imageWidth, height: imageHeight }}>
+                <Pressable
+                  accessibilityRole="imagebutton"
+                  accessibilityLabel={`${productName}, ảnh ${index + 1}`}
+                  accessibilityHint="Mở ảnh toàn màn hình để phóng to"
+                  onPress={() => setViewerIndex(index)}
+                  style={{ width: imageWidth, height: imageHeight }}
+                >
                   {failedImageUrls.has(imageUrl) ? (
                     <View
                       accessibilityLabel={`Không thể hiển thị ảnh ${index + 1} của ${productName}`}
@@ -138,7 +165,6 @@ export function ProductImageGallery({
                     </View>
                   ) : (
                     <Image
-                      accessibilityLabel={`${productName}, ảnh ${index + 1}`}
                       source={{ uri: imageUrl }}
                       contentFit="cover"
                       transition={150}
@@ -146,10 +172,23 @@ export function ProductImageGallery({
                       onError={() => handleImageError(imageUrl)}
                     />
                   )}
-                </View>
+                </Pressable>
               )}
             />
           )}
+          {imageUrls.length > 0 ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Phóng to ảnh"
+              onPress={() => setViewerIndex(activeIndex)}
+              className="absolute right-md top-md min-h-11 flex-row items-center gap-xs rounded-subtle border border-landing-line bg-paper/95 px-md active:border-oxblood"
+            >
+              <Maximize2 size={14} strokeWidth={1.75} color={COLORS.obsidian} />
+              <Text className="font-sans text-2xs font-semibold uppercase tracking-widest text-obsidian">
+                Phóng to
+              </Text>
+            </Pressable>
+          ) : null}
           {imageUrls.length > 1 ? (
             <View
               pointerEvents="none"
@@ -172,6 +211,14 @@ export function ProductImageGallery({
           </View>
         ) : null}
       </View>
+      {viewerIndex !== null ? (
+        <ProductImageViewer
+          imageUrls={imageUrls}
+          initialIndex={viewerIndex}
+          productName={productName}
+          onClose={handleViewerClose}
+        />
+      ) : null}
     </View>
   );
 }
