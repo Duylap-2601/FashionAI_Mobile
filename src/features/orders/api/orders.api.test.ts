@@ -95,6 +95,23 @@ describe('ordersApi', () => {
     expect(result).toEqual({ success: true });
   });
 
+  it('getMyReturns pages through orders with returns', async () => {
+    const orders = [{ id: 'o1', orderCode: 15560998, status: 'RETURNED', amountRefundedVnd: 769700, issues: [] }];
+    const meta = { total: 11, page: 2, limit: 10, totalPages: 2 };
+    mock.onGet(ENDPOINTS.ORDERS.MY_RETURNS).reply((config) => {
+      expect(config.params).toEqual({ page: 2, limit: 10 });
+      return [200, envelope(orders, meta)];
+    });
+
+    await expect(ordersApi.getMyReturns({ page: 2, limit: 10 })).resolves.toEqual({ data: orders, meta });
+  });
+
+  it('getMyReturns tolerates a response without pagination meta', async () => {
+    mock.onGet(ENDPOINTS.ORDERS.MY_RETURNS).reply(200, envelope([]));
+
+    await expect(ordersApi.getMyReturns()).resolves.toEqual({ data: [], meta: undefined });
+  });
+
   it('createOrderIssue sends a refund-only multipart form with the refund bank account', async () => {
     const appendSpy = jest.spyOn(FormData.prototype, 'append');
     const issue = { id: 'issue-1', status: 'PENDING' };

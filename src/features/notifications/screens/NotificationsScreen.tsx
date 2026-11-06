@@ -14,6 +14,7 @@ import {
   CreditCard,
   Info,
   Package,
+  ShieldAlert,
   Tag,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
@@ -28,6 +29,7 @@ import {
 } from '@/features/notifications/hooks/use-notifications';
 import { NotificationItem } from '@/features/notifications/components/NotificationItem';
 import type { INotification } from '@/features/notifications/types/notification';
+import { getOrderNotificationTarget } from '@/features/notifications/utils/order-notification-target';
 import { Loading } from '@/components/common/Loading';
 import { ErrorView } from '@/components/common/ErrorView';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -37,6 +39,7 @@ type NotificationFilter =
   | 'ALL'
   | 'ORDER_STATUS'
   | 'PAYMENT'
+  | 'ORDER_ISSUE'
   | 'PROMOTION'
   | 'SYSTEM';
 
@@ -44,6 +47,7 @@ const FILTERS: { value: NotificationFilter; label: string; Icon: LucideIcon }[] 
   { value: 'ALL', label: 'Tất cả', Icon: Bell },
   { value: 'ORDER_STATUS', label: 'Đơn hàng', Icon: Package },
   { value: 'PAYMENT', label: 'Thanh toán', Icon: CreditCard },
+  { value: 'ORDER_ISSUE', label: 'Đổi trả', Icon: ShieldAlert },
   { value: 'PROMOTION', label: 'Khuyến mãi', Icon: Tag },
   { value: 'SYSTEM', label: 'Hệ thống', Icon: Info },
 ];
@@ -113,9 +117,12 @@ export const NotificationsScreen: React.FC = () => {
       markRead(item.id);
     }
     const payload = item.data ?? {};
-    if (item.type === 'ORDER_STATUS' || item.type === 'PAYMENT') {
-      if (typeof payload.orderId === 'string' && payload.orderId) {
-        navigation.navigate('OrderDetail', { orderId: payload.orderId });
+    const orderTarget = getOrderNotificationTarget(item.type, payload);
+    if (orderTarget) {
+      if (orderTarget.screen === 'Returns') {
+        navigation.navigate('Main', { screen: 'ProfileTab', params: { screen: 'Returns' } });
+      } else {
+        navigation.navigate(orderTarget.screen, { orderId: orderTarget.orderId });
       }
     } else if (item.type === 'PROMOTION') {
       navigation.navigate('Main', { screen: 'ShopTab' });

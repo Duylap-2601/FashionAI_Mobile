@@ -111,6 +111,80 @@ export interface IOrderIssue {
   };
 }
 
+export type OrderRefundStatus = 'PENDING' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+/** Khoản hoàn: tiền hàng hoặc phí ship ban đầu, chuyển và ghi nhận riêng. */
+export type OrderRefundKind = 'GOODS' | 'SHIPPING';
+
+export interface IOrderRefund {
+  id: string;
+  /** Khoản cũ (trước khi tách) không có `kind`: coi là tiền hàng. */
+  kind?: OrderRefundKind;
+  amountVnd: number;
+  status: OrderRefundStatus;
+  requestedAt: string;
+  processedAt?: string | null;
+  failedReason?: string | null;
+}
+
+/** Chứng từ hoàn tiền: mã giao dịch / ghi chú và `receiptImages` (ảnh chuyển khoản). */
+export type RefundEvidence = string | Record<string, unknown> | null;
+
+export interface IOrderHistoryEvent {
+  id?: string;
+  type?: string | null;
+  toStatus?: string | null;
+  publicMessage?: string | null;
+  message?: string | null;
+  occurredAt?: string | null;
+  createdAt?: string | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+/** Phần dữ liệu GET /orders/:id mà màn đổi trả & hoàn tiền dùng. */
+export interface IOrderReturnsView {
+  id: string;
+  orderCode?: string | number;
+  orderNumber?: string | number;
+  status?: string;
+  refundStatus?: string | null;
+  amountPaidVnd?: number | string | null;
+  amountRefundedVnd?: number | string | null;
+  refunds?: IOrderRefund[];
+  refundEvidence?: RefundEvidence;
+  refundBankName?: string | null;
+  refundAccountNumber?: string | null;
+  refundAccountHolder?: string | null;
+  history?: IOrderHistoryEvent[];
+  items?: (IOrderItemSummary & { id?: string | number })[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface IOrderItemSummary {
+  productNameSnapshot?: string | null;
+  productImageSnapshot?: string | null;
+  color?: string | null;
+  quantity?: number | null;
+}
+
+/** Một đơn có yêu cầu đổi trả (GET /order-issues/mine). */
+export interface IMyReturnOrder {
+  id: string;
+  orderCode: number | string;
+  status: string;
+  refundStatus?: string | null;
+  amountRefundedVnd: number;
+  createdAt: string;
+  updatedAt: string;
+  issues: {
+    id: string;
+    status: OrderIssueStatus;
+    reason: OrderIssueReason;
+    createdAt: string;
+    orderItem?: { productNameSnapshot?: string | null; productImageSnapshot?: string | null } | null;
+  }[];
+}
+
 export interface IEvidenceImage {
   uri: string;
   name: string;

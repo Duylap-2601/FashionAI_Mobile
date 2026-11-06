@@ -5,6 +5,7 @@ import {
   Info,
   MessageSquare,
   Package,
+  ShieldAlert,
   Tag,
 } from 'lucide-react-native';
 import type { INotification, NotificationType } from '@/features/notifications/types/notification';
@@ -17,6 +18,8 @@ function iconFor(type: NotificationType) {
       return { Icon: Package, color: COLORS.oxblood };
     case 'PAYMENT':
       return { Icon: CreditCard, color: COLORS.sageInk };
+    case 'ORDER_ISSUE':
+      return { Icon: ShieldAlert, color: COLORS.oxblood };
     case 'PROMOTION':
       return { Icon: Tag, color: COLORS.brassInk };
     case 'REVIEW':

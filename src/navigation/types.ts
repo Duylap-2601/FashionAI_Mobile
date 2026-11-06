@@ -15,6 +15,7 @@ export type ProfileStackParamList = {
   Measurements: { tab?: 'profile' | 'measurements' | 'sizes' } | undefined;
   Addresses: undefined;
   Orders: undefined;
+  Returns: undefined;
   TryOnHistory: undefined;
   TryOnDetail: { id: string };
 };
@@ -55,6 +56,7 @@ export type RootStackParamList = {
   StylistResult: { resultId: string };
 
   OrderDetail: { orderId: string | number };
+  OrderReturns: { orderId: string | number };
   OrderSuccess: {
     orderId: string | number;
     orderCode?: string;
