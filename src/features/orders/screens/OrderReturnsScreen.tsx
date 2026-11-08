@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, InteractionManager, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppHeader } from '@/components/common/AppHeader';
 import { BackButton } from '@/components/common/BackButton';
+import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { COLORS } from '@/constants/theme';
 import { formatCurrency } from '@/utils/format';
 import { formatDateTime } from '@/utils/date';
@@ -18,6 +19,7 @@ import {
 } from '../components/OrderReturnParts';
 import { ReportIssueModal, type ReportableOrderItem } from '../components/ReportIssueModal';
 import type { IOrderReturnsView } from '../types/order';
+import { getOrderCode } from '../utils/order-format';
 import {
   RETURN_FLOW_TITLES,
   canReportRefundNotReceived,
@@ -70,6 +72,12 @@ export function OrderReturnsScreen({ route, navigation }: Props) {
   const { issues, refetch: refetchIssues } = useOrderIssues(orderId);
   const [reportingItem, setReportingItem] = useState<ReportableOrderItem | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: 'success' | 'error';
+    title: string;
+    message?: string;
+  } | null>(null);
 
   const goToAllReturns = () => navigation.navigate('Main', { screen: 'ProfileTab', params: { screen: 'Returns' } });
   const goToOrder = () => navigation.navigate('OrderDetail', { orderId });
@@ -115,7 +123,7 @@ export function OrderReturnsScreen({ route, navigation }: Props) {
   }
 
   const status = String(order.status || 'CREATED').toUpperCase();
-  const orderCode = `ORD-${order.orderNumber || order.orderCode || order.id}`;
+  const orderCode = getOrderCode(order);
   const refunds = order.refunds ?? [];
   const hasReturns = issues.length > 0 || refunds.length > 0;
   const isInReturnFlow = isReturnFlowStatus(status);
@@ -124,6 +132,20 @@ export function OrderReturnsScreen({ route, navigation }: Props) {
   const paidVnd = toVnd(order.amountPaidVnd);
   const refundedVnd = toVnd(order.amountRefundedVnd);
   const returnEvents = (order.history ?? []).filter(isReturnHistoryEvent);
+
+  const openNotReceived = () => {
+    setNotice(null);
+    if (pendingNotReceived) {
+      setNotice('Bạn đã gửi báo cáo chưa nhận được tiền, vui lòng chờ shop xử lý.');
+      return;
+    }
+    const item = order.items?.[0];
+    if (!item) {
+      setNotice('Không xác định được sản phẩm của đơn để gửi báo cáo. Vui lòng liên hệ shop.');
+      return;
+    }
+    setReportingItem(item);
+  };
 
   return (
     <View className="flex-1 bg-landing-paper">
@@ -159,6 +181,34 @@ export function OrderReturnsScreen({ route, navigation }: Props) {
           <OutlineButton label="Tất cả đổi trả" onPress={goToAllReturns} />
         </View>
 
+        {notice ? (
+          <View
+            accessibilityRole="alert"
+            className="mt-4 border-l-2 border-danger bg-landing-ivory px-3 py-2"
+          >
+            <Text className="font-sans text-[13px] leading-relaxed text-danger">{notice}</Text>
+          </View>
+        ) : null}
+
+        {canReportNotReceived && status !== 'RETURNED' ? (
+          <View className="mt-4">
+            <OrderNotice title="Bạn chưa nhận được tiền hoàn?">
+              <NoticeText>
+                Shop đã ghi nhận hoàn tiền cho đơn này. Nếu chưa thấy tiền trong tài khoản, gửi báo
+                cáo để shop đối chiếu lại giao dịch.
+              </NoticeText>
+              <RefundAccount order={order} />
+              {pendingNotReceived ? (
+                <NoticeText>
+                  Bạn đã báo chưa nhận được tiền. Trạng thái xử lý nằm ở mục Yêu cầu bên dưới.
+                </NoticeText>
+              ) : (
+                <OutlineButton label="Chưa nhận được tiền hoàn" onPress={openNotReceived} />
+              )}
+            </OrderNotice>
+          </View>
+        ) : null}
+
         {isInReturnFlow ? (
           <View className="mt-4">
             <OrderNotice title={RETURN_FLOW_TITLES[status]}>
@@ -189,7 +239,7 @@ export function OrderReturnsScreen({ route, navigation }: Props) {
                 ) : (
                   <OutlineButton
                     label="Chưa nhận được tiền hoàn"
-                    onPress={() => setReportingItem(order.items?.[0] ?? null)}
+                    onPress={openNotReceived}
                   />
                 )
               ) : null}
@@ -260,6 +310,26 @@ export function OrderReturnsScreen({ route, navigation }: Props) {
           accountNumber: order.refundAccountNumber,
           accountHolder: order.refundAccountHolder,
         }}
+        onSuccess={() => {
+          InteractionManager.runAfterInteractions(() =>
+            setFeedback({
+              type: 'success',
+              title: 'Đã gửi báo cáo',
+              message:
+                'Đã gửi báo cáo chưa nhận được tiền hoàn. Shop sẽ kiểm tra và phản hồi sớm nhất.',
+            }),
+          );
+        }}
+      />
+
+      <FeedbackModal
+        visible={!!feedback}
+        type={feedback?.type ?? 'success'}
+        title={feedback?.title ?? ''}
+        message={feedback?.message}
+        primaryButtonText="Đồng ý"
+        onPrimaryPress={() => setFeedback(null)}
+        onClose={() => setFeedback(null)}
       />
     </View>
   );

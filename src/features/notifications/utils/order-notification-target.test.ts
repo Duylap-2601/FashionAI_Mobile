@@ -30,6 +30,20 @@ describe('getOrderNotificationTarget', () => {
     });
   });
 
+  it('opens the order detail focused on the shop chat for new messages', () => {
+    expect(getOrderNotificationTarget('ORDER_CHAT', { orderId: 'o3' })).toEqual({
+      screen: 'OrderDetail',
+      orderId: 'o3',
+      focusChat: true,
+    });
+    expect(getOrderNotificationTarget('ORDER_CHAT', { orderCode: 15560998 })).toEqual({
+      screen: 'OrderDetail',
+      orderId: '15560998',
+      focusChat: true,
+    });
+    expect(getOrderNotificationTarget('ORDER_CHAT', {})).toBeNull();
+  });
+
   it('ignores other notification types', () => {
     expect(getOrderNotificationTarget('PROMOTION', { orderId: 'o1' })).toBeNull();
     expect(getOrderNotificationTarget('ORDER_STATUS', {})).toBeNull();

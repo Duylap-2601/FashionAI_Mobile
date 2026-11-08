@@ -1,11 +1,18 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Socket } from 'socket.io-client';
 import { getMainSocket } from '@/realtime/socket';
 import { getTokens } from '@/features/auth/storage/secure-storage';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { notificationKeys } from '@/features/notifications/hooks/notification-keys';
 import { MY_RETURNS_KEY } from '@/features/orders/hooks/use-orders';
+import { orderChatKeys } from '@/features/orders/hooks/order-chat-keys';
+import { reviewKeys } from '@/features/reviews/api/review.keys';
+import { useAppToast } from '@/components/providers/toast-provider';
+import { getOrderNotificationTarget } from '../utils/order-notification-target';
+import type { RootStackParamList } from '@/navigation/types';
 
 const ORDER_NOTIFICATION_TYPES = ['ORDER_STATUS', 'PAYMENT', 'ORDER_ISSUE'];
 
@@ -24,6 +31,8 @@ interface ReauthAck {
 export function useNotificationSocket(enabled = true) {
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const { showToast } = useAppToast();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     if (!isAuthenticated || !enabled) return;
@@ -36,14 +45,52 @@ export function useNotificationSocket(enabled = true) {
       queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
     };
 
-    const handlePush = (notification?: { type?: string }) => {
+    const handlePush = (notification?: {
+      type?: string;
+      title?: string;
+      message?: string;
+      data?: Record<string, unknown>;
+    }) => {
       refreshQueries();
+      if (notification?.title) {
+        const target = getOrderNotificationTarget(notification.type, notification.data ?? {});
+        let onPress: (() => void) | undefined;
+
+        if (target) {
+          onPress = () => {
+            if (target.screen === 'Returns') {
+              navigation.navigate('Main', { screen: 'ProfileTab', params: { screen: 'Returns' } });
+            } else if (target.screen === 'OrderDetail') {
+              navigation.navigate('OrderDetail', {
+                orderId: target.orderId,
+                focusChat: target.focusChat,
+              });
+            } else {
+              navigation.navigate('OrderReturns', { orderId: target.orderId });
+            }
+          };
+        }
+
+        showToast({
+          title: notification.title,
+          message: notification.message,
+          type: notification.type === 'ORDER_ISSUE' ? 'warning' : 'info',
+          onPress,
+        });
+      }
       // Đổi trạng thái đơn, duyệt đổi trả, ghi nhận thanh toán / hoàn tiền: tải lại đơn và
       // yêu cầu đổi trả để màn đang mở cập nhật ngay (như RealtimeProvider của web).
       if (notification?.type && ORDER_NOTIFICATION_TYPES.includes(notification.type)) {
         queryClient.invalidateQueries({ queryKey: ['orders'] });
         queryClient.invalidateQueries({ queryKey: ['orderIssues'] });
         queryClient.invalidateQueries({ queryKey: MY_RETURNS_KEY });
+      }
+      if (notification?.type === 'REVIEW') {
+        queryClient.invalidateQueries({ queryKey: reviewKeys.all });
+      }
+      if (notification?.type === 'ORDER_CHAT') {
+        queryClient.invalidateQueries({ queryKey: orderChatKeys.all });
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
       }
     };
 
@@ -90,5 +137,5 @@ export function useNotificationSocket(enabled = true) {
       socket?.off('token:expiring', handleExpiring);
       socket?.off('token:expired', handleExpired);
     };
-  }, [enabled, isAuthenticated, queryClient]);
+  }, [enabled, isAuthenticated, navigation, queryClient, showToast]);
 }

@@ -1,7 +1,7 @@
 export type OrderNotificationTarget =
   | { screen: 'OrderReturns'; orderId: string }
   | { screen: 'Returns' }
-  | { screen: 'OrderDetail'; orderId: string };
+  | { screen: 'OrderDetail'; orderId: string; focusChat?: boolean };
 
 function readString(value: unknown): string | undefined {
   if (typeof value === 'string' && value) return value;
@@ -18,6 +18,9 @@ export function getOrderNotificationTarget(type: unknown, data: Record<string, u
   const orderRef = readString(data.orderId) ?? readString(data.orderCode);
   if (type === 'ORDER_ISSUE' || (type === 'PAYMENT' && data.refundStatus)) {
     return orderRef ? { screen: 'OrderReturns', orderId: orderRef } : { screen: 'Returns' };
+  }
+  if (type === 'ORDER_CHAT' && orderRef) {
+    return { screen: 'OrderDetail', orderId: orderRef, focusChat: true };
   }
   if ((type === 'ORDER_STATUS' || type === 'PAYMENT') && orderRef) {
     return { screen: 'OrderDetail', orderId: orderRef };
