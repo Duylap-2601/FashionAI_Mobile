@@ -188,6 +188,7 @@ function ReviewListSkeleton() {
 
 export function MyReviewsScreen({ navigation }: Props) {
   const [editing, setEditing] = useState<IReview | null>(null);
+  const [editImages, setEditImages] = useState<string[]>([]);
   const reviewsQuery = useMyReviews(undefined);
   const updateMutation = useUpdateReview();
   const deleteMutation = useDeleteReview();
@@ -210,14 +211,15 @@ export function MyReviewsScreen({ navigation }: Props) {
         await updateMutation.mutateAsync({
           reviewId: editing.id,
           productId: editing.productId,
-          input: { comment: values.comment.trim() },
+          input: { comment: values.comment.trim(), images: editImages },
         });
         setEditing(null);
+        setEditImages([]);
       } catch {
         // The form renders the backend ownership error from mutation state.
       }
     },
-    [editing, updateMutation],
+    [editImages, editing, updateMutation],
   );
 
   const confirmDelete = useCallback(
@@ -292,6 +294,7 @@ export function MyReviewsScreen({ navigation }: Props) {
               review={item}
               onEdit={(review) => {
                 updateMutation.reset();
+                setEditImages(Array.isArray(review.images) ? review.images : []);
                 setEditing(review);
               }}
               onDelete={confirmDelete}
@@ -305,8 +308,13 @@ export function MyReviewsScreen({ navigation }: Props) {
                   initialComment={item.comment}
                   submitting={updateMutation.isPending}
                   errorMessage={updateMutation.isError ? getErrorMessage(updateMutation.error) : undefined}
+                  images={editImages}
+                  onChangeImages={setEditImages}
                   onSubmit={submitEdit}
-                  onCancel={() => setEditing(null)}
+                  onCancel={() => {
+                    setEditing(null);
+                    setEditImages([]);
+                  }}
                 />
               </View>
             ) : null}

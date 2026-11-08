@@ -122,7 +122,54 @@ describe('ordersApi', () => {
   it('getMyReturns tolerates a response without pagination meta', async () => {
     mock.onGet(ENDPOINTS.ORDERS.MY_RETURNS).reply(200, envelope([]));
 
-    await expect(ordersApi.getMyReturns()).resolves.toEqual({ data: [], meta: undefined });
+    await expect(ordersApi.getMyReturns()).resolves.toEqual({
+      data: [],
+      meta: { page: 1, limit: 10, total: 0, totalPages: 1 },
+    });
+  });
+
+  it('getOrderIssues sends paging params and synthesizes missing meta', async () => {
+    const issues = [{ id: 'issue-1', status: 'PENDING' }];
+    mock.onGet(ENDPOINTS.ORDERS.ISSUES('order-1')).reply((config) => {
+      expect(config.params).toEqual({ page: 2, limit: 50 });
+      return [200, envelope(issues)];
+    });
+
+    await expect(ordersApi.getOrderIssues('order-1', { page: 2 })).resolves.toEqual({
+      data: issues,
+      meta: { page: 2, limit: 50, total: 1, totalPages: 1 },
+    });
+  });
+
+  it('confirmRefundReceived posts to the refund confirmation endpoint', async () => {
+    const order = { id: 'order-1', refundConfirmedAt: '2026-11-04T10:00:00.000Z' };
+    mock.onPost(ENDPOINTS.ORDERS.CONFIRM_REFUND_RECEIVED('order-1')).reply(200, envelope(order));
+
+    await expect(ordersApi.confirmRefundReceived('order-1')).resolves.toEqual(order);
+  });
+
+  it('createDeliveryDispute sends only description and evidence images', async () => {
+    const appendSpy = jest.spyOn(FormData.prototype, 'append');
+    const order = { id: 'order-1', status: 'DELIVERY_DISPUTED' };
+    mock.onPost(ENDPOINTS.ORDERS.DELIVERY_DISPUTE('order-1')).reply((config) => {
+      expect(String(config.headers?.['Content-Type'])).toContain('multipart/form-data');
+      return [201, envelope(order)];
+    });
+
+    const evidence = { uri: 'file:///door.jpg', name: 'door.jpg', type: 'image/jpeg' };
+    await expect(
+      ordersApi.createDeliveryDispute({
+        orderId: 'order-1',
+        description: 'Hãng báo giao lúc 15h nhưng mình không có nhà',
+        images: [evidence],
+      }),
+    ).resolves.toEqual(order);
+
+    const appended = appendSpy.mock.calls.filter(([name]) => name !== 'evidenceImages');
+    expect(appended).toEqual([
+      ['description', 'Hãng báo giao lúc 15h nhưng mình không có nhà'],
+    ]);
+    expect(appendSpy.mock.calls.filter(([name]) => name === 'evidenceImages')).toHaveLength(1);
   });
 
   it('createOrderIssue sends a refund-only multipart form with the refund bank account', async () => {

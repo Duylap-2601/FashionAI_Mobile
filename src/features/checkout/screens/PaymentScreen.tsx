@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
   ChevronLeft,
@@ -165,6 +165,7 @@ function QrPanel({ value }: IQrPanelProps) {
 export function PaymentScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
+  const queryClient = useQueryClient();
 
   const {
     checkoutUrl,
@@ -251,6 +252,10 @@ export function PaymentScreen() {
   };
 
   const handleClose = () => {
+    if (orderId) {
+      void queryClient.invalidateQueries({ queryKey: ['orders', String(orderId)] });
+      void queryClient.invalidateQueries({ queryKey: ['orders'] });
+    }
     navigation.goBack();
   };
 

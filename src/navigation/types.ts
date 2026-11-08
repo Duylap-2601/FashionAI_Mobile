@@ -56,7 +56,7 @@ export type RootStackParamList = {
   StylistHistory: undefined;
   StylistResult: { resultId: string };
 
-  OrderDetail: { orderId: string | number };
+  OrderDetail: { orderId: string | number; focusChat?: boolean };
   OrderReturns: { orderId: string | number };
   OrderSuccess: {
     orderId: string | number;

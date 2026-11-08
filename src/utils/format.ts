@@ -3,9 +3,10 @@
  */
 
 /** Giá VND dạng `1.290.000đ`, cùng cách viết với web (formatVnd). */
-export function formatCurrency(amount?: number | null): string {
-  if (amount === undefined || amount === null || isNaN(amount)) return '0đ';
-  return `${amount.toLocaleString('vi-VN')}đ`;
+export function formatCurrency(amount?: number | string | null): string {
+  const value = typeof amount === 'number' ? amount : Number(amount ?? NaN);
+  if (!Number.isFinite(value)) return '0đ';
+  return `${value.toLocaleString('vi-VN')}đ`;
 }
 
 export function formatWeight(kg?: number | null): string {

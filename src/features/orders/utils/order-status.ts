@@ -18,6 +18,7 @@ export const ORDER_STATUS_CONFIG: Record<string, { label: string; tone: StatusTo
   READY_TO_SHIP: { label: 'Chờ giao', tone: 'active', step: 3 },
   SHIPPING: { label: 'Đang giao', tone: 'active', step: 3 },
   DELIVERED: { label: 'Đã giao', tone: 'done', step: 3 },
+  DELIVERY_DISPUTED: { label: 'Chưa nhận được hàng', tone: 'attention', step: 3 },
   COMPLETED: { label: 'Hoàn tất', tone: 'done', step: 4 },
   CANCELLED: { label: 'Đã hủy', tone: 'closed', step: -1 },
   EXPIRED: { label: 'Hết hạn thanh toán', tone: 'closed', step: -1 },
@@ -26,4 +27,6 @@ export const ORDER_STATUS_CONFIG: Record<string, { label: string; tone: StatusTo
   RETURN_APPROVED: { label: 'Đã duyệt hoàn trả', tone: 'attention', step: -1 },
   RETURNING: { label: 'Đang hoàn trả', tone: 'attention', step: -1 },
   FAILED: { label: 'Thanh toán thất bại', tone: 'error', step: -1 },
+  REFUND_PENDING: { label: 'Chờ hoàn tiền', tone: 'attention', step: -1 },
+  REFUNDED: { label: 'Đã hoàn tiền', tone: 'done', step: -1 },
 };
