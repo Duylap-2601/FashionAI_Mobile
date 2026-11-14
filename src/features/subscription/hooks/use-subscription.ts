@@ -7,11 +7,29 @@ function formatPlanPrice(price: number): string {
   return price === 0 ? '0đ' : `${price.toLocaleString('vi-VN')}đ`;
 }
 
+const SUBSCRIPTION_HISTORY_KEY = ['subscription-history'] as const;
+
 export const SUBSCRIPTION_QUERY_KEYS = {
   plans: ['subscription-plans'] as const,
   mySubscription: ['my-subscription'] as const,
-  history: (page: number, limit: number) => ['subscription-history', page, limit] as const,
+  /** Gốc của lịch sử gói: dùng làm prefix khi cần làm mới mọi trang. */
+  historyAll: SUBSCRIPTION_HISTORY_KEY,
+  history: (page: number, limit: number) =>
+    [...SUBSCRIPTION_HISTORY_KEY, page, limit] as const,
 };
+
+/**
+ * Khoá quota AI dùng trong app: `['quota', action]` (Profile, Stylist) và
+ * `['live-try-on-quota']` (thử đồ trực tiếp). `all` là prefix cho mọi action.
+ */
+export const QUOTA_QUERY_KEYS = {
+  all: ['quota'] as const,
+  action: (action: string) => ['quota', action] as const,
+  liveTryOn: ['live-try-on-quota'] as const,
+};
+
+/** Khoá hồ sơ người dùng, dùng chung với ProfileScreen (`usersApi.getMe`). */
+export const USER_PROFILE_QUERY_KEY = ['users', 'me'] as const;
 
 /** Lấy danh sách gói cước (kết hợp dữ liệu BE với chi tiết quyền lợi UI) */
 export function useSubscriptionPlans() {
@@ -108,7 +126,7 @@ export function useCancelAutoRenew() {
     mutationFn: () => subscriptionsApi.cancelAutoRenew(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SUBSCRIPTION_QUERY_KEYS.mySubscription });
-      queryClient.invalidateQueries({ queryKey: ['users-me'] });
+      queryClient.invalidateQueries({ queryKey: USER_PROFILE_QUERY_KEY });
     },
   });
 
@@ -127,7 +145,7 @@ export function useResumeAutoRenew() {
     mutationFn: () => subscriptionsApi.resumeAutoRenew(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SUBSCRIPTION_QUERY_KEYS.mySubscription });
-      queryClient.invalidateQueries({ queryKey: ['users-me'] });
+      queryClient.invalidateQueries({ queryKey: USER_PROFILE_QUERY_KEY });
     },
   });
 

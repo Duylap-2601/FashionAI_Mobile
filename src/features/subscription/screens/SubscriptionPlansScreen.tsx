@@ -786,12 +786,12 @@ export const SubscriptionPlansScreen: React.FC = () => {
               <View className="gap-4">
                 <View className="gap-1">
                   <Text accessibilityRole="header" className={sectionTitleClass}>
-                    Nhắc gia hạn
+                    Nhắc gia hạn qua email
                   </Text>
                   <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
                     {currentSub.autoRenew
-                      ? 'Bạn sẽ nhận email nhắc trước 3 ngày khi gói sắp hết hạn.'
-                      : 'Đã tắt nhắc. Khi hết hạn, tài khoản tự về gói miễn phí.'}
+                      ? 'Bạn sẽ nhận email nhắc trước 3 ngày khi gói sắp hết hạn. StAie. không tự động trừ tiền.'
+                      : 'Đã tắt nhắc. Khi hết hạn, tài khoản tự về gói miễn phí. StAie. không tự động trừ tiền.'}
                   </Text>
                 </View>
                 <Pressable
