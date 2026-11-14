@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -23,11 +23,17 @@ import { COLORS } from '@/constants/theme';
 import { formatCurrency } from '@/utils/format';
 import { paymentsApi } from '@/features/payments/api/payments.api';
 import { PaymentStatusCard } from '@/features/payments/components/PaymentStatusCard';
+import { invalidateSubscriptionEntitlement } from '@/features/subscription/utils/refresh-entitlement';
 
 const ZALOPAY_DESCRIPTION =
   'Quét QR hoặc mở ZaloPay. Giữ trang này, đơn tự cập nhật khi thanh toán xong.';
 const SEPAY_DESCRIPTION =
   'Quét QR hoặc mở cổng SePay để chuyển khoản. Giữ trang này, đơn tự cập nhật khi thanh toán xong.';
+
+/** Nhịp hỏi trạng thái thanh toán khi cổng chưa xác nhận. */
+const PAYMENT_POLL_INTERVAL_MS = 3000;
+const PAID_STATUSES = ['PAID', 'COMPLETED'];
+const FAILED_STATUSES = ['FAILED', 'EXPIRED'];
 
 interface ISheetHeaderProps {
   title: string;
@@ -184,13 +190,23 @@ export function PaymentScreen() {
   >(null);
   const [webViewKey, setWebViewKey] = useState(0);
   const [isGatewayOpen, setIsGatewayOpen] = useState(false);
+  // Chặn success path chạy hai lần (poll + điều hướng WebView + effect trên isPaid).
+  const hasHandledResultRef = useRef(false);
 
   const isZaloPay = provider === 'ZALOPAY';
   const qrValue = qrCode || checkoutUrl;
 
+  // Mua gói thành viên: có targetTier (hoặc quay về màn Gói thành viên) và có paymentId.
+  const isSubscriptionPurchase = !!targetTier || returnRoute === 'SubscriptionPlans';
+
   useEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
+
+  // ZaloPay: giữ nguyên hành vi cũ (poll khi PENDING).
+  // Gói thành viên: poll cả khi qua SePay, để không phụ thuộc vào URL WebView nhận được.
+  const shouldPollPaymentStatus =
+    !!paymentId && (provider === 'ZALOPAY' || isSubscriptionPurchase);
 
   const {
     data: payment,
@@ -199,36 +215,74 @@ export function PaymentScreen() {
   } = useQuery({
     queryKey: ['paymentStatus', paymentId],
     queryFn: () => paymentsApi.getPaymentStatus(paymentId),
-    enabled: !!paymentId && provider === 'ZALOPAY',
+    enabled: shouldPollPaymentStatus,
     refetchInterval: (query) => {
       const status = query.state.data?.status;
-      return status === 'PENDING' ? 3000 : false;
+
+      if (!status) {
+        // Gói thành viên: bắt đầu poll ngay, không chờ trạng thái đầu tiên.
+        return isSubscriptionPurchase ? PAYMENT_POLL_INTERVAL_MS : false;
+      }
+
+      const isTerminal =
+        PAID_STATUSES.includes(status) ||
+        FAILED_STATUSES.includes(status) ||
+        status === 'REFUND_REQUIRED';
+      if (isTerminal) return false;
+
+      // ZaloPay giữ nguyên: chỉ poll khi PENDING.
+      if (!isSubscriptionPurchase) {
+        return status === 'PENDING' ? PAYMENT_POLL_INTERVAL_MS : false;
+      }
+
+      // Gói thành viên qua SePay: poll mọi trạng thái chưa kết thúc (INITIATED/PROCESSING/...).
+      return PAYMENT_POLL_INTERVAL_MS;
     },
   });
 
-  const isPaid = payment?.status === 'PAID' || payment?.status === 'COMPLETED';
+  const isPaid = PAID_STATUSES.includes(payment?.status ?? '');
   const isFailed = payment?.status === 'FAILED' || paymentStatusOverride === 'FAILED';
   const isCancelled = paymentStatusOverride === 'CANCELLED';
   const isRefundRequired = payment?.status === 'REFUND_REQUIRED';
   const isExpired = payment?.status === 'EXPIRED';
 
-  const handlePaymentSuccess = () => {
-    if (targetTier || returnRoute === 'SubscriptionPlans') {
+  /**
+   * Chạy đúng một lần cho mỗi lần thanh toán: effect trên `isPaid`, vòng poll trạng thái
+   * và điều hướng WebView đều có thể gọi vào đây (cờ `hasHandledResultRef`).
+   */
+  const handlePaymentSuccess = useCallback(() => {
+    if (hasHandledResultRef.current) return;
+    hasHandledResultRef.current = true;
+
+    if (isSubscriptionPurchase) {
+      // Đánh dấu stale (đồng bộ) các cache quyền lợi trước khi rời màn, để màn Gói thành
+      // viên, hồ sơ và các thước đo quota thấy gói mới ngay khi được mount lại.
+      void invalidateSubscriptionEntitlement(queryClient);
       navigation.replace('SubscriptionPlans');
-    } else if (orderId) {
+      return;
+    }
+
+    if (orderId) {
       navigation.replace('OrderSuccess', {
         orderId,
         orderCode,
         totalAmount,
       });
     }
-  };
+  }, [
+    isSubscriptionPurchase,
+    navigation,
+    orderCode,
+    orderId,
+    queryClient,
+    totalAmount,
+  ]);
 
   useEffect(() => {
     if (isPaid) {
       handlePaymentSuccess();
     }
-  }, [isPaid]);
+  }, [handlePaymentSuccess, isPaid]);
 
   const handleRetry = () => {
     setPaymentStatusOverride(null);
@@ -236,6 +290,10 @@ export function PaymentScreen() {
       refetchStatus();
     } else {
       setWebViewKey((prev) => prev + 1);
+      // Gói thành viên (cả SePay): hỏi lại trạng thái thay vì chờ URL WebView.
+      if (isSubscriptionPurchase) {
+        refetchStatus();
+      }
     }
   };
 
@@ -247,9 +305,29 @@ export function PaymentScreen() {
     }
   };
 
+  const handleBackToPlans = () => {
+    navigation.replace('SubscriptionPlans');
+  };
+
   const handleBackToCart = () => {
     navigation.replace('Cart');
   };
+
+  // Gói thành viên không có "đơn hàng" trong luồng mua: điều hướng về màn gói thay vì đơn.
+  const resultPrimary = isSubscriptionPurchase
+    ? { label: 'Về gói thành viên', onPress: handleBackToPlans }
+    : { label: 'Xem đơn hàng', onPress: handleGoToOrder };
+  const resultSecondary = { label: 'Thử lại', onPress: handleRetry };
+  const resultFootnote = isSubscriptionPurchase
+    ? undefined
+    : { label: 'Về giỏ hàng', onPress: handleBackToCart };
+  // Hoàn tiền không có bước thử lại: giữ nguyên cặp nút của luồng đơn hàng.
+  const refundPrimary = isSubscriptionPurchase
+    ? { label: 'Về gói thành viên', onPress: handleBackToPlans }
+    : { label: 'Xem đơn hàng', onPress: handleGoToOrder };
+  const refundSecondary = isSubscriptionPurchase
+    ? undefined
+    : { label: 'Về giỏ hàng', onPress: handleBackToCart };
 
   const handleClose = () => {
     if (orderId) {
@@ -338,10 +416,14 @@ export function PaymentScreen() {
         title="Khoản thanh toán cần hoàn lại"
         orderCode={orderCode}
         status={{ tone: 'attention', label: 'Cần hoàn tiền' }}
-        description="Shop đã nhận tiền nhưng không ghi nhận được cho đơn này, thường do đơn đã được thanh toán trước đó. Khoản này sẽ được hoàn lại cho bạn."
+        description={
+          isSubscriptionPurchase
+            ? 'Shop đã nhận tiền nhưng chưa ghi nhận được cho lần mua gói này, thường do đã xử lý trước đó. Khoản này sẽ được hoàn lại cho bạn.'
+            : 'Shop đã nhận tiền nhưng không ghi nhận được cho đơn này, thường do đơn đã được thanh toán trước đó. Khoản này sẽ được hoàn lại cho bạn.'
+        }
         onClose={handleClose}
-        primary={{ label: 'Xem đơn hàng', onPress: handleGoToOrder }}
-        secondary={{ label: 'Về giỏ hàng', onPress: handleBackToCart }}
+        primary={refundPrimary}
+        secondary={refundSecondary}
       />
     );
   }
@@ -352,11 +434,15 @@ export function PaymentScreen() {
         title="Thanh toán đã bị hủy"
         orderCode={orderCode}
         status={{ tone: 'attention', label: 'Chờ thanh toán' }}
-        description="Bạn đã hủy ở cổng thanh toán. Đơn vẫn được giữ ở trạng thái chờ thanh toán, bạn có thể thanh toán lại từ trang đơn hàng."
+        description={
+          isSubscriptionPurchase
+            ? 'Bạn đã hủy ở cổng thanh toán nên gói chưa được kích hoạt. Bạn có thể tạo lại thanh toán từ trang Gói thành viên.'
+            : 'Bạn đã hủy ở cổng thanh toán. Đơn vẫn được giữ ở trạng thái chờ thanh toán, bạn có thể thanh toán lại từ trang đơn hàng.'
+        }
         onClose={handleClose}
-        primary={{ label: 'Xem đơn hàng', onPress: handleGoToOrder }}
-        secondary={{ label: 'Thử lại', onPress: handleRetry }}
-        footnote={{ label: 'Về giỏ hàng', onPress: handleBackToCart }}
+        primary={resultPrimary}
+        secondary={resultSecondary}
+        footnote={resultFootnote}
       />
     );
   }
@@ -369,12 +455,14 @@ export function PaymentScreen() {
         status={{ tone: 'error', label: 'Thất bại' }}
         description={
           payment?.failureReason ||
-          'Cổng thanh toán chưa xác nhận giao dịch. Đơn vẫn chờ thanh toán, bạn có thể thử lại từ trang đơn hàng.'
+          (isSubscriptionPurchase
+            ? 'Cổng thanh toán chưa xác nhận giao dịch nên gói chưa được kích hoạt. Bạn có thể thử lại từ trang Gói thành viên.'
+            : 'Cổng thanh toán chưa xác nhận giao dịch. Đơn vẫn chờ thanh toán, bạn có thể thử lại từ trang đơn hàng.')
         }
         onClose={handleClose}
-        primary={{ label: 'Xem đơn hàng', onPress: handleGoToOrder }}
-        secondary={{ label: 'Thử lại', onPress: handleRetry }}
-        footnote={{ label: 'Về giỏ hàng', onPress: handleBackToCart }}
+        primary={resultPrimary}
+        secondary={resultSecondary}
+        footnote={resultFootnote}
       />
     );
   }
@@ -385,10 +473,14 @@ export function PaymentScreen() {
         title="Liên kết đã hết hạn"
         orderCode={orderCode}
         status={{ tone: 'closed', label: 'Hết hạn' }}
-        description="Liên kết thanh toán không còn hiệu lực. Đơn hàng vẫn được giữ, bạn có thể tạo lại thanh toán từ chi tiết đơn."
+        description={
+          isSubscriptionPurchase
+            ? 'Liên kết thanh toán không còn hiệu lực nên gói chưa được kích hoạt. Bạn có thể tạo lại thanh toán từ trang Gói thành viên.'
+            : 'Liên kết thanh toán không còn hiệu lực. Đơn hàng vẫn được giữ, bạn có thể tạo lại thanh toán từ chi tiết đơn.'
+        }
         onClose={handleClose}
-        primary={{ label: 'Xem đơn hàng', onPress: handleGoToOrder }}
-        secondary={{ label: 'Thử lại', onPress: handleRetry }}
+        primary={resultPrimary}
+        secondary={resultSecondary}
       />
     );
   }
@@ -399,9 +491,13 @@ export function PaymentScreen() {
         title="Không tìm thấy liên kết thanh toán"
         orderCode={orderCode}
         status={{ tone: 'error', label: 'Không xác định' }}
-        description="Không nhận được liên kết thanh toán cho đơn hàng này. Vui lòng mở lại đơn hàng và tạo lại thanh toán."
+        description={
+          isSubscriptionPurchase
+            ? 'Không nhận được liên kết thanh toán cho lần mua gói này. Vui lòng tạo lại thanh toán từ trang Gói thành viên.'
+            : 'Không nhận được liên kết thanh toán cho đơn hàng này. Vui lòng mở lại đơn hàng và tạo lại thanh toán.'
+        }
         onClose={handleClose}
-        primary={{ label: 'Xem đơn hàng', onPress: handleGoToOrder }}
+        primary={resultPrimary}
         secondary={{ label: 'Về giỏ hàng', onPress: handleBackToCart }}
       />
     );
@@ -464,11 +560,11 @@ export function PaymentScreen() {
 
           <Pressable
             accessibilityRole="button"
-            onPress={handleGoToOrder}
+            onPress={isSubscriptionPurchase ? handleBackToPlans : handleGoToOrder}
             className="mt-6 min-h-11 items-center justify-center active:opacity-60"
           >
             <Text className="font-sans text-xs text-landing-muted">
-              Xem chi tiết đơn hàng
+              {isSubscriptionPurchase ? 'Về gói thành viên' : 'Xem chi tiết đơn hàng'}
             </Text>
           </Pressable>
 
@@ -542,27 +638,49 @@ export function PaymentScreen() {
           </Pressable>
 
           <View className="mt-4 flex-row items-center gap-2">
-            <Clock size={16} strokeWidth={1.75} color={COLORS.brassInk} />
-            <Text className="flex-1 font-sans text-xs leading-relaxed text-landing-muted">
-              Đơn tự cập nhật khi cổng SePay xác nhận thanh toán.
-            </Text>
+            {isPaid ? (
+              <>
+                <CheckCircle2 size={16} strokeWidth={1.75} color={COLORS.sageInk} />
+                <Text className="flex-1 font-sans text-xs leading-relaxed text-sage-ink">
+                  Thanh toán thành công, đang chuyển trang...
+                </Text>
+              </>
+            ) : shouldPollPaymentStatus ? (
+              <>
+                <ActivityIndicator size="small" color={COLORS.brassInk} />
+                <Text className="flex-1 font-sans text-xs leading-relaxed text-landing-muted">
+                  {isCheckingStatus
+                    ? 'Đang kiểm tra trạng thái thanh toán...'
+                    : 'Đang chờ SePay xác nhận thanh toán...'}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Clock size={16} strokeWidth={1.75} color={COLORS.brassInk} />
+                <Text className="flex-1 font-sans text-xs leading-relaxed text-landing-muted">
+                  Đơn tự cập nhật khi cổng SePay xác nhận thanh toán.
+                </Text>
+              </>
+            )}
           </View>
 
           <Pressable
             accessibilityRole="button"
-            onPress={handleGoToOrder}
+            onPress={isSubscriptionPurchase ? handleBackToPlans : handleGoToOrder}
             className="mt-6 min-h-11 items-center justify-center active:opacity-60"
           >
             <Text className="font-sans text-xs text-landing-muted">
-              Xem chi tiết đơn hàng
+              {isSubscriptionPurchase ? 'Về gói thành viên' : 'Xem chi tiết đơn hàng'}
             </Text>
           </Pressable>
 
-          {orderId ? (
-            <View className="mt-1 flex-row items-center justify-center">
-              <TextAction label="Hủy thanh toán" onPress={handleHoldOrder} />
-            </View>
-          ) : null}
+          <View className="mt-1 flex-row items-center justify-center">
+            {shouldPollPaymentStatus ? (
+              <TextAction label="Kiểm tra lại" onPress={() => refetchStatus()} />
+            ) : null}
+            {orderId ? <Text className="font-sans text-[10px] text-taupe">·</Text> : null}
+            {orderId ? <TextAction label="Hủy thanh toán" onPress={handleHoldOrder} /> : null}
+          </View>
         </ScrollView>
       )}
     </SafeAreaView>

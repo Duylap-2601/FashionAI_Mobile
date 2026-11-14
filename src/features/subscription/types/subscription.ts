@@ -2,7 +2,11 @@ export type SubscriptionTier = 'FREE' | 'MEMBER' | 'VIP';
 
 export type TargetTier = 'MEMBER' | 'VIP';
 
-export type SubscriptionStatus = 'ACTIVE' | 'SCHEDULED' | 'EXPIRED' | 'CANCELLED';
+/**
+ * Trạng thái gói. `RENEWED` là bản ghi của một lần gia hạn đã cộng dồn thêm thời hạn
+ * cho gói đang hoạt động (BE trả về trong lịch sử); các giá trị cũ vẫn được BE phát.
+ */
+export type SubscriptionStatus = 'ACTIVE' | 'SCHEDULED' | 'EXPIRED' | 'CANCELLED' | 'RENEWED';
 
 export interface PlanQuota {
   action: 'TRY_ON' | 'STYLIST' | 'CHATBOT' | string;

@@ -92,6 +92,7 @@ export const SUBSCRIPTION_FAQS: SubscriptionFaqItem[] = [
 /** Nhãn trạng thái gói (chấm màu + chữ in hoa), cùng bảng nhãn của web. */
 export const SUBSCRIPTION_STATUS_LABELS: Record<string, { label: string; tone: StatusTone }> = {
   ACTIVE: { label: 'Đang hoạt động', tone: 'done' },
+  RENEWED: { label: 'Đã gia hạn', tone: 'done' },
   SCHEDULED: { label: 'Chờ kích hoạt', tone: 'attention' },
   EXPIRED: { label: 'Đã hết hạn', tone: 'closed' },
   CANCELLED: { label: 'Đã hủy', tone: 'closed' },
