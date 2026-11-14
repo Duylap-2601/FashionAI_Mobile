@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  InteractionManager,
+  KeyboardAvoidingView,
   Linking,
   Modal,
+  Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   View,
@@ -16,19 +20,34 @@ import * as Clipboard from 'expo-clipboard';
 import { AlertTriangle, Check, ChevronLeft, Copy, ExternalLink, X } from 'lucide-react-native';
 import { AppHeader } from '@/components/common/AppHeader';
 import { BackButton } from '@/components/common/BackButton';
+import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { COLORS } from '@/constants/theme';
 import { formatCurrency } from '@/utils/format';
 import { formatDateTime } from '@/utils/date';
+import { getErrorMessage } from '@/utils/error-message';
 import { RootStackParamList } from '@/navigation/types';
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { paymentsApi } from '@/features/payments/api/payments.api';
-import { useOrder, useCancelOrder, useConfirmDelivery, useOrderIssues } from '../hooks/use-orders';
+import { useOrder, useCancelOrder, useConfirmDelivery, useOrderIssues, useConfirmRefundReceived } from '../hooks/use-orders';
 import { ReportIssueModal, type ReportableOrderItem } from '../components/ReportIssueModal';
+import { DeliveryDisputeModal } from '../components/DeliveryDisputeModal';
+import { ImagePreviewModal } from '../components/ImagePreviewModal';
+import { OrderChatPanel } from '../components/OrderChatPanel';
+import { OrderMeasurementReview } from '../components/OrderMeasurementReview';
+import { OrderReviewModal } from '../components/OrderReviewModal';
+import { PaymentMethodSheet, type CheckoutProvider } from '../components/PaymentMethodSheet';
+import { NoticeText, OrderNotice } from '../components/OrderReturnParts';
 import { ISSUE_STATUS } from '../components/OrderIssuesList';
 import { STATUS_TONE_CLASSES, ToneLabel, type StatusTone } from '../components/ToneLabel';
 import type { OrderIssueStatus } from '../types/order';
 import { getOrderItemImage, getOrderItemName } from '../utils/order-items';
 import { getShippingLabel, getTransferContent } from '../utils/order-shipping';
+import {
+  getOrderCode,
+  getPaymentMethodLabel,
+  PAYMENT_STATUS_LABELS,
+  toNumber,
+} from '../utils/order-format';
 import {
   RETURN_HISTORY_STATUSES,
   RETURN_STATUS_LABELS,
@@ -121,6 +140,12 @@ const STATUS_CONFIG: Record<
     step: 3,
     description: 'Kiện hàng đã tới nơi, xác nhận khi bạn đã nhận.',
   },
+  DELIVERY_DISPUTED: {
+    label: 'Chưa nhận được hàng',
+    tone: 'attention',
+    step: 3,
+    description: 'Shop đang kiểm tra với đơn vị vận chuyển.',
+  },
   COMPLETED: {
     label: 'Hoàn thành',
     tone: 'done',
@@ -184,28 +209,6 @@ const STATUS_CONFIG: Record<
 };
 
 const ORDER_STEPS = ['Đã đặt', 'Duyệt số đo', 'Đang may', 'Đang giao', 'Đã nhận'] as const;
-
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  COD: 'Thanh toán khi nhận hàng',
-  ZALOPAY: 'ZaloPay',
-  BANK_TRANSFER: 'Chuyển khoản',
-  BANK: 'Chuyển khoản',
-  SEPAY: 'Chuyển khoản',
-  MOMO: 'MoMo',
-  WALLET: 'Ví FashionAI',
-};
-
-const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  PENDING: 'Chờ thanh toán',
-  PAID: 'Đã thanh toán',
-  FAILED: 'Thanh toán thất bại',
-  EXPIRED: 'Hết hạn thanh toán',
-  REFUND_REQUIRED: 'Cần hoàn tiền',
-  REFUND_PENDING: 'Đang hoàn tiền',
-  REFUNDED: 'Đã hoàn tiền',
-  PARTIALLY_REFUNDED: 'Đã hoàn một phần',
-  COD_COLLECTED: 'Đã thu khi giao',
-};
 
 const MEASUREMENT_FIELDS: { key: string; label: string }[] = [
   { key: 'height', label: 'Cao' },
@@ -417,18 +420,55 @@ function PaperActionSheet({
 }
 
 export function OrderDetailScreen({ route, navigation }: Props) {
-  const { orderId } = route.params;
+  const { orderId, focusChat } = route.params;
   const { order, isLoading, isError, refetch } = useOrder(orderId);
   const { cancelOrder, isCancelling } = useCancelOrder();
   const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
-  const { issues } = useOrderIssues(orderId);
+  const { issues, refetch: refetchIssues } = useOrderIssues(orderId);
+  const { confirmRefundReceived, isConfirmingRefund } = useConfirmRefundReceived();
   const { addItem } = useCart();
 
   const [copied, setCopied] = useState(false);
   const [reportingItem, setReportingItem] = useState<ReportableOrderItem | null>(null);
   const [showCancelSheet, setShowCancelSheet] = useState(false);
   const [showConfirmSheet, setShowConfirmSheet] = useState(false);
+  const [showDeliveryDispute, setShowDeliveryDispute] = useState(false);
+  const [showPaymentSheet, setShowPaymentSheet] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<CheckoutProvider>('ZALOPAY');
+  const [reviewItem, setReviewItem] = useState<any | null>(null);
+  const [zoomedDisputeImage, setZoomedDisputeImage] = useState<{
+    url: string;
+    caption: string;
+  } | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<{
+    type: 'success' | 'error';
+    title: string;
+    message?: string;
+  } | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const chatOffsetRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!focusChat) return;
+    const offset = chatOffsetRef.current;
+    if (offset === null) return;
+
+    const timer = setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: Math.max(offset - 16, 0), animated: true });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [focusChat, order?.id]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([refetch(), refetchIssues()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const { mutate: startPayment, isPending: isStartingPayment } = useMutation({
     mutationFn: (provider: string) => paymentsApi.checkout({ orderId, provider }),
@@ -477,16 +517,16 @@ export function OrderDetailScreen({ route, navigation }: Props) {
   const status = String(order.status || 'PENDING').toUpperCase();
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
   const tone = STATUS_TONE_CLASSES[cfg.tone];
-  const orderCode = `ORD-${order.orderNumber || order.orderCode || order.id}`;
+  const orderCode = getOrderCode(order);
   const items: any[] = Array.isArray(order.items) ? order.items : [];
   const itemCount = items.reduce((sum, item) => sum + (item?.quantity || 1), 0);
 
-  const totalAmount = order.totalVnd ?? order.totalAmount ?? order.total ?? 0;
-  const subtotal = order.itemsSubtotalVnd ?? order.subtotal ?? order.subtotalAmount ?? 0;
-  const shippingFee = order.shippingFeeVnd ?? order.shippingFee ?? 0;
-  const discount = order.discountVnd ?? order.discountAmount ?? order.discount ?? 0;
-  const paidAmount =
-    order.amountPaidVnd ?? order.amountPaid ?? order.paidAmount ?? order.paidAmountVnd ?? 0;
+  const totalAmount = toNumber(order.totalVnd ?? order.totalAmount ?? order.amount ?? order.total);
+  const subtotal = toNumber(order.itemsSubtotalVnd ?? order.itemsTotal ?? order.subtotal);
+  const shippingFee = toNumber(order.shippingFeeVnd ?? order.shippingFee);
+  const discount = toNumber(order.discountVnd ?? order.discountAmount ?? order.discount);
+  const hasPaidAmount = order.amountPaidVnd !== undefined && order.amountPaidVnd !== null;
+  const paidAmount = toNumber(order.amountPaidVnd ?? order.amountPaid ?? order.paidAmount);
   const refundedAmount = toVnd(order.amountRefundedVnd);
   // Báo lỗi, trả hàng và hoàn tiền nằm ở màn riêng; màn đơn chỉ giữ thẻ tóm tắt.
   const hasReturns =
@@ -495,7 +535,7 @@ export function OrderDetailScreen({ route, navigation }: Props) {
     RETURN_STATUS_LABELS[status] ?? (issues[0] ? ISSUE_STATUS[issues[0].status as OrderIssueStatus] : null);
 
   const isPaid = order.isPaid === true;
-  const isPendingPayment = ['PENDING', 'PENDING_PAYMENT', 'CREATED'].includes(status) && !isPaid;
+  const isPendingPayment = status === 'CREATED' && order.paymentStatus === 'PENDING' && !isPaid;
   const paymentDueAt = order.paymentDueAt || order.paymentExpiresAt || order.paymentDeadline || '';
   // BE quyết định được hủy / xác nhận nhận hàng (allowedActions), như web.
   const isCancellable = order.allowedActions?.cancel === true;
@@ -506,10 +546,7 @@ export function OrderDetailScreen({ route, navigation }: Props) {
   const canReportIssue = canReportOrderIssue(order);
   const blockedReportItemIds = getBlockedReportItemIds(issues);
 
-  const paymentMethodLabel =
-    PAYMENT_METHOD_LABELS[String(order.paymentMethod || '')] ||
-    order.paymentMethod ||
-    'Chuyển khoản';
+  const paymentMethodLabel = getPaymentMethodLabel(order);
   const paymentStatusLabel =
     PAYMENT_STATUS_LABELS[String(order.paymentStatus || '')] ||
     order.paymentStatus ||
@@ -565,11 +602,18 @@ export function OrderDetailScreen({ route, navigation }: Props) {
 
   const handlePay = () => {
     setPaymentError(null);
-    const provider =
-      order.paymentProvider === 'SEPAY' || order.paymentMethod === 'SEPAY' ? 'SEPAY' : 'ZALOPAY';
+    setSelectedProvider(
+      order.paymentProvider === 'SEPAY' || order.paymentMethod === 'SEPAY' ? 'SEPAY' : 'ZALOPAY',
+    );
+    setShowPaymentSheet(true);
+  };
+
+  const handleStartPayment = (provider: CheckoutProvider) => {
+    setPaymentError(null);
 
     startPayment(provider, {
       onSuccess: (result) => {
+        setShowPaymentSheet(false);
         const url = result.checkoutUrl || result.payUrl;
         if (!url) {
           setPaymentError('Không lấy được đường dẫn thanh toán. Vui lòng thử lại.');
@@ -585,7 +629,12 @@ export function OrderDetailScreen({ route, navigation }: Props) {
           orderId: order.id,
         });
       },
-      onError: () => setPaymentError('Không tạo được thanh toán lúc này. Vui lòng thử lại.'),
+      onError: (error) => {
+        setShowPaymentSheet(false);
+        setPaymentError(
+          getErrorMessage(error, 'Không tạo được thanh toán lúc này. Vui lòng thử lại.'),
+        );
+      },
     });
   };
 
@@ -593,7 +642,20 @@ export function OrderDetailScreen({ route, navigation }: Props) {
     cancelOrder(order.id, {
       onSuccess: () => {
         setShowCancelSheet(false);
-        navigation.goBack();
+        setActionFeedback({
+          type: 'success',
+          title: 'Đã hủy đơn hàng',
+          message: `Đơn ${orderCode} đã được hủy.`,
+        });
+        void refetch();
+      },
+      onError: (error) => {
+        setShowCancelSheet(false);
+        setActionFeedback({
+          type: 'error',
+          title: 'Không thể hủy đơn',
+          message: getErrorMessage(error, 'Không thể hủy đơn hàng lúc này.'),
+        });
       },
     });
   };
@@ -604,10 +666,42 @@ export function OrderDetailScreen({ route, navigation }: Props) {
       {
         onSuccess: () => {
           setShowConfirmSheet(false);
+          setActionFeedback({
+            type: 'success',
+            title: 'Đã nhận hàng',
+            message: 'Cảm ơn bạn đã xác nhận đã nhận hàng.',
+          });
           void refetch();
+        },
+        onError: (error) => {
+          setShowConfirmSheet(false);
+          setActionFeedback({
+            type: 'error',
+            title: 'Chưa thể xác nhận',
+            message: getErrorMessage(error, 'Chưa thể xác nhận nhận hàng lúc này.'),
+          });
         },
       },
     );
+  };
+
+  const handleConfirmRefund = () => {
+    confirmRefundReceived(order.id, {
+      onSuccess: () => {
+        setActionFeedback({
+          type: 'success',
+          title: 'Đã xác nhận nhận tiền hoàn',
+          message: 'Cảm ơn bạn đã xác nhận. Hỗ trợ cho đơn này đã được đóng.',
+        });
+        void refetch();
+      },
+      onError: (error) =>
+        setActionFeedback({
+          type: 'error',
+          title: 'Không thể xác nhận',
+          message: getErrorMessage(error, 'Không thể xác nhận lúc này.'),
+        }),
+    });
   };
 
   const handleProductPress = (productId?: string | number) => {
@@ -639,11 +733,24 @@ export function OrderDetailScreen({ route, navigation }: Props) {
     <View className="flex-1 bg-landing-paper">
       <AppHeader />
 
-      <ScrollView
+      <KeyboardAvoidingView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 48 }}
-        showsVerticalScrollIndicator={false}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        <ScrollView
+          ref={scrollRef}
+          className="flex-1"
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 48 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={() => void handleRefresh()}
+              tintColor={COLORS.oxblood}
+            />
+          }
+        >
         <View className="pt-4">
           <BackButton onPress={() => navigation.goBack()} label="Đơn hàng" />
         </View>
@@ -726,6 +833,20 @@ export function OrderDetailScreen({ route, navigation }: Props) {
             </Pressable>
           ) : null}
 
+          {order.allowedActions?.reportDeliveryIssue === true &&
+          order.deliveryDispute?.status !== 'OPEN' ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Báo chưa nhận được hàng"
+              onPress={() => setShowDeliveryDispute(true)}
+              className="h-11 items-center justify-center rounded-subtle border border-landing-line px-4 active:opacity-70"
+            >
+              <Text className={`${ACTION_LABEL_CLASS} text-landing-obsidian`}>
+                Tôi chưa nhận được hàng
+              </Text>
+            </Pressable>
+          ) : null}
+
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Mua lại đơn hàng"
@@ -782,6 +903,92 @@ export function OrderDetailScreen({ route, navigation }: Props) {
                 {paymentError}
               </Text>
             ) : null}
+          </View>
+        ) : null}
+
+        {order.refundStatus === 'COMPLETED' ? (
+          <View className="mt-2">
+            {order.refundConfirmedAt ? (
+              <OrderNotice title="Đã xác nhận nhận tiền hoàn">
+                <NoticeText>
+                  Bạn đã xác nhận nhận được tiền hoàn lúc{' '}
+                  <Text className="font-mono">{formatDateTime(order.refundConfirmedAt)}</Text>.
+                </NoticeText>
+              </OrderNotice>
+            ) : (
+              <OrderNotice title="Bạn đã nhận được tiền hoàn?">
+                <NoticeText>
+                  Shop đã ghi nhận hoàn tiền cho đơn. Xác nhận để đóng hỗ trợ, hoặc báo lại nếu chưa
+                  nhận được.
+                </NoticeText>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Đã nhận được tiền hoàn"
+                  accessibilityState={{ disabled: isConfirmingRefund }}
+                  disabled={isConfirmingRefund}
+                  onPress={handleConfirmRefund}
+                  className="h-11 items-center justify-center self-start rounded-subtle bg-oxblood px-4 active:opacity-90 disabled:opacity-60"
+                >
+                  <Text className={`${ACTION_LABEL_CLASS} text-landing-paper`}>
+                    {isConfirmingRefund ? 'Đang xác nhận' : 'Đã nhận được tiền'}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Chưa nhận được tiền hoàn"
+                  onPress={() => navigation.navigate('OrderReturns', { orderId: order.id })}
+                  className="h-11 items-center justify-center self-start rounded-subtle border border-landing-line px-4 active:opacity-70"
+                >
+                  <Text className={`${ACTION_LABEL_CLASS} text-landing-obsidian`}>
+                    Chưa nhận được tiền hoàn
+                  </Text>
+                </Pressable>
+              </OrderNotice>
+            )}
+          </View>
+        ) : null}
+
+        {order.deliveryDispute?.status === 'OPEN' ? (
+          <View className="mt-2">
+            <OrderNotice title="Bạn đã báo chưa nhận được hàng">
+              <NoticeText>
+                Shop đang kiểm tra với đơn vị vận chuyển. Nếu hàng đã tới, bấm “Đã nhận hàng” để
+                hoàn tất đơn.
+              </NoticeText>
+              <NoticeText>
+                Nội dung đã gửi:{' '}
+                <Text className="text-landing-obsidian">{order.deliveryDispute.description}</Text>
+              </NoticeText>
+              <NoticeText>
+                Gửi lúc{' '}
+                <Text className="font-mono">{formatDateTime(order.deliveryDispute.createdAt)}</Text>
+              </NoticeText>
+              {Array.isArray(order.deliveryDispute.evidenceImages) &&
+              order.deliveryDispute.evidenceImages.length > 0 ? (
+                <View className="flex-row flex-wrap gap-2">
+                  {order.deliveryDispute.evidenceImages.map((url: string, index: number) => (
+                    <Pressable
+                      key={`${url}-${index}`}
+                      accessibilityRole="imagebutton"
+                      accessibilityLabel={`Xem ảnh minh chứng ${index + 1}`}
+                      onPress={() =>
+                        setZoomedDisputeImage({
+                          url,
+                          caption: `Ảnh minh chứng ${index + 1}/${order.deliveryDispute.evidenceImages.length}`,
+                        })
+                      }
+                      className="overflow-hidden rounded-subtle border border-landing-line bg-landing-paper active:opacity-75"
+                    >
+                      <Image
+                        source={{ uri: url }}
+                        style={{ width: 64, height: 64 }}
+                        contentFit="cover"
+                      />
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
+            </OrderNotice>
           </View>
         ) : null}
 
@@ -881,7 +1088,9 @@ export function OrderDetailScreen({ route, navigation }: Props) {
           <View className="mt-4 gap-4">
             {items.map((item: any, index: number) => {
               const measurementRows = getMeasurementRows(item);
-              const lineTotal = (item.price || 0) * (item.quantity || 1);
+              const lineTotal = toNumber(
+                item.lineTotalVnd ?? (item.price || 0) * (item.quantity || 1),
+              );
 
               return (
                 <View key={item.id || index} className="gap-2">
@@ -918,7 +1127,7 @@ export function OrderDetailScreen({ route, navigation }: Props) {
                     </Text>
                   </Pressable>
 
-                  {measurementRows.length > 0 ? (
+                  {measurementRows.length > 0 && item.measurementReview?.status !== 'OPEN' ? (
                     <View className="rounded-subtle border border-landing-line bg-ivory px-3 py-2.5">
                       <Text className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brass-ink">
                         Số đo may riêng
@@ -937,6 +1146,8 @@ export function OrderDetailScreen({ route, navigation }: Props) {
                       </View>
                     </View>
                   ) : null}
+
+                  <OrderMeasurementReview item={item} orderId={order.id} />
 
                   {canReportIssue ? (
                     item.id !== undefined && blockedReportItemIds.has(String(item.id)) ? (
@@ -963,6 +1174,19 @@ export function OrderDetailScreen({ route, navigation }: Props) {
                         </Text>
                       </Pressable>
                     )
+                  ) : null}
+
+                  {status === 'COMPLETED' ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Đánh giá sản phẩm"
+                      onPress={() => setReviewItem(item)}
+                      className="h-11 justify-center self-start active:opacity-60"
+                    >
+                      <Text className={`${ACTION_LABEL_CLASS} text-oxblood`}>
+                        Đánh giá sản phẩm
+                      </Text>
+                    </Pressable>
                   ) : null}
                 </View>
               );
@@ -1000,7 +1224,9 @@ export function OrderDetailScreen({ route, navigation }: Props) {
               <SummaryRow label="Giảm giá" value={`-${formatCurrency(discount)}`} />
             ) : null}
             <SummaryRow label="Tổng cộng" value={formatCurrency(totalAmount)} strong />
-            <SummaryRow label="Đã thanh toán" value={formatCurrency(paidAmount)} />
+            {hasPaidAmount ? (
+              <SummaryRow label="Đã thanh toán" value={formatCurrency(paidAmount)} />
+            ) : null}
             {refundedAmount > 0 ? (
               <SummaryRow
                 label={paidAmount > 0 && refundedAmount < paidAmount ? 'Đã hoàn một phần' : 'Đã hoàn tiền'}
@@ -1008,6 +1234,21 @@ export function OrderDetailScreen({ route, navigation }: Props) {
               />
             ) : null}
           </View>
+        </View>
+
+        <View
+          className="mt-4"
+          onLayout={(event) => {
+            const offset = event.nativeEvent.layout.y;
+            chatOffsetRef.current = offset;
+            if (focusChat) {
+              setTimeout(() => {
+                scrollRef.current?.scrollTo({ y: Math.max(offset - 16, 0), animated: true });
+              }, 300);
+            }
+          }}
+        >
+          <OrderChatPanel orderId={order.id} orderCode={orderCode} />
         </View>
 
         {history.length > 0 ? (
@@ -1053,7 +1294,8 @@ export function OrderDetailScreen({ route, navigation }: Props) {
             </View>
           </View>
         ) : null}
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <PaperActionSheet
         visible={showCancelSheet}
@@ -1090,6 +1332,56 @@ export function OrderDetailScreen({ route, navigation }: Props) {
         onClose={() => setShowConfirmSheet(false)}
       />
 
+      <ImagePreviewModal
+        url={zoomedDisputeImage?.url ?? null}
+        caption={zoomedDisputeImage?.caption}
+        onClose={() => setZoomedDisputeImage(null)}
+      />
+
+      <PaymentMethodSheet
+        visible={showPaymentSheet}
+        onClose={() => setShowPaymentSheet(false)}
+        total={totalAmount}
+        isPending={isStartingPayment}
+        initialProvider={selectedProvider}
+        onConfirm={handleStartPayment}
+      />
+
+      <OrderReviewModal
+        visible={!!reviewItem}
+        onClose={() => setReviewItem(null)}
+        orderId={order.id}
+        productId={reviewItem?.productId ?? reviewItem?.id ?? ''}
+        productName={reviewItem ? getOrderItemName(reviewItem) : ''}
+        productImage={reviewItem ? getOrderItemImage(reviewItem) : undefined}
+        onSuccess={() => {
+          InteractionManager.runAfterInteractions(() =>
+            setActionFeedback({
+              type: 'success',
+              title: 'Đã gửi đánh giá',
+              message: 'Cảm ơn bạn đã chia sẻ cảm nhận về sản phẩm.',
+            }),
+          );
+        }}
+      />
+
+      <DeliveryDisputeModal
+        visible={showDeliveryDispute}
+        onClose={() => setShowDeliveryDispute(false)}
+        orderId={orderId}
+        orderCode={orderCode}
+        onSuccess={() => {
+          InteractionManager.runAfterInteractions(() =>
+            setActionFeedback({
+              type: 'success',
+              title: 'Đã gửi báo cáo',
+              message: 'Đã báo chưa nhận được hàng. Shop sẽ kiểm tra và phản hồi.',
+            }),
+          );
+          void refetch();
+        }}
+      />
+
       <ReportIssueModal
         visible={!!reportingItem}
         onClose={() => setReportingItem(null)}
@@ -1101,6 +1393,16 @@ export function OrderDetailScreen({ route, navigation }: Props) {
           accountHolder: order.refundAccountHolder,
         }}
         onSuccess={() => navigation.navigate('OrderReturns', { orderId: order.id })}
+      />
+
+      <FeedbackModal
+        visible={!!actionFeedback}
+        type={actionFeedback?.type ?? 'success'}
+        title={actionFeedback?.title ?? ''}
+        message={actionFeedback?.message}
+        primaryButtonText="Đồng ý"
+        onPrimaryPress={() => setActionFeedback(null)}
+        onClose={() => setActionFeedback(null)}
       />
     </View>
   );

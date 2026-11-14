@@ -12,6 +12,7 @@ import { useMyReturns } from '../hooks/use-orders';
 import { ISSUE_STATUS } from '../components/OrderIssuesList';
 import { ToneLabel } from '../components/ToneLabel';
 import type { IMyReturnOrder } from '../types/order';
+import { getOrderCode } from '../utils/order-format';
 import { RETURN_STATUS_LABELS } from '../utils/order-returns';
 
 type ReturnsNavigationProp = CompositeNavigationProp<
@@ -32,12 +33,12 @@ function ReturnRow({ order, onOpen }: { order: IMyReturnOrder; onOpen: () => voi
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Xem đổi trả đơn ORD-${order.orderCode}`}
+      accessibilityLabel={`Xem đổi trả đơn ${getOrderCode(order)}`}
       onPress={onOpen}
       className="gap-1.5 border-b border-landing-line/60 py-4 active:opacity-70"
     >
       <View className="flex-row flex-wrap items-center gap-x-3 gap-y-1">
-        <Text className="font-mono text-[13px] text-landing-obsidian">ORD-{order.orderCode}</Text>
+        <Text className="font-mono text-[13px] text-landing-obsidian">{getOrderCode(order)}</Text>
         {statusLabel ? <ToneLabel tone={statusLabel.tone} label={statusLabel.label} /> : null}
       </View>
       {itemNames ? (

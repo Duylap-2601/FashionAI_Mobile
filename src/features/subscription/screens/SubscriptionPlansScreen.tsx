@@ -46,6 +46,21 @@ const TABS: { id: SubscriptionTab; label: string }[] = [
   { id: 'history', label: 'Lịch sử thanh toán' },
 ];
 
+type SubscriptionProvider = 'ZALOPAY' | 'SEPAY';
+
+const PROVIDERS: { value: SubscriptionProvider; label: string; description: string }[] = [
+  {
+    value: 'ZALOPAY',
+    label: 'ZaloPay',
+    description: 'Quét QR hoặc mở ứng dụng ZaloPay.',
+  },
+  {
+    value: 'SEPAY',
+    label: 'Chuyển khoản (SePay)',
+    description: 'Quét QR hoặc mở cổng SePay để chuyển khoản.',
+  },
+];
+
 // Cùng bộ nhãn, nút và khối của các trang tài khoản trên web (account-ui).
 const eyebrowClass =
   'font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-ink';
@@ -76,6 +91,8 @@ export const SubscriptionPlansScreen: React.FC = () => {
     route.params?.tab ?? 'plans',
   );
   const [refreshing, setRefreshing] = useState(false);
+  // Gói thành viên chỉ hỗ trợ ZaloPay hoặc SePay (chuyển khoản ngân hàng).
+  const [paymentProvider, setPaymentProvider] = useState<SubscriptionProvider>('ZALOPAY');
 
   // Queries
   const {
@@ -150,13 +167,13 @@ export const SubscriptionPlansScreen: React.FC = () => {
   const handleUpgrade = (targetTier: 'MEMBER' | 'VIP') => {
     const isRenewal = currentTier === targetTier;
     const isUpgradeFromMember = currentTier === 'MEMBER' && targetTier === 'VIP';
+    const providerLabel = paymentProvider === 'ZALOPAY' ? 'ZaloPay' : 'SePay';
 
-    let confirmMsg = `Bạn muốn nâng cấp lên gói ${targetTier} (30 ngày)?`;
+    let confirmMsg = `Bạn muốn nâng cấp lên gói ${targetTier} (30 ngày) qua ${providerLabel}?`;
     if (isRenewal) {
-      confirmMsg = `Gia hạn gói ${targetTier}: 30 ngày mới sẽ được cộng dồn tiếp vào ngày hết hạn hiện tại của bạn.`;
+      confirmMsg = `Gia hạn gói ${targetTier} qua ${providerLabel}: 30 ngày mới sẽ được cộng dồn tiếp vào ngày hết hạn hiện tại của bạn.`;
     } else if (isUpgradeFromMember) {
-      confirmMsg =
-        'Nâng cấp lên gói VIP: gói VIP có hiệu lực ngay sau khi thanh toán. Giá trị còn lại của gói Member được trừ vào tiền gói mới.';
+      confirmMsg = `Nâng cấp lên gói VIP qua ${providerLabel}: gói VIP có hiệu lực ngay sau khi thanh toán. Giá trị còn lại của gói Member được trừ vào tiền gói mới.`;
     }
 
     Alert.alert(
@@ -170,7 +187,7 @@ export const SubscriptionPlansScreen: React.FC = () => {
             try {
               const res = await checkoutAsync({
                 targetTier,
-                provider: 'SEPAY',
+                provider: paymentProvider,
               });
 
               const checkoutUrl = res.checkoutUrl || res.payUrl;
@@ -181,7 +198,8 @@ export const SubscriptionPlansScreen: React.FC = () => {
 
               navigation.navigate('Payment', {
                 checkoutUrl,
-                provider: 'SEPAY',
+                provider: paymentProvider,
+                qrCode: res.qrCode,
                 orderId: res.orderId,
                 orderCode: res.orderCode?.toString(),
                 totalAmount: res.amount,
@@ -365,6 +383,49 @@ export const SubscriptionPlansScreen: React.FC = () => {
                   Gia hạn cùng gói khi còn hạn: 30 ngày mới nối tiếp sau ngày hết hạn hiện tại.
                 </Text>
               ) : null}
+            </View>
+
+            <View className="gap-3">
+              <Text className={eyebrowClass}>Phương thức thanh toán</Text>
+              <View accessibilityRole="radiogroup" className="gap-2">
+                {PROVIDERS.map((option) => {
+                  const selected = paymentProvider === option.value;
+                  return (
+                    <Pressable
+                      key={option.value}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: selected }}
+                      accessibilityLabel={option.label}
+                      onPress={() => setPaymentProvider(option.value)}
+                      className={`min-h-11 gap-1 rounded-subtle border px-3 py-2.5 active:opacity-80 ${
+                        selected
+                          ? 'border-oxblood bg-landing-ivory'
+                          : 'border-landing-line bg-landing-ivory/50'
+                      }`}
+                    >
+                      <View className="flex-row items-center justify-between gap-3">
+                        <Text
+                          className={`flex-1 font-sans text-[13px] ${
+                            selected ? 'font-medium text-oxblood' : 'text-landing-obsidian'
+                          }`}
+                        >
+                          {option.label}
+                        </Text>
+                        <View
+                          className={`h-4 w-4 items-center justify-center rounded-full border ${
+                            selected ? 'border-oxblood bg-oxblood' : 'border-taupe'
+                          }`}
+                        >
+                          {selected ? <Check size={10} strokeWidth={3} color={COLORS.paper} /> : null}
+                        </View>
+                      </View>
+                      <Text className="font-sans text-[12px] leading-relaxed text-landing-muted">
+                        {option.description}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
 
             {isLoadingPlans ? (
@@ -725,12 +786,12 @@ export const SubscriptionPlansScreen: React.FC = () => {
               <View className="gap-4">
                 <View className="gap-1">
                   <Text accessibilityRole="header" className={sectionTitleClass}>
-                    Nhắc gia hạn
+                    Nhắc gia hạn qua email
                   </Text>
                   <Text className="font-sans text-body-sm leading-relaxed text-landing-muted">
                     {currentSub.autoRenew
-                      ? 'Bạn sẽ nhận email nhắc trước 3 ngày khi gói sắp hết hạn.'
-                      : 'Đã tắt nhắc. Khi hết hạn, tài khoản tự về gói miễn phí.'}
+                      ? 'Bạn sẽ nhận email nhắc trước 3 ngày khi gói sắp hết hạn. StAie. không tự động trừ tiền.'
+                      : 'Đã tắt nhắc. Khi hết hạn, tài khoản tự về gói miễn phí. StAie. không tự động trừ tiền.'}
                   </Text>
                 </View>
                 <Pressable

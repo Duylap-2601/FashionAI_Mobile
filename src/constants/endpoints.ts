@@ -99,6 +99,15 @@ export const ENDPOINTS = {
     ISSUES: (orderId: string | number) => `/orders/${orderId}/issues`,
     ISSUE_DETAIL: (issueId: string | number) => `/order-issues/${issueId}`,
     MY_RETURNS: '/order-issues/mine',
+    CONFIRM_REFUND_RECEIVED: (orderId: string | number) =>
+      `/orders/${orderId}/refund/confirm-received`,
+    DELIVERY_DISPUTE: (orderId: string | number) => `/orders/${orderId}/delivery-dispute`,
+    CHAT_THREAD: (orderId: string | number) => `/orders/${orderId}/chat`,
+    CHAT_MESSAGES: (orderId: string | number) => `/orders/${orderId}/chat/messages`,
+    CHAT_READ: (orderId: string | number) => `/orders/${orderId}/chat/read`,
+  },
+  ORDER_CHATS: {
+    MINE: '/order-chats/mine',
   },
   PAYMENTS: {
     CHECKOUT: '/payments/checkout',

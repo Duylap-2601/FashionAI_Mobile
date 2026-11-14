@@ -26,6 +26,7 @@ import { AnnouncementBar } from '../features/home/components/AnnouncementBar';
 import { COLORS as THEME_COLORS } from '../constants/theme';
 import { FloatingChatBubble } from '../features/chat/components/FloatingChatBubble';
 import { CartSync } from '../features/cart/components/CartSync';
+import { useMyOrderChats, useOrderChatRealtime } from '../features/orders/hooks/use-order-chat';
 
 // React Navigation's screenOptions (tabBarStyle, tint colors) and lucide icon props
 // only take plain values, so the Atelier Paper tokens come from COLORS
@@ -123,6 +124,9 @@ export const MainTabs: React.FC = () => {
   const insets = useSafeAreaInsets();
   const focusedTabName = useNavigationState(getFocusedTabName);
   const isLandingPage = focusedTabName === 'HomeTab';
+  const { totalUnread } = useMyOrderChats();
+
+  useOrderChatRealtime();
 
   return (
     <View style={{ flex: 1 }}>
@@ -207,6 +211,12 @@ export const MainTabs: React.FC = () => {
           title: 'Profile',
           headerShown: false,
           popToTopOnBlur: true,
+          tabBarBadge: totalUnread > 0 ? totalUnread : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: THEME_COLORS.oxblood,
+            color: THEME_COLORS.paper,
+            fontSize: 10,
+          },
           tabBarLabel: ({ focused }) => <TabLabel label="Tài khoản" focused={focused} />,
           tabBarIcon: ({ focused }) => <TabIcon Icon={User} focused={focused} />,
         }}

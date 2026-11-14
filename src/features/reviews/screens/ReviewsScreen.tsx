@@ -47,6 +47,8 @@ export function ReviewsScreen({ navigation, route }: Props) {
     Boolean(route.params.startWriting),
   );
   const [editing, setEditing] = useState<IReview | null>(null);
+  const [createImages, setCreateImages] = useState<string[]>([]);
+  const [editImages, setEditImages] = useState<string[]>([]);
   const [eligibilityModal, setEligibilityModal] = useState<
     'already_reviewed' | 'not_purchased' | null
   >(null);
@@ -60,11 +62,14 @@ export function ReviewsScreen({ navigation, route }: Props) {
   const handleToggleWriting = useCallback(() => {
     createMutation.reset();
     setEditing(null);
+    setEditImages([]);
 
     if (writing) {
       setWriting(false);
       return;
     }
+
+    setCreateImages([]);
 
     if (reviewEligibility.isLoading) {
       return;
@@ -106,17 +111,19 @@ export function ReviewsScreen({ navigation, route }: Props) {
           input: {
             rating: values.rating as ReviewRating,
             ...(comment ? { comment } : {}),
+            ...(createImages.length > 0 ? { images: createImages } : {}),
             ...(reviewEligibility.eligibleOrderId
               ? { orderId: reviewEligibility.eligibleOrderId }
               : {}),
           },
         });
+        setCreateImages([]);
         setWriting(false);
       } catch {
         // Mutation state renders the authoritative backend eligibility/permission error.
       }
     },
-    [createMutation, productId, reviewEligibility.eligibleOrderId],
+    [createMutation, createImages, productId, reviewEligibility.eligibleOrderId],
   );
 
   const submitEdit = useCallback(
@@ -126,14 +133,15 @@ export function ReviewsScreen({ navigation, route }: Props) {
         await updateMutation.mutateAsync({
           reviewId: editing.id,
           productId: editing.productId,
-          input: { comment: values.comment.trim() },
+          input: { comment: values.comment.trim(), images: editImages },
         });
         setEditing(null);
+        setEditImages([]);
       } catch {
         // Mutation state renders the backend ownership error.
       }
     },
-    [editing, updateMutation],
+    [editImages, editing, updateMutation],
   );
 
   const confirmDelete = useCallback(
@@ -256,6 +264,8 @@ export function ReviewsScreen({ navigation, route }: Props) {
                   mode="create"
                   submitting={createMutation.isPending}
                   errorMessage={createMutation.isError ? getErrorMessage(createMutation.error) : undefined}
+                  images={createImages}
+                  onChangeImages={setCreateImages}
                   onSubmit={submitCreate}
                   onCancel={() => setWriting(false)}
                 />
@@ -292,6 +302,7 @@ export function ReviewsScreen({ navigation, route }: Props) {
               onEdit={(review) => {
                 updateMutation.reset();
                 setWriting(false);
+                setEditImages(Array.isArray(review.images) ? review.images : []);
                 setEditing(review);
               }}
               onDelete={confirmDelete}
@@ -304,8 +315,13 @@ export function ReviewsScreen({ navigation, route }: Props) {
                   initialComment={item.comment}
                   submitting={updateMutation.isPending}
                   errorMessage={updateMutation.isError ? getErrorMessage(updateMutation.error) : undefined}
+                  images={editImages}
+                  onChangeImages={setEditImages}
                   onSubmit={submitEdit}
-                  onCancel={() => setEditing(null)}
+                  onCancel={() => {
+                    setEditing(null);
+                    setEditImages([]);
+                  }}
                 />
               </View>
             ) : null}

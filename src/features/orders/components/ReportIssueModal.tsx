@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -11,12 +10,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { ImagePlus, Trash2, X } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
+import { getErrorMessage } from '@/utils/error-message';
 import { useCreateOrderIssue } from '../hooks/use-orders';
 import type { IEvidenceImage, IRefundBankAccount, OrderIssueReason } from '../types/order';
 import { getOrderItemImage, getOrderItemName, type OrderItemLike } from '../utils/order-items';
+import {
+  describeEvidenceRejection,
+  pickEvidenceImages,
+} from '../utils/evidence-images';
 import {
   ISSUE_DESCRIPTION_MAX,
   ISSUE_DESCRIPTION_MIN,
@@ -75,8 +78,17 @@ const INPUT_CLASS =
   'h-11 rounded-subtle border border-landing-line bg-landing-ivory px-3 font-sans text-[13px] text-landing-obsidian';
 
 export function ReportIssueModal({ visible, onClose, orderId, orderItem, mode = 'PRODUCT', defaultBank, onSuccess }: Props) {
+  const pendingRef = useRef(false);
+
   return (
-    <Modal visible={visible && !!orderItem} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal
+      visible={visible && !!orderItem}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={() => {
+        if (!pendingRef.current) onClose();
+      }}
+    >
       {/* Form chỉ mount khi mở nên mỗi lần mở là một form mới, không cần reset trong effect. */}
       {visible && orderItem ? (
         <ReportIssueForm
@@ -86,6 +98,7 @@ export function ReportIssueModal({ visible, onClose, orderId, orderItem, mode = 
           mode={mode}
           defaultBank={defaultBank}
           onSuccess={onSuccess}
+          pendingRef={pendingRef}
         />
       ) : null}
     </Modal>
@@ -99,7 +112,12 @@ function ReportIssueForm({
   mode,
   defaultBank,
   onSuccess,
-}: Omit<Props, 'visible' | 'orderItem' | 'mode'> & { orderItem: ReportableOrderItem; mode: ReportIssueMode }) {
+  pendingRef,
+}: Omit<Props, 'visible' | 'orderItem' | 'mode'> & {
+  orderItem: ReportableOrderItem;
+  mode: ReportIssueMode;
+  pendingRef: React.MutableRefObject<boolean>;
+}) {
   const isRefundMode = mode === 'REFUND_NOT_RECEIVED';
   const [reason, setReason] = useState<OrderIssueReason>(isRefundMode ? 'REFUND_NOT_RECEIVED' : 'WRONG_SIZE');
   const [description, setDescription] = useState('');
@@ -113,26 +131,19 @@ function ReportIssueForm({
   const descriptionLength = description.trim().length;
   const canAddImages = images.length < MAX_EVIDENCE_IMAGES;
 
-  const handlePickImages = async () => {
-    try {
-      const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsMultipleSelection: true,
-        selectionLimit: MAX_EVIDENCE_IMAGES - images.length,
-        quality: 0.8,
-      });
+  useEffect(() => {
+    pendingRef.current = isPending;
+  }, [isPending, pendingRef]);
 
-      if (!res.canceled && res.assets) {
-        const picked = res.assets.map((asset, idx) => ({
-          uri: asset.uri,
-          name: asset.fileName || `evidence_${Date.now()}_${idx}.jpg`,
-          type: asset.mimeType || 'image/jpeg',
-        }));
-        setErrorMsg(null);
-        setImages((prev) => [...prev, ...picked].slice(0, MAX_EVIDENCE_IMAGES));
-      }
-    } catch {
-      Alert.alert('Không mở được thư viện ảnh', 'Vui lòng kiểm tra quyền truy cập ảnh rồi thử lại.');
+  const handlePickImages = async () => {
+    const result = await pickEvidenceImages(MAX_EVIDENCE_IMAGES - images.length);
+    if (result.cancelled) return;
+
+    const rejection = describeEvidenceRejection(result.rejectedSize, result.rejectedType);
+    if (rejection) setErrorMsg(rejection);
+
+    if (result.images.length > 0) {
+      setImages((prev) => [...prev, ...result.images].slice(0, MAX_EVIDENCE_IMAGES));
     }
   };
 
@@ -172,25 +183,10 @@ function ReportIssueForm({
         accountHolder: accountHolder.trim(),
       });
 
-      Alert.alert(
-        'Đã gửi yêu cầu',
-        isRefundMode
-          ? 'Đã gửi báo cáo chưa nhận được tiền hoàn. Shop sẽ kiểm tra và phản hồi sớm nhất.'
-          : 'Yêu cầu báo lỗi sản phẩm đã được gửi. Đội ngũ FashionAI sẽ xem xét sớm nhất.',
-        [
-          {
-            text: 'Đồng ý',
-            onPress: () => {
-              onSuccess?.();
-              onClose();
-            },
-          },
-        ],
-      );
+      onSuccess?.();
+      onClose();
     } catch (err: unknown) {
-      setErrorMsg(
-        err instanceof Error && err.message ? err.message : 'Không thể gửi yêu cầu lúc này. Vui lòng thử lại.',
-      );
+      setErrorMsg(getErrorMessage(err, 'Không thể gửi yêu cầu lúc này. Vui lòng thử lại.'));
     }
   };
 
@@ -452,8 +448,10 @@ function ReportIssueForm({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={isRefundMode ? 'Gửi báo cáo' : 'Gửi yêu cầu'}
-            accessibilityState={{ disabled: isPending }}
-            disabled={isPending}
+            accessibilityState={{
+              disabled: isPending || descriptionLength < ISSUE_DESCRIPTION_MIN || images.length === 0,
+            }}
+            disabled={isPending || descriptionLength < ISSUE_DESCRIPTION_MIN || images.length === 0}
             onPress={handleSubmit}
             className="h-11 flex-row items-center justify-center gap-2 rounded-subtle bg-oxblood active:opacity-90 disabled:opacity-60"
           >

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
+  InteractionManager,
   Modal,
   Pressable,
   RefreshControl,
@@ -20,12 +20,22 @@ import { useCart } from '@/features/cart/hooks/use-cart';
 import { useDebouncedValue } from '@/features/products/hooks/use-debounced-value';
 import { AppHeader } from '@/components/common/AppHeader';
 import { BackButton } from '@/components/common/BackButton';
+import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { COLORS } from '@/constants/theme';
+import { formatCurrency } from '@/utils/format';
 import { formatDate, formatDateTime } from '@/utils/date';
+import { getErrorMessage } from '@/utils/error-message';
 import { useInfiniteOrders, useCancelOrder, useConfirmDelivery } from '../hooks/use-orders';
 import { ToneLabel } from '../components/ToneLabel';
+import { OrderReviewModal } from '../components/OrderReviewModal';
 import { getOrderItemImage, getOrderItemName } from '../utils/order-items';
-import { RETURN_HISTORY_STATUSES } from '../utils/order-returns';
+import { RETURN_FLOW_STATUSES } from '../utils/order-returns';
+import {
+  getOrderCode,
+  getPaymentMethodLabel,
+  PAYMENT_STATUS_LABELS,
+  toNumber,
+} from '../utils/order-format';
 import { getCarrierLabel } from '../utils/order-shipping';
 import { ORDER_STATUS_CONFIG } from '../utils/order-status';
 
@@ -38,6 +48,7 @@ const FILTER_TABS: { id: string; label: string; status?: string }[] = [
   { id: 'ready_to_ship', label: 'Chờ giao', status: 'READY_TO_SHIP' },
   { id: 'shipping', label: 'Đang giao', status: 'SHIPPING' },
   { id: 'delivered', label: 'Đã giao', status: 'DELIVERED' },
+  { id: 'delivery_disputed', label: 'Chưa nhận được hàng', status: 'DELIVERY_DISPUTED' },
   { id: 'completed', label: 'Hoàn tất', status: 'COMPLETED' },
   { id: 'cancelled', label: 'Đã hủy', status: 'CANCELLED' },
 ];
@@ -48,28 +59,6 @@ const STEPS = ['Đã đặt', 'Duyệt số đo', 'Đang may', 'Đang giao', 'Gi
 
 const STATUS_CONFIG = ORDER_STATUS_CONFIG;
 
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  COD: 'Thanh toán khi nhận hàng',
-  ZALOPAY: 'ZaloPay',
-  BANK_TRANSFER: 'Chuyển khoản',
-  BANK: 'Chuyển khoản',
-  SEPAY: 'Chuyển khoản',
-  MOMO: 'MoMo',
-  WALLET: 'Ví FashionAI',
-};
-
-const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  PENDING: 'Chờ thanh toán',
-  PAID: 'Đã thanh toán',
-  FAILED: 'Thanh toán thất bại',
-  EXPIRED: 'Hết hạn thanh toán',
-  REFUND_REQUIRED: 'Cần hoàn tiền',
-  REFUND_PENDING: 'Đang hoàn tiền',
-  REFUNDED: 'Đã hoàn tiền',
-  PARTIALLY_REFUNDED: 'Đã hoàn một phần',
-  COD_COLLECTED: 'Đã thu khi giao',
-};
-
 const LABEL_CLASS =
   'font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-brass-ink';
 const CARD_ACTION_CLASS = 'h-11 items-center justify-center rounded-subtle px-3';
@@ -77,15 +66,6 @@ const CARD_ACTION_LABEL_CLASS = 'font-sans text-[10.5px] font-semibold uppercase
 
 // expo-image không nhận className (chưa cssInterop), nên kích thước ảnh dùng style.
 const THUMB_STYLE = { width: 48, height: 64 } as const;
-
-function fmtPrice(amount?: number | null): string {
-  if (amount === undefined || amount === null || isNaN(amount)) return '0đ';
-  return `${amount.toLocaleString('vi-VN')}đ`;
-}
-
-function getOrderCode(order: any): string {
-  return `ORD-${order?.orderCode || order?.orderNumber || order?.id}`;
-}
 
 function getItems(order: any): any[] {
   return Array.isArray(order?.items) ? order.items : [];
@@ -305,6 +285,18 @@ export function OrdersScreen() {
   const [expandedOrders, setExpandedOrders] = useState<Set<string | number>>(new Set());
   const [cancelTarget, setCancelTarget] = useState<any | null>(null);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<any | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<{
+    orderId: string | number;
+    item: any;
+  } | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: 'success' | 'error';
+    title: string;
+    message?: string;
+    actionLabel?: string;
+    onAction?: () => void;
+  } | null>(null);
 
   const isFiltered = activeTab.status !== undefined || debouncedSearch.length > 0;
 
@@ -341,10 +333,13 @@ export function OrdersScreen() {
       });
     });
 
-    Alert.alert('Thành công', 'Đã thêm sản phẩm vào giỏ hàng.', [
-      { text: 'Tiếp tục xem', style: 'cancel' },
-      { text: 'Xem giỏ hàng', onPress: () => navigation.navigate('Cart') },
-    ]);
+    setFeedback({
+      type: 'success',
+      title: 'Đã thêm vào giỏ',
+      message: 'Sản phẩm trong đơn đã được thêm vào giỏ hàng.',
+      actionLabel: 'Xem giỏ hàng',
+      onAction: () => navigation.navigate('Cart'),
+    });
   };
 
   const handleCancel = (order: any) => {
@@ -357,29 +352,38 @@ export function OrdersScreen() {
     setCancelError(null);
     cancelOrder(cancelTarget.id, {
       onSuccess: () => setCancelTarget(null),
-      onError: () => setCancelError('Không thể hủy đơn hàng lúc này. Vui lòng thử lại.'),
+      onError: (error) =>
+        setCancelError(
+          getErrorMessage(error, 'Không thể hủy đơn hàng lúc này. Vui lòng thử lại.'),
+        ),
     });
   };
 
   // Hỏi lại trước khi xác nhận, vì xác nhận xong đơn chuyển sang hoàn tất.
   const handleConfirmDelivery = (order: any) => {
-    Alert.alert(
-      'Đã nhận hàng?',
-      `Bạn xác nhận đã nhận kiện hàng của đơn ${getOrderCode(order)} và hàng hóa đang ở trạng thái tốt.`,
-      [
-        { text: 'Chưa', style: 'cancel' },
-        {
-          text: 'Xác nhận',
-          onPress: () =>
-            confirmDelivery(
-              { id: order.id },
-              {
-                onSuccess: () => Alert.alert('Thành công', 'Cảm ơn bạn đã xác nhận đã nhận hàng!'),
-                onError: () => Alert.alert('Lỗi', 'Chưa thể xác nhận nhận hàng lúc này.'),
-              },
-            ),
-        },
-      ],
+    setConfirmTarget(order);
+  };
+
+  const confirmDeliveryNow = () => {
+    if (!confirmTarget) return;
+    const target = confirmTarget;
+    setConfirmTarget(null);
+    confirmDelivery(
+      { id: target.id },
+      {
+        onSuccess: () =>
+          setFeedback({
+            type: 'success',
+            title: 'Đã nhận hàng',
+            message: 'Cảm ơn bạn đã xác nhận đã nhận hàng!',
+          }),
+        onError: (error) =>
+          setFeedback({
+            type: 'error',
+            title: 'Chưa thể xác nhận',
+            message: getErrorMessage(error, 'Chưa thể xác nhận nhận hàng lúc này.'),
+          }),
+      },
     );
   };
 
@@ -389,7 +393,9 @@ export function OrdersScreen() {
     const carrierLabel = getCarrierLabel(order);
 
     const orderCode = getOrderCode(order);
-    const total = order.totalVnd ?? order.totalAmount ?? order.total ?? 0;
+    const total = toNumber(
+      order.totalVnd ?? order.totalAmount ?? order.amount ?? order.total,
+    );
     const isExpanded = expandedOrders.has(order.id);
     const isCopied = copiedId === order.id;
 
@@ -410,11 +416,10 @@ export function OrdersScreen() {
       order.shippingInfo?.name || order.shippingAddress?.name || order.shippingAddress?.fullName;
     const phone = order.shippingInfo?.phone || order.shippingAddress?.phone;
 
-    const shippingFee = order.shippingFeeVnd ?? order.shippingFee ?? 0;
-    const discount = order.discountVnd ?? order.discountAmount ?? order.discount ?? 0;
+    const shippingFee = toNumber(order.shippingFeeVnd ?? order.shippingFee);
+    const discount = toNumber(order.discountVnd ?? order.discountAmount ?? order.discount);
 
-    const paymentMethodLabel =
-      PAYMENT_METHOD_LABELS[order.paymentMethod] || order.paymentMethod || 'Chuyển khoản';
+    const paymentMethodLabel = getPaymentMethodLabel(order);
     const paymentStatusLabel =
       PAYMENT_STATUS_LABELS[order.paymentStatus] || order.paymentStatus || 'Chờ thanh toán';
 
@@ -468,6 +473,20 @@ export function OrdersScreen() {
           {carrierLabel ? (
             <Text className="font-sans text-[12px] text-landing-muted">Vận chuyển: {carrierLabel}</Text>
           ) : null}
+          {order.chatUnreadForCustomer > 0 ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${order.chatUnreadForCustomer} tin nhắn mới từ shop`}
+              onPress={() =>
+                navigation.navigate('OrderDetail', { orderId: order.id, focusChat: true })
+              }
+              className="min-h-11 self-start justify-center active:opacity-60"
+            >
+              <Text className="font-sans text-[12px] font-medium text-oxblood">
+                {order.chatUnreadForCustomer} tin nhắn mới từ shop
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <View className="flex-row items-start gap-3">
@@ -486,7 +505,7 @@ export function OrdersScreen() {
               {items.length > 1 ? `và ${items.length - 1} món khác · ` : ''}
               {itemCount} sản phẩm
             </Text>
-            <Text className="font-mono text-[15px] text-landing-obsidian">{fmtPrice(total)}</Text>
+            <Text className="font-mono text-[15px] text-landing-obsidian">{formatCurrency(total)}</Text>
           </View>
         </View>
 
@@ -580,7 +599,7 @@ export function OrdersScreen() {
             <Text className={`${CARD_ACTION_LABEL_CLASS} text-landing-obsidian`}>Mua lại</Text>
           </Pressable>
 
-          {RETURN_HISTORY_STATUSES.includes(rawStatus) ? (
+          {RETURN_FLOW_STATUSES.includes(rawStatus) ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Đổi trả đơn ${orderCode}`}
@@ -608,7 +627,9 @@ export function OrdersScreen() {
               <Text className={LABEL_CLASS}>Sản phẩm</Text>
               <View className="gap-3">
                 {items.map((item: any, itemIdx: number) => {
-                  const lineTotal = (item.price || 0) * (item.quantity || 1);
+                  const lineTotal = toNumber(
+                    item.lineTotalVnd ?? (item.price || 0) * (item.quantity || 1),
+                  );
 
                   return (
                     <View key={item.id || itemIdx} className="flex-row items-center gap-3">
@@ -626,9 +647,23 @@ export function OrdersScreen() {
                           Màu: {item.color || 'Mặc định'} · May đo · SL {item.quantity || 1}
                         </Text>
                       </View>
-                      <Text className="shrink-0 text-right font-mono text-[12.5px] text-landing-obsidian">
-                        {fmtPrice(lineTotal)}
-                      </Text>
+                      <View className="items-end gap-1">
+                        <Text className="shrink-0 text-right font-mono text-[12.5px] text-landing-obsidian">
+                          {formatCurrency(lineTotal)}
+                        </Text>
+                        {rawStatus === 'COMPLETED' && item.productId ? (
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Đánh giá ${getOrderItemName(item)}`}
+                            onPress={() => setReviewTarget({ orderId: order.id, item })}
+                            className="min-h-11 justify-center active:opacity-60"
+                          >
+                            <Text className={`${CARD_ACTION_LABEL_CLASS} text-oxblood`}>
+                              Đánh giá
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
                     </View>
                   );
                 })}
@@ -661,11 +696,11 @@ export function OrdersScreen() {
               <View>
                 <SummaryLine label="Phương thức" value={paymentMethodLabel} />
                 <SummaryLine label="Trạng thái" value={paymentStatusLabel} />
-                <SummaryLine label="Phí giao hàng" value={fmtPrice(shippingFee)} />
+                <SummaryLine label="Phí giao hàng" value={formatCurrency(shippingFee)} />
                 {discount > 0 ? (
-                  <SummaryLine label="Giảm giá" value={`-${fmtPrice(discount)}`} />
+                  <SummaryLine label="Giảm giá" value={`-${formatCurrency(discount)}`} />
                 ) : null}
-                <SummaryLine label="Tổng cộng" value={fmtPrice(total)} strong />
+                <SummaryLine label="Tổng cộng" value={formatCurrency(total)} strong />
               </View>
             </View>
           </View>
@@ -801,11 +836,18 @@ export function OrdersScreen() {
         </View>
         <Pressable
           accessibilityRole="button"
-          onPress={() => navigation.navigate('Main', { screen: 'ShopTab' })}
+          onPress={() => {
+            if (isFiltered) {
+              setActiveFilter('all');
+              setSearch('');
+              return;
+            }
+            navigation.navigate('Main', { screen: 'ShopTab' });
+          }}
           className="h-11 items-center justify-center rounded-subtle bg-oxblood px-5 active:opacity-90"
         >
           <Text className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] text-landing-paper">
-            Khám phá sản phẩm
+            {isFiltered ? 'Xem tất cả đơn' : 'Khám phá sản phẩm'}
           </Text>
         </Pressable>
       </View>
@@ -856,6 +898,55 @@ export function OrdersScreen() {
         onConfirm={confirmCancel}
         isPending={isCancelling}
         errorMessage={cancelError}
+      />
+
+      <OrderReviewModal
+        visible={!!reviewTarget}
+        onClose={() => setReviewTarget(null)}
+        orderId={reviewTarget?.orderId ?? ''}
+        productId={reviewTarget?.item?.productId ?? ''}
+        productName={reviewTarget ? getOrderItemName(reviewTarget.item) : ''}
+        productImage={reviewTarget ? getOrderItemImage(reviewTarget.item) : undefined}
+        onSuccess={() => {
+          InteractionManager.runAfterInteractions(() =>
+            setFeedback({
+              type: 'success',
+              title: 'Đã gửi đánh giá',
+              message: 'Cảm ơn bạn đã chia sẻ cảm nhận về sản phẩm.',
+            }),
+          );
+        }}
+      />
+
+      <FeedbackModal
+        visible={!!confirmTarget}
+        type="info"
+        title="Đã nhận hàng?"
+        message={`Bạn xác nhận đã nhận kiện hàng của đơn ${
+          confirmTarget ? getOrderCode(confirmTarget) : ''
+        } và hàng hóa đang ở trạng thái tốt.`}
+        primaryButtonText={isConfirmingDelivery ? 'Đang xác nhận' : 'Xác nhận'}
+        primaryButtonLoading={isConfirmingDelivery}
+        onPrimaryPress={confirmDeliveryNow}
+        secondaryButtonText="Chưa"
+        onSecondaryPress={() => setConfirmTarget(null)}
+        onClose={() => setConfirmTarget(null)}
+      />
+
+      <FeedbackModal
+        visible={!!feedback}
+        type={feedback?.type ?? 'success'}
+        title={feedback?.title ?? ''}
+        message={feedback?.message}
+        primaryButtonText={feedback?.actionLabel ?? 'Đồng ý'}
+        onPrimaryPress={() => {
+          const action = feedback?.onAction;
+          setFeedback(null);
+          action?.();
+        }}
+        secondaryButtonText={feedback?.actionLabel ? 'Đóng' : undefined}
+        onSecondaryPress={() => setFeedback(null)}
+        onClose={() => setFeedback(null)}
       />
     </View>
   );

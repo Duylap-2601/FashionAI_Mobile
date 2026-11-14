@@ -107,8 +107,13 @@ function navigateFromNotification(
   if (orderTarget) {
     if (orderTarget.screen === 'Returns') {
       navigation.navigate('Main', { screen: 'ProfileTab', params: { screen: 'Returns' } });
+    } else if (orderTarget.screen === 'OrderDetail') {
+      navigation.navigate('OrderDetail', {
+        orderId: orderTarget.orderId,
+        focusChat: orderTarget.focusChat,
+      });
     } else {
-      navigation.navigate(orderTarget.screen, { orderId: orderTarget.orderId });
+      navigation.navigate('OrderReturns', { orderId: orderTarget.orderId });
     }
     return;
   }

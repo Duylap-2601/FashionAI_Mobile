@@ -7,6 +7,7 @@ export enum EOrderStatus {
   DELIVERED = 'DELIVERED',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
+  DELIVERY_DISPUTED = 'DELIVERY_DISPUTED',
   REFUND_PENDING = 'REFUND_PENDING',
   REFUNDED = 'REFUNDED',
 }
@@ -147,6 +148,7 @@ export interface IOrderReturnsView {
   orderNumber?: string | number;
   status?: string;
   refundStatus?: string | null;
+  refundConfirmedAt?: string | null;
   amountPaidVnd?: number | string | null;
   amountRefundedVnd?: number | string | null;
   refunds?: IOrderRefund[];
@@ -156,6 +158,9 @@ export interface IOrderReturnsView {
   refundAccountHolder?: string | null;
   history?: IOrderHistoryEvent[];
   items?: (IOrderItemSummary & { id?: string | number })[];
+  deliveryDispute?: IDeliveryDispute | null;
+  allowedActions?: IOrderAllowedActions;
+  chatUnreadForCustomer?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -197,5 +202,82 @@ export interface ICreateOrderIssuePayload extends IRefundBankAccount {
   reason: OrderIssueReason;
   description: string;
   evidenceImages: IEvidenceImage[];
+}
+
+export type DeliveryDisputeStatus = 'OPEN' | 'RESOLVED' | 'CANCELLED';
+
+export type DeliveryDisputeResolution =
+  | 'CUSTOMER_CONFIRMED_RECEIVED'
+  | 'ADMIN_CONFIRMED_RECEIVED'
+  | 'REFUNDED'
+  | 'LOST';
+
+export interface IDeliveryDispute {
+  id: string;
+  status: DeliveryDisputeStatus;
+  resolution?: DeliveryDisputeResolution | null;
+  description: string;
+  evidenceImages: string[];
+  carrierRawStatus?: string | null;
+  carrierDeliveredAt?: string | null;
+  adminNote?: string | null;
+  resolvedAt?: string | null;
+  createdAt: string;
+}
+
+export interface IOrderAllowedActions {
+  cancel?: boolean;
+  confirmDelivery?: boolean;
+  reportDeliveryIssue?: boolean;
+  startShipmentCreation?: boolean;
+  createReplacementShipment?: boolean;
+  updateMeasurement?: boolean;
+}
+
+export interface IDeliveryDisputePayload {
+  orderId: string | number;
+  description: string;
+  images: IEvidenceImage[];
+}
+
+export interface IMeasurementReviewState {
+  status?: 'OPEN' | 'SUBMITTED' | 'RESOLVED' | 'CLOSED' | string;
+  message?: string | null;
+  requestedFields?: string[];
+  fields?: string[];
+  editable?: boolean;
+  openedAt?: string;
+  submittedAt?: string;
+  resolvedAt?: string;
+  closedAt?: string;
+}
+
+export interface IMeasurementDisplayItem {
+  field: string;
+  label: string;
+  value: number;
+  unit: string;
+}
+
+/** Item của GET /orders/:id: tiền theo dòng + dữ liệu số đo/review. */
+export interface IOrderDetailItem {
+  id?: string | number;
+  productId?: string | number;
+  productName?: string | null;
+  productNameSnapshot?: string | null;
+  productImage?: string | null;
+  productImageSnapshot?: string | null;
+  color?: string | null;
+  quantity?: number | null;
+  price?: number | null;
+  unitPriceVnd?: number | string | null;
+  listUnitPriceVnd?: number | string | null;
+  lineTotalVnd?: number | string | null;
+  measurementSnapshot?: Record<string, unknown> | null;
+  measurementDisplay?: IMeasurementDisplayItem[] | null;
+  measurementReview?: IMeasurementReviewState | null;
+  measurementRequiredFields?: string[] | null;
+  measurementMissingFields?: string[] | null;
+  [key: string]: unknown;
 }
 

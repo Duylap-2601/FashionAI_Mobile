@@ -21,6 +21,7 @@ const TYPE_META: Record<NotificationType, { Icon: LucideIcon; label: string; col
   REVIEW: { Icon: MessageSquare, label: 'Đánh giá', color: COLORS.brassInk, text: 'text-brass-ink' },
   SYSTEM: { Icon: Info, label: 'Hệ thống', color: COLORS.muted, text: 'text-landing-muted' },
   ORDER_ISSUE: { Icon: ShieldAlert, label: 'Đổi trả', color: COLORS.oxblood, text: 'text-oxblood' },
+  ORDER_CHAT: { Icon: MessageSquare, label: 'Tin nhắn', color: COLORS.oxblood, text: 'text-oxblood' },
 };
 
 interface NotificationItemProps {

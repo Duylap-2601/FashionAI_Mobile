@@ -8,6 +8,7 @@ import type {
   OrderRefundStatus,
   RefundEvidence,
 } from '../types/order';
+import { ORDER_STATUS_CONFIG } from './order-status';
 
 /** BE chỉ nhận báo lỗi trong 7 ngày kể từ khi đơn hoàn tất (order-issues.service.ts). */
 export const ISSUE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -16,13 +17,22 @@ export const RETURN_FLOW_STATUSES: readonly string[] = ['RETURN_REQUESTED', 'RET
 /** Mọi trạng thái của luồng đổi trả, kể cả đã hoàn trả xong. */
 export const RETURN_HISTORY_STATUSES: readonly string[] = [...RETURN_FLOW_STATUSES, 'RETURNED'];
 
-/** Nhãn trạng thái đơn trong luồng hoàn trả (cùng nhãn với chi tiết đơn). */
-export const RETURN_STATUS_LABELS: Record<string, { label: string; tone: StatusTone }> = {
-  RETURN_REQUESTED: { label: 'Yêu cầu hoàn trả', tone: 'attention' },
-  RETURN_APPROVED: { label: 'Đã duyệt hoàn trả', tone: 'attention' },
-  RETURNING: { label: 'Đang hoàn trả', tone: 'attention' },
-  RETURNED: { label: 'Đã hoàn trả', tone: 'closed' },
-};
+/** Nhãn trạng thái đơn trong luồng hoàn trả (một nguồn với chi tiết đơn). */
+const RETURN_STATUS_KEYS = [
+  'RETURN_REQUESTED',
+  'RETURN_APPROVED',
+  'RETURNING',
+  'RETURNED',
+  'DELIVERY_DISPUTED',
+] as const;
+
+export const RETURN_STATUS_LABELS: Record<string, { label: string; tone: StatusTone }> =
+  Object.fromEntries(
+    RETURN_STATUS_KEYS.map((key) => [
+      key,
+      { label: ORDER_STATUS_CONFIG[key].label, tone: ORDER_STATUS_CONFIG[key].tone },
+    ]),
+  );
 
 export const RETURN_FLOW_TITLES: Record<string, string> = {
   RETURN_REQUESTED: 'Yêu cầu hoàn trả đã được ghi nhận',
@@ -98,7 +108,15 @@ export function formatRefundEvidence(evidence: unknown): string | null {
     const text = formatRefundEvidence(record[key]);
     if (text) return text;
   }
-  return null;
+
+  const unknownEntries = Object.entries(record).filter(
+    ([key, value]) => key !== 'receiptImages' && value !== null && value !== undefined && value !== '',
+  );
+  if (unknownEntries.length === 0) return null;
+
+  return unknownEntries
+    .map(([key, value]) => `${key}: ${typeof value === 'string' ? value : JSON.stringify(value)}`)
+    .join(' · ');
 }
 
 export function getRefundEvidenceImages(evidence: RefundEvidence | undefined): string[] {

@@ -169,6 +169,16 @@ describe('refund evidence', () => {
     expect(formatRefundEvidence('  ')).toBeNull();
     expect(getRefundEvidenceImages('FT2611040001')).toEqual([]);
   });
+
+  it('still surfaces evidence stored under an unknown key, without receipt images', () => {
+    const text = formatRefundEvidence({
+      adminNote: 'Đã chuyển khoản đợt 2',
+      receiptImages: ['https://cdn/a.jpg'],
+    });
+    expect(text).toContain('adminNote');
+    expect(text).toContain('Đã chuyển khoản đợt 2');
+    expect(text).not.toContain('receiptImages');
+  });
 });
 
 describe('isReturnHistoryEvent', () => {

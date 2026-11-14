@@ -6,7 +6,8 @@ export type NotificationType =
   | 'PROMOTION'
   | 'SYSTEM'
   | 'REVIEW'
-  | 'ORDER_ISSUE';
+  | 'ORDER_ISSUE'
+  | 'ORDER_CHAT';
 
 export interface INotificationData {
   orderId?: string;

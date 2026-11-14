@@ -1,6 +1,19 @@
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AppState } from 'react-native';
 import { ordersApi } from '../api/orders.api';
-import type { ICreateOrderIssuePayload } from '../types/order';
+import type { ICreateOrderIssuePayload, IDeliveryDisputePayload } from '../types/order';
+
+const TERMINAL_ORDER_STATUSES = ['COMPLETED', 'CANCELLED', 'EXPIRED', 'FAILED'];
+const ORDER_DETAIL_REFETCH_MS = 30_000;
+
+function isAppActive(): boolean {
+  const state = AppState.currentState;
+  return state !== 'background' && state !== 'inactive';
+}
+
+function normalizeOrderId(id: string | number): string {
+  return String(id);
+}
 
 export function useOrders() {
   const query = useQuery({
@@ -47,10 +60,18 @@ export function useInfiniteOrders(filters: { status?: string; search?: string })
 }
 
 export function useOrder(id: string | number) {
+  const orderId = normalizeOrderId(id);
   const query = useQuery({
-    queryKey: ['orders', id],
-    queryFn: ({ signal }) => ordersApi.getOrder(id, { signal }),
+    queryKey: ['orders', orderId],
+    queryFn: ({ signal }) => ordersApi.getOrder(orderId, { signal }),
     enabled: !!id,
+    // Đơn đang xử lý cần tự cập nhật: trạng thái thanh toán, vận chuyển, hoàn tiền.
+    refetchInterval: (query) => {
+      const status = String(query.state.data?.status ?? '').toUpperCase();
+      if (TERMINAL_ORDER_STATUSES.includes(status) || !isAppActive()) return false;
+      return ORDER_DETAIL_REFETCH_MS;
+    },
+    refetchOnReconnect: true,
   });
 
   return {
@@ -59,6 +80,7 @@ export function useOrder(id: string | number) {
     isError: query.isError,
     error: query.error,
     refetch: query.refetch,
+    isRefetching: query.isRefetching,
   };
 }
 
@@ -115,14 +137,16 @@ export function useConfirmDelivery() {
 }
 
 export function useOrderIssues(orderId: string | number) {
+  const normalizedOrderId = normalizeOrderId(orderId);
   const query = useQuery({
-    queryKey: ['orderIssues', orderId],
-    queryFn: ({ signal }) => ordersApi.getOrderIssues(orderId, { signal }),
+    queryKey: ['orderIssues', normalizedOrderId],
+    queryFn: ({ signal }) => ordersApi.getOrderIssues(normalizedOrderId, {}, { signal }),
     enabled: !!orderId,
   });
 
   return {
-    issues: query.data || [],
+    issues: query.data?.data ?? [],
+    meta: query.data?.meta,
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,
@@ -165,8 +189,9 @@ export function useCreateOrderIssue() {
   const mutation = useMutation({
     mutationFn: (payload: ICreateOrderIssuePayload) => ordersApi.createOrderIssue(payload),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['orderIssues', variables.orderId] });
-      queryClient.invalidateQueries({ queryKey: ['orders', variables.orderId] });
+      const orderId = normalizeOrderId(variables.orderId);
+      queryClient.invalidateQueries({ queryKey: ['orderIssues', orderId] });
+      queryClient.invalidateQueries({ queryKey: ['orders', orderId] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: MY_RETURNS_KEY });
     },
@@ -182,3 +207,70 @@ export function useCreateOrderIssue() {
   };
 }
 
+export function useConfirmRefundReceived() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (orderId: string | number) => ordersApi.confirmRefundReceived(orderId),
+    onSuccess: (_, orderId) => {
+      const normalizedOrderId = normalizeOrderId(orderId);
+      queryClient.invalidateQueries({ queryKey: ['orders', normalizedOrderId] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: MY_RETURNS_KEY });
+    },
+  });
+
+  return {
+    confirmRefundReceived: mutation.mutate,
+    isConfirmingRefund: mutation.isPending,
+  };
+}
+
+export function useCreateDeliveryDispute() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (payload: IDeliveryDisputePayload) => ordersApi.createDeliveryDispute(payload),
+    onSuccess: (_, variables) => {
+      const orderId = normalizeOrderId(variables.orderId);
+      queryClient.invalidateQueries({ queryKey: ['orders', orderId] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+  });
+
+  return {
+    createDeliveryDispute: mutation.mutate,
+    createDeliveryDisputeAsync: mutation.mutateAsync,
+    isCreatingDeliveryDispute: mutation.isPending,
+  };
+}
+
+export function useUpdateItemMeasurement() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: ({
+      orderId,
+      itemId,
+      measurementSnapshot,
+      syncToProfile,
+    }: {
+      orderId: string | number;
+      itemId: string | number;
+      measurementSnapshot: Record<string, number | null>;
+      syncToProfile?: boolean;
+    }) =>
+      ordersApi.updateMeasurement(orderId, itemId, { measurementSnapshot, syncToProfile }),
+    onSuccess: (_, variables) => {
+      const orderId = normalizeOrderId(variables.orderId);
+      queryClient.invalidateQueries({ queryKey: ['orders', orderId] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['users', 'measurements'] });
+    },
+  });
+
+  return {
+    updateItemMeasurement: mutation.mutate,
+    isUpdatingMeasurement: mutation.isPending,
+  };
+}

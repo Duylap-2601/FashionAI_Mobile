@@ -1,7 +1,12 @@
 import { http, HttpOptions } from '@/api/http';
 import { ENDPOINTS } from '@/constants/endpoints';
 import { isPaginationMeta, type ApiPaginationMeta } from '@/types/api';
-import type { ICreateOrderIssuePayload, IMyReturnOrder, IOrderIssue } from '../types/order';
+import type {
+  ICreateOrderIssuePayload,
+  IDeliveryDisputePayload,
+  IMyReturnOrder,
+  IOrderIssue,
+} from '../types/order';
 
 export interface IOrderShippingInfo {
   name: string;
@@ -89,18 +94,24 @@ export const ordersApi = {
   },
   
   getOrders: (opts?: HttpOptions): Promise<any[]> => {
-    return http.get<any[]>(ENDPOINTS.ORDERS.LIST, opts);
+    return http.get<any[]>(ENDPOINTS.ORDERS.LIST, {
+      ...opts,
+      params: { ...opts?.params, limit: 100 },
+    });
   },
   
   /** Một trang đơn của tôi; BE lọc theo một trạng thái và tìm theo mã đơn / tên sản phẩm. */
   getOrdersPage: async (
     params: OrdersListParams = {},
     opts?: HttpOptions,
-  ): Promise<{ data: any[]; meta?: ApiPaginationMeta }> => {
+  ): Promise<{ data: any[]; meta: ApiPaginationMeta }> => {
+    const page = params.page ?? 1;
+    const limit = params.limit ?? 20;
     const res = await http.getPaged<any[]>(ENDPOINTS.ORDERS.LIST, { ...opts, params });
+    const data = Array.isArray(res.data) ? res.data : [];
     return {
-      data: Array.isArray(res.data) ? res.data : [],
-      meta: isPaginationMeta(res.meta) ? res.meta : undefined,
+      data,
+      meta: isPaginationMeta(res.meta) ? res.meta : { page, limit, total: data.length, totalPages: 1 },
     };
   },
 
@@ -138,19 +149,53 @@ export const ordersApi = {
   getMyReturns: async (
     params: { page?: number; limit?: number } = {},
     opts?: HttpOptions,
-  ): Promise<{ data: IMyReturnOrder[]; meta?: ApiPaginationMeta }> => {
-    const res = await http.getPaged<IMyReturnOrder[]>(ENDPOINTS.ORDERS.MY_RETURNS, { ...opts, params });
+  ): Promise<{ data: IMyReturnOrder[]; meta: ApiPaginationMeta }> => {
+    const page = params.page ?? 1;
+    const limit = params.limit ?? 10;
+    const res = await http.getPaged<IMyReturnOrder[]>(ENDPOINTS.ORDERS.MY_RETURNS, {
+      ...opts,
+      params,
+    });
+    const data = Array.isArray(res.data) ? res.data : [];
     return {
-      data: Array.isArray(res.data) ? res.data : [],
-      meta: isPaginationMeta(res.meta) ? res.meta : undefined,
+      data,
+      meta: isPaginationMeta(res.meta) ? res.meta : { page, limit, total: data.length, totalPages: 1 },
     };
   },
 
-  getOrderIssues: async (orderId: string | number, opts?: HttpOptions): Promise<any[]> => {
-    const res = await http.get<any>(ENDPOINTS.ORDERS.ISSUES(orderId), opts);
-    if (Array.isArray(res)) return res;
-    if (res && Array.isArray(res.data)) return res.data;
-    return [];
+  getOrderIssues: async (
+    orderId: string | number,
+    params: { page?: number; limit?: number } = {},
+    opts?: HttpOptions,
+  ): Promise<{ data: any[]; meta: ApiPaginationMeta }> => {
+    const page = params.page ?? 1;
+    const limit = params.limit ?? 50;
+    const res = await http.getPaged<any>(ENDPOINTS.ORDERS.ISSUES(orderId), {
+      ...opts,
+      params: { ...opts?.params, page, limit },
+    });
+    const data = Array.isArray(res.data) ? res.data : [];
+    return {
+      data,
+      meta: isPaginationMeta(res.meta) ? res.meta : { page, limit, total: data.length, totalPages: 1 },
+    };
+  },
+
+  confirmRefundReceived: (orderId: string | number, opts?: HttpOptions): Promise<any> => {
+    return http.post<any>(ENDPOINTS.ORDERS.CONFIRM_REFUND_RECEIVED(orderId), undefined, opts);
+  },
+
+  createDeliveryDispute: (payload: IDeliveryDisputePayload, opts?: HttpOptions): Promise<any> => {
+    const form = new FormData();
+    form.append('description', payload.description);
+    payload.images.forEach((img) => {
+      form.append('evidenceImages', img as unknown as Blob);
+    });
+
+    return http.upload<any>(ENDPOINTS.ORDERS.DELIVERY_DISPUTE(payload.orderId), form, {
+      ...opts,
+      timeout: opts?.timeout ?? 30000,
+    });
   },
 
   createOrderIssue: (payload: ICreateOrderIssuePayload, opts?: HttpOptions): Promise<IOrderIssue> => {

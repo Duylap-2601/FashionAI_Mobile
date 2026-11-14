@@ -29,6 +29,8 @@ type NotificationFilter =
   | 'ORDER_STATUS'
   | 'PAYMENT'
   | 'ORDER_ISSUE'
+  | 'ORDER_CHAT'
+  | 'REVIEW'
   | 'PROMOTION'
   | 'SYSTEM';
 
@@ -37,6 +39,8 @@ const FILTERS: { value: NotificationFilter; label: string }[] = [
   { value: 'ORDER_STATUS', label: 'Đơn hàng' },
   { value: 'PAYMENT', label: 'Thanh toán' },
   { value: 'ORDER_ISSUE', label: 'Đổi trả' },
+  { value: 'ORDER_CHAT', label: 'Tin nhắn' },
+  { value: 'REVIEW', label: 'Đánh giá' },
   { value: 'PROMOTION', label: 'Khuyến mãi' },
   { value: 'SYSTEM', label: 'Hệ thống' },
 ];
@@ -147,8 +151,13 @@ export const NotificationsScreen: React.FC = () => {
     if (orderTarget) {
       if (orderTarget.screen === 'Returns') {
         navigation.navigate('Main', { screen: 'ProfileTab', params: { screen: 'Returns' } });
+      } else if (orderTarget.screen === 'OrderDetail') {
+        navigation.navigate('OrderDetail', {
+          orderId: orderTarget.orderId,
+          focusChat: orderTarget.focusChat,
+        });
       } else {
-        navigation.navigate(orderTarget.screen, { orderId: orderTarget.orderId });
+        navigation.navigate('OrderReturns', { orderId: orderTarget.orderId });
       }
     } else if (item.type === 'PROMOTION') {
       navigation.navigate('Main', { screen: 'ShopTab' });
@@ -158,6 +167,8 @@ export const NotificationsScreen: React.FC = () => {
       } else {
         navigation.navigate('MyReviews');
       }
+    } else {
+      navigation.navigate('Main', { screen: 'ProfileTab', params: { screen: 'Orders' } });
     }
   };
 
