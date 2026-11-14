@@ -156,12 +156,12 @@ export function useCancelScheduledSubscription() {
   };
 }
 
-/** Nâng cấp / gia hạn gói qua SePay */
+/** Nâng cấp / gia hạn gói qua ZaloPay hoặc SePay */
 export function useUpgradeSubscription() {
   const mutation = useMutation({
     mutationFn: ({
       targetTier,
-      provider = 'SEPAY',
+      provider = 'ZALOPAY',
     }: {
       targetTier: 'MEMBER' | 'VIP';
       provider?: string;
