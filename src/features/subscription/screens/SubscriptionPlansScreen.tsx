@@ -26,6 +26,7 @@ import {
   useResumeAutoRenew,
   useCancelScheduledSubscription,
   useUpgradeSubscription,
+  useSubscriptionQuote,
 } from '../hooks/use-subscription';
 import {
   QUOTA_NOT_INCLUDED,
@@ -36,7 +37,7 @@ import {
   getSubscriptionStatusLabel,
 } from '../constants/plans';
 import { SubscriptionHistoryList } from '../components/SubscriptionHistoryList';
-import { SubscriptionTier, PlanCardData } from '../types/subscription';
+import { SubscriptionTier, PlanCardData, CheckoutResponse } from '../types/subscription';
 
 type SubscriptionTab = 'plans' | 'current' | 'history';
 
@@ -121,6 +122,11 @@ export const SubscriptionPlansScreen: React.FC = () => {
   const { cancelScheduled, isCancellingScheduled } = useCancelScheduledSubscription();
   const { checkoutAsync, isCheckingOut } = useUpgradeSubscription();
 
+  // Nâng cấp từ MEMBER giữa kỳ chỉ còn phải trả phần chênh lệch: card VIP phải hiện
+  // đúng số tiền thực thu thay vì giá niêm yết.
+  const isMember = (subscription?.tier || user?.tier || 'FREE') === 'MEMBER';
+  const { quote: vipQuote } = useSubscriptionQuote('VIP', isMember);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await Promise.all([refetchPlans(), refetchSub(), refetchHistory(), refreshUser()]);
@@ -163,6 +169,25 @@ export const SubscriptionPlansScreen: React.FC = () => {
     }
   }, [subscription?.tierExpiresAt, user?.tierExpiresAt, currentTier, currentSub]);
 
+  // Điều hướng sang màn thanh toán sau khi BE đã tạo link cho đơn gói.
+  const navigateToPayment = (
+    res: CheckoutResponse,
+    targetTier: 'MEMBER' | 'VIP',
+    checkoutUrl: string,
+  ) => {
+    navigation.navigate('Payment', {
+      checkoutUrl,
+      provider: paymentProvider,
+      qrCode: res.qrCode,
+      orderId: res.orderId,
+      orderCode: res.orderCode?.toString(),
+      totalAmount: res.amount,
+      paymentId: res.paymentId,
+      targetTier,
+      returnRoute: 'SubscriptionPlans',
+    });
+  };
+
   // Handle upgrade or renewal
   const handleUpgrade = (targetTier: 'MEMBER' | 'VIP') => {
     const isRenewal = currentTier === targetTier;
@@ -196,17 +221,32 @@ export const SubscriptionPlansScreen: React.FC = () => {
                 return;
               }
 
-              navigation.navigate('Payment', {
-                checkoutUrl,
-                provider: paymentProvider,
-                qrCode: res.qrCode,
-                orderId: res.orderId,
-                orderCode: res.orderCode?.toString(),
-                totalAmount: res.amount,
-                paymentId: res.paymentId,
-                targetTier,
-                returnRoute: 'SubscriptionPlans',
-              });
+              // Nâng cấp giữa kỳ: khách chỉ trả phần chênh lệch, phải thấy breakdown
+              // trước khi sang cổng thanh toán (BR-192).
+              const proration = res.proration;
+              if (proration) {
+                const net = Math.round(proration.net);
+                Alert.alert(
+                  `Thanh toán gói ${targetTier}`,
+                  [
+                    `Gói ${proration.oldTier} còn ${proration.remainingDays} ngày.`,
+                    `Giá gói ${targetTier}: ${formatCurrency(proration.debit)}`,
+                    `Trừ giá trị gói cũ: -${formatCurrency(proration.credit)}`,
+                    '',
+                    `Cần thanh toán: ${formatCurrency(net)}`,
+                  ].join('\n'),
+                  [
+                    { text: 'Để sau', style: 'cancel' },
+                    {
+                      text: `Thanh toán ${formatCurrency(net)}`,
+                      onPress: () => navigateToPayment(res, targetTier, checkoutUrl),
+                    },
+                  ],
+                );
+                return;
+              }
+
+              navigateToPayment(res, targetTier, checkoutUrl);
             } catch (err: any) {
               Alert.alert(
                 'Lỗi khởi tạo thanh toán',
@@ -481,6 +521,14 @@ export const SubscriptionPlansScreen: React.FC = () => {
                           {plan.periodText}
                         </Text>
                       </View>
+
+                      {plan.id === 'VIP' && vipQuote?.proration ? (
+                        <Text className="mt-3 font-sans text-[12px] leading-relaxed text-brass-ink">
+                          Nâng cấp giữa kỳ: trừ {formatCurrency(vipQuote.proration.credit)} giá trị{' '}
+                          {vipQuote.proration.oldTier} còn {vipQuote.proration.remainingDays} ngày,
+                          chỉ còn {formatCurrency(vipQuote.amount)}.
+                        </Text>
+                      ) : null}
 
                       <View className="mt-5 gap-3">
                         {plan.features.map((feat) => (

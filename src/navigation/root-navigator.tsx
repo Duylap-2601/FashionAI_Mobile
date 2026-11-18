@@ -1,5 +1,4 @@
 import React from "react";
-import { View, ActivityIndicator, Text } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
@@ -7,6 +6,7 @@ import { RootStackParamList } from "./types";
 import { AuthStack } from "./auth-stack";
 import { MainTabs } from "./main-tabs";
 import { navigationTheme } from "./navigation-theme";
+import { AppSplashScreen } from "../components/common/AppSplashScreen";
 
 import { ProductDetailScreen } from "../features/products/screens/ProductDetailScreen";
 import { SearchScreen } from "../features/products/screens/SearchScreen";
@@ -41,14 +41,7 @@ export const RootNavigator: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-landing-paper p-xl">
-        <ActivityIndicator size="large" color={COLORS.oxblood} />
-        <Text className="mt-md font-sans text-body-sm text-landing-muted">
-          Đang khởi động FashionAI...
-        </Text>
-      </View>
-    );
+    return <AppSplashScreen />;
   }
 
   return (

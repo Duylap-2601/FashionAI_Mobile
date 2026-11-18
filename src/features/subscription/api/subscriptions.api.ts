@@ -7,6 +7,7 @@ import {
   SubscriptionHistoryResponse,
   CheckoutResponse,
   SubscriptionDetail,
+  SubscriptionQuote,
 } from '../types/subscription';
 
 export const subscriptionsApi = {
@@ -18,6 +19,14 @@ export const subscriptionsApi = {
   /** Lấy thông tin gói đăng ký hiện tại của user */
   getMySubscription(opts?: HttpOptions): Promise<MySubscriptionResponse> {
     return http.get<MySubscriptionResponse>(ENDPOINTS.PAYMENTS.SUBSCRIPTIONS_ME, opts);
+  },
+
+  /** Giá thực thu cho một gói; nâng cấp giữa kỳ trả kèm breakdown proration */
+  getQuote(targetTier: 'MEMBER' | 'VIP', opts?: HttpOptions): Promise<SubscriptionQuote> {
+    return http.get<SubscriptionQuote>(ENDPOINTS.PAYMENTS.SUBSCRIPTIONS_QUOTE, {
+      ...opts,
+      params: { targetTier, ...opts?.params },
+    });
   },
 
   /** Lấy lịch sử đăng ký / gia hạn gói */

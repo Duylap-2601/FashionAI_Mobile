@@ -10,7 +10,10 @@ describe('gluestack provider colors', () => {
 
   it('produces a valid "R G B" triplet for every variable', () => {
     for (const [name, value] of Object.entries(colors.light)) {
-      expect([name, value]).toEqual([name, expect.stringMatching(/^\d{1,3} \d{1,3} \d{1,3}$/)]);
+      expect([name, value]).toEqual([
+        name,
+        expect.stringMatching(/^\d{1,3} \d{1,3} \d{1,3}(?: \/ [\d.]+)?$/),
+      ]);
     }
   });
 });

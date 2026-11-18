@@ -116,6 +116,29 @@ describe('subscriptionsApi', () => {
     expect(result.autoRenew).toBe(true);
   });
 
+  it('getQuote trả số tiền thực thu kèm proration khi nâng cấp giữa kỳ', async () => {
+    const quote = {
+      targetTier: 'VIP',
+      listPrice: 99000,
+      amount: 33000,
+      proration: {
+        oldTier: 'MEMBER',
+        newTier: 'VIP',
+        remainingDays: 15,
+        credit: 17000,
+        debit: 50000,
+        net: 33000,
+      },
+    };
+
+    mock.onGet(ENDPOINTS.PAYMENTS.SUBSCRIPTIONS_QUOTE).reply(200, envelope(quote));
+
+    const result = await subscriptionsApi.getQuote('VIP');
+    expect(result.amount).toBe(33000);
+    expect(result.listPrice).toBe(99000);
+    expect(result.proration?.net).toBe(33000);
+  });
+
   it('checkout creates payment link for targetTier', async () => {
     const checkoutRes = {
       orderId: 'ord-sub-1',

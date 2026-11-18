@@ -1,4 +1,4 @@
-import React, { act } from 'react';
+import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSearchHistory, type SearchHistory } from './use-search-history';
 import { SEARCH_HISTORY_KEY } from '../utils/search-history';
@@ -17,8 +17,9 @@ interface TestTree {
   root: { findByType(type: string): TestNode };
   unmount(): void;
 }
-const { create } = jest.requireActual('react-test-renderer') as {
+const { create, act } = jest.requireActual('react-test-renderer') as {
   create(element: React.ReactElement): TestTree;
+  act(callback: () => void | Promise<void>): void | Promise<void>;
 };
 
 const storage = jest.mocked(AsyncStorage);

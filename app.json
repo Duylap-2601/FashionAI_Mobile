@@ -30,6 +30,15 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FBF9F7"
+        }
+      ],
       "expo-secure-store",
       "expo-image",
       [
@@ -130,7 +139,8 @@
           "photosPermission": "FashionAI cần truy cập ảnh để phân tích phong cách của bạn.",
           "cameraPermission": "FashionAI cần dùng camera để chụp ảnh phân tích phong cách của bạn."
         }
-      ]
+      ],
+      "expo-splash-screen"
     ],
     "experiments": {
       "tsconfigPaths": true

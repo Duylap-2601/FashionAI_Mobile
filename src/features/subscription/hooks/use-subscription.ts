@@ -12,6 +12,7 @@ const SUBSCRIPTION_HISTORY_KEY = ['subscription-history'] as const;
 export const SUBSCRIPTION_QUERY_KEYS = {
   plans: ['subscription-plans'] as const,
   mySubscription: ['my-subscription'] as const,
+  quote: (targetTier: 'MEMBER' | 'VIP') => ['subscription-quote', targetTier] as const,
   /** Gốc của lịch sử gói: dùng làm prefix khi cần làm mới mọi trang. */
   historyAll: SUBSCRIPTION_HISTORY_KEY,
   history: (page: number, limit: number) =>
@@ -98,6 +99,22 @@ export function useMySubscription() {
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,
+    refetch: query.refetch,
+  };
+}
+
+/** Giá thực thu cho một gói; nâng cấp giữa kỳ trả kèm proration để UI hiện đúng số tiền */
+export function useSubscriptionQuote(targetTier: 'MEMBER' | 'VIP', enabled: boolean) {
+  const query = useQuery({
+    queryKey: SUBSCRIPTION_QUERY_KEYS.quote(targetTier),
+    queryFn: ({ signal }) => subscriptionsApi.getQuote(targetTier, { signal }),
+    enabled,
+    staleTime: 60 * 1000,
+  });
+
+  return {
+    quote: query.data ?? null,
+    isLoading: query.isLoading,
     refetch: query.refetch,
   };
 }

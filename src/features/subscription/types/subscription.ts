@@ -72,6 +72,23 @@ export interface SubscriptionHistoryResponse {
   };
 }
 
+export interface ProrationBreakdown {
+  oldTier: string;
+  newTier: string;
+  remainingDays: number;
+  credit: number;
+  debit: number;
+  net: number;
+}
+
+/** Báo giá trước khi thanh toán; `proration` có khi nâng cấp giữa kỳ. */
+export interface SubscriptionQuote {
+  targetTier: SubscriptionTier;
+  listPrice: number;
+  amount: number;
+  proration: ProrationBreakdown | null;
+}
+
 export interface CheckoutResponse {
   orderId: string;
   orderCode?: number;
@@ -83,7 +100,8 @@ export interface CheckoutResponse {
   payUrl?: string;
   qrCode?: string;
   paymentId?: string;
-  proration?: any;
+  /** Có khi nâng cấp giữa kỳ: giá trị còn lại của gói cũ trừ vào gói mới. */
+  proration?: ProrationBreakdown | null;
 }
 
 export interface PlanFeature {

@@ -115,6 +115,7 @@ export const ENDPOINTS = {
     ORDERS: '/payments/orders',
     PLANS: '/payments/plans',
     SUBSCRIPTIONS_ME: '/payments/subscriptions/me',
+    SUBSCRIPTIONS_QUOTE: '/payments/subscriptions/quote',
     SUBSCRIPTIONS_HISTORY: '/payments/subscriptions/history',
     SUBSCRIPTIONS_CANCEL: '/payments/subscriptions/cancel',
     SUBSCRIPTIONS_RESUME: '/payments/subscriptions/resume',

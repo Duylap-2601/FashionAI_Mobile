@@ -1,4 +1,4 @@
-import React, { act } from "react";
+import React from "react";
 import { ProductDescription } from "./ProductDescription";
 
 jest.mock("react-native", () => ({
@@ -25,8 +25,9 @@ interface TestTree {
   update(element: React.ReactElement): void;
   unmount(): void;
 }
-const { create } = jest.requireActual("react-test-renderer") as {
+const { create, act } = jest.requireActual("react-test-renderer") as {
   create(element: React.ReactElement): TestTree;
+  act(callback: () => void | Promise<void>): void | Promise<void>;
 };
 
 let tree: TestTree;

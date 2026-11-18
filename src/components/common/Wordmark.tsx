@@ -7,6 +7,7 @@ const SIZE_MAP = {
   sm: { fontSize: 18, lineHeight: 18 },
   md: { fontSize: 22, lineHeight: 22 },
   lg: { fontSize: 28, lineHeight: 28 },
+  xl: { fontSize: 44, lineHeight: 48 },
 } as const;
 
 interface IWordmarkProps {
